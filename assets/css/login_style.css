@@ -1,0 +1,277 @@
+/* ====================================================
+    LOGIN PAGE - SPLIT LAYOUT
+    ==================================================== */
+body {
+    overflow-x: hidden;
+}
+
+.auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+}
+
+/* --- Left Panel: Hero / Brand --- */
+.auth-panel-left {
+    flex: 1 1 50%;
+    background:
+        radial-gradient(ellipse at 20% 80%, rgba(13, 148, 136, 0.45) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 10%, rgba(20, 184, 166, 0.25) 0%, transparent 55%),
+        url('https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1200&auto=format&fit=crop') center/cover no-repeat;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 2.5rem 3rem;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-panel-left::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(150deg, rgba(9, 13, 22, 0.70) 30%, rgba(13, 148, 136, 0.35) 100%);
+}
+
+.auth-panel-left>* {
+    position: relative;
+    z-index: 1;
+}
+
+.auth-brand-badge {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--brand-teal), var(--brand-teal-dark));
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    box-shadow: 0 0 24px rgba(13, 148, 136, 0.5);
+}
+
+.auth-stat-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.auth-stat-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    padding: 1rem 1.4rem;
+    min-width: 140px;
+}
+
+.auth-stat-num {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #2dd4bf;
+    line-height: 1;
+}
+
+.auth-stat-label {
+    font-size: 0.78rem;
+    opacity: 0.75;
+    margin-top: 0.3rem;
+}
+
+.auth-hero-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+}
+
+/* --- Right Panel: Form --- */
+.auth-panel-right {
+    flex: 1 1 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-body);
+    padding: 2rem 1.5rem;
+}
+
+.auth-form-box {
+    width: 100%;
+    max-width: 440px;
+}
+
+/* Social login buttons */
+.btn-social {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    border: 1.5px solid var(--border-color);
+    background: transparent;
+    color: var(--text-primary);
+    border-radius: 0.75rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: var(--transition-fast);
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn-social:hover {
+    background: var(--bg-surface);
+    border-color: var(--brand-teal);
+    color: var(--brand-teal);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Input floating style */
+.auth-input-group {
+    position: relative;
+}
+
+.auth-input-group .input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 1rem;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.auth-input-group .form-control {
+    padding-left: 2.6rem;
+    border-radius: 0.75rem;
+    height: 50px;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: var(--transition-fast);
+}
+
+.auth-input-group .form-control:focus {
+    border-color: var(--brand-teal);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+}
+
+.auth-input-group .btn-eye {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem;
+    transition: var(--transition-fast);
+}
+
+.auth-input-group .btn-eye:hover {
+    color: var(--brand-teal);
+}
+
+/* Demo quick-fill */
+.demo-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg-surface);
+    border: 1.5px solid var(--border-color);
+    border-radius: 9999px;
+    padding: 0.4rem 1rem 0.4rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: var(--transition-fast);
+    color: var(--text-primary);
+}
+
+.demo-pill:hover {
+    border-color: var(--brand-teal);
+    color: var(--brand-teal);
+    background: rgba(13, 148, 136, 0.06);
+}
+
+.demo-pill .demo-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.divider-text {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.divider-text::before,
+.divider-text::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+
+/* Theme toggle on auth page */
+.auth-theme-btn {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    z-index: 999;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.auth-theme-btn:hover {
+    background: var(--brand-teal);
+}
+
+[data-bs-theme="light"] .auth-theme-btn {
+    background: rgba(15, 23, 42, 0.08);
+    border-color: rgba(15, 23, 42, 0.15);
+    color: var(--text-primary);
+}
+
+/* Responsive: stack on mobile */
+@media (max-width: 767px) {
+    .auth-wrapper {
+        flex-direction: column;
+    }
+
+    .auth-panel-left {
+        flex: none;
+        min-height: 260px;
+        padding: 2rem 1.5rem;
+    }
+
+    .auth-hero-title {
+        font-size: 1.8rem;
+    }
+
+    .auth-panel-right {
+        padding: 2rem 1.25rem;
+    }
+}

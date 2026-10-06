@@ -1,0 +1,14 @@
+# Dependencies (cài lại bằng composer install, KHÔNG commit)
+/vendor/
+
+# Thông tin nhạy cảm — không commit mật khẩu DB / VAPID key thật
+.env
+
+# File hệ điều hành / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Log, cache nếu phát sinh trong lúc chạy XAMPP
+*.log
