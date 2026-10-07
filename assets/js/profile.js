@@ -30,6 +30,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const inpPhone = document.getElementById('inpPhone');
     if (inpPhone) inpPhone.value = user.phone;
 
+    // Kiểm tra quyền Admin/Owner mới hiện nút Chuyển trang Admin
+    const btnGoAdmin = document.getElementById('btnGoAdmin');
+    if (btnGoAdmin) {
+        if (user && (user.role === 'admin' || user.role === 'owner')) {
+            btnGoAdmin.classList.remove('d-none');
+        } else {
+            btnGoAdmin.classList.add('d-none');
+        }
+    }
+
     // 2. Render danh sách lịch sử đặt sân gần đây
     renderBookingsList();
 

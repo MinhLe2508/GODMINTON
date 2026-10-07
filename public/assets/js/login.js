@@ -58,7 +58,7 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
                 timer: 1200, showConfirmButton: false
             }).then(() => {
                 const role = result.data.user.role;
-                const fallback = (role === 'owner' || role === 'admin') ? 'admin-dashboard.html' : 'index.html';
+                const fallback = (role === 'owner' || role === 'admin') ? 'admin-dashboard.php' : 'index.php';
                 const redirect = new URLSearchParams(window.location.search).get('redirect') || fallback;
                 window.location.href = redirect;
             });

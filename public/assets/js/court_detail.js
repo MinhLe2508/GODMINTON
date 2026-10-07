@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const court = MockDB.getCourtById(courtId);
 
     if (!court) {
-        window.location.href = 'courts.html';
+        window.location.href = 'courts.php';
         return;
     }
 
@@ -62,8 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb small">
-            <li class="breadcrumb-item"><a href="index.html" class="text-teal text-decoration-none">Trang chủ</a></li>
-            <li class="breadcrumb-item"><a href="courts.html" class="text-teal text-decoration-none">Danh sách sân</a></li>
+            <li class="breadcrumb-item"><a href="index.php" class="text-teal text-decoration-none">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a href="courts.php" class="text-teal text-decoration-none">Danh sách sân</a></li>
             <li class="breadcrumb-item active">${court.name}</li>
         </ol>
     </nav>
@@ -127,10 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
 
                 <div class="d-grid gap-2">
-                    <a href="booking.html?court_id=${court.id}" class="btn btn-teal btn-lg rounded-pill fw-bold shadow">
+                    <a href="booking.php?court_id=${court.id}" class="btn btn-teal btn-lg rounded-pill fw-bold shadow">
                         <i class="fa-solid fa-calendar-check me-2"></i>Chọn Giờ Đặt Sân Ngay
                     </a>
-                    <a href="courts.html" class="btn btn-outline-secondary rounded-pill">
+                    <a href="courts.php" class="btn btn-outline-secondary rounded-pill">
                         <i class="fa-solid fa-arrow-left me-1"></i> Quay lại tìm sân khác
                     </a>
                 </div>

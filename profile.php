@@ -174,7 +174,7 @@ $assetsPath = 'assets';
                         <div class="row g-2">
                             <div class="col-4">
                                 <div class="profile-stat-box">
-                                    <div class="fs-4 fw-extrabold text-warning" id="statBookingsCount"><?= count($sample_bookings) ?></div>
+                                    <div class="fs-4 fw-extrabold text-warning" id="statBookingsCount"><?= count($SAMPLE_BOOKINGS ?? $sample_bookings ?? []) ?></div>
                                     <div class="small opacity-80" style="font-size: 0.75rem;">Lượt đặt sân</div>
                                 </div>
                             </div>
@@ -219,7 +219,8 @@ $assetsPath = 'assets';
                             <a href="courts.php" class="btn btn-teal rounded-pill w-100 fw-bold">
                                 <i class="fa-solid fa-plus me-1"></i> Đặt sân mới
                             </a>
-                            <a href="admin-courts.php" class="btn btn-outline-secondary rounded-pill w-100 fw-semibold text-start px-3">
+                            <!-- Nút Chuyển trang Admin: Chỉ hiển thị khi tài khoản có quyền admin/owner -->
+                            <a href="admin-dashboard.php" id="btnGoAdmin" class="btn btn-outline-warning rounded-pill w-100 fw-semibold text-start px-3 d-none">
                                 <i class="fa-solid fa-gauge-high me-2 text-warning"></i> Chuyển trang Admin
                             </a>
                             <a href="auth.php" class="btn btn-outline-secondary rounded-pill w-100 fw-semibold text-start px-3">

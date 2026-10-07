@@ -15,7 +15,7 @@ let booking = {
 document.addEventListener('DOMContentLoaded', () => {
     // Guard: redirect nếu chưa đăng nhập
     const user = typeof MockDB !== 'undefined' ? MockDB.getUser() : null;
-    if (!user) { window.location.href = 'login.html?redirect=payment.html'; return; }
+    if (!user) { window.location.href = 'auth.php?redirect=payment.php'; return; }
 
     // Pre-fill form
     document.getElementById('billingName').value  = user.name  || '';
@@ -148,7 +148,7 @@ function startCountdown(seconds) {
                 confirmButtonText: 'Quay lại chọn giờ',
                 confirmButtonColor: '#0d9488',
                 allowOutsideClick: false
-            }).then(() => window.location.href = 'booking.html');
+            }).then(() => window.location.href = 'booking.php');
         }
         rem--;
     };

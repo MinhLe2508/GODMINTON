@@ -189,7 +189,7 @@ class BookingEngine {
                 cancelButtonColor: '#64748b'
             }).then((res) => {
                 if (res.isConfirmed) {
-                    window.location.href = `confirm.html?slot_id=${slotId}&court_id=${this.courtId}&date=${this.selectedDate}`;
+                    window.location.href = `confirm.php?slot_id=${slotId}&court_id=${this.courtId}&date=${this.selectedDate}`;
                 }
             });
 
@@ -221,7 +221,7 @@ class BookingEngine {
                 cancelButtonText: 'Để sau',
                 confirmButtonColor: '#0d9488'
             }).then((r) => {
-                if (r.isConfirmed) window.location.href = 'login.html';
+                if (r.isConfirmed) window.location.href = 'auth.php';
             });
             if (slotEl) slotEl.classList.remove('slot-selected');
             return;
@@ -269,7 +269,7 @@ class BookingEngine {
             denyButtonColor: '#ef4444'
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.href = `confirm.html?slot_id=${slotId}&court_id=${this.courtId}&date=${this.selectedDate}`;
+                window.location.href = `confirm.php?slot_id=${slotId}&court_id=${this.courtId}&date=${this.selectedDate}`;
             } else if (result.isDenied) {
                 this.cancelHold(slotId);
             }
@@ -322,7 +322,7 @@ class BookingEngine {
                         <div class="small text-warning text-uppercase fw-bold" style="font-size:0.65rem;">Thời gian còn lại</div>
                         <div id="holdCountdownDisplay" class="fs-4 fw-extrabold text-warning font-monospace">--:--</div>
                     </div>
-                    <a href="confirm.html?slot_id=${slot.id}&court_id=${this.courtId}&date=${this.selectedDate}" class="btn btn-warning fw-bold text-dark rounded-pill px-4 shadow">
+                    <a href="confirm.php?slot_id=${slot.id}&court_id=${this.courtId}&date=${this.selectedDate}" class="btn btn-warning fw-bold text-dark rounded-pill px-4 shadow">
                         <i class="fa-solid fa-credit-card me-1"></i> Đặt Cọc Ngay
                     </a>
                     <button onclick="window.bookingEngine.cancelHold(${slot.id})" class="btn btn-outline-light rounded-pill btn-sm" title="Hủy">

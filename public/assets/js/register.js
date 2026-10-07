@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     timer: 1500,
                     showConfirmButton: false
                 }).then(() => {
-                    window.location.href = (role === 'owner') ? 'admin-dashboard.html' : 'index.html';
+                    window.location.href = (role === 'owner') ? 'admin-dashboard.php' : 'index.php';
                 });
             } else {
                 Swal.fire({

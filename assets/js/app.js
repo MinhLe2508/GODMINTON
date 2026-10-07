@@ -48,12 +48,14 @@ function renderNavbarUser() {
     const initial = user && user.name ? user.name.charAt(0).toUpperCase() : 'A';
     const displayName = user ? user.name : 'Tài Khoản';
     const displayRole = user && user.role ? (user.role === 'admin' ? 'QUẢN TRỊ' : (user.role === 'owner' ? 'CHỦ SÂN' : 'KHÁCH HÀNG')) : 'KHÁCH HÀNG';
+    const isAdminOrOwner = !!(user && (user.role === 'admin' || user.role === 'owner'));
 
     userArea.innerHTML = `
-    <!-- Nút chọn Kênh Admin trực tiếp trên header -->
+    <!-- Nút chọn Kênh Admin trực tiếp trên header: Chỉ hiện khi là Admin hoặc Chủ sân -->
+    ${isAdminOrOwner ? `
     <a href="admin-dashboard.php" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold d-flex align-items-center gap-1" title="Kênh Quản trị / Chủ sân">
         <i class="fa-solid fa-gauge-high"></i> <span class="d-none d-sm-inline">Kênh Admin</span>
-    </a>
+    </a>` : ''}
 
     <!-- Dropdown Chọn Trang & Tài Khoản -->
     <div class="dropdown">
@@ -72,7 +74,7 @@ function renderNavbarUser() {
             </li>
             <li><h6 class="dropdown-header text-uppercase fs-xs fw-bold text-muted py-1" style="font-size:0.72rem;">CHỌN TRANG NHANH</h6></li>
             <li><a class="dropdown-item py-2 fw-semibold" href="profile.php"><i class="fa-solid fa-circle-user me-2 text-teal"></i>Trang cá nhân</a></li>
-            <li><a class="dropdown-item py-2 fw-semibold" href="admin-dashboard.php"><i class="fa-solid fa-gauge-high me-2 text-warning"></i>Kênh Quản trị (Admin)</a></li>
+            ${isAdminOrOwner ? `<li><a class="dropdown-item py-2 fw-semibold" href="admin-dashboard.php"><i class="fa-solid fa-gauge-high me-2 text-warning"></i>Kênh Quản trị (Admin)</a></li>` : ''}
             <li><a class="dropdown-item py-2 fw-semibold" href="history.php"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Lịch sử đặt sân</a></li>
             <li><hr class="dropdown-divider my-1"></li>
             <li><h6 class="dropdown-header text-uppercase fs-xs fw-bold text-muted py-1" style="font-size:0.72rem;">XÁC THỰC TÀI KHOẢN</h6></li>

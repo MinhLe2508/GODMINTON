@@ -184,3 +184,11 @@ if (!function_exists('format_vnd')) {
         return number_format($amount, 0, ',', '.') . ' đ';
     }
 }
+
+// Alias chữ thường để tương thích với tất cả view gọi $sample_*
+$sample_bookings   = $SAMPLE_BOOKINGS;
+$sample_courts     = $SAMPLE_COURTS;
+$sample_wards      = $SAMPLE_WARDS;
+$sample_amenities  = $SAMPLE_AMENITIES;
+$sample_admin_stats = $SAMPLE_ADMIN_STATS;
+

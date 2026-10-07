@@ -8,22 +8,57 @@
 
 const AdminApp = (() => {
 
-    /* ================= AUTH GUARD (CHẾ ĐỘ TĨNH) ================= */
-    // Luôn cho phép truy cập khu quản trị tĩnh với dữ liệu mẫu đầy đủ
+    /* ================= AUTH GUARD ================= */
+    // Chỉ tài khoản có vai trò 'admin' hoặc 'owner' mới có quyền truy cập Kênh Admin
     function requireAuth() {
-        MockDB.init();
-        let user = MockDB.getUser();
-        if (!user || (user.role !== 'owner' && user.role !== 'admin')) {
-            user = {
-                id: 1,
-                name: "Quản Trị Viên (Demo)",
-                email: "admin@godminton.vn",
-                phone: "0900 000 001",
-                role: "admin"
-            };
+        if (typeof MockDB !== 'undefined' && MockDB.init) {
+            MockDB.init();
         }
+        const user = (typeof MockDB !== 'undefined' && MockDB.getUser) ? MockDB.getUser() : null;
+
+        // 1. Chưa đăng nhập
+        if (!user) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Yêu cầu đăng nhập',
+                    text: 'Vui lòng đăng nhập với tài khoản Quản trị viên hoặc Chủ sân để truy cập Kênh Admin.',
+                    confirmButtonColor: '#0d9488',
+                    confirmButtonText: 'Đăng nhập ngay',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = 'auth.php';
+                });
+            } else {
+                alert('Vui lòng đăng nhập với tài khoản Quản trị viên hoặc Chủ sân!');
+                window.location.href = 'auth.php';
+            }
+            return null;
+        }
+
+        // 2. Đã đăng nhập nhưng không phải admin hoặc owner (ví dụ: customer)
+        if (user.role !== 'owner' && user.role !== 'admin') {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Không có quyền truy cập',
+                    text: `Tài khoản "${user.name}" có vai trò Khách hàng (customer). Chỉ tài khoản Quản trị viên (admin) hoặc Chủ sân (owner) mới có quyền vào Kênh Admin.`,
+                    confirmButtonColor: '#0d9488',
+                    confirmButtonText: 'Về trang chủ',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = 'index.php';
+                });
+            } else {
+                alert('Bạn không có quyền truy cập Kênh Admin!');
+                window.location.href = 'index.php';
+            }
+            return null;
+        }
+
         return user;
     }
+
 
 
     /* ================= OWNER -> COURTS SCOPE ================= */
