@@ -1,3 +1,15 @@
+<?php
+/**
+ * admin-slots.php — Quản Lý Khung Giờ | Kênh Chủ Sân - GODMINTON
+ * 
+ * Người phụ trách: P3 (Trương Minh Triết)
+ */
+// DỮ LIỆU MẪU - thay bằng truy vấn DB ở tuần 2
+require_once __DIR__ . '/includes/sample_data.php';
+
+$currentPage = 'admin-slots';
+$assetsPath = 'assets';
+?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 <head>
@@ -12,28 +24,15 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/admin_style.css">
+    <link rel="stylesheet" href="assets/css/ui-states.css">
 </head>
 <body class="admin-body">
 
 <div class="admin-shell">
-    <aside class="admin-sidebar" id="adminSidebar">
-        <div class="admin-sidebar-brand">
-            <img src="assets/img/logo.svg" alt="GODMINTON">
-            <div>
-                <div class="fw-bold text-white" style="font-size:.9rem;">GODMINTON</div>
-                <div class="brand-sub">Kênh Chủ Sân</div>
-            </div>
-        </div>
-        <nav class="admin-nav">
-            <div class="admin-nav-label">Điều hướng</div>
-            <div id="adminSidebarNav"></div>
-        </nav>
-        <div class="admin-sidebar-footer">
-            <div id="adminUserBox" class="mb-2"></div>
-            <a href="index.html" class="admin-back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại trang khách</a>
-        </div>
-    </aside>
-    <div class="admin-overlay" id="adminOverlay"></div>
+    <?php 
+    $adminActive = 'slots';
+    include __DIR__ . '/includes/partials/admin-sidebar.php'; 
+    ?>
 
     <div class="admin-main">
         <header class="admin-topbar">
@@ -144,6 +143,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="assets/js/mock-data.js"></script>
+<script src="assets/js/ui-states.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/admin.js"></script>
 <script src="assets/js/bottom-nav.js"></script>
