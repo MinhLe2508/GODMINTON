@@ -1,64 +1,50 @@
-/* ---- Explore feed data ---- */
+/**
+ * GODMINTON — index_explore_dt.js
+ * Phụ trách: P3 (Trương Minh Triết)
+ * Cập nhật Task #6: Gỡ sự kiện, voucher, tin tức, rating và chuyển link sang .php
+ */
+
+/* ---- Explore feed data (Đã gỡ event và voucher theo Task #6) ---- */
 const EXPLORE_DATA = [
-    {
-        type: 'event', tag: 'Sự kiện', tagColor: '#7c3aed', tagBg: 'rgba(124,58,237,0.1)',
-        icon: 'fa-trophy',
-        img: 'https://images.baoangiang.com.vn/image/fckeditor/upload/2023/20231123/images/T10-cau-long.jpg',
-        title: 'Giải Cầu Lông Mở Rộng TP.HCM Mùa Thu 2026',
-        desc: 'Giải đấu phong trào cho mọi trình độ. Đăng ký trước 25/09 để nhận ưu đãi.',
-        author: 'Cầu Lông Quận 7 – Phú Mỹ Hưng Sport', authorInit: 'C',
-        date: '28/09/2026', meta: '🔥 Còn 12 suất',
-        ctaText: 'Đăng ký ngay', ctaUrl: 'news.html'
-    },
     {
         type: 'membership', tag: 'Hội viên', tagColor: '#f59e0b', tagBg: 'rgba(245,158,11,0.1)',
         icon: 'fa-id-card',
-        img: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDFT_A1H58pN3vbqd58kHnEZ_OSx-H-r-bL-WcslwHalDYNdtbAHxZd7w&s=10',
+        img: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=600&auto=format&fit=crop',
         title: 'Gói Hội Viên Tháng — Tiết Kiệm 30%',
-        desc: 'Đặt sân không giới hạn trong tháng với giá cố định. Bao gồm 2 giờ miễn phí mỗi tuần.',
+        desc: 'Đặt sân định kỳ trong tháng với giá ưu đãi cố định. Bao gồm 2 giờ tập luyện linh hoạt mỗi tuần.',
         author: 'GODMINTON', authorInit: 'G',
-        date: 'Còn 8 ngày', meta: '⭐ Bán chạy nhất',
-        ctaText: 'Mua gói ngay', ctaUrl: 'courts.html'
+        date: 'Tháng này', meta: '⭐ Gói phổ biến',
+        ctaText: 'Xem sân áp dụng', ctaUrl: 'courts.php'
     },
     {
         type: 'notice', tag: 'Thông báo', tagColor: '#ef4444', tagBg: 'rgba(239,68,68,0.1)',
         icon: 'fa-fire',
-        img: 'https://sportnet.vn/uploads/clb/236/banner-san-cau-long-68-linh-trungthu-duc-1733763095.jpeg',
-        title: '🔥 Sân Trống Hôm Nay — CLB Thể Thao Thủ Đức',
-        desc: 'Sân 1 trống khung 17:00–18:00 và 20:30–21:30. Đặt ngay trước khi hết chỗ!',
-        author: 'CLB Thể Thao Thủ Đức', authorInit: 'Đ',
-        date: 'Hôm nay', meta: '⏱ Cập nhật 5 phút trước',
-        ctaText: 'Đặt ngay', ctaUrl: 'booking.html'
+        img: 'assets/img/gmdiscount.png',
+        title: '🔥 Khung Giờ Vàng Đang Trống — Đặt Ngay',
+        desc: 'Nhiều khung giờ tối từ 18:00 - 20:00 tại Quận 1 và Chợ Lớn vừa được mở thêm.',
+        author: 'GODMINTON Live', authorInit: 'L',
+        date: 'Hôm nay', meta: '⏱ Cập nhật thời gian thực',
+        ctaText: 'Đặt sân ngay', ctaUrl: 'courts.php'
     },
     {
         type: 'class', tag: 'Khóa học', tagColor: '#0ea5e9', tagBg: 'rgba(14,165,233,0.1)',
         icon: 'fa-person-chalkboard',
-        img: 'https://thethaovanhoa.mediacdn.vn/thumb_w/300/372676912336973824/2023/10/6/01-huyen-thoai-nguyen-tien-minh-1696593429244264020372.png',
-        title: 'Khóa Học Cầu Lông Cơ Bản — Trình Mới Bắt Đầu',
-        desc: '12 buổi học với HLV Nguyễn Tiến Minh (cựu tuyển thủ quốc gia). Sáng T2-T4-T6.',
-        author: 'HLV Nguyễn Tiến Minh', authorInit: 'M',
-        date: 'Khai giảng 01/10', meta: '👥 8/12 học viên',
-        ctaText: 'Đăng ký học', ctaUrl: 'news.html'
-    },
-    {
-        type: 'promo', tag: 'Ưu đãi', tagColor: '#10b981', tagBg: 'rgba(16,185,129,0.1)',
-        icon: 'fa-gift',
-        img: '/static/assets/img/gmdiscount.png',
-        title: 'Giảm 20% Buổi Đầu Tiên Cho Khách Mới',
-        desc: 'Nhập mã GODMINTON20 khi đặt sân lần đầu để được giảm ngay 20% tổng hoá đơn.',
-        author: 'GODMINTON', authorInit: 'G',
-        date: 'Hết hạn 31/10', meta: '🎁 Dùng 1 lần/tài khoản',
-        ctaText: 'Dùng mã ngay', ctaUrl: 'courts.html'
+        img: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=600&auto=format&fit=crop',
+        title: 'Lớp Cầu Lông Cơ Bản & Nâng Cao Kỹ Thuật',
+        desc: 'Lớp học kỹ thuật đập cầu, di chuyển bước chân với HLV chuyên nghiệp tại các cụm sân trung tâm.',
+        author: 'Ban Huấn Luyện', authorInit: 'H',
+        date: 'Khai giảng hàng tuần', meta: '👥 Nhóm 6 học viên',
+        ctaText: 'Khám phá sân', ctaUrl: 'courts.php'
     },
     {
         type: 'pass', tag: 'Pass sân', tagColor: '#8b5cf6', tagBg: 'rgba(139,92,246,0.1)',
         icon: 'fa-ticket',
-        img: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxo40VnFT-aM8qzu3eUJTEi3rDVAOdDkJ99BBVVcjduQ&s=10',
-        title: 'Pass 10 Buổi Thanh Xuân Pro — Tiết Kiệm 25%',
-        desc: 'Mua trước 10 suất đặt sân tại Thanh Xuân Pro với giá ưu đãi, dùng bất kỳ khung giờ nào trong 3 tháng.',
-        author: 'Thanh Xuân Pro', authorInit: 'T',
-        date: 'Còn hiệu lực', meta: '✅ Còn 5 pass',
-        ctaText: 'Mua pass', ctaUrl: 'courts.html'
+        img: 'assets/img/logo.jpg',
+        title: 'Thẻ Pass Đặt Sân Linh Hoạt 10 Buổi',
+        desc: 'Tiện lợi cho các hội nhóm cầu lông, sử dụng linh hoạt mọi ngày trong tuần không lo hết giờ.',
+        author: 'GODMINTON Club', authorInit: 'C',
+        date: 'Còn hiệu lực', meta: '✅ Linh hoạt',
+        ctaText: 'Chọn sân đặt', ctaUrl: 'courts.php'
     }
 ];
 
@@ -118,43 +104,36 @@ function renderExploreFeed() {
 // Run on load
 document.addEventListener('DOMContentLoaded', () => {
     renderExploreFeed();
-});
 
-
-
-/* ---- index.html ---- */
-document.addEventListener('DOMContentLoaded', () => {
-    const user = MockDB.getUser();
+    const user = (typeof MockDB !== 'undefined' && MockDB.getUser) ? MockDB.getUser() : null;
     const navHistoryEl = document.getElementById('navHistoryItem');
     if (user && navHistoryEl) navHistoryEl.style.display = '';
 
     // Render Featured Courts Swiper
-    const allCourts = (typeof MockDB !== 'undefined') ? MockDB.getCourts() : (typeof INITIAL_COURTS !== 'undefined' ? INITIAL_COURTS : []);
+    const allCourts = (typeof MockDB !== 'undefined' && MockDB.getCourts) 
+        ? MockDB.getCourts() 
+        : (typeof INITIAL_COURTS !== 'undefined' ? INITIAL_COURTS : []);
     const courts = allCourts.slice(0, 6);
     const wrapper = document.getElementById('featuredCourtsWrapper');
-    if (wrapper) {
+    if (wrapper && courts.length > 0) {
         wrapper.innerHTML = courts.map(court => `
         <div class="swiper-slide">
             <div class="court-card">
                 <div class="court-img-wrapper">
-                    <img src="${court.image_url}" alt="${court.name}" class="court-img" loading="lazy">
-                    <div class="court-badge-price">${court.price_formatted} <span class="small opacity-75">/ giờ</span></div>
+                    <img src="${court.image_url || 'assets/img/gmdiscount.png'}" alt="${court.name}" class="court-img" loading="lazy">
+                    <div class="court-badge-price">${court.price_formatted || (typeof MockDB !== 'undefined' ? MockDB.formatVND(court.min_price || court.price_per_hour) : (court.min_price + ' đ'))} <span class="small opacity-75">/ giờ</span></div>
                 </div>
                 <div class="p-3 d-flex flex-column flex-grow-1">
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <span class="badge bg-teal-subtle text-teal">
-                            <i class="fa-solid fa-location-dot me-1"></i>${court.district}
+                            <i class="fa-solid fa-location-dot me-1"></i>${court.district || court.ward_name || 'TP.HCM'}
                         </span>
-                        <div class="small text-warning fw-bold">
-                            <i class="fa-solid fa-star me-1"></i>${court.avg_rating}
-                            <span class="text-muted fw-normal">(${court.total_reviews})</span>
-                        </div>
                     </div>
                     <h5 class="fw-bold mb-2 text-truncate">${court.name}</h5>
-                    <p class="text-muted small mb-3 flex-grow-1 line-clamp-2">${court.description.substring(0, 110)}...</p>
+                    <p class="text-muted small mb-3 flex-grow-1 line-clamp-2">${(court.description || '').substring(0, 110)}...</p>
                     <div class="d-flex gap-2">
-                        <a href="court-detail.html?id=${court.id}" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">Chi tiết</a>
-                        <a href="booking.html?court_id=${court.id}" class="btn btn-teal btn-sm rounded-pill flex-grow-1 fw-bold">Đặt sân ngay</a>
+                        <a href="court-detail.php?id=${court.id}" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">Chi tiết</a>
+                        <a href="booking.php?court_id=${court.id}" class="btn btn-teal btn-sm rounded-pill flex-grow-1 fw-bold">Đặt sân ngay</a>
                     </div>
                 </div>
             </div>
@@ -173,35 +152,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // Render News
-    const news = MockDB.getNews().slice(0, 3);
-    const newsContainer = document.getElementById('homeNewsContainer');
-    if (newsContainer) {
-        newsContainer.innerHTML = news.map(n => `
-        <div class="col-md-4" data-aos="fade-up">
-            <div class="card h-100 border rounded-4 overflow-hidden shadow-sm">
-                <img src="${n.image_url}" class="card-img-top" style="height: 180px; object-fit: cover;" alt="${n.title}">
-                <div class="card-body d-flex flex-column">
-                    <h6 class="card-title fw-bold mb-2">
-                        <a href="news.html#news-${n.id}" class="text-decoration-none text-body">${n.title}</a>
-                    </h6>
-                    <p class="card-text text-muted small flex-grow-1">${n.summary.substring(0, 95)}...</p>
-                    <a href="news.html#news-${n.id}" class="text-teal fw-bold small text-decoration-none mt-2">
-                        Đọc tiếp <i class="fa-solid fa-chevron-right ms-1"></i>
-                    </a>
-                </div>
-            </div>
-        </div>`).join('');
-    }
 });
 
 function handleHomeSearch(e) {
     e.preventDefault();
-    const district = document.getElementById('homeDistrict').value;
-    const maxPrice = document.getElementById('homeMaxPrice').value;
-    const amenity = document.getElementById('homeAmenity').value;
-    let url = 'courts.html?';
+    const district = document.getElementById('homeDistrict')?.value || '';
+    const maxPrice = document.getElementById('homeMaxPrice')?.value || '';
+    const amenity = document.getElementById('homeAmenity')?.value || '';
+    let url = 'courts.php?';
     if (district) url += `district=${encodeURIComponent(district)}&`;
     if (maxPrice) url += `max_price=${maxPrice}&`;
     if (amenity) url += `amenity=${amenity}&`;
