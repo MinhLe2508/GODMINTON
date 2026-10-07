@@ -4,6 +4,8 @@
 -- Engine: MySQL 8.0+ (InnoDB, hỗ trợ FOREIGN KEY)
 -- =====================================================================
 
+SET NAMES utf8mb4;
+
 CREATE DATABASE IF NOT EXISTS badminton_booking
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE badminton_booking;

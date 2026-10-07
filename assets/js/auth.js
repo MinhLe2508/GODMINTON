@@ -46,39 +46,61 @@ function fillLogin(email, pass) {
     switchTab('login');
 }
 
+/* ---- Gọi API PHP (session cookie cùng domain) ---- */
+async function authApi(path, payload) {
+    const res = await fetch(path, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    let json;
+    try { json = await res.json(); }
+    catch (_) { json = { status: 'error', message: 'Máy chủ không phản hồi đúng định dạng. Kiểm tra Apache/MySQL đã bật chưa.' }; }
+    return json;
+}
+
+/* Chỉ cho redirect về trang nội bộ (chặn open-redirect kiểu ?redirect=https://evil.com) */
+function safeRedirect(target, fallback) {
+    if (!target || /^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith('/') || target.startsWith('\\')) return fallback;
+    return target;
+}
+
+function afterAuth(user) {
+    // Đồng bộ sang MockDB để các trang CHƯA chuyển sang API (header, history...) vẫn hiển thị đúng user.
+    // Xóa dòng này khi mock-data.js bị gỡ hoàn toàn (Tuần 3).
+    if (window.MockDB) MockDB.setUser(user);
+    const fallback = (user.role === 'owner' || user.role === 'admin') ? 'admin-dashboard.php' : 'index.php';
+    window.location.href = safeRedirect(new URLSearchParams(window.location.search).get('redirect'), fallback);
+}
+
 /* ---- Login submit ---- */
-document.getElementById('loginForm')?.addEventListener('submit', e => {
+document.getElementById('loginForm')?.addEventListener('submit', async e => {
     e.preventDefault();
     const btn = document.getElementById('btnLoginSubmit');
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
+    const remember = document.getElementById('rememberMe')?.checked || false;
 
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xác thực...';
 
-    setTimeout(() => {
-        const result = MockDB.login(email, password);
-        if (result.status === 'success') {
-            Swal.fire({
-                icon: 'success',
-                title: `Chào mừng, ${result.data.user.name}!`,
-                timer: 1200, showConfirmButton: false
-            }).then(() => {
-                const role = result.data.user.role;
-                const fallback = (role === 'owner' || role === 'admin') ? 'admin-dashboard.html' : 'index.html';
-                const redirect = new URLSearchParams(window.location.search).get('redirect') || fallback;
-                window.location.href = redirect;
-            });
-        } else {
-            Swal.fire({ icon: 'error', title: 'Sai thông tin', text: result.message, confirmButtonColor: '#0d9488' });
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i>Đăng Nhập';
-        }
-    }, 700);
+    const result = await authApi('api/auth/login.php', { email, password, remember });
+    if (result.status === 'success') {
+        Swal.fire({
+            icon: 'success',
+            title: `Chào mừng, ${result.data.user.name}!`,
+            timer: 1200, showConfirmButton: false
+        }).then(() => afterAuth(result.data.user));
+    } else {
+        Swal.fire({ icon: 'error', title: 'Sai thông tin', text: result.message, confirmButtonColor: '#0d9488' });
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i>Đăng Nhập';
+    }
 });
 
 /* ---- Register submit ---- */
-document.getElementById('registerForm')?.addEventListener('submit', e => {
+document.getElementById('registerForm')?.addEventListener('submit', async e => {
     e.preventDefault();
     const password = document.getElementById('regPassword').value;
     const passwordConfirm = document.getElementById('regConfirmPassword').value;
@@ -90,27 +112,22 @@ document.getElementById('registerForm')?.addEventListener('submit', e => {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tạo tài khoản...';
 
-    setTimeout(() => {
-        const result = MockDB.register({
-            name: document.getElementById('regName').value.trim(),
-            email: document.getElementById('regEmail').value.trim(),
-            phone: document.getElementById('regPhone').value.trim(),
-            password,
-            role: document.getElementById('regRole').value
-        });
-        if (result.status === 'success') {
-            Swal.fire({
-                icon: 'success', title: 'Đăng ký thành công!',
-                text: 'Tài khoản của bạn đã được kích hoạt.',
-                timer: 1500, showConfirmButton: false
-            }).then(() => {
-                const role = result.data.user.role;
-                window.location.href = (role === 'owner' || role === 'admin') ? 'admin-dashboard.html' : 'index.html';
-            });
-        } else {
-            Swal.fire({ icon: 'error', title: 'Đăng ký thất bại', text: result.message, confirmButtonColor: '#0d9488' });
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-user-plus me-2"></i>Tạo Tài Khoản Miễn Phí';
-        }
-    }, 800);
+    const result = await authApi('api/auth/register.php', {
+        name: document.getElementById('regName').value.trim(),
+        email: document.getElementById('regEmail').value.trim(),
+        phone: document.getElementById('regPhone').value.trim(),
+        password,
+        role: document.getElementById('regRole').value
+    });
+    if (result.status === 'success') {
+        Swal.fire({
+            icon: 'success', title: 'Đăng ký thành công!',
+            text: 'Tài khoản của bạn đã được kích hoạt.',
+            timer: 1500, showConfirmButton: false
+        }).then(() => afterAuth(result.data.user));
+    } else {
+        Swal.fire({ icon: 'error', title: 'Đăng ký thất bại', text: result.message, confirmButtonColor: '#0d9488' });
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-user-plus me-2"></i>Tạo Tài Khoản Miễn Phí';
+    }
 });

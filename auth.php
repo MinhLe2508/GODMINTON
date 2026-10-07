@@ -142,11 +142,19 @@
                             </div>
                             <i class="fa-solid fa-arrow-right ms-auto" style="font-size:0.7rem; color:var(--text-secondary);"></i>
                         </button>
-                        <button class="demo-pill" type="button" onclick="fillLogin('admin@datsancaulong.vn','Admin@123')">
+                        <button class="demo-pill" type="button" onclick="fillLogin('admin@godminton.vn','Admin@123')">
                             <div class="demo-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706);">A</div>
                             <div>
                                 <div style="font-size:0.78rem; font-weight:700;">Quản trị viên</div>
-                                <div style="font-size:0.7rem; color:var(--text-secondary);">admin@datsancaulong.vn / Admin@123</div>
+                                <div style="font-size:0.7rem; color:var(--text-secondary);">admin@godminton.vn / Admin@123</div>
+                            </div>
+                            <i class="fa-solid fa-arrow-right ms-auto" style="font-size:0.7rem; color:var(--text-secondary);"></i>
+                        </button>
+                        <button class="demo-pill" type="button" onclick="fillLogin('owner.q1@godminton.vn','Owner@123')">
+                            <div class="demo-avatar" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">C</div>
+                            <div>
+                                <div style="font-size:0.78rem; font-weight:700;">Chủ sân</div>
+                                <div style="font-size:0.7rem; color:var(--text-secondary);">owner.q1@godminton.vn / Owner@123</div>
                             </div>
                             <i class="fa-solid fa-arrow-right ms-auto" style="font-size:0.7rem; color:var(--text-secondary);"></i>
                         </button>
