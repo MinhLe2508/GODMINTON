@@ -22,13 +22,46 @@ document.addEventListener('DOMContentLoaded', () => {
     const headerEmail = document.getElementById('profileHeaderEmail');
     if (headerEmail) headerEmail.innerHTML = `<i class="fa-regular fa-envelope me-1"></i> ${user.email}`;
 
-    // Render vào Form
+    // Cập nhật badge vai trò chính xác
+    const badgeRole = document.getElementById('profileBadgeRole');
+    if (badgeRole) {
+        if (user.role === 'admin') {
+            badgeRole.className = 'badge bg-danger text-white fw-bold rounded-pill px-2 py-1';
+            badgeRole.innerHTML = '<i class="fa-solid fa-shield-halved me-1"></i>Quản trị viên';
+        } else if (user.role === 'owner') {
+            badgeRole.className = 'badge bg-warning text-dark fw-bold rounded-pill px-2 py-1';
+            badgeRole.innerHTML = '<i class="fa-solid fa-crown me-1"></i>Chủ sân';
+        } else {
+            badgeRole.className = 'badge bg-warning text-dark fw-bold rounded-pill px-2 py-1';
+            badgeRole.innerHTML = '<i class="fa-solid fa-user me-1"></i>Thành viên';
+        }
+    }
+
+    // Cập nhật thông tin mô tả vai trò
+    const headerMeta = document.getElementById('profileHeaderMeta');
+    if (headerMeta) {
+        if (user.role === 'admin') {
+            headerMeta.innerHTML = '<i class="fa-solid fa-shield-halved me-1"></i> Quản trị viên hệ thống · GODMINTON';
+        } else if (user.role === 'owner') {
+            headerMeta.innerHTML = '<i class="fa-solid fa-building me-1"></i> Đối tác chủ sân · TP. Hồ Chí Minh';
+        } else {
+            headerMeta.innerHTML = '<i class="fa-regular fa-calendar-check me-1"></i> Khách hàng thân thiết · TP. Hồ Chí Minh';
+        }
+    }
+
+    // Render vào 6 trường của Form Hồ Sơ Cá Nhân
     const inpName = document.getElementById('inpFullName');
-    if (inpName) inpName.value = user.name;
-    const inpEmail = document.getElementById('inpEmail');
-    if (inpEmail) inpEmail.value = user.email;
+    if (inpName) inpName.value = user.name || '';
     const inpPhone = document.getElementById('inpPhone');
-    if (inpPhone) inpPhone.value = user.phone;
+    if (inpPhone) inpPhone.value = user.phone || '';
+    const inpEmail = document.getElementById('inpEmail');
+    if (inpEmail) inpEmail.value = user.email || '';
+    const inpDistrict = document.getElementById('inpDistrict');
+    if (inpDistrict && user.district) inpDistrict.value = user.district;
+    const inpLevel = document.getElementById('inpLevel');
+    if (inpLevel && user.level) inpLevel.value = user.level;
+    const inpPreferredTime = document.getElementById('inpPreferredTime');
+    if (inpPreferredTime && user.preferredTime) inpPreferredTime.value = user.preferredTime;
 
     // Kiểm tra quyền Admin/Owner mới hiện nút Chuyển trang Admin
     const btnGoAdmin = document.getElementById('btnGoAdmin');
@@ -46,18 +79,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Form cập nhật thông tin cá nhân
     document.getElementById('formUpdateProfile')?.addEventListener('submit', (e) => {
         e.preventDefault();
-        const newName = document.getElementById('inpFullName').value.trim();
-        const newPhone = document.getElementById('inpPhone').value.trim();
-        const newEmail = document.getElementById('inpEmail').value.trim();
+        const newName = document.getElementById('inpFullName')?.value.trim() || '';
+        const newPhone = document.getElementById('inpPhone')?.value.trim() || '';
+        const newEmail = document.getElementById('inpEmail')?.value.trim() || '';
+        const newDistrict = document.getElementById('inpDistrict')?.value || '';
+        const newLevel = document.getElementById('inpLevel')?.value || '';
+        const newPreferredTime = document.getElementById('inpPreferredTime')?.value || '';
 
-        const updated = { ...user, name: newName, phone: newPhone, email: newEmail };
+        const updated = {
+            ...user,
+            name: newName,
+            phone: newPhone,
+            email: newEmail,
+            district: newDistrict,
+            level: newLevel,
+            preferredTime: newPreferredTime
+        };
+
         if (typeof MockDB !== 'undefined') {
             MockDB.setUser(updated);
         }
 
         if (headerName) headerName.textContent = newName;
         if (headerEmail) headerEmail.innerHTML = `<i class="fa-regular fa-envelope me-1"></i> ${newEmail}`;
-        if (avatarEl) avatarEl.innerHTML = `${newName.charAt(0).toUpperCase()} <span class="profile-avatar-edit" title="Đổi ảnh đại diện"><i class="fa-solid fa-camera"></i></span>`;
+        if (avatarEl) avatarEl.innerHTML = `${(newName.charAt(0) || 'A').toUpperCase()} <span class="profile-avatar-edit" title="Đổi ảnh đại diện"><i class="fa-solid fa-camera"></i></span>`;
 
         Swal.fire({
             icon: 'success',
@@ -158,9 +203,18 @@ function renderBookingsList() {
 function resetProfileForm() {
     const user = (typeof MockDB !== 'undefined' && MockDB.getUser()) ? MockDB.getUser() : null;
     if (user) {
-        document.getElementById('inpFullName').value = user.name || '';
-        document.getElementById('inpPhone').value = user.phone || '';
-        document.getElementById('inpEmail').value = user.email || '';
+        const inpName = document.getElementById('inpFullName');
+        if (inpName) inpName.value = user.name || '';
+        const inpPhone = document.getElementById('inpPhone');
+        if (inpPhone) inpPhone.value = user.phone || '';
+        const inpEmail = document.getElementById('inpEmail');
+        if (inpEmail) inpEmail.value = user.email || '';
+        const inpDistrict = document.getElementById('inpDistrict');
+        if (inpDistrict) inpDistrict.value = user.district || 'Quận 1';
+        const inpLevel = document.getElementById('inpLevel');
+        if (inpLevel) inpLevel.value = user.level || 'intermediate';
+        const inpPreferredTime = document.getElementById('inpPreferredTime');
+        if (inpPreferredTime) inpPreferredTime.value = user.preferredTime || 'evening';
     }
 }
 
