@@ -1,0 +1,287 @@
+/* ==========================================================
+   GODMINTON - ADMIN (CHỦ SÂN) PANEL STYLE
+   Dùng chung biến màu / design token từ style.css
+   ========================================================== */
+
+body.admin-body {
+    background-color: var(--bg-body);
+    min-height: 100vh;
+}
+
+/* ---------- Layout ---------- */
+.admin-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ---------- Sidebar ---------- */
+.admin-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+    color: #e2e8f0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    z-index: 1030;
+    transition: transform 0.25s ease;
+}
+
+.admin-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1.25rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.admin-sidebar-brand img {
+    height: 32px;
+}
+
+.admin-sidebar-brand .brand-sub {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.admin-nav {
+    flex: 1;
+    padding: 1rem 0.85rem;
+    overflow-y: auto;
+}
+
+.admin-nav-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    padding: 0.5rem 0.75rem 0.4rem;
+    font-weight: 700;
+}
+
+.admin-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 0.75rem;
+    color: #cbd5e1;
+    font-weight: 600;
+    font-size: 0.92rem;
+    text-decoration: none;
+    margin-bottom: 0.2rem;
+    transition: var(--transition-fast);
+}
+
+.admin-nav-link i {
+    width: 20px;
+    text-align: center;
+    color: #64748b;
+    transition: var(--transition-fast);
+}
+
+.admin-nav-link:hover {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+}
+
+.admin-nav-link.active {
+    background: var(--brand-teal);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(13,148,136,0.35);
+}
+
+.admin-nav-link.active i { color: #fff; }
+
+.admin-sidebar-footer {
+    padding: 0.9rem 1.1rem 1.1rem;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.admin-back-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+.admin-back-link:hover { color: #fff; }
+
+/* ---------- Main column ---------- */
+.admin-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.85rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.admin-topbar-title h1 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.admin-topbar-title .admin-breadcrumb {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.admin-sidebar-toggle {
+    display: none;
+}
+
+.admin-content {
+    padding: 1.5rem;
+    flex: 1;
+}
+
+/* ---------- Stat cards ---------- */
+.admin-stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 100%;
+    box-shadow: var(--shadow-sm);
+}
+
+.admin-stat-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.admin-stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.1;
+}
+
+.admin-stat-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* ---------- Cards / panels ---------- */
+.admin-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+}
+
+.admin-panel-head {
+    padding: 1.1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.admin-panel-head h2 {
+    font-size: 1.02rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.admin-panel-body { padding: 1.25rem; }
+
+/* ---------- Table ---------- */
+.admin-table thead th {
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    border-bottom-width: 1px !important;
+    white-space: nowrap;
+}
+
+.admin-table td { vertical-align: middle; }
+
+.admin-table-court-name {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.admin-court-thumb {
+    width: 52px;
+    height: 52px;
+    border-radius: 0.65rem;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+/* ---------- Slot grid ---------- */
+.slot-chip {
+    border: 1.5px solid var(--border-color);
+    border-radius: 0.65rem;
+    padding: 0.5rem 0.4rem;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    transition: var(--transition-fast);
+    background: var(--bg-surface);
+}
+.slot-chip small { display:block; font-weight:600; opacity:.75; font-size: .68rem; }
+
+.slot-chip.is-available { border-color: rgba(34,197,94,.35); color:#16a34a; }
+.slot-chip.is-available:hover { background: rgba(34,197,94,.1); }
+.slot-chip.is-holding { border-color: rgba(245,158,11,.4); color:#b45309; background: rgba(245,158,11,.08); }
+.slot-chip.is-booked { border-color: rgba(239,68,68,.35); color:#dc2626; background: rgba(239,68,68,.08); }
+.slot-chip.is-blocked { border-color: var(--border-color); color: var(--text-secondary); background: repeating-linear-gradient(135deg, var(--bg-body), var(--bg-body) 6px, rgba(148,163,184,.15) 6px, rgba(148,163,184,.15) 12px); }
+
+.slot-legend-dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:.35rem; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 991.98px) {
+    .admin-sidebar {
+        position: fixed;
+        left: 0;
+        transform: translateX(-100%);
+        box-shadow: var(--shadow-lg);
+    }
+    .admin-sidebar.show { transform: translateX(0); }
+    .admin-sidebar-toggle { display: inline-flex; }
+    .admin-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.45);
+        z-index: 1025;
+    }
+    .admin-overlay.show { display: block; }
+}

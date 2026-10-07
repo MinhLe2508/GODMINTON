@@ -1,0 +1,321 @@
+/**
+ * GODMINTON — UI STATES & FEEDBACK CSS
+ * Module dùng chung cho 5 trạng thái giao diện:
+ * 1. Trạng thái rỗng (Empty State)
+ * 2. Trạng thái đang tải (Loading Spinner & Skeleton)
+ * 3. Trạng thái lỗi (Error State & Field Error)
+ * 4. Thông báo nổi (Toast Notification)
+ * 5. Nút bị vô hiệu hóa khi đang gửi (Button Disabled / Submitting)
+ * 
+ * Người phụ trách: P3 (Trương Minh Triết)
+ */
+
+/* ============================================================
+   1. EMPTY STATE (TRẠNG THÁI RỖNG)
+   ============================================================ */
+.state-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    border-radius: 1.25rem;
+    background: rgba(13, 148, 136, 0.03);
+    border: 1px dashed rgba(13, 148, 136, 0.25);
+    margin: 1.5rem 0;
+}
+
+.state-empty-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1.25rem;
+    border-radius: 50%;
+    background: rgba(13, 148, 136, 0.12);
+    color: #0d9488;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    transition: transform 0.3s ease;
+}
+
+.state-empty:hover .state-empty-icon {
+    transform: scale(1.08) rotate(5deg);
+}
+
+.state-empty-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--bs-body-color, #1e293b);
+}
+
+.state-empty-desc {
+    font-size: 0.9rem;
+    color: #64748b;
+    max-width: 420px;
+    margin: 0 auto 1.25rem;
+    line-height: 1.6;
+}
+
+/* ============================================================
+   2. LOADING STATE (SPINNER & SKELETON)
+   ============================================================ */
+.state-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    min-height: 200px;
+}
+
+.loading-spinner-teal {
+    width: 46px;
+    height: 46px;
+    border: 4px solid rgba(13, 148, 136, 0.18);
+    border-top-color: #0d9488;
+    border-radius: 50%;
+    animation: gmSpinnerRotate 0.8s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes gmSpinnerRotate {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #0d9488;
+}
+
+/* Skeleton loader */
+.skeleton-card {
+    background: var(--bg-card, #ffffff);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 1rem;
+    overflow: hidden;
+    height: 100%;
+}
+
+.skeleton-shimmer {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.5s infinite;
+}
+
+[data-bs-theme="dark"] .skeleton-shimmer {
+    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background-size: 200% 100%;
+}
+
+@keyframes skeletonShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-img {
+    height: 180px;
+    width: 100%;
+}
+
+.skeleton-body {
+    padding: 1.25rem;
+}
+
+.skeleton-line {
+    height: 12px;
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+}
+
+.skeleton-line.title {
+    height: 18px;
+    width: 70%;
+    margin-bottom: 1rem;
+}
+
+.skeleton-line.half { width: 50%; }
+.skeleton-line.quarter { width: 35%; margin-bottom: 0; }
+
+/* ============================================================
+   3. ERROR STATE (TRẠNG THÁI LỖI)
+   ============================================================ */
+.state-error {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    border-radius: 1.25rem;
+    background: rgba(239, 68, 68, 0.04);
+    border: 1px dashed rgba(239, 68, 68, 0.3);
+    margin: 1.5rem 0;
+}
+
+.state-error-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1.25rem;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.state-error-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #dc2626;
+}
+
+.state-error-desc {
+    font-size: 0.9rem;
+    color: #64748b;
+    max-width: 440px;
+    margin: 0 auto 1.25rem;
+    line-height: 1.6;
+}
+
+/* Field level inline error */
+.auth-field-error {
+    font-size: 0.78rem;
+    color: #ef4444;
+    font-weight: 500;
+    margin-top: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.is-invalid-field {
+    border-color: #ef4444 !important;
+    background-color: rgba(239, 68, 68, 0.03) !important;
+}
+
+/* ============================================================
+   4. TOAST NOTIFICATIONS (THÔNG BÁO NỔI)
+   ============================================================ */
+#godmintonToastContainer {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 380px;
+    width: calc(100% - 2.5rem);
+    pointer-events: none;
+}
+
+.gm-toast {
+    pointer-events: auto;
+    background: var(--bg-card, #ffffff);
+    color: var(--bs-body-color, #1e293b);
+    padding: 0.9rem 1.15rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+[data-bs-theme="dark"] .gm-toast {
+    background: #1e293b;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
+}
+
+.gm-toast.toast-success { border-left: 4px solid #0d9488; }
+.gm-toast.toast-error   { border-left: 4px solid #ef4444; }
+.gm-toast.toast-warning { border-left: 4px solid #f59e0b; }
+.gm-toast.toast-info    { border-left: 4px solid #0284c7; }
+
+.gm-toast .toast-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+}
+
+.toast-success .toast-icon { color: #0d9488; }
+.toast-error   .toast-icon { color: #ef4444; }
+.toast-warning .toast-icon { color: #f59e0b; }
+.toast-info    .toast-icon { color: #0284c7; }
+
+.gm-toast .toast-content {
+    flex-grow: 1;
+}
+
+.gm-toast .toast-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+}
+
+.gm-toast .toast-msg {
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.45;
+}
+
+[data-bs-theme="dark"] .gm-toast .toast-msg {
+    color: #94a3b8;
+}
+
+.gm-toast .toast-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.15rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    margin-left: 0.5rem;
+}
+
+.gm-toast .toast-close:hover {
+    color: #475569;
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(40px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes toastFadeOut {
+    to {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+    }
+}
+
+/* ============================================================
+   5. BUTTON DISABLED / SUBMITTING STATE
+   ============================================================ */
+.btn:disabled,
+.btn.disabled,
+.btn-is-loading {
+    opacity: 0.65 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+.btn-is-loading .btn-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: gmSpinnerRotate 0.75s linear infinite;
+    vertical-align: text-bottom;
+    margin-right: 0.5rem;
+}

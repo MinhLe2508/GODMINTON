@@ -1,0 +1,799 @@
+/* ==========================================================
+   BADMINTON HUB - MODERN SPORTS DESIGN SYSTEM (BOOTSTRAP 5)
+   Biến CSS :root, Dark Mode Ready, Glassmorphism, Micro-interactions
+   ========================================================== */
+
+:root {
+    /* === GODMINTON Brand Palette === */
+    --brand-teal: #0d9488;
+    --brand-teal-light: #14b8a6;
+    --brand-teal-dark: #0f766e;
+    --brand-teal-deep: #115e59;    /* extra deep for text on dark */
+    --brand-lime: #84cc16;
+    --brand-amber: #f59e0b;
+    --brand-danger: #ef4444;
+    --brand-indigo: #6366f1;
+    
+    --bg-surface: #ffffff;
+    --bg-body: #f8fafc;
+    --bg-card: #ffffff;
+    /* Gradient theo chủ đề màu Teal của logo */
+    --bg-gradient: linear-gradient(180deg, #d3f4ee 0%, #e3f8f4 160px, #f0fbf9 360px, #f8fafc 600px, #f8fafc 100%);
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-glow: 0 0 20px rgba(13, 148, 136, 0.25);
+    
+    --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    --page-transition-duration: 0.22s;
+    --page-transition-timing: cubic-bezier(0.16, 1, 0.3, 1);
+    --radius-xl: 1rem;
+    --radius-2xl: 1.5rem;
+}
+
+[data-bs-theme="dark"] {
+    --bg-body: #05161c;
+    --bg-surface: #0a2128;
+    --bg-card: #0d2730;
+    /* Gradient huyền ảo theo tone Teal trầm của logo */
+    --bg-gradient: linear-gradient(180deg, #092c34 0%, #062026 180px, #04161c 420px, #020d12 700px, #020d12 100%);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --border-color: #173844;
+    --shadow-glow: 0 0 25px rgba(20, 184, 166, 0.35);
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-body);
+    background-image: var(--bg-gradient);
+    background-attachment: fixed;
+    background-size: 100% 100%;
+    color: var(--text-primary);
+    transition: background 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* Utilities */
+.text-teal { color: var(--brand-teal) !important; }
+.bg-teal { background-color: var(--brand-teal) !important; }
+.bg-teal-subtle { background-color: rgba(13, 148, 136, 0.12) !important; }
+.btn-teal {
+    background-color: var(--brand-teal);
+    color: #ffffff;
+    border: none;
+    transition: var(--transition-fast);
+}
+.btn-teal:hover {
+    background-color: var(--brand-teal-dark);
+    color: #ffffff;
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+}
+.btn-outline-teal {
+    border: 1.5px solid var(--brand-teal);
+    color: var(--brand-teal);
+    background: transparent;
+    transition: var(--transition-fast);
+}
+.btn-outline-teal:hover {
+    background-color: var(--brand-teal);
+    color: #fff;
+}
+.fw-extrabold { font-weight: 800 !important; }
+.bg-surface { background-color: var(--bg-surface) !important; }
+.max-w-700 { max-width: 700px; }
+.max-w-800 { max-width: 800px; }
+.max-w-600 { max-width: 600px; }
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.tracking-wider { letter-spacing: 0.05em; }
+
+/* Header & Navbar */
+.navbar-custom {
+    background-color: rgba(7, 20, 30, 0.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(13, 148, 136, 0.2);
+    padding: 0.5rem 0;
+}
+.navbar-custom .nav-link {
+    color: #a7c4c2;
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 0.5rem;
+    transition: var(--transition-fast);
+    letter-spacing: 0.01em;
+}
+.navbar-custom .nav-link:hover,
+.navbar-custom .nav-link.active {
+    color: #2dd4bf;
+    background-color: rgba(13, 148, 136, 0.12);
+}
+
+/* === GODMINTON Logo in Navbar === */
+.navbar-logo-img {
+    height: 44px;
+    width: auto;
+    /* SVG has built-in teal colors — NO filter needed */
+    filter: none;
+    transition: opacity 0.2s ease;
+    display: block;
+}
+.navbar-brand:hover .navbar-logo-img {
+    opacity: 0.85;
+}
+
+/* =====================================================
+   APP BRAND HEADER (TRONG SUỐT TIỆP GRADIENT - LOGO & CÁNH TEAL TINH TẾ)
+   ===================================================== */
+.app-brand-head {
+    width: 100%;
+    margin: 0;
+    padding: 0.85rem 1.5rem;
+    position: relative;
+    z-index: 1020;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+[data-bs-theme="light"] .app-brand-head {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+}
+
+[data-bs-theme="dark"] .app-brand-head {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+}
+
+/* Container chứa logo và 2 cánh */
+.app-brand-head .container {
+    width: 100%;
+    max-width: 1280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 0 1rem;
+}
+
+/* Hai cánh vát thanh lịch lan tỏa sang hai bên */
+.app-brand-head .container::before,
+.app-brand-head .container::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    display: block;
+    border-radius: 2px;
+    margin: 0 1.5rem;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Cánh trong Light Mode */
+[data-bs-theme="light"] .app-brand-head .container::before {
+    background: linear-gradient(90deg, transparent, rgba(13, 148, 136, 0.3), #0d9488);
+    box-shadow: 0 0 6px rgba(13, 148, 136, 0.25);
+    transform-origin: right center;
+    animation: wingsZoomIn 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+}
+
+[data-bs-theme="light"] .app-brand-head .container::after {
+    background: linear-gradient(90deg, #0d9488, rgba(13, 148, 136, 0.3), transparent);
+    box-shadow: 0 0 6px rgba(13, 148, 136, 0.25);
+    transform-origin: left center;
+    animation: wingsZoomIn 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+}
+
+/* Cánh trong Dark Mode */
+[data-bs-theme="dark"] .app-brand-head .container::before {
+    background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.5), rgba(45, 212, 191, 0.95));
+    box-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
+    transform-origin: right center;
+    animation: wingsZoomIn 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+}
+
+[data-bs-theme="dark"] .app-brand-head .container::after {
+    background: linear-gradient(90deg, rgba(45, 212, 191, 0.95), rgba(45, 212, 191, 0.5), transparent);
+    box-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
+    transform-origin: left center;
+    animation: wingsZoomIn 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+}
+
+.app-brand-head .brand-logo-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    padding: 0;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    flex-shrink: 0;
+}
+
+/* Logo xuất hiện từ từ (Zoom-in mượt mà, sạch đẹp) */
+.app-brand-head .brand-logo-img {
+    height: 92px;
+    max-height: 104px;
+    width: auto;
+    display: block;
+    transform-origin: center center;
+    animation: aosZoomIn 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
+}
+
+/* Logo Shadow trong Light Mode */
+[data-bs-theme="light"] .app-brand-head .brand-logo-img {
+    filter: drop-shadow(0 3px 12px rgba(13, 148, 136, 0.3));
+}
+
+[data-bs-theme="light"] .app-brand-head .brand-logo-link:hover .brand-logo-img {
+    transform: scale(1.07);
+    filter: drop-shadow(0 6px 20px rgba(13, 148, 136, 0.55));
+}
+
+/* Logo Shadow trong Dark Mode */
+[data-bs-theme="dark"] .app-brand-head .brand-logo-img {
+    filter: drop-shadow(0 4px 20px rgba(45, 212, 191, 0.65)) drop-shadow(0 0 12px rgba(20, 184, 166, 0.45));
+}
+
+[data-bs-theme="dark"] .app-brand-head .brand-logo-link:hover .brand-logo-img {
+    transform: scale(1.07);
+    filter: drop-shadow(0 6px 30px rgba(45, 212, 191, 0.95)) drop-shadow(0 0 20px rgba(45, 212, 191, 0.75));
+}
+
+/* Keyframes: Zoom-In xuất hiện từ từ tương tự search-card-floating */
+@keyframes aosZoomIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes wingsZoomIn {
+    0% {
+        opacity: 0;
+        transform: scaleX(0.4);
+    }
+    100% {
+        opacity: 1;
+        transform: scaleX(1);
+    }
+}
+
+/* Theme Toggle Button placement in Header */
+.bnav-theme-float {
+    top: 20px !important;
+    right: 20px !important;
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 1.1rem !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-bs-theme="light"] .bnav-theme-float {
+    background: #ffffff !important;
+    border: 1.5px solid rgba(13, 148, 136, 0.35) !important;
+    color: #0d9488 !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-bs-theme="light"] .bnav-theme-float:hover {
+    background: #0d9488 !important;
+    color: #ffffff !important;
+    border-color: #0d9488 !important;
+}
+
+@media (max-width: 991px) {
+    .app-brand-head {
+        padding: 0.75rem 1rem;
+    }
+    .app-brand-head .container::before,
+    .app-brand-head .container::after {
+        margin: 0 0.85rem;
+    }
+    .app-brand-head .brand-logo-img {
+        height: 78px;
+        max-height: 86px;
+    }
+}
+
+@media (max-width: 575px) {
+    .app-brand-head {
+        padding: 0.6rem 0.5rem;
+    }
+    .app-brand-head .container::before,
+    .app-brand-head .container::after {
+        display: none;
+    }
+    .app-brand-head .brand-logo-img {
+        height: 60px;
+        max-height: 66px;
+    }
+    .bnav-theme-float {
+        top: 14px !important;
+        right: 12px !important;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 0.95rem !important;
+    }
+}
+
+
+
+/* Fallback badge (used in small icon contexts) */
+.brand-logo-badge {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--brand-teal), var(--brand-teal-dark));
+    color: #ffffff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    box-shadow: var(--shadow-glow);
+}
+.brand-text {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+}
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+.avatar-sm {
+    width: 36px;
+    height: 36px;
+}
+
+/* PWA Install Banner */
+.pwa-install-banner {
+    background: linear-gradient(90deg, #1e293b, #0f172a);
+    color: #ffffff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: var(--shadow-md);
+}
+
+/* Hero Section */
+.hero-section {
+    position: relative;
+    background: radial-gradient(circle at 80% 20%, rgba(13, 148, 136, 0.25) 0%, rgba(15, 23, 42, 0.98) 70%),
+                url('https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1600&auto=format&fit=crop') center/cover no-repeat;
+    min-height: 520px;
+    display: flex;
+    align-items: center;
+    color: #ffffff;
+    padding: 4rem 0;
+    overflow: hidden;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(13, 148, 136, 0.2);
+    border: 1px solid rgba(20, 184, 166, 0.4);
+    color: #2dd4bf;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+.hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -1px;
+}
+@media (max-width: 768px) {
+    .hero-title { font-size: 2.2rem; }
+}
+
+/* Search Box — sits below hero section — Gradient matching background */
+.search-card-floating {
+    position: relative;
+    z-index: 10;
+    margin-top: 2rem;
+    padding: 1.6rem 2rem;
+    border-radius: var(--radius-2xl);
+    background: linear-gradient(135deg, #d3f4ee 0%, #e3f8f4 50%, #f0fbf9 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(13, 148, 136, 0.28);
+    box-shadow: 
+        0 14px 34px -4px rgba(13, 148, 136, 0.16),
+        0 4px 12px rgba(0, 0, 0, 0.04);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.search-card-floating:hover {
+    transform: translateY(-3px);
+    border-color: rgba(13, 148, 136, 0.45);
+    box-shadow: 
+        0 18px 40px -4px rgba(13, 148, 136, 0.22),
+        0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+/* Các ô select nổi bật sắc nét trên nền gradient */
+.search-card-floating .form-select {
+    border: 1.5px solid rgba(13, 148, 136, 0.2);
+    background-color: #ffffff;
+    box-shadow: 0 2px 6px rgba(13, 148, 136, 0.06);
+    transition: var(--transition-fast);
+}
+.search-card-floating .form-select:hover {
+    border-color: rgba(13, 148, 136, 0.45);
+}
+.search-card-floating .form-select:focus {
+    border-color: var(--brand-teal);
+    box-shadow: 0 0 0 0.25rem rgba(13, 148, 136, 0.16);
+    background-color: #ffffff;
+}
+
+.search-card-floating .btn-teal {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    box-shadow: 0 4px 15px rgba(13, 148, 136, 0.35);
+    border: none;
+    transition: var(--transition-fast);
+}
+.search-card-floating .btn-teal:hover {
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+    box-shadow: 0 6px 20px rgba(20, 184, 166, 0.45);
+    transform: translateY(-2px);
+}
+
+/* Chế độ Dark Mode cho Hộp Tìm Kiếm Nổi — match dải màu background dark */
+[data-bs-theme="dark"] .search-card-floating {
+    background: linear-gradient(135deg, #092c34 0%, #062026 50%, #04161c 100%);
+    border: 1.5px solid rgba(45, 212, 191, 0.3);
+    box-shadow: 
+        0 16px 42px -6px rgba(0, 0, 0, 0.65),
+        0 0 25px rgba(20, 184, 166, 0.2);
+}
+[data-bs-theme="dark"] .search-card-floating .form-select {
+    background-color: #0d2730;
+    border-color: rgba(20, 184, 166, 0.25);
+    color: var(--text-primary);
+}
+[data-bs-theme="dark"] .search-card-floating .form-select:focus {
+    border-color: var(--brand-teal-light);
+    box-shadow: 0 0 0 0.25rem rgba(20, 184, 166, 0.2);
+}
+
+/* Court Cards */
+.court-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    transition: var(--transition-bounce);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.court-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--brand-teal-light);
+}
+.court-img-wrapper {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+}
+.court-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+.court-card:hover .court-img {
+    transform: scale(1.08);
+}
+.court-badge-price {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(6px);
+    color: #ffffff;
+    font-weight: 700;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* ==========================================================
+   SLOT GRID SYSTEM & REAL-TIME STYLES (TRỌNG TÂM KỸ THUẬT)
+   ========================================================== */
+.slot-legend-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 1rem 1.5rem;
+}
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+.legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+}
+
+.sub-court-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.slot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.75rem;
+}
+
+.slot-card {
+    position: relative;
+    background: var(--bg-surface);
+    border: 2px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 0.85rem 0.6rem;
+    text-align: center;
+    transition: var(--transition-fast);
+    user-select: none;
+    cursor: pointer;
+}
+
+/* Trạng thái 1: TRỐNG (AVAILABLE) */
+.slot-card.slot-available {
+    border-color: #10b981;
+    background-color: rgba(16, 185, 129, 0.04);
+}
+.slot-card.slot-available:hover {
+    border-color: #059669;
+    background-color: rgba(16, 185, 129, 0.15);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+.slot-card.slot-available .slot-badge-status {
+    color: #059669;
+    font-weight: 700;
+}
+
+/* Trạng thái 2: ĐANG GIỮ CHỖ (HOLDING BỞI NGƯỜI KHÁC) */
+.slot-card.slot-holding {
+    border-color: #f59e0b;
+    background-color: rgba(245, 158, 11, 0.08);
+    cursor: not-allowed;
+    opacity: 0.9;
+    animation: pulseHolding 2s infinite ease-in-out;
+}
+.slot-card.slot-holding .slot-badge-status {
+    color: #d97706;
+    font-weight: 700;
+}
+
+/* Trạng thái 3: ĐANG GIỮ CHỖ BỞI CHÍNH TÔI (MY HOLD) */
+.slot-card.slot-my-hold {
+    border-color: var(--brand-teal);
+    background-color: rgba(13, 148, 136, 0.12);
+    box-shadow: 0 0 15px rgba(13, 148, 136, 0.35);
+    cursor: pointer;
+}
+.slot-card.slot-my-hold .slot-badge-status {
+    color: var(--brand-teal);
+    font-weight: 800;
+}
+
+/* Trạng thái 4: ĐÃ ĐẶT (BOOKED) */
+.slot-card.slot-booked {
+    border-color: #cbd5e1;
+    background-color: rgba(148, 163, 184, 0.1);
+    color: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+.slot-card.slot-booked .slot-time {
+    text-decoration: line-through;
+}
+.slot-card.slot-booked .slot-badge-status {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+/* Trạng thái 5: ĐANG CHỌN (SELECTED) */
+.slot-card.slot-selected {
+    border-color: var(--brand-indigo) !important;
+    background-color: rgba(99, 102, 241, 0.15) !important;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.4) !important;
+    transform: translateY(-2px);
+}
+
+@keyframes pulseHolding {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(0.98); opacity: 0.65; }
+}
+
+.slot-time {
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+}
+.slot-price {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+.slot-badge-status {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+/* Countdown Bar */
+.countdown-box {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #ffffff;
+    border-radius: var(--radius-xl);
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow-md);
+    border-left: 5px solid var(--brand-amber);
+}
+
+/* Footer Custom */
+.footer-custom {
+    background-color: #0b1120;
+    color: #94a3b8;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.text-muted-light {
+    color: #94a3b8;
+}
+.footer-links a {
+    color: #cbd5e1;
+    text-decoration: none;
+    line-height: 2;
+    transition: var(--transition-fast);
+}
+.footer-links a:hover {
+    color: var(--brand-teal-light);
+    padding-left: 4px;
+}
+.social-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-fast);
+    text-decoration: none;
+}
+.social-icon:hover {
+    background: var(--brand-teal);
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+.icon-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Animate pulse */
+.animate-pulse {
+    animation: animPulse 2s infinite;
+}
+@keyframes animPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .slot-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* =====================================================
+   PAGE SLIDE TRANSITIONS (HIỆU ỨNG TRƯỢT CHUYỂN TRANG ĐỒNG BỘ TOÀN DỰ ÁN)
+   ===================================================== */
+.page-slide-in-right {
+    animation: pageSlideInRight var(--page-transition-duration, 0.22s) var(--page-transition-timing, cubic-bezier(0.16, 1, 0.3, 1)) both !important;
+    will-change: transform, opacity;
+}
+
+.page-slide-in-left {
+    animation: pageSlideInLeft var(--page-transition-duration, 0.22s) var(--page-transition-timing, cubic-bezier(0.16, 1, 0.3, 1)) both !important;
+    will-change: transform, opacity;
+}
+
+@keyframes pageSlideInRight {
+    0% {
+        transform: translate3d(28px, 0, 0);
+        opacity: 0.88;
+    }
+    100% {
+        transform: translate3d(0, 0, 0);
+        opacity: 1;
+    }
+}
+
+@keyframes pageSlideInLeft {
+    0% {
+        transform: translate3d(-28px, 0, 0);
+        opacity: 0.88;
+    }
+    100% {
+        transform: translate3d(0, 0, 0);
+        opacity: 1;
+    }
+}
+
+/* Native View Transitions API for modern Chrome / Edge - Đồng bộ thời lượng */
+@view-transition {
+    navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: var(--page-transition-duration, 0.22s) !important;
+    animation-timing-function: var(--page-transition-timing, cubic-bezier(0.16, 1, 0.3, 1)) !important;
+}
+
