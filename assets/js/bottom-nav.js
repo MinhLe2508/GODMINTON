@@ -16,44 +16,37 @@
             id:      'home',
             label:   'Trang chủ',
             icon:    'fa-house',
-            href:    'index.html',
-            match:   ['index.html', '/', ''],
-        },
-        {
-            id:      'profile',
-            label:   'Cá nhân',
-            icon:    'fa-circle-user',
-            href:    'profile.html',
-            match:   ['profile.html', 'history.html', 'login.html', 'register.html', 'auth.html', 'admin-dashboard.html', 'admin-courts.html', 'admin-slots.html', 'admin-bookings.html'],
+            href:    'index.php',
+            match:   ['index.php', 'index.html', '/', ''],
         },
         {
             id:      'courts',
             label:   'Đặt sân',
             icon:    'fa-layer-group',
-            href:    'courts.html',
-            match:   ['courts.html', 'court-detail.html', 'booking.html', 'confirm.html', 'payment.html'],
+            href:    'courts.php',
+            match:   ['courts.php', 'court-detail.php', 'booking.php', 'confirm.php', 'payment.php', 'courts.html', 'court-detail.html', 'booking.html', 'confirm.html', 'payment.html'],
             center:  true,                        // FAB trung tâm nổi bật
         },
         {
-            id:      'news',
-            label:   'Khám phá',
-            icon:    'fa-compass',
-            href:    'news.html',
-            match:   ['news.html'],
+            id:      'history',
+            label:   'Lịch sử',
+            icon:    'fa-calendar-check',
+            href:    'history.php',
+            match:   ['history.php', 'history.html'],
         },
         {
-            id:      'contact',
-            label:   'Liên hệ',
-            icon:    'fa-headset',
-            href:    'contact.html',
-            match:   ['contact.html'],
+            id:      'profile',
+            label:   'Tài khoản',
+            icon:    'fa-circle-user',
+            href:    'auth.php',
+            match:   ['auth.php', 'profile.php', 'login.php', 'register.php', 'auth.html', 'login.html', 'register.html', 'profile.html', 'admin-dashboard.php', 'admin-courts.php', 'admin-slots.php', 'admin-bookings.php'],
         },
     ];
 
     /* ============================================================
        2. XÁC ĐỊNH TRANG ĐANG ACTIVE
        ============================================================ */
-    const currentPage = (window.location.pathname.split('/').pop() || 'index.html').split('?')[0];
+    const currentPage = (window.location.pathname.split('/').pop() || 'index.php').split('?')[0];
 
     function isActive(tab) {
         if (!tab.match) return false;
@@ -450,7 +443,7 @@
                                 if (typeof MockDB !== 'undefined' && MockDB.logout) {
                                     MockDB.logout();
                                 }
-                                window.location.href = 'login.html';
+                                window.location.href = 'auth.php';
                             }
                         });
                     } else {
@@ -458,7 +451,7 @@
                             if (typeof MockDB !== 'undefined' && MockDB.logout) {
                                 MockDB.logout();
                             }
-                            window.location.href = 'login.html';
+                            window.location.href = 'auth.php';
                         }
                     }
                 });
@@ -473,23 +466,21 @@
        7. HIỆU ỨNG SLIDE TRƯỢT CHUYỂN TRANG ĐỒNG BỘ TOÀN DỰ ÁN (0.22s)
        ============================================================ */
     const PAGE_INDEX_MAP = {
-        'index.html': 0,
-        'courts.html': 10,
-        'court-detail.html': 12,
-        'booking.html': 14,
-        'payment.html': 16,
-        'confirm.html': 18,
-        'history.html': 20,
-        'news.html': 30,
-        'contact.html': 40,
-        'profile.html': 50,
-        'auth.html': 52,
-        'login.html': 54,
-        'register.html': 56,
-        'admin-dashboard.html': 60,
-        'admin-courts.html': 62,
-        'admin-slots.html': 64,
-        'admin-bookings.html': 66
+        'index.php': 0, 'index.html': 0,
+        'courts.php': 10, 'courts.html': 10,
+        'court-detail.php': 12, 'court-detail.html': 12,
+        'booking.php': 14, 'booking.html': 14,
+        'payment.php': 16, 'payment.html': 16,
+        'confirm.php': 18, 'confirm.html': 18,
+        'history.php': 20, 'history.html': 20,
+        'profile.php': 50, 'profile.html': 50,
+        'auth.php': 52, 'auth.html': 52,
+        'login.php': 54, 'login.html': 54,
+        'register.php': 56, 'register.html': 56,
+        'admin-dashboard.php': 60, 'admin-dashboard.html': 60,
+        'admin-courts.php': 62, 'admin-courts.html': 62,
+        'admin-slots.php': 64, 'admin-slots.html': 64,
+        'admin-bookings.php': 66, 'admin-bookings.html': 66
     };
 
     function getNavDirection(fromPage, toPage, element) {
@@ -525,7 +516,7 @@
     // Hàm điều hướng toàn cục có hỗ trợ hướng trượt
     window.godmintonNavigate = function (url, explicitDir) {
         if (!url) return;
-        const toPage = url.split('?')[0].split('#')[0].split('/').pop() || 'index.html';
+        const toPage = url.split('?')[0].split('#')[0].split('/').pop() || 'index.php';
         const direction = explicitDir || getNavDirection(currentPage, toPage);
         sessionStorage.setItem('godminton_slide_direction', direction);
         sessionStorage.setItem('godminton_last_page', currentPage);
@@ -551,7 +542,7 @@
                 const destUrl = new URL(link.href, window.location.href);
                 if (destUrl.origin !== window.location.origin) return;
 
-                const toPage = destUrl.pathname.split('/').pop() || 'index.html';
+                const toPage = destUrl.pathname.split('/').pop() || 'index.php';
                 if (toPage === currentPage && destUrl.search === window.location.search) return;
 
                 const direction = getNavDirection(currentPage, toPage, link);

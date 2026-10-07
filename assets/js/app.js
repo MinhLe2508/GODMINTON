@@ -51,7 +51,7 @@ function renderNavbarUser() {
 
     userArea.innerHTML = `
     <!-- Nút chọn Kênh Admin trực tiếp trên header -->
-    <a href="admin-dashboard.html" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold d-flex align-items-center gap-1" title="Kênh Quản trị / Chủ sân">
+    <a href="admin-dashboard.php" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold d-flex align-items-center gap-1" title="Kênh Quản trị / Chủ sân">
         <i class="fa-solid fa-gauge-high"></i> <span class="d-none d-sm-inline">Kênh Admin</span>
     </a>
 
@@ -71,13 +71,13 @@ function renderNavbarUser() {
                 <span class="badge bg-teal-subtle text-teal mt-1 fw-bold">${displayRole}</span>
             </li>
             <li><h6 class="dropdown-header text-uppercase fs-xs fw-bold text-muted py-1" style="font-size:0.72rem;">CHỌN TRANG NHANH</h6></li>
-            <li><a class="dropdown-item py-2 fw-semibold" href="profile.html"><i class="fa-solid fa-circle-user me-2 text-teal"></i>Trang cá nhân</a></li>
-            <li><a class="dropdown-item py-2 fw-semibold" href="admin-dashboard.html"><i class="fa-solid fa-gauge-high me-2 text-warning"></i>Kênh Quản trị (Admin)</a></li>
-            <li><a class="dropdown-item py-2 fw-semibold" href="history.html"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Lịch sử đặt sân</a></li>
+            <li><a class="dropdown-item py-2 fw-semibold" href="profile.php"><i class="fa-solid fa-circle-user me-2 text-teal"></i>Trang cá nhân</a></li>
+            <li><a class="dropdown-item py-2 fw-semibold" href="admin-dashboard.php"><i class="fa-solid fa-gauge-high me-2 text-warning"></i>Kênh Quản trị (Admin)</a></li>
+            <li><a class="dropdown-item py-2 fw-semibold" href="history.php"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Lịch sử đặt sân</a></li>
             <li><hr class="dropdown-divider my-1"></li>
             <li><h6 class="dropdown-header text-uppercase fs-xs fw-bold text-muted py-1" style="font-size:0.72rem;">XÁC THỰC TÀI KHOẢN</h6></li>
-            <li><a class="dropdown-item py-2" href="login.html"><i class="fa-solid fa-right-to-bracket me-2 text-success"></i>Trang Đăng nhập</a></li>
-            <li><a class="dropdown-item py-2" href="register.html"><i class="fa-solid fa-user-plus me-2 text-info"></i>Trang Đăng ký</a></li>
+            <li><a class="dropdown-item py-2" href="auth.php"><i class="fa-solid fa-right-to-bracket me-2 text-success"></i>Trang Đăng nhập</a></li>
+            <li><a class="dropdown-item py-2" href="auth.php#register"><i class="fa-solid fa-user-plus me-2 text-info"></i>Trang Đăng ký</a></li>
             <li><hr class="dropdown-divider my-1"></li>
             <li><a class="dropdown-item py-2 text-danger" href="#" id="btnLogout"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất</a></li>
         </ul>
