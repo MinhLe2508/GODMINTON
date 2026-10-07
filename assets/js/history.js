@@ -1,25 +1,36 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const user = MockDB.getUser();
+    const user = (typeof MockDB !== 'undefined' && MockDB.getUser) ? MockDB.getUser() : null;
     if (!user) {
-        window.location.href = 'login.html';
+        window.location.href = 'auth.php';
         return;
     }
 
     const container = document.getElementById('bookingListContainer');
 
     function renderBookings() {
-        const bookings = MockDB.getBookings();
+        const bookings = (typeof MockDB !== 'undefined' && MockDB.getBookings) ? MockDB.getBookings() : [];
 
         if (!bookings || bookings.length === 0) {
-            container.innerHTML = `
-        <div class="card border rounded-4 p-5 text-center shadow-sm max-w-600 mx-auto">
-            <i class="fa-solid fa-calendar-xmark fs-1 text-muted mb-3"></i>
-            <h5 class="fw-bold">Bạn chưa có đơn đặt sân nào</h5>
-            <p class="text-muted small">Hãy tìm kiếm sân cầu lông ưng ý và đặt ngay hôm nay!</p>
-            <div>
-                <a href="courts.html" class="btn btn-teal rounded-pill px-4">Khám phá các sân</a>
-            </div>
-        </div>`;
+            if (window.GodmintonUI) {
+                container.innerHTML = '<div class="max-w-600 mx-auto" id="historyEmptyHolder"></div>';
+                GodmintonUI.renderEmpty('historyEmptyHolder', {
+                    icon: 'fa-calendar-xmark',
+                    title: 'Bạn chưa có đơn đặt sân nào',
+                    desc: 'Hãy tìm kiếm sân cầu lông ưng ý và đặt ngay hôm nay!',
+                    actionText: 'Khám phá các sân',
+                    actionHref: 'courts.php'
+                });
+            } else {
+                container.innerHTML = `
+                <div class="card border rounded-4 p-5 text-center shadow-sm max-w-600 mx-auto">
+                    <i class="fa-solid fa-calendar-xmark fs-1 text-muted mb-3"></i>
+                    <h5 class="fw-bold">Bạn chưa có đơn đặt sân nào</h5>
+                    <p class="text-muted small">Hãy tìm kiếm sân cầu lông ưng ý và đặt ngay hôm nay!</p>
+                    <div>
+                        <a href="courts.php" class="btn btn-teal rounded-pill px-4">Khám phá các sân</a>
+                    </div>
+                </div>`;
+            }
             return;
         }
 
@@ -54,8 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <div class="col-lg-3 col-md-4">
-                        <div class="small text-muted">Tổng tiền: <strong>${MockDB.formatVND(b.total_amount)}</strong></div>
-                        <div class="small text-success">Đã cọc: <strong>${MockDB.formatVND(b.deposit_amount)}</strong></div>
+                        <div class="small text-muted">Tổng tiền: <strong>${typeof MockDB !== 'undefined' ? MockDB.formatVND(b.total_amount) : (b.total_amount + ' đ')}</strong></div>
+                        <div class="small text-success">Đã cọc: <strong>${typeof MockDB !== 'undefined' ? MockDB.formatVND(b.deposit_amount) : (b.deposit_amount + ' đ')}</strong></div>
                         <div class="mt-1">
                             <span class="badge ${s.badge}">
                                 <i class="fa-solid ${s.icon} me-1"></i>${s.text}
@@ -68,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ? `<button class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="cancelBooking(${b.id})">
                                 <i class="fa-solid fa-xmark me-1"></i> Hủy đơn
                                 </button>`
-                    : `<a href="booking.html?court_id=${b.court_id}" class="btn btn-outline-teal btn-sm rounded-pill px-3">Đặt lại</a>`
+                    : `<a href="booking.php?court_id=${b.court_id}" class="btn btn-outline-teal btn-sm rounded-pill px-3">Đặt lại</a>`
                 }
                     </div>
                 </div>
@@ -90,8 +101,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (result.isConfirmed) {
-            const res = MockDB.cancelBooking(bookingId);
+            const res = (typeof MockDB !== 'undefined' && MockDB.cancelBooking)
+                ? MockDB.cancelBooking(bookingId)
+                : { status: 'success', message: 'Hủy đơn thành công.' };
+
             if (res.status === 'success') {
+                if (window.GodmintonUI) {
+                    GodmintonUI.toast('success', 'Đã hủy đơn', 'Đơn đặt sân đã được hủy và slot đã được mở lại.');
+                }
                 Swal.fire({
                     icon: 'success',
                     title: 'Đã hủy đơn thành công',
