@@ -100,7 +100,7 @@ function renderBookingsList() {
                 <i class="fa-regular fa-calendar-xmark fs-2 d-block mb-2"></i>
                 Bạn chưa có đơn đặt sân nào.
                 <div class="mt-3">
-                    <a href="courts.html" class="btn btn-teal rounded-pill px-4">Đặt sân ngay</a>
+                    <a href="courts.php" class="btn btn-teal rounded-pill px-4">Đặt sân ngay</a>
                 </div>
             </div>`;
         return;
@@ -137,7 +137,7 @@ function renderBookingsList() {
                         <span class="mx-2">·</span>
                         <i class="fa-regular fa-clock me-1 text-teal"></i>${b.time_range}
                     </div>
-                    <a href="courts.html" class="btn btn-sm btn-outline-teal rounded-pill px-3 py-1" style="font-size: 0.78rem;">
+                    <a href="courts.php" class="btn btn-sm btn-outline-teal rounded-pill px-3 py-1" style="font-size: 0.78rem;">
                         <i class="fa-solid fa-arrow-rotate-right me-1"></i>Đặt lại
                     </a>
                 </div>

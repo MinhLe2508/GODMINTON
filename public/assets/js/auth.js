@@ -5,18 +5,27 @@
  */
 
 (function() {
-    const saved = localStorage.getItem('bm_theme') || 'light';
+    const saved = localStorage.getItem('godminton_theme') || 'dark';
     document.documentElement.setAttribute('data-bs-theme', saved);
     const btn = document.getElementById('themeToggle');
-    if (btn) btn.innerHTML = saved === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+    if (btn) {
+        btn.innerHTML = saved === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+    }
 })();
 
-document.getElementById('themeToggle')?.addEventListener('click', function() {
-    const cur = document.documentElement.getAttribute('data-bs-theme');
-    const next = cur === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-bs-theme', next);
-    localStorage.setItem('bm_theme', next);
-    this.innerHTML = next === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+// Xử lý nút Theme: nếu chưa có app.js xử lý thì auth.js mới gắn listener dự phòng
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('themeToggle');
+    if (btn && !btn.dataset.themeBound && typeof toggleTheme !== 'function') {
+        btn.dataset.themeBound = 'true';
+        btn.addEventListener('click', function() {
+            const cur = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+            const next = cur === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-bs-theme', next);
+            localStorage.setItem('godminton_theme', next);
+            this.innerHTML = next === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+        });
+    }
 });
 
 /* ---- Tab switch ---- */

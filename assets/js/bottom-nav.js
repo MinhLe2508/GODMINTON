@@ -20,6 +20,13 @@
             match:   ['index.php', 'index.html', '/', ''],
         },
         {
+            id:      'profile',
+            label:   'Cá nhân',
+            icon:    'fa-circle-user',
+            href:    'profile.php',
+            match:   ['profile.php', 'profile.html', 'auth.php', 'auth.html', 'login.php', 'login.html', 'register.php', 'register.html', 'admin-dashboard.php', 'admin-courts.php', 'admin-slots.php', 'admin-bookings.php'],
+        },
+        {
             id:      'courts',
             label:   'Đặt sân',
             icon:    'fa-layer-group',
@@ -28,18 +35,18 @@
             center:  true,                        // FAB trung tâm nổi bật
         },
         {
-            id:      'history',
-            label:   'Lịch sử',
-            icon:    'fa-calendar-check',
-            href:    'history.php',
-            match:   ['history.php', 'history.html'],
+            id:      'news',
+            label:   'Khám phá',
+            icon:    'fa-compass',
+            href:    'news.php',
+            match:   ['news.php', 'news.html'],
         },
         {
-            id:      'profile',
-            label:   'Tài khoản',
-            icon:    'fa-circle-user',
-            href:    'auth.php',
-            match:   ['auth.php', 'profile.php', 'login.php', 'register.php', 'auth.html', 'login.html', 'register.html', 'profile.html', 'admin-dashboard.php', 'admin-courts.php', 'admin-slots.php', 'admin-bookings.php'],
+            id:      'contact',
+            label:   'Liên hệ',
+            icon:    'fa-headset',
+            href:    'contact.php',
+            match:   ['contact.php', 'contact.html'],
         },
     ];
 
@@ -394,14 +401,14 @@
         // Inject Theme Button nếu trang chưa có
         injectThemeToggle();
 
-        // Tránh inject 2 lần
-        if (document.getElementById('godmintonBottomNav')) return;
-
-        const nav = document.createElement('nav');
-        nav.id = 'godmintonBottomNav';
-        nav.setAttribute('aria-label', 'Điều hướng chính');
+        let nav = document.getElementById('godmintonBottomNav');
+        if (!nav) {
+            nav = document.createElement('nav');
+            nav.id = 'godmintonBottomNav';
+            nav.setAttribute('aria-label', 'Điều hướng chính');
+            document.body.appendChild(nav);
+        }
         nav.innerHTML = buildNavHTML();
-        document.body.appendChild(nav);
 
         // Thêm class để body có padding-bottom đúng
         document.body.classList.add('has-bottom-nav');
@@ -473,6 +480,8 @@
         'payment.php': 16, 'payment.html': 16,
         'confirm.php': 18, 'confirm.html': 18,
         'history.php': 20, 'history.html': 20,
+        'news.php': 30, 'news.html': 30,
+        'contact.php': 40, 'contact.html': 40,
         'profile.php': 50, 'profile.html': 50,
         'auth.php': 52, 'auth.html': 52,
         'login.php': 54, 'login.html': 54,

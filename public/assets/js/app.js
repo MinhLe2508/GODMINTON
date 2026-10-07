@@ -111,5 +111,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderNavbarUser();
 
     // Theme toggle button
-    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    const themeBtn = document.getElementById('themeToggle');
+    if (themeBtn && !themeBtn.dataset.themeBound) {
+        themeBtn.dataset.themeBound = 'true';
+        themeBtn.addEventListener('click', toggleTheme);
+    }
 });
