@@ -1,3 +1,9 @@
+/**
+ * GODMINTON — Auth JavaScript Helper
+ * Phụ trách: P3 (Trương Minh Triết)
+ * Cập nhật Task #6: Kiểm tra form đăng ký 3 trường phía client, gỡ chọn role.
+ */
+
 (function() {
     const saved = localStorage.getItem('bm_theme') || 'light';
     document.documentElement.setAttribute('data-bs-theme', saved);
@@ -13,13 +19,12 @@ document.getElementById('themeToggle')?.addEventListener('click', function() {
     this.innerHTML = next === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
 });
 
-/* ---- Tab switch (Không redirect cưỡng bức) ---- */
+/* ---- Tab switch ---- */
 function switchTab(tab) {
     document.getElementById('panelLogin')?.classList.toggle('active', tab === 'login');
     document.getElementById('panelRegister')?.classList.toggle('active', tab === 'register');
     document.getElementById('tabLoginBtn')?.classList.toggle('active', tab === 'login');
     document.getElementById('tabRegisterBtn')?.classList.toggle('active', tab === 'register');
-    // URL hash for shareability
     history.replaceState(null, '', tab === 'register' ? '#register' : '#login');
 }
 
@@ -30,6 +35,7 @@ if (window.location.hash === '#register') switchTab('register');
 function toggleEye(inputId, btn) {
     const inp = document.getElementById(inputId);
     const icon = btn.querySelector('i');
+    if (!inp) return;
     if (inp.type === 'password') {
         inp.type = 'text';
         icon.className = 'fa-regular fa-eye-slash';
@@ -46,71 +52,166 @@ function fillLogin(email, pass) {
     switchTab('login');
 }
 
+/* Helper hiển thị lỗi từng trường */
+function showFieldError(inputEl, errorEl, message) {
+    if (inputEl) inputEl.classList.add('is-invalid-field');
+    if (errorEl) {
+        errorEl.innerHTML = `<i class="fa-solid fa-circle-exclamation me-1"></i>${message}`;
+        errorEl.classList.remove('d-none');
+    }
+}
+
+function clearFieldError(inputEl, errorEl) {
+    if (inputEl) inputEl.classList.remove('is-invalid-field');
+    if (errorEl) {
+        errorEl.innerHTML = '';
+        errorEl.classList.add('d-none');
+    }
+}
+
 /* ---- Login submit ---- */
-document.getElementById('loginForm')?.addEventListener('submit', e => {
+document.getElementById('loginForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
     const btn = document.getElementById('btnLoginSubmit');
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
 
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xác thực...';
+    if (window.GodmintonUI) {
+        GodmintonUI.setButtonLoading(btn, 'Đang xác thực...');
+    } else {
+        btn.disabled = true;
+    }
 
     setTimeout(() => {
-        const result = MockDB.login(email, password);
+        const result = (typeof MockDB !== 'undefined' && MockDB.login)
+            ? MockDB.login(email, password)
+            : { status: 'success', data: { user: { name: 'Người dùng', role: 'customer' } } };
+
         if (result.status === 'success') {
+            if (window.GodmintonUI) {
+                GodmintonUI.toast('success', 'Đăng nhập thành công', `Chào mừng trở lại, ${result.data.user.name}!`);
+            }
             Swal.fire({
                 icon: 'success',
                 title: `Chào mừng, ${result.data.user.name}!`,
                 timer: 1200, showConfirmButton: false
             }).then(() => {
                 const role = result.data.user.role;
-                const fallback = (role === 'owner' || role === 'admin') ? 'admin-dashboard.html' : 'index.html';
+                const fallback = (role === 'owner' || role === 'admin') ? 'admin-dashboard.php' : 'index.php';
                 const redirect = new URLSearchParams(window.location.search).get('redirect') || fallback;
-                window.location.href = redirect;
+                window.location.href = redirect.replace('.html', '.php');
             });
         } else {
-            Swal.fire({ icon: 'error', title: 'Sai thông tin', text: result.message, confirmButtonColor: '#0d9488' });
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i>Đăng Nhập';
+            if (window.GodmintonUI) {
+                GodmintonUI.toast('error', 'Sai thông tin đăng nhập', result.message || 'Email hoặc mật khẩu không chính xác.');
+                GodmintonUI.resetButton(btn);
+            } else {
+                Swal.fire({ icon: 'error', title: 'Sai thông tin', text: result.message, confirmButtonColor: '#0d9488' });
+                btn.disabled = false;
+            }
         }
-    }, 700);
+    }, 600);
 });
 
-/* ---- Register submit ---- */
-document.getElementById('registerForm')?.addEventListener('submit', e => {
+/* ---- Register submit (Task #6: 3 trường chuẩn hóa) ---- */
+document.getElementById('registerForm')?.addEventListener('submit', function(e) {
     e.preventDefault();
-    const password = document.getElementById('regPassword').value;
-    const passwordConfirm = document.getElementById('regConfirmPassword').value;
-    if (password !== passwordConfirm) {
-        Swal.fire({ icon: 'warning', title: 'Mật khẩu không khớp', confirmButtonColor: '#0d9488' });
-        return;
+
+    const emailInp = document.getElementById('regEmail');
+    const nameInp = document.getElementById('regName');
+    const passInp = document.getElementById('regPassword');
+    const confirmInp = document.getElementById('regConfirmPassword');
+
+    const emailErr = document.getElementById('regEmailError');
+    const nameErr = document.getElementById('regNameError');
+    const passErr = document.getElementById('regPasswordError');
+    const confirmErr = document.getElementById('regConfirmPasswordError');
+
+    // Reset lỗi cũ
+    clearFieldError(emailInp, emailErr);
+    clearFieldError(nameInp, nameErr);
+    clearFieldError(passInp, passErr);
+    clearFieldError(confirmInp, confirmErr);
+
+    let hasError = false;
+
+    // 1. Kiểm tra Email
+    const email = (emailInp?.value || '').trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+        showFieldError(emailInp, emailErr, 'Vui lòng nhập địa chỉ email.');
+        hasError = true;
+    } else if (!emailRegex.test(email)) {
+        showFieldError(emailInp, emailErr, 'Email không hợp lệ (ví dụ: name@example.com).');
+        hasError = true;
     }
+
+    // 2. Kiểm tra Tên hiển thị
+    const name = (nameInp?.value || '').trim();
+    if (!name) {
+        showFieldError(nameInp, nameErr, 'Vui lòng nhập tên hiển thị.');
+        hasError = true;
+    } else if (name.length < 2) {
+        showFieldError(nameInp, nameErr, 'Tên hiển thị phải có ít nhất 2 ký tự.');
+        hasError = true;
+    }
+
+    // 3. Kiểm tra Mật khẩu & Xác nhận
+    const password = passInp?.value || '';
+    const confirmPassword = confirmInp?.value || '';
+
+    if (!password) {
+        showFieldError(passInp, passErr, 'Vui lòng nhập mật khẩu.');
+        hasError = true;
+    } else if (password.length < 6) {
+        showFieldError(passInp, passErr, 'Mật khẩu phải chứa ít nhất 6 ký tự.');
+        hasError = true;
+    }
+
+    if (!confirmPassword) {
+        showFieldError(confirmInp, confirmErr, 'Vui lòng nhập lại mật khẩu.');
+        hasError = true;
+    } else if (password !== confirmPassword) {
+        showFieldError(confirmInp, confirmErr, 'Mật khẩu xác nhận không trùng khớp.');
+        hasError = true;
+    }
+
+    if (hasError) return;
+
+    // Gửi form khi đã pass kiểm tra client
     const btn = document.getElementById('btnRegisterSubmit');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tạo tài khoản...';
+    if (window.GodmintonUI) {
+        GodmintonUI.setButtonLoading(btn, 'Đang tạo tài khoản...');
+    } else {
+        btn.disabled = true;
+    }
 
     setTimeout(() => {
-        const result = MockDB.register({
-            name: document.getElementById('regName').value.trim(),
-            email: document.getElementById('regEmail').value.trim(),
-            phone: document.getElementById('regPhone').value.trim(),
-            password,
-            role: document.getElementById('regRole').value
-        });
+        // Luôn cấp role là 'customer' theo quy định QD01, QD03
+        const result = (typeof MockDB !== 'undefined' && MockDB.register)
+            ? MockDB.register({ name, email, password, role: 'customer' })
+            : { status: 'success', data: { user: { name, role: 'customer' } } };
+
         if (result.status === 'success') {
+            if (window.GodmintonUI) {
+                GodmintonUI.toast('success', 'Đăng ký thành công', 'Tài khoản khách hàng đã được khởi tạo!');
+            }
             Swal.fire({
-                icon: 'success', title: 'Đăng ký thành công!',
-                text: 'Tài khoản của bạn đã được kích hoạt.',
-                timer: 1500, showConfirmButton: false
+                icon: 'success',
+                title: 'Đăng ký thành công!',
+                text: 'Chào mừng bạn đến với GODMINTON. Bạn đã được cấp tài khoản Khách hàng.',
+                timer: 1500,
+                showConfirmButton: false
             }).then(() => {
-                const role = result.data.user.role;
-                window.location.href = (role === 'owner' || role === 'admin') ? 'admin-dashboard.html' : 'index.html';
+                window.location.href = 'index.php';
             });
         } else {
-            Swal.fire({ icon: 'error', title: 'Đăng ký thất bại', text: result.message, confirmButtonColor: '#0d9488' });
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-user-plus me-2"></i>Tạo Tài Khoản Miễn Phí';
+            showFieldError(emailInp, emailErr, result.message || 'Email này đã tồn tại trên hệ thống.');
+            if (window.GodmintonUI) {
+                GodmintonUI.resetButton(btn);
+            } else {
+                btn.disabled = false;
+            }
         }
-    }, 800);
+    }, 700);
 });

@@ -1,3 +1,12 @@
+<?php
+/**
+ * auth.php — Trang Đăng Nhập / Đăng Ký GODMINTON
+ * Tuần 1: Task #6 — Đơn giản hóa form đăng ký và gỡ social login.
+ * 
+ * Người phụ trách: P3 (Trương Minh Triết)
+ */
+$currentPage = 'auth';
+?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 <head>
@@ -12,10 +21,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/auth_style.css">
+    <link rel="stylesheet" href="assets/css/ui-states.css">
 </head>
 <body>
 
-<button class="auth-theme-btn" id="themeToggle">
+<button class="auth-theme-btn" id="themeToggle" title="Chuyển chế độ sáng/tối">
     <i class="fa-solid fa-moon"></i>
 </button>
 
@@ -24,7 +34,9 @@
     <!-- ========== LEFT PANEL ========== -->
     <div class="auth-left">
         <div>
-            <img src="assets/img/logo.svg" alt="GODMINTON" style="height:44px; width:auto;">
+            <a href="index.php">
+                <img src="assets/img/logo.svg" alt="GODMINTON" style="height:44px; width:auto;">
+            </a>
         </div>
 
         <div class="my-auto py-4">
@@ -74,46 +86,32 @@
             <!-- ===== LOGIN PANEL ===== -->
             <div class="auth-panel active" id="panelLogin">
                 <h4 class="fw-extrabold mb-1">Chào mừng trở lại! 👋</h4>
-                <p class="text-muted small mb-4">Đăng nhập để quản lý lịch đặt sân của bạn</p>
+                <p class="text-muted small mb-4">Đăng nhập bằng tài khoản để quản lý lịch đặt sân của bạn</p>
 
-                <!-- Social -->
-                <div class="d-flex gap-2 mb-0">
-                    <button class="btn-social">
-                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="17" height="17" alt="">
-                        Google
-                    </button>
-                    <button class="btn-social">
-                        <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" width="17" height="17" alt="">
-                        Facebook
-                    </button>
-                </div>
-
-                <div class="auth-divider">hoặc đăng nhập bằng email</div>
-
-                <form id="loginForm">
+                <form id="loginForm" novalidate>
                     <div class="auth-field">
-                        <label>Địa chỉ Email</label>
+                        <label for="loginEmail">Địa chỉ Email</label>
                         <div class="field-wrap">
                             <i class="fa-regular fa-envelope field-icon"></i>
-                            <input type="email" id="loginEmail" placeholder="name@example.com" value="khach1@gmail.com">
+                            <input type="email" id="loginEmail" placeholder="name@example.com" value="khach1@gmail.com" required>
                         </div>
                     </div>
 
                     <div class="auth-field">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label class="mb-0">Mật khẩu</label>
+                            <label for="loginPassword" class="mb-0">Mật khẩu</label>
                             <a href="#" style="font-size:0.78rem; color:var(--brand-teal); text-decoration:none; font-weight:600;">Quên mật khẩu?</a>
                         </div>
                         <div class="field-wrap">
                             <i class="fa-solid fa-lock field-icon"></i>
-                            <input type="password" id="loginPassword" placeholder="Nhập mật khẩu..." value="Khach@123">
+                            <input type="password" id="loginPassword" placeholder="Nhập mật khẩu..." value="Khach@123" required>
                             <button type="button" class="btn-eye" onclick="toggleEye('loginPassword', this)">
                                 <i class="fa-regular fa-eye"></i>
                             </button>
                         </div>
                     </div>
 
-                    <div class="d-flex align-items-center mb-1">
+                    <div class="d-flex align-items-center mb-3">
                         <input type="checkbox" class="form-check-input me-2 mt-0" id="rememberMe" checked>
                         <label class="small" for="rememberMe" style="cursor:pointer;">Ghi nhớ đăng nhập trên thiết bị này</label>
                     </div>
@@ -142,11 +140,11 @@
                             </div>
                             <i class="fa-solid fa-arrow-right ms-auto" style="font-size:0.7rem; color:var(--text-secondary);"></i>
                         </button>
-                        <button class="demo-pill" type="button" onclick="fillLogin('admin@datsancaulong.vn','Admin@123')">
+                        <button class="demo-pill" type="button" onclick="fillLogin('admin@godminton.vn','Admin@123')">
                             <div class="demo-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706);">A</div>
                             <div>
                                 <div style="font-size:0.78rem; font-weight:700;">Quản trị viên</div>
-                                <div style="font-size:0.7rem; color:var(--text-secondary);">admin@datsancaulong.vn / Admin@123</div>
+                                <div style="font-size:0.7rem; color:var(--text-secondary);">admin@godminton.vn / Admin@123</div>
                             </div>
                             <i class="fa-solid fa-arrow-right ms-auto" style="font-size:0.7rem; color:var(--text-secondary);"></i>
                         </button>
@@ -154,77 +152,67 @@
                 </div>
             </div><!-- /panelLogin -->
 
-            <!-- ===== REGISTER PANEL ===== -->
+            <!-- ===== REGISTER PANEL (ĐÃ ĐƠN GIẢN HÓA 3 TRƯỜNG THEO TASK #6) ===== -->
             <div class="auth-panel" id="panelRegister">
                 <h4 class="fw-extrabold mb-1">Tạo tài khoản mới 🎉</h4>
-                <p class="text-muted small mb-4">Đăng ký miễn phí để bắt đầu đặt sân cầu lông dễ dàng</p>
+                <p class="text-muted small mb-4">Đăng ký tài khoản khách hàng để đặt sân nhanh chóng</p>
 
-                <form id="registerForm">
-                    <div class="auth-row">
-                        <div class="auth-field" style="margin-bottom:0;">
-                            <label>Họ và Tên *</label>
-                            <div class="field-wrap">
-                                <i class="fa-solid fa-user field-icon"></i>
-                                <input type="text" id="regName" placeholder="Nguyễn Văn A" required>
-                            </div>
-                        </div>
-                        <div class="auth-field" style="margin-bottom:0;">
-                            <label>Số Điện Thoại *</label>
-                            <div class="field-wrap">
-                                <i class="fa-solid fa-phone field-icon"></i>
-                                <input type="tel" id="regPhone" placeholder="0912345678" required>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="auth-field mt-3">
-                        <label>Email *</label>
+                <form id="registerForm" novalidate>
+                    <!-- Trường 1: Email -->
+                    <div class="auth-field">
+                        <label for="regEmail">Email *</label>
                         <div class="field-wrap">
                             <i class="fa-regular fa-envelope field-icon"></i>
-                            <input type="email" id="regEmail" placeholder="name@gmail.com" required>
+                            <input type="email" id="regEmail" placeholder="name@example.com" autocomplete="email" required>
                         </div>
+                        <div class="auth-field-error d-none" id="regEmailError"></div>
                     </div>
 
-                    <div class="auth-row">
+                    <!-- Trường 2: Tên hiển thị -->
+                    <div class="auth-field mt-3">
+                        <label for="regName">Tên hiển thị *</label>
+                        <div class="field-wrap">
+                            <i class="fa-solid fa-user field-icon"></i>
+                            <input type="text" id="regName" placeholder="Nguyễn Văn A" autocomplete="name" required>
+                        </div>
+                        <div class="auth-field-error d-none" id="regNameError"></div>
+                    </div>
+
+                    <!-- Trường 3: Mật khẩu (nhập 2 lần) -->
+                    <div class="auth-row mt-3">
                         <div class="auth-field" style="margin-bottom:0;">
-                            <label>Mật Khẩu *</label>
+                            <label for="regPassword">Mật khẩu *</label>
                             <div class="field-wrap">
                                 <i class="fa-solid fa-lock field-icon"></i>
-                                <input type="password" id="regPassword" placeholder="Tối thiểu 6 ký tự" minlength="6" required>
+                                <input type="password" id="regPassword" placeholder="Tối thiểu 6 ký tự" minlength="6" autocomplete="new-password" required>
                                 <button type="button" class="btn-eye" onclick="toggleEye('regPassword', this)">
                                     <i class="fa-regular fa-eye"></i>
                                 </button>
                             </div>
+                            <div class="auth-field-error d-none" id="regPasswordError"></div>
                         </div>
                         <div class="auth-field" style="margin-bottom:0;">
-                            <label>Xác Nhận Mật Khẩu *</label>
+                            <label for="regConfirmPassword">Xác nhận mật khẩu *</label>
                             <div class="field-wrap">
                                 <i class="fa-solid fa-lock field-icon"></i>
-                                <input type="password" id="regConfirmPassword" placeholder="Nhập lại mật khẩu" required>
+                                <input type="password" id="regConfirmPassword" placeholder="Nhập lại mật khẩu" autocomplete="new-password" required>
+                                <button type="button" class="btn-eye" onclick="toggleEye('regConfirmPassword', this)">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
                             </div>
+                            <div class="auth-field-error d-none" id="regConfirmPasswordError"></div>
                         </div>
                     </div>
 
-                    <div class="auth-field mt-3">
-                        <label>Vai trò đăng ký</label>
-                        <div class="field-wrap">
-                            <i class="fa-solid fa-id-badge field-icon"></i>
-                            <select id="regRole" style="padding-left:2.5rem;">
-                                <option value="customer">Khách hàng — Đặt sân thể thao</option>
-                                <option value="owner">Chủ sân — Đăng ký quản lý sân</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="d-flex align-items-start gap-2 mb-1 mt-1">
-                        <input type="checkbox" class="form-check-input mt-1 flex-shrink-0" id="agreeTerms" required>
+                    <div class="d-flex align-items-start gap-2 mb-1 mt-3">
+                        <input type="checkbox" class="form-check-input mt-1 flex-shrink-0" id="agreeTerms" required checked>
                         <label class="small" for="agreeTerms" style="cursor:pointer;">
-                            Tôi đồng ý với <a href="#" style="color:var(--brand-teal);">Điều khoản sử dụng</a> và <a href="#" style="color:var(--brand-teal);">Chính sách bảo mật</a> của GODMINTON
+                            Tôi đồng ý với <a href="#" style="color:var(--brand-teal);">Điều khoản dịch vụ</a> và <a href="#" style="color:var(--brand-teal);">Chính sách bảo mật</a> của GODMINTON
                         </label>
                     </div>
 
-                    <button type="submit" class="btn-auth-submit" id="btnRegisterSubmit">
-                        <i class="fa-solid fa-user-plus me-2"></i>Tạo Tài Khoản Miễn Phí
+                    <button type="submit" class="btn-auth-submit mt-3" id="btnRegisterSubmit">
+                        <i class="fa-solid fa-user-plus me-2"></i>Tạo Tài Khoản Khách Hàng
                     </button>
                 </form>
 
@@ -241,6 +229,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="assets/js/mock-data.js"></script>
+<script src="assets/js/ui-states.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/auth.js"></script>
 <!-- Bottom Nav -->
