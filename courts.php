@@ -1,3 +1,21 @@
+<?php
+/**
+ * courts.php — Danh Sách Sân Cầu Lông - Tìm Kiếm & Lọc Nhanh
+ * 
+ * Người phụ trách: P3 (Trương Minh Triết)
+ * Cập nhật:
+ * - Tách partial: navbar.php, bottom-nav.php, footer.php
+ * - Dữ liệu mẫu tập trung từ sample_data.php
+ * - Gỡ bỏ: rating filter, rating sort, sự kiện, link news/contact
+ * - Chuyển toàn bộ liên kết sang .php
+ */
+
+// DỮ LIỆU MẪU - thay bằng truy vấn DB ở tuần 2
+require_once __DIR__ . '/includes/sample_data.php';
+
+$currentPage = 'courts';
+$assetsPath = 'assets';
+?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 <head>
@@ -14,17 +32,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/courts_style.css">
+    <link rel="stylesheet" href="assets/css/ui-states.css">
 </head>
 <body>
 
-<!-- App Brand Header (Khung Cố Định) -->
-<header class="app-brand-head">
-    <div class="container text-center">
-        <a href="index.html" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
-            <img src="assets/img/logo-teal.svg" alt="GODMINTON" class="brand-logo-img">
-        </a>
-    </div>
-</header>
+<!-- Navbar Partial -->
+<?php include __DIR__ . '/includes/partials/navbar.php'; ?>
 
 <!-- ==================== SLIM SEARCH BAR ==================== -->
 <div class="search-bar-wrap">
@@ -56,7 +69,7 @@
                 </a>
 
                 <!-- Sân đã đặt -->
-                <a href="history.html" class="sb-btn" title="Sân đã đặt">
+                <a href="history.php" class="sb-btn" title="Sân đã đặt">
                     <i class="fa-solid fa-calendar-check"></i>
                     <span class="sb-lbl">Đã đặt</span>
                 </a>
@@ -65,12 +78,6 @@
                 <button class="sb-btn" id="btnFavorite" onclick="toggleFavoriteFilter()" title="Sân yêu thích">
                     <i class="fa-regular fa-heart"></i>
                     <span class="sb-lbl">Yêu thích</span>
-                </button>
-
-                <!-- Giao diện Sáng / Tối -->
-                <button class="sb-btn" id="themeToggle" title="Chuyển chế độ Sáng / Tối">
-                    <i class="fa-solid fa-moon"></i>
-                    <span class="sb-lbl">Giao diện</span>
                 </button>
 
             </div>
@@ -98,12 +105,10 @@
     <!-- Header -->
     <div class="drawer-header">
         <div class="d-flex align-items-center gap-2">
-            <button class="drawer-close" onclick="closeFilterDrawer()" title="Đóng">
-                <i class="fa-solid fa-arrow-left"></i>
-            </button>
-            <h5>Bộ Lọc Tìm Kiếm</h5>
+            <i class="fa-solid fa-sliders text-teal"></i>
+            <span class="drawer-title">Bộ Lọc Tìm Kiếm</span>
         </div>
-        <button class="drawer-close" onclick="closeFilterDrawer()" title="Đóng">
+        <button class="drawer-close" onclick="closeFilterDrawer()" aria-label="Đóng">
             <i class="fa-solid fa-xmark"></i>
         </button>
     </div>
@@ -111,68 +116,55 @@
     <!-- Body -->
     <div class="drawer-body">
 
-        <!-- Khu vực -->
+        <!-- Khu vực (Quận / Phường) -->
         <div class="drawer-section">
             <div class="drawer-section-title">
-                <i class="fa-solid fa-location-dot text-teal me-1"></i>Khu Vực /Quận
+                <i class="fa-solid fa-location-dot text-teal me-1"></i>Khu Vực (Đô Thị Lõi Cũ)
             </div>
-            <select class="drawer-select" id="filterDistrict">
-                <option value="">Tất cả khu vực TP.HCM</option>
-                <option value="Cầu Giấy">Quận 1</option>
-                <option value="Đống Đa">Quận 2</option>
-                <option value="Thanh Xuân">Quận 3</option>
-                <option value="Tây Hồ">Quận 4</option>
-                <option value="Hai Bà Trưng">Quận 5</option>
-                <option value="Ba Đình">Quận 6</option>
-                <option value="Hoàng Mai">Quận 7</option>
-                <option value="Long Biên">Thủ Đức</option>
+            <select class="form-select form-select-sm" id="filterDistrict">
+                <option value="">Tất cả khu vực</option>
+                <?php foreach ($SAMPLE_WARDS as $w): ?>
+                    <option value="<?= htmlspecialchars($w['name']) ?>"><?= htmlspecialchars($w['name']) ?> (<?= htmlspecialchars($w['old_area_label']) ?>)</option>
+                <?php endforeach; ?>
             </select>
         </div>
 
-        <!-- Mức giá -->
+        <!-- Mức giá / giờ -->
         <div class="drawer-section">
             <div class="drawer-section-title">
-                <i class="fa-solid fa-tag text-teal me-1"></i>Mức Giá Thuê
+                <i class="fa-solid fa-tag text-teal me-1"></i>Mức Giá / Giờ (Tối đa)
             </div>
-            <select class="drawer-select" id="filterPrice">
+            <select class="form-select form-select-sm" id="filterPrice">
                 <option value="">Tất cả mức giá</option>
-                <option value="80000">Dưới 80.000 đ/giờ</option>
-                <option value="90000">Dưới 90.000 đ/giờ</option>
-                <option value="100000">Dưới 100.000 đ/giờ</option>
-                <option value="150000">Dưới 150.000 đ/giờ</option>
+                <option value="80000">Dưới 80.000 đ/h</option>
+                <option value="100000">Dưới 100.000 đ/h</option>
+                <option value="120000">Dưới 120.000 đ/h</option>
             </select>
         </div>
 
-        <!-- Tiện ích sân -->
+        <!-- Tiện ích (Amenities) -->
         <div class="drawer-section">
             <div class="drawer-section-title">
-                <i class="fa-solid fa-star text-teal me-1"></i>Tiện Ích Sân
+                <i class="fa-solid fa-wand-magic-sparkles text-teal me-1"></i>Tiện Ích
             </div>
-            <div class="amenity-grid">
-                <button class="amenity-chip" data-value="aircon" data-label="Điều hòa" onclick="toggleAmenityChip(this)">
-                    <i class="fa-solid fa-snowflake text-info"></i> Điều hòa
-                </button>
-                <button class="amenity-chip" data-value="parking" data-label="Bãi đỗ xe" onclick="toggleAmenityChip(this)">
-                    <i class="fa-solid fa-square-parking text-primary"></i> Bãi đỗ xe
-                </button>
-                <button class="amenity-chip" data-value="shower" data-label="Phòng tắm" onclick="toggleAmenityChip(this)">
-                    <i class="fa-solid fa-shower text-success"></i> Phòng tắm
-                </button>
-                <button class="amenity-chip" data-value="rental" data-label="Cho thuê vợt" onclick="toggleAmenityChip(this)">
-                    <i class="fa-solid fa-medal text-warning"></i> Cho thuê vợt
-                </button>
-                <button class="amenity-chip" data-value="cafe" data-label="Canteen/Cafe" onclick="toggleAmenityChip(this)">
-                    <i class="fa-solid fa-mug-hot" style="color:#f97316;"></i> Canteen/Cafe
-                </button>
-                <button class="amenity-chip" data-value="locker" data-label="Tủ khóa" onclick="toggleAmenityChip(this)">
-                    <i class="fa-solid fa-lock text-secondary"></i> Tủ khóa
-                </button>
-                <button class="amenity-chip" data-value="wifi" data-label="Wi-Fi" onclick="toggleAmenityChip(this)">
-                    <i class="fa-solid fa-wifi" style="color:#8b5cf6;"></i> Wi-Fi
-                </button>
-                <button class="amenity-chip" data-value="court_indoor" data-label="Sân trong nhà" onclick="toggleAmenityChip(this)">
-                    <i class="fa-solid fa-warehouse" style="color:#06b6d4;"></i> Sân trong nhà
-                </button>
+            <div class="d-flex flex-wrap gap-2" id="amenityChipsGroup">
+                <?php
+                $amenityIcons = [
+                    'aircon' => 'fa-snowflake text-info',
+                    'parking' => 'fa-square-parking text-primary',
+                    'shower' => 'fa-shower text-success',
+                    'rental' => 'fa-medal text-warning',
+                    'cafe' => 'fa-mug-hot text-danger',
+                    'locker' => 'fa-lock text-secondary',
+                    'wifi' => 'fa-wifi text-primary',
+                    'indoor' => 'fa-warehouse text-info'
+                ];
+                foreach ($SAMPLE_AMENITIES as $code => $label):
+                ?>
+                    <button class="amenity-chip" data-value="<?= htmlspecialchars($code) ?>" data-label="<?= htmlspecialchars($label) ?>" onclick="toggleAmenityChip(this)">
+                        <i class="fa-solid <?= $amenityIcons[$code] ?? 'fa-check' ?>"></i> <?= htmlspecialchars($label) ?>
+                    </button>
+                <?php endforeach; ?>
             </div>
         </div>
 
@@ -185,29 +177,8 @@
                 <button class="amenity-chip" data-value="type_single" data-label="Sân trống" onclick="toggleBookingType(this)">
                     Sân trống
                 </button>
-                <button class="amenity-chip" data-value="type_event" data-label="Sự kiện/Xẻ đôi" onclick="toggleBookingType(this)">
-                    Sự kiện / Xẻ đôi
-                </button>
                 <button class="amenity-chip" data-value="type_group" data-label="Ghép đội" onclick="toggleBookingType(this)">
                     Ghép đội
-                </button>
-            </div>
-        </div>
-
-        <!-- Rating -->
-        <div class="drawer-section">
-            <div class="drawer-section-title">
-                <i class="fa-solid fa-star text-warning me-1"></i>Đánh Giá Tối Thiểu
-            </div>
-            <div class="d-flex gap-2" id="ratingGroup">
-                <button class="amenity-chip" data-value="4.5" onclick="setRating(this, 4.5)">
-                    <i class="fa-solid fa-star text-warning"></i> 4.5+
-                </button>
-                <button class="amenity-chip" data-value="4.0" onclick="setRating(this, 4.0)">
-                    <i class="fa-solid fa-star text-warning"></i> 4.0+
-                </button>
-                <button class="amenity-chip" data-value="3.5" onclick="setRating(this, 3.5)">
-                    <i class="fa-solid fa-star text-warning"></i> 3.5+
                 </button>
             </div>
         </div>
@@ -234,13 +205,13 @@
         <div>
             <h5 class="fw-extrabold mb-0">Hệ Thống Sân Cầu Lông</h5>
             <div class="small text-muted mt-1">
-                Tìm thấy <strong id="courtCountText" class="text-teal">...</strong> sân
+                Tìm thấy <strong id="courtCountText" class="text-teal"><?= count($SAMPLE_COURTS) ?></strong> sân
             </div>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <button class="sort-tab-btn active" onclick="setSortMode(this,'default')">Tất cả</button>
             <button class="sort-tab-btn" onclick="setSortMode(this,'price_asc')"><i class="fa-solid fa-arrow-up me-1"></i>Giá thấp</button>
-            <button class="sort-tab-btn" onclick="setSortMode(this,'rating')"><i class="fa-solid fa-star me-1"></i>Đánh giá</button>
+            <button class="sort-tab-btn" onclick="setSortMode(this,'price_desc')"><i class="fa-solid fa-arrow-down me-1"></i>Giá cao</button>
         </div>
     </div>
 
@@ -257,58 +228,26 @@
         <div class="text-center text-muted">
             <i class="fa-solid fa-map-location-dot fs-1 mb-2" style="color:#0d9488;"></i>
             <div class="fw-bold">Bản đồ sân cầu lông</div>
-            <div class="small">Google Maps API — hiển thị vị trí các sân</div>
+            <div class="small">Google Maps API — hiển thị vị trí các sân tại TP.HCM</div>
         </div>
     </div>
 </div>
 </main>
 
-<!-- ==================== FOOTER ==================== -->
-<footer class="footer-custom mt-5 pt-5 pb-4">
-    <div class="container">
-        <div class="row g-4 mb-4">
-            <div class="col-lg-4 col-md-6">
-                <div class="mb-3"><img src="assets/img/logo.svg" alt="GODMINTON" style="height:38px; width:auto;"></div>
-                <p class="text-muted-light">Nền tảng đặt sân cầu lông trực tuyến thông minh.</p>
-                <div class="d-flex gap-3">
-                    <a href="#" class="social-icon"><i class="fa-brands fa-facebook-f"></i></a>
-                    <a href="#" class="social-icon"><i class="fa-brands fa-youtube"></i></a>
-                    <a href="#" class="social-icon"><i class="fa-brands fa-tiktok"></i></a>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-6">
-                <h6 class="text-white fw-bold mb-3">Liên Kết Nhanh</h6>
-                <ul class="list-unstyled footer-links">
-                    <li><a href="index.html">Trang chủ</a></li>
-                    <li><a href="courts.html">Tìm kiếm sân</a></li>
-                    <li><a href="news.html">Tin tức</a></li>
-                    <li><a href="contact.html">Hỗ trợ</a></li>
-                </ul>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <h6 class="text-white fw-bold mb-3">Hotline</h6>
-                <div class="d-flex align-items-center gap-3">
-                    <div class="icon-circle bg-teal text-white"><i class="fa-solid fa-phone"></i></div>
-                    <div>
-                        <div class="small text-muted-light">Tổng đài 24/7</div>
-                        <div class="fs-5 fw-bold text-white">1900 8888</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <hr class="border-secondary opacity-25 my-4">
-        <div class="small text-muted-light">&copy; 2026 GODMINTON - Đồ án Lập trình Web.</div>
-    </div>
-</footer>
+<!-- Footer Partial -->
+<?php include __DIR__ . '/includes/partials/footer.php'; ?>
 
-<!-- ==================== SCRIPTS ==================== -->
+<!-- Bottom Navigation Partial -->
+<?php include __DIR__ . '/includes/partials/bottom-nav.php'; ?>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="assets/js/mock-data.js"></script>
+<script src="assets/js/ui-states.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/courts.js"></script>
-<!-- Bottom Nav -->
+<!-- Bottom Nav Script -->
 <script src="assets/js/bottom-nav.js"></script>
 </body>
 </html>
