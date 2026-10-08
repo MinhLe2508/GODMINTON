@@ -46,8 +46,27 @@ function fillLogin(email, pass) {
     switchTab('login');
 }
 
+/* ---- Gọi API PHP (Tuần 1: nối form với backend thật) ---- */
+async function callAuthApi(url, payload) {
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        return await res.json();
+    } catch (err) {
+        return { status: 'error', message: 'Không kết nối được máy chủ. Hãy kiểm tra Apache/MySQL trong XAMPP.' };
+    }
+}
+
+function goAfterAuth(role) {
+    const fallback = (role === 'owner' || role === 'admin') ? 'admin-dashboard.php' : 'index.php';
+    window.location.href = new URLSearchParams(window.location.search).get('redirect') || fallback;
+}
+
 /* ---- Login submit ---- */
-document.getElementById('loginForm')?.addEventListener('submit', e => {
+document.getElementById('loginForm')?.addEventListener('submit', async e => {
     e.preventDefault();
     const btn = document.getElementById('btnLoginSubmit');
     const email = document.getElementById('loginEmail').value.trim();
@@ -56,29 +75,23 @@ document.getElementById('loginForm')?.addEventListener('submit', e => {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xác thực...';
 
-    setTimeout(() => {
-        const result = MockDB.login(email, password);
-        if (result.status === 'success') {
-            Swal.fire({
-                icon: 'success',
-                title: `Chào mừng, ${result.data.user.name}!`,
-                timer: 1200, showConfirmButton: false
-            }).then(() => {
-                const role = result.data.user.role;
-                const fallback = (role === 'owner' || role === 'admin') ? 'admin-dashboard.html' : 'index.html';
-                const redirect = new URLSearchParams(window.location.search).get('redirect') || fallback;
-                window.location.href = redirect;
-            });
-        } else {
-            Swal.fire({ icon: 'error', title: 'Sai thông tin', text: result.message, confirmButtonColor: '#0d9488' });
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i>Đăng Nhập';
-        }
-    }, 700);
+    const result = await callAuthApi('api/auth/login.php', { email, password });
+    if (result.status === 'success') {
+        MockDB.setUser(result.data.user); // giữ cho phần giao diện cũ (navbar...) vẫn hoạt động
+        Swal.fire({
+            icon: 'success',
+            title: `Chào mừng, ${result.data.user.name}!`,
+            timer: 1200, showConfirmButton: false
+        }).then(() => goAfterAuth(result.data.user.role));
+    } else {
+        Swal.fire({ icon: 'error', title: 'Sai thông tin', text: result.message, confirmButtonColor: '#0d9488' });
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-2"></i>Đăng Nhập';
+    }
 });
 
 /* ---- Register submit ---- */
-document.getElementById('registerForm')?.addEventListener('submit', e => {
+document.getElementById('registerForm')?.addEventListener('submit', async e => {
     e.preventDefault();
     const password = document.getElementById('regPassword').value;
     const passwordConfirm = document.getElementById('regConfirmPassword').value;
@@ -90,27 +103,23 @@ document.getElementById('registerForm')?.addEventListener('submit', e => {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tạo tài khoản...';
 
-    setTimeout(() => {
-        const result = MockDB.register({
-            name: document.getElementById('regName').value.trim(),
-            email: document.getElementById('regEmail').value.trim(),
-            phone: document.getElementById('regPhone').value.trim(),
-            password,
-            role: document.getElementById('regRole').value
-        });
-        if (result.status === 'success') {
-            Swal.fire({
-                icon: 'success', title: 'Đăng ký thành công!',
-                text: 'Tài khoản của bạn đã được kích hoạt.',
-                timer: 1500, showConfirmButton: false
-            }).then(() => {
-                const role = result.data.user.role;
-                window.location.href = (role === 'owner' || role === 'admin') ? 'admin-dashboard.html' : 'index.html';
-            });
-        } else {
-            Swal.fire({ icon: 'error', title: 'Đăng ký thất bại', text: result.message, confirmButtonColor: '#0d9488' });
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-user-plus me-2"></i>Tạo Tài Khoản Miễn Phí';
-        }
-    }, 800);
+    const result = await callAuthApi('api/auth/register.php', {
+        name: document.getElementById('regName').value.trim(),
+        email: document.getElementById('regEmail').value.trim(),
+        phone: document.getElementById('regPhone').value.trim(),
+        password,
+        role: document.getElementById('regRole').value
+    });
+    if (result.status === 'success') {
+        MockDB.setUser(result.data.user);
+        Swal.fire({
+            icon: 'success', title: 'Đăng ký thành công!',
+            text: 'Tài khoản của bạn đã được kích hoạt.',
+            timer: 1500, showConfirmButton: false
+        }).then(() => goAfterAuth(result.data.user.role));
+    } else {
+        Swal.fire({ icon: 'error', title: 'Đăng ký thất bại', text: result.message, confirmButtonColor: '#0d9488' });
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-user-plus me-2"></i>Tạo Tài Khoản Miễn Phí';
+    }
 });

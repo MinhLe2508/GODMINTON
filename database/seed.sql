@@ -8,9 +8,9 @@ USE badminton_booking;
 -- Mật khẩu mẫu bên dưới là bcrypt của: Khach@123 / Admin@123 / Owner@123
 -- (tạo lại bằng password_hash('Khach@123', PASSWORD_BCRYPT) nếu muốn đổi)
 INSERT INTO users (name, email, phone, password_hash, role, is_verified) VALUES
-    ('Nguyễn Văn An',   'khach1@gmail.com',       '0912345678', '$2y$10$REPLACE_WITH_REAL_BCRYPT_HASH', 'customer', 1),
-    ('Quản Trị Viên',   'admin@godminton.vn',     '0900000000', '$2y$10$REPLACE_WITH_REAL_BCRYPT_HASH', 'admin',    1),
-    ('Chủ Sân Quận 1',  'owner.q1@godminton.vn',  '0911111111', '$2y$10$REPLACE_WITH_REAL_BCRYPT_HASH', 'owner',    1);
+    ('Nguyễn Văn An',   'khach1@gmail.com',       '0912345678', '$2y$10$3hgwe0BT37Nzj6hN/b7vDeM0xOWnSwZJGd6LAgJiu1CT60io.1v5u', 'customer', 1),
+    ('Quản Trị Viên',   'admin@godminton.vn',     '0900000000', '$2y$10$CFJ7WgeODP.0LwIVtVu1YOYSyChd86T7Qj/Em5TVO5Zx0Kvbsu5D2', 'admin',    1),
+    ('Chủ Sân Quận 1',  'owner.q1@godminton.vn',  '0911111111', '$2y$10$Z1jvuTrsmcDW9OHina1Oq.MtiPF7z1UJN7rNMWik6iW/astsatoSC', 'owner',    1);
 
 -- Sân mẫu (owner_id = 3 ở trên, ward_id = 1 "Sài Gòn" có sẵn từ schema.sql)
 INSERT INTO courts (owner_id, ward_id, name, address, latitude, longitude, price_per_hour, description, status) VALUES

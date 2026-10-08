@@ -6,8 +6,18 @@
  * Người phụ trách: Huy (Tuần 1, công việc #1-2 trong timeline).
  */
 
-// Đọc cấu hình từ biến môi trường nếu có, nếu không dùng giá trị mặc định
-// cho XAMPP local (KHÔNG commit mật khẩu thật lên GitHub — xem .env.example).
+// Đọc file .env (nếu có) ở thư mục gốc dự án. XAMPP không tự đọc .env,
+// nên mình tự nạp các dòng KEY=VALUE vào biến môi trường.
+$envFile = __DIR__ . '/../.env';
+if (is_readable($envFile)) {
+    foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $line = trim($line);
+        if ($line === '' || $line[0] === '#' || strpos($line, '=') === false) continue;
+        [$k, $v] = explode('=', $line, 2);
+        putenv(trim($k) . '=' . trim($v));
+    }
+}
+
 $DB_HOST = getenv('DB_HOST') ?: '127.0.0.1';
 $DB_NAME = getenv('DB_NAME') ?: 'badminton_booking';
 $DB_USER = getenv('DB_USER') ?: 'root';
@@ -26,5 +36,7 @@ try {
     );
 } catch (PDOException $e) {
     http_response_code(500);
-    die('Lỗi kết nối cơ sở dữ liệu: ' . $e->getMessage());
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['status' => 'error', 'message' => 'Lỗi kết nối cơ sở dữ liệu: ' . $e->getMessage()]);
+    exit;
 }

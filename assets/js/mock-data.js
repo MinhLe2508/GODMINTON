@@ -627,7 +627,11 @@ class MockDB {
     }
 
     /* ---- Đăng xuất ---- */
-    static logout() { this.setUser(null); }
+    static logout() {
+        this.setUser(null);
+        // Huỷ session PHP phía server (Tuần 1 — Huy)
+        fetch('api/auth/logout.php', { method: 'POST', keepalive: true }).catch(() => {});
+    }
 
     /* ---- Gửi liên hệ ---- */
     static sendContact(data) {
