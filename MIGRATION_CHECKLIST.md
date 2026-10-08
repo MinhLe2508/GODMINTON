@@ -1,6 +1,6 @@
 # MIGRATION_CHECKLIST — Chuyển MockDB (LocalStorage) → fetch API thật
 
-> **Dự án:** GODMINTON · Nhóm 2, Đề tài 5  
+> **Dự án:** GODMINTON  
 > **Người lập:** Triết (52400323) · **Tuần 1:** Rà soát MockDB toàn dự án & Lập checklist chuyển đổi  
 > **Nhánh làm việc:** `project` · **Ngày hoàn thiện:** 2026-10-08  
 > **Cách dùng:** Mỗi dòng `- [ ]` là một đầu việc/vị trí code cần sửa. Người phụ trách tick `[x]` khi đã đổi sang `fetch()` API thật **và đã kiểm thử chạy tốt trên XAMPP**.
