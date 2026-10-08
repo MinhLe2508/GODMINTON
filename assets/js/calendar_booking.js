@@ -186,7 +186,7 @@ function handleSlotClick(courtId, slotIdx, type) {
             icon: 'success',
             title: 'Bạn đang giữ chỗ này',
             html: `Bạn có <strong>5 phút</strong> để xác nhận đặt cọc. 
-                    <a href="payment.html" class="d-block mt-2 text-teal fw-bold text-decoration-none">Đặt cọc & Thanh toán ngay →</a>`,
+                    <a href="payment.php" class="d-block mt-2 text-teal fw-bold text-decoration-none">Đặt cọc & Thanh toán ngay →</a>`,
             confirmButtonColor: '#0d9488',
             showCancelButton: true,
             cancelButtonText: 'Hủy giữ chỗ',
@@ -243,7 +243,7 @@ function updateSummaryBar() {
             end:       lastSlot.label,
             court_num: `Sân ${first.courtId}`
         });
-        payBtn.href = `payment.html?${params.toString()}`;
+        payBtn.href = `payment.php?${params.toString()}`;
     }
 }
 

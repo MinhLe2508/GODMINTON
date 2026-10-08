@@ -32,7 +32,7 @@
     <!-- App Brand Header (Khung Cố Định) -->
     <header class="app-brand-head">
         <div class="container text-center">
-            <a href="index.html" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
+            <a href="index.php" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
                 <img src="assets/img/logo-teal.svg" alt="GODMINTON" class="brand-logo-img">
             </a>
         </div>
@@ -56,7 +56,7 @@
                         Hệ thống đặt sân thông minh hỗ trợ kiểm tra slot trống tức thì không cần tải lại trang, công nghệ khóa giữ chỗ tự động chống đặt trùng và nhắc nhở lịch chơi qua PWA.
                     </p>
                     <div class="d-flex flex-wrap gap-3">
-                        <a href="courts.html" class="btn btn-teal btn-lg rounded-pill px-4 fw-bold">
+                        <a href="courts.php" class="btn btn-teal btn-lg rounded-pill px-4 fw-bold">
                             <i class="fa-solid fa-magnifying-glass me-2"></i>Tìm Sân Ngay
                         </a>
                         <a href="#howItWorks" class="btn btn-outline-light btn-lg rounded-pill px-4">
@@ -97,19 +97,12 @@
     <!-- Hộp Tìm Kiếm Nổi -->
     <div class="container">
         <div class="search-card-floating" data-aos="zoom-in" data-aos-delay="200">
-            <form class="row g-3 align-items-end" onsubmit="handleHomeSearch(event)">
+            <form class="row g-3 align-items-end" id="homeSearchForm">
                 <div class="col-md-4">
                     <label class="form-label fw-bold small text-muted"><i class="fa-solid fa-location-dot text-teal me-1"></i> Khu Vực /Quận</label>
                     <select id="homeDistrict" class="form-select form-select-lg rounded-3 fs-6">
                         <option value="">Tất cả khu vực (TP.HCM)</option>
-                        <option value="1">Quận 1</option>
-                        <option value="2">Quận 2</option>
-                        <option value="3">Quận 3</option>
-                        <option value="4">Quận 4</option>
-                        <option value="5">Quận 5</option>
-                        <option value="6">Quận 6</option>
-                        <option value="7">Quận 7</option>
-                        <option value="TD">Thủ Đức</option>
+                        <!-- Sẽ được populate bởi AJAX từ api/wards.php -->
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -140,7 +133,7 @@
         </div>
     </div>
 
-    <!-- Section: Sân Cầu Lông Nổi Bật -->
+    <!-- Section: Sân Cầu Lông Nổi Bật (AJAX) -->
     <section class="py-5 mt-4">
         <div class="container">
             <div class="d-flex flex-wrap justify-content-between align-items-end mb-4">
@@ -148,168 +141,19 @@
                     <span class="text-teal fw-bold text-uppercase tracking-wider small">Điểm Đến Hàng Đầu</span>
                     <h2 class="fw-extrabold mb-0">Tổ Hợp Sân Cầu Lông Cao Cấp</h2>
                 </div>
-                <a href="courts.html" class="btn btn-outline-teal rounded-pill px-3 mt-2 mt-sm-0">
+                <a href="courts.php" class="btn btn-outline-teal rounded-pill px-3 mt-2 mt-sm-0">
                     Xem tất cả sân <i class="fa-solid fa-arrow-right ms-1"></i>
                 </a>
             </div>
 
-            <!-- Swiper Carousel -->
+            <!-- Swiper Carousel — slides sẽ được render bởi JS/AJAX -->
             <div class="swiper featuredCourtsSwiper pb-5" data-aos="fade-up">
                 <div class="swiper-wrapper" id="featuredCourtsWrapper">
-                    <!-- Sân 1 -->
+                    <!-- Loading placeholder -->
                     <div class="swiper-slide">
-                        <div class="court-card">
-                            <div class="court-img-wrapper">
-                                <img src="https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop" alt="Cầu Lông Quận 1 – Lê Thánh Tôn Sport" class="court-img" loading="lazy">
-                                <div class="court-badge-price">100.000 đ <span class="small opacity-75">/ giờ</span></div>
-                            </div>
-                            <div class="p-3 d-flex flex-column flex-grow-1">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="badge bg-teal-subtle text-teal">
-                                        <i class="fa-solid fa-location-dot me-1"></i>Quận 1
-                                    </span>
-                                    <div class="small text-warning fw-bold">
-                                        <i class="fa-solid fa-star me-1"></i>4.8
-                                        <span class="text-muted fw-normal">(64)</span>
-                                    </div>
-                                </div>
-                                <h5 class="fw-bold mb-2 text-truncate">Cầu Lông Quận 1 – Lê Thánh Tôn Sport</h5>
-                                <p class="text-muted small mb-3 flex-grow-1 line-clamp-2">Tổ hợp sân cầu lông hiện đại ngay trung tâm Quận 1, 6 sân thảm tiêu chuẩn BWF, hệ thống chiếu sáng LED chống lóa...</p>
-                                <div class="d-flex gap-2">
-                                    <a href="court-detail.html?id=1" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">Chi tiết</a>
-                                    <a href="booking.html?court_id=1" class="btn btn-teal btn-sm rounded-pill flex-grow-1 fw-bold">Đặt sân ngay</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Sân 2 -->
-                    <div class="swiper-slide">
-                        <div class="court-card">
-                            <div class="court-img-wrapper">
-                                <img src="https://images.unsplash.com/photo-1521537634581-0dced2fee2ef?w=800&auto=format&fit=crop" alt="CLB Cầu Lông Bình Thạnh – Arena Xô Viết" class="court-img" loading="lazy">
-                                <div class="court-badge-price">80.000 đ <span class="small opacity-75">/ giờ</span></div>
-                            </div>
-                            <div class="p-3 d-flex flex-column flex-grow-1">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="badge bg-teal-subtle text-teal">
-                                        <i class="fa-solid fa-location-dot me-1"></i>Bình Thạnh
-                                    </span>
-                                    <div class="small text-warning fw-bold">
-                                        <i class="fa-solid fa-star me-1"></i>4.7
-                                        <span class="text-muted fw-normal">(89)</span>
-                                    </div>
-                                </div>
-                                <h5 class="fw-bold mb-2 text-truncate">CLB Cầu Lông Bình Thạnh – Arena Xô Viết</h5>
-                                <p class="text-muted small mb-3 flex-grow-1 line-clamp-2">Sân cầu lông quy mô lớn với 8 sân thảm Yonex cao cấp, dịch vụ căng vợt điện tử lấy ngay trong 30 phút...</p>
-                                <div class="d-flex gap-2">
-                                    <a href="court-detail.html?id=2" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">Chi tiết</a>
-                                    <a href="booking.html?court_id=2" class="btn btn-teal btn-sm rounded-pill flex-grow-1 fw-bold">Đặt sân ngay</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Sân 3 -->
-                    <div class="swiper-slide">
-                        <div class="court-card">
-                            <div class="court-img-wrapper">
-                                <img src="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=800&auto=format&fit=crop" alt="Trung Tâm Thể Thao Tân Bình – TBSport" class="court-img" loading="lazy">
-                                <div class="court-badge-price">75.000 đ <span class="small opacity-75">/ giờ</span></div>
-                            </div>
-                            <div class="p-3 d-flex flex-column flex-grow-1">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="badge bg-teal-subtle text-teal">
-                                        <i class="fa-solid fa-location-dot me-1"></i>Tân Bình
-                                    </span>
-                                    <div class="small text-warning fw-bold">
-                                        <i class="fa-solid fa-star me-1"></i>4.6
-                                        <span class="text-muted fw-normal">(52)</span>
-                                    </div>
-                                </div>
-                                <h5 class="fw-bold mb-2 text-truncate">Trung Tâm Thể Thao Tân Bình – TBSport</h5>
-                                <p class="text-muted small mb-3 flex-grow-1 line-clamp-2">Cụm 10 sân tiêu chuẩn quốc tế, bãi đỗ xe ô tô rộng rãi, phòng thay đồ hiện đại có tắm nước nóng...</p>
-                                <div class="d-flex gap-2">
-                                    <a href="court-detail.html?id=3" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">Chi tiết</a>
-                                    <a href="booking.html?court_id=3" class="btn btn-teal btn-sm rounded-pill flex-grow-1 fw-bold">Đặt sân ngay</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Sân 4 -->
-                    <div class="swiper-slide">
-                        <div class="court-card">
-                            <div class="court-img-wrapper">
-                                <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop" alt="Sân Cầu Lông Gò Vấp – GV Arena" class="court-img" loading="lazy">
-                                <div class="court-badge-price">70.000 đ <span class="small opacity-75">/ giờ</span></div>
-                            </div>
-                            <div class="p-3 d-flex flex-column flex-grow-1">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="badge bg-teal-subtle text-teal">
-                                        <i class="fa-solid fa-location-dot me-1"></i>Gò Vấp
-                                    </span>
-                                    <div class="small text-warning fw-bold">
-                                        <i class="fa-solid fa-star me-1"></i>4.5
-                                        <span class="text-muted fw-normal">(41)</span>
-                                    </div>
-                                </div>
-                                <h5 class="fw-bold mb-2 text-truncate">Sân Cầu Lông Gò Vấp – GV Arena</h5>
-                                <p class="text-muted small mb-3 flex-grow-1 line-clamp-2">Sân cầu lông giá sinh viên chất lượng cao, thảm PVC chống trơn trượt đạt chuẩn, quầy nước giải khát đầy đủ...</p>
-                                <div class="d-flex gap-2">
-                                    <a href="court-detail.html?id=4" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">Chi tiết</a>
-                                    <a href="booking.html?court_id=4" class="btn btn-teal btn-sm rounded-pill flex-grow-1 fw-bold">Đặt sân ngay</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Sân 5 -->
-                    <div class="swiper-slide">
-                        <div class="court-card">
-                            <div class="court-img-wrapper">
-                                <img src="https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=800&auto=format&fit=crop" alt="Cầu Lông Quận 7 – Phú Mỹ Hưng Sport" class="court-img" loading="lazy">
-                                <div class="court-badge-price">120.000 đ <span class="small opacity-75">/ giờ</span></div>
-                            </div>
-                            <div class="p-3 d-flex flex-column flex-grow-1">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="badge bg-teal-subtle text-teal">
-                                        <i class="fa-solid fa-location-dot me-1"></i>Quận 7
-                                    </span>
-                                    <div class="small text-warning fw-bold">
-                                        <i class="fa-solid fa-star me-1"></i>4.9
-                                        <span class="text-muted fw-normal">(112)</span>
-                                    </div>
-                                </div>
-                                <h5 class="fw-bold mb-2 text-truncate">Cầu Lông Quận 7 – Phú Mỹ Hưng Sport</h5>
-                                <p class="text-muted small mb-3 flex-grow-1 line-clamp-2">Tổ hợp thể thao cao cấp tại khu đô thị Phú Mỹ Hưng, trang bị máy lạnh 100%, sàn gỗ giảm chấn...</p>
-                                <div class="d-flex gap-2">
-                                    <a href="court-detail.html?id=5" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">Chi tiết</a>
-                                    <a href="booking.html?court_id=5" class="btn btn-teal btn-sm rounded-pill flex-grow-1 fw-bold">Đặt sân ngay</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Sân 6 -->
-                    <div class="swiper-slide">
-                        <div class="court-card">
-                            <div class="court-img-wrapper">
-                                <img src="https://images.unsplash.com/photo-1519766304817-4f37bda74a29?w=800&auto=format&fit=crop" alt="CLB Thể Thao Thủ Đức – ThủĐức Arena" class="court-img" loading="lazy">
-                                <div class="court-badge-price">65.000 đ <span class="small opacity-75">/ giờ</span></div>
-                            </div>
-                            <div class="p-3 d-flex flex-column flex-grow-1">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="badge bg-teal-subtle text-teal">
-                                        <i class="fa-solid fa-location-dot me-1"></i>TP. Thủ Đức
-                                    </span>
-                                    <div class="small text-warning fw-bold">
-                                        <i class="fa-solid fa-star me-1"></i>4.4
-                                        <span class="text-muted fw-normal">(38)</span>
-                                    </div>
-                                </div>
-                                <h5 class="fw-bold mb-2 text-truncate">CLB Thể Thao Thủ Đức – ThủĐức Arena</h5>
-                                <p class="text-muted small mb-3 flex-grow-1 line-clamp-2">Cụm sân cầu lông quy mô lớn tại khu vực Làng Đại Học, thoáng mát, giá hợp lý, thích hợp cho giải đấu phong trào...</p>
-                                <div class="d-flex gap-2">
-                                    <a href="court-detail.html?id=6" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">Chi tiết</a>
-                                    <a href="booking.html?court_id=6" class="btn btn-teal btn-sm rounded-pill flex-grow-1 fw-bold">Đặt sân ngay</a>
-                                </div>
-                            </div>
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-teal" role="status"></div>
+                            <div class="mt-2 text-muted small">Đang tải sân nổi bật...</div>
                         </div>
                     </div>
                 </div>
@@ -376,7 +220,7 @@
                     <span class="text-teal fw-bold text-uppercase small">Cộng Đồng GODMINTON</span>
                     <h2 class="fw-extrabold mb-0">Khám Phá</h2>
                 </div>
-                <a href="news.html" class="btn btn-outline-teal rounded-pill px-3 mt-2 mt-sm-0">
+                <a href="news.php" class="btn btn-outline-teal rounded-pill px-3 mt-2 mt-sm-0">
                     Xem tất cả <i class="fa-solid fa-arrow-right ms-1"></i>
                 </a>
             </div>
@@ -436,12 +280,12 @@
                 <div class="col-lg-2 col-md-6">
                     <h6 class="text-white fw-bold mb-3">Liên Kết Nhanh</h6>
                     <ul class="list-unstyled footer-links">
-                        <li><a href="index.html">Trang chủ</a></li>
-                        <li><a href="courts.html">Tìm kiếm sân</a></li>
-                        <li><a href="profile.html">Trang cá nhân</a></li>
-                        <li><a href="admin-dashboard.html" class="text-warning fw-bold"><i class="fa-solid fa-gauge-high me-1"></i>Kênh Quản trị Admin</a></li>
-                        <li><a href="news.html">Tin tức - Giải đấu</a></li>
-                        <li><a href="contact.html">Hỗ trợ khách hàng</a></li>
+                        <li><a href="index.php">Trang chủ</a></li>
+                        <li><a href="courts.php">Tìm kiếm sân</a></li>
+                        <li><a href="profile.php">Trang cá nhân</a></li>
+                        <li><a href="admin-dashboard.php" class="text-warning fw-bold"><i class="fa-solid fa-gauge-high me-1"></i>Kênh Quản trị Admin</a></li>
+                        <li><a href="news.php">Tin tức - Giải đấu</a></li>
+                        <li><a href="contact.php">Hỗ trợ khách hàng</a></li>
                     </ul>
                 </div>
 
@@ -479,7 +323,7 @@
                 <div class="d-flex gap-3 mt-2 mt-md-0">
                     <span class="badge bg-dark border border-secondary text-secondary">Vanilla HTML/JS</span>
                     <span class="badge bg-dark border border-secondary text-secondary">Bootstrap 5.3</span>
-                    <span class="badge bg-dark border border-secondary text-secondary">LocalStorage Mock</span>
+                    <span class="badge bg-dark border border-secondary text-secondary">PHP + MySQL (AJAX)</span>
                 </div>
             </div>
         </div>
@@ -493,18 +337,107 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Mock Data -->
+    <!-- Mock Data (giữ lại cho các trang chưa migrate) -->
     <script src="assets/js/mock-data.js"></script>
     <!-- App JS -->
     <script src="assets/js/app.js"></script>
 
     <script src="assets/js/index_explore_dt.js"></script>
+
+    <!-- ===== AJAX: Load Featured Courts & Home Search ===== -->
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // --- Load wards dropdown ---
+        try {
+            const wardRes  = await fetch('api/wards.php');
+            const wardJson = await wardRes.json();
+            if (wardJson.status === 'success') {
+                const sel = document.getElementById('homeDistrict');
+                wardJson.data.forEach(w => {
+                    const opt = document.createElement('option');
+                    opt.value = w.id;
+                    opt.textContent = `${w.name} (${w.old_area_label})`;
+                    sel.appendChild(opt);
+                });
+            }
+        } catch (e) { console.warn('Không tải được danh sách phường:', e); }
+
+        // --- Load featured courts via AJAX ---
+        try {
+            const res  = await fetch('api/courts.php');
+            const json = await res.json();
+
+            if (json.status === 'success' && json.data.length > 0) {
+                const wrapper = document.getElementById('featuredCourtsWrapper');
+                const formatVND = (amt) => new Intl.NumberFormat('vi-VN').format(amt) + ' đ';
+
+                wrapper.innerHTML = json.data.map(court => `
+                    <div class="swiper-slide">
+                        <div class="court-card">
+                            <div class="court-img-wrapper">
+                                <img src="${court.image_url}" alt="${court.name}" class="court-img" loading="lazy">
+                                <div class="court-badge-price">${formatVND(court.price_per_hour)} <span class="small opacity-75">/ giờ</span></div>
+                            </div>
+                            <div class="p-3 d-flex flex-column flex-grow-1">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="badge bg-teal-subtle text-teal">
+                                        <i class="fa-solid fa-location-dot me-1"></i>${court.old_area_label || court.ward_name}
+                                    </span>
+                                </div>
+                                <h5 class="fw-bold mb-2 text-truncate">${court.name}</h5>
+                                <p class="text-muted small mb-3 flex-grow-1 line-clamp-2">${(court.description || '').substring(0, 120)}...</p>
+                                <div class="d-flex gap-2">
+                                    <a href="court-detail.php?id=${court.id}" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">Chi tiết</a>
+                                    <a href="booking.php?court_id=${court.id}" class="btn btn-teal btn-sm rounded-pill flex-grow-1 fw-bold">Đặt sân ngay</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`).join('');
+
+                // Khởi tạo Swiper sau khi có slides
+                new Swiper('.featuredCourtsSwiper', {
+                    slidesPerView: 1,
+                    spaceBetween: 20,
+                    loop: json.data.length > 3,
+                    autoplay: { delay: 4000, disableOnInteraction: false },
+                    pagination: { el: '.swiper-pagination', clickable: true },
+                    breakpoints: {
+                        576:  { slidesPerView: 2 },
+                        992:  { slidesPerView: 3 },
+                        1200: { slidesPerView: 3 }
+                    }
+                });
+            }
+        } catch (err) {
+            console.error('Lỗi tải sân nổi bật:', err);
+            document.getElementById('featuredCourtsWrapper').innerHTML = `
+                <div class="swiper-slide">
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-triangle-exclamation text-danger fs-3"></i>
+                        <div class="mt-2 text-muted small">Không thể tải dữ liệu sân. Kiểm tra kết nối CSDL.</div>
+                    </div>
+                </div>`;
+        }
+
+        // --- Home Search Form ---
+        document.getElementById('homeSearchForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const params = new URLSearchParams();
+            const ward    = document.getElementById('homeDistrict').value;
+            const price   = document.getElementById('homeMaxPrice').value;
+            const amenity = document.getElementById('homeAmenity').value;
+            if (ward)    params.set('ward_id', ward);
+            if (price)   params.set('max_price', price);
+            if (amenity) params.set('amenity', amenity);
+            window.location.href = `courts.php?${params.toString()}`;
+        });
+    });
+    </script>
+
     <!-- Bottom Nav -->
     <script src="assets/js/bottom-nav.js"></script>
 </body>
 </html>
-
-
 
 
 

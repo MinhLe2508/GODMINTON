@@ -17,7 +17,7 @@
     <!-- App Brand Header (Khung Cố Định) -->
     <header class="app-brand-head">
         <div class="container text-center">
-            <a href="index.html" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
+            <a href="index.php" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
                 <img src="assets/img/logo-teal.svg" alt="GODMINTON" class="brand-logo-img">
             </a>
         </div>

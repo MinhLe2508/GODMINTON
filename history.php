@@ -21,7 +21,7 @@
     <!-- App Brand Header (Khung Cố Định) -->
     <header class="app-brand-head">
         <div class="container text-center">
-            <a href="index.html" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
+            <a href="index.php" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
                 <img src="assets/img/logo-teal.svg" alt="GODMINTON" class="brand-logo-img">
             </a>
         </div>
@@ -35,7 +35,7 @@
                     <p class="text-muted small mb-0">Theo dõi trạng thái đơn đặt sân, thông tin khung giờ và thanh toán
                     </p>
                 </div>
-                <a href="courts.html" class="btn btn-teal rounded-pill px-4 mt-2 mt-sm-0">
+                <a href="courts.php" class="btn btn-teal rounded-pill px-4 mt-2 mt-sm-0">
                     <i class="fa-solid fa-plus me-1"></i> Đặt Sân Mới
                 </a>
             </div>

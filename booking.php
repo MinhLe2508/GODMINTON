@@ -18,7 +18,7 @@
     <!-- App Brand Header (Khung Cố Định) -->
     <header class="app-brand-head">
         <div class="container text-center">
-            <a href="index.html" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
+            <a href="index.php" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
                 <img src="assets/img/logo-teal.svg" alt="GODMINTON" class="brand-logo-img">
             </a>
         </div>
@@ -48,7 +48,7 @@
                 </div>
             </div>
             <div class="d-flex gap-2">
-                <a href="court-detail.html?id=1" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <a href="court-detail.php?id=1" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                     <i class="fa-solid fa-circle-info me-1"></i>Thông tin sân
                 </a>
                 <div class="dropdown">
@@ -158,7 +158,7 @@
                 <button class="btn btn-light btn-sm rounded-pill px-3 text-teal fw-bold" id="btnCancelSel">
                     <i class="fa-solid fa-xmark me-1"></i>Huỷ chọn
                 </button>
-                <a id="btnGoPayment" href="payment.html" class="btn btn-light fw-bold rounded-pill px-4" style="color:var(--brand-teal);">
+                <a id="btnGoPayment" href="payment.php" class="btn btn-light fw-bold rounded-pill px-4" style="color:var(--brand-teal);">
                     <i class="fa-solid fa-lock me-2"></i>Đặt Cọc & Thanh Toán
                 </a>
             </div>

@@ -6,12 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const user = MockDB.getUser();
     if (!user) {
-        window.location.href = 'login.html';
+        window.location.href = 'auth.php';
         return;
     }
 
     if (!slotId) {
-        window.location.href = 'courts.html';
+        window.location.href = 'courts.php';
         return;
     }
 
@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 Khung giờ bạn chọn đã quá thời hạn 5 phút giữ chỗ hoặc chưa được giữ đúng quy trình.
             </p>
             <div class="d-flex justify-content-center gap-2 mt-3">
-                <a href="booking.html?court_id=${courtId}" class="btn btn-teal rounded-pill px-4">Chọn lại khung giờ</a>
-                <a href="courts.html" class="btn btn-outline-secondary rounded-pill px-4">Danh sách sân</a>
+                <a href="booking.php?court_id=${courtId}" class="btn btn-teal rounded-pill px-4">Chọn lại khung giờ</a>
+                <a href="courts.php" class="btn btn-outline-secondary rounded-pill px-4">Danh sách sân</a>
             </div>
         </div>`;
         return;
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3 class="fw-extrabold mb-1">Xác Nhận Đặt Sân & Đặt Cọc</h3>
             <p class="text-muted small mb-0">Hoàn tất thủ tục giữ sân và thanh toán cọc bảo đảm</p>
         </div>
-        <a href="booking.html?court_id=${courtId}&date=${dateStr}" class="btn btn-outline-secondary btn-sm rounded-pill">
+        <a href="booking.php?court_id=${courtId}&date=${dateStr}" class="btn btn-outline-secondary btn-sm rounded-pill">
             <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
         </a>
     </div>
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     confirmButtonText: 'Xem lịch sử đặt sân',
                     confirmButtonColor: '#0d9488'
                 }).then(() => {
-                    window.location.href = 'history.html';
+                    window.location.href = 'history.php';
                 });
             } else {
                 Swal.fire({
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (confirmResult.isConfirmed) {
             MockDB.cancelSlot(courtId, dateStr, slotId);
-            window.location.href = `booking.html?court_id=${courtId}`;
+            window.location.href = `booking.php?court_id=${courtId}`;
         }
     });
 });

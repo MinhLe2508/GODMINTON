@@ -30,7 +30,7 @@
         </nav>
         <div class="admin-sidebar-footer">
             <div id="adminUserBox" class="mb-2"></div>
-            <a href="index.html" class="admin-back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại trang khách</a>
+            <a href="index.php" class="admin-back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại trang khách</a>
         </div>
     </aside>
     <div class="admin-overlay" id="adminOverlay"></div>
@@ -212,7 +212,7 @@ function renderCourts() {
             <td><span class="badge ${c.status === 'active' ? 'bg-success' : 'bg-secondary'}">${c.status === 'active' ? 'Hoạt động' : 'Tạm ngưng'}</span></td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-teal rounded-pill me-1" onclick="openCourtModal(${c.id})"><i class="fa-solid fa-pen"></i></button>
-                <a class="btn btn-sm btn-outline-secondary rounded-pill me-1" href="admin-slots.html?court=${c.id}" title="Quản lý khung giờ"><i class="fa-solid fa-clock"></i></a>
+                <a class="btn btn-sm btn-outline-secondary rounded-pill me-1" href="admin-slots.php?court=${c.id}" title="Quản lý khung giờ"><i class="fa-solid fa-clock"></i></a>
                 <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="deleteCourt(${c.id})"><i class="fa-solid fa-trash"></i></button>
             </td>
         </tr>`).join('');

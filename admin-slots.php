@@ -30,7 +30,7 @@
         </nav>
         <div class="admin-sidebar-footer">
             <div id="adminUserBox" class="mb-2"></div>
-            <a href="index.html" class="admin-back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại trang khách</a>
+            <a href="index.php" class="admin-back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại trang khách</a>
         </div>
     </aside>
     <div class="admin-overlay" id="adminOverlay"></div>

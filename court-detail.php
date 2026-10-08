@@ -18,7 +18,7 @@
     <!-- App Brand Header (Khung Cố Định) -->
     <header class="app-brand-head">
         <div class="container text-center">
-            <a href="index.html" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
+            <a href="index.php" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
                 <img src="assets/img/logo-teal.svg" alt="GODMINTON" class="brand-logo-img">
             </a>
         </div>
@@ -47,9 +47,9 @@
                 <div class="col-lg-2 col-md-6">
                     <h6 class="text-white fw-bold mb-3">Liên Kết Nhanh</h6>
                     <ul class="list-unstyled footer-links">
-                        <li><a href="index.html">Trang chủ</a></li>
-                        <li><a href="courts.html">Tìm kiếm sân</a></li>
-                        <li><a href="contact.html">Hỗ trợ</a></li>
+                        <li><a href="index.php">Trang chủ</a></li>
+                        <li><a href="courts.php">Tìm kiếm sân</a></li>
+                        <li><a href="contact.php">Hỗ trợ</a></li>
                     </ul>
                 </div>
                 <div class="col-lg-3 col-md-6">

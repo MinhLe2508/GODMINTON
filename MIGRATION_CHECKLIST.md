@@ -55,9 +55,9 @@
 
 | # | Trang | Script JS nạp | Lời gọi MockDB bị ảnh hưởng | API tương ứng cần nối | Trạng thái |
 |---|---|---|---|---|---|
-| 1 | `index.php` | `mock-data.js`, `app.js`, `index_explore_dt.js`, `bottom-nav.js` | `getUser` (3), `getCourts` (1), `getNews` (1), `logout` (2) | `api/courts.php`, `api/news.php` | `[ ]` |
-| 2 | `courts.php` | `mock-data.js`, `app.js`, `courts.js`, `bottom-nav.js` | `getCourts` (1), `formatVND` (1), `getUser` (3), `logout` (2) | `api/courts.php` | `[ ]` |
-| 3 | `court-detail.php` | `mock-data.js`, `app.js`, `court_detail.js`, `bottom-nav.js` | `getCourtById` (1), `getUser` (3), `logout` (2) | `api/court-detail.php?id=` | `[ ]` |
+| 1 | `index.php` | `mock-data.js`, `app.js`, `index_explore_dt.js`, `bottom-nav.js` | `getUser` (3), `getCourts` (1), `getNews` (1), `logout` (2) | `api/courts.php`, `api/news.php` | `[x]` |
+| 2 | `courts.php` | `mock-data.js`, `app.js`, `courts.js`, `bottom-nav.js` | `getCourts` (1), `formatVND` (1), `getUser` (3), `logout` (2) | `api/courts.php` | `[x]` |
+| 3 | `court-detail.php` | `mock-data.js`, `app.js`, `court_detail.js`, `bottom-nav.js` | `getCourtById` (1), `getUser` (3), `logout` (2) | `api/court-detail.php?id=` | `[x]` |
 | 4 | `booking.php` | `mock-data.js`, `app.js`, `calendar_booking.js`, `bottom-nav.js` | `getUser` (2), `logout` (2), comment reload MockDB L304 | `api/slots.php?court_id=&date=` | `[ ]` |
 | 5 | `confirm.php` | `mock-data.js`, `app.js`, `confirm.js`, `bottom-nav.js` | `getUser` (3), `getSlotById` (1), `formatVND` (4), `confirmBooking` (1), `cancelSlot` (1), `logout` (2) | `api/slots.php`, `api/confirm.php`, `api/hold.php` | `[ ]` |
 | 6 | `payment.php` | `mock-data.js`, `app.js`, `payment.js`, `bottom-nav.js` | `formatVND` (1), `getUser` (3), `getCourts` (1), `createBooking` (1), `logout` (2) | `api/courts.php`, `api/confirm.php` | `[ ]` |
@@ -100,14 +100,14 @@
 ---
 
 ## 2. Danh sách & Chi tiết sân (Minh, Tuần 1)
-
+ 
 API mục tiêu: `api/courts.php` (GET hỗ trợ filter `search`, `district`, `max_price`, `amenities`, `limit`), `api/court-detail.php?id=` (GET).
 
-- [ ] `assets/js/courts.js:170` — `renderCourts()` gọi `MockDB.getCourts()` rồi lọc ở client → chuyển sang `fetch('api/courts.php?...')`.
-- [ ] `assets/js/courts.js:232` — `MockDB.formatVND(court.min_price)` → đổi sang dùng `formatVND` từ `utils.js`.
-- [ ] `assets/js/index_explore_dt.js:132` — `getCourts()` lấy danh sách sân nổi bật; gỡ bỏ fallback `INITIAL_COURTS` → gọi `api/courts.php?limit=6`.
-- [ ] `assets/js/payment.js:39` — gọi `getCourts()` chỉ để tìm thông tin 1 sân → đổi sang `api/court-detail.php?id=`.
-- [ ] `assets/js/court_detail.js:8` — `MockDB.getCourtById(courtId)` → đổi sang `fetch('api/court-detail.php?id=' + courtId)`. Xử lý chuyển hướng nếu sân không tồn tại.
+- [x] `assets/js/courts.js` — `renderCourts()` gọi `MockDB.getCourts()` rồi lọc ở client → chuyển sang `fetch('api/courts.php?...')`.
+- [x] `assets/js/courts.js` — `MockDB.formatVND(court.min_price)` → đổi sang dùng `formatVND` chuẩn JS.
+- [x] `index.php` / `assets/js/index_explore_dt.js` — lấy danh sách sân nổi bật qua AJAX `fetch('api/courts.php')`.
+- [x] `api/wards.php` — API lấy danh sách phường động đổ vào dropdown lọc ở `index.php` và `courts.php`.
+- [x] `assets/js/court_detail.js` — `MockDB.getCourtById(courtId)` → đổi sang `fetch('api/court-detail.php?id=' + courtId)`. Xử lý chuyển hướng nếu sân không tồn tại.
 
 ---
 

@@ -8,7 +8,7 @@ const EXPLORE_DATA = [
         desc: 'Giải đấu phong trào cho mọi trình độ. Đăng ký trước 25/09 để nhận ưu đãi.',
         author: 'Cầu Lông Quận 7 – Phú Mỹ Hưng Sport', authorInit: 'C',
         date: '28/09/2026', meta: '🔥 Còn 12 suất',
-        ctaText: 'Đăng ký ngay', ctaUrl: 'news.html'
+        ctaText: 'Đăng ký ngay', ctaUrl: 'news.php'
     },
     {
         type: 'membership', tag: 'Hội viên', tagColor: '#f59e0b', tagBg: 'rgba(245,158,11,0.1)',
@@ -18,7 +18,7 @@ const EXPLORE_DATA = [
         desc: 'Đặt sân không giới hạn trong tháng với giá cố định. Bao gồm 2 giờ miễn phí mỗi tuần.',
         author: 'GODMINTON', authorInit: 'G',
         date: 'Còn 8 ngày', meta: '⭐ Bán chạy nhất',
-        ctaText: 'Mua gói ngay', ctaUrl: 'courts.html'
+        ctaText: 'Mua gói ngay', ctaUrl: 'courts.php'
     },
     {
         type: 'notice', tag: 'Thông báo', tagColor: '#ef4444', tagBg: 'rgba(239,68,68,0.1)',
@@ -28,7 +28,7 @@ const EXPLORE_DATA = [
         desc: 'Sân 1 trống khung 17:00–18:00 và 20:30–21:30. Đặt ngay trước khi hết chỗ!',
         author: 'CLB Thể Thao Thủ Đức', authorInit: 'Đ',
         date: 'Hôm nay', meta: '⏱ Cập nhật 5 phút trước',
-        ctaText: 'Đặt ngay', ctaUrl: 'booking.html'
+        ctaText: 'Đặt ngay', ctaUrl: 'booking.php'
     },
     {
         type: 'class', tag: 'Khóa học', tagColor: '#0ea5e9', tagBg: 'rgba(14,165,233,0.1)',
@@ -38,7 +38,7 @@ const EXPLORE_DATA = [
         desc: '12 buổi học với HLV Nguyễn Tiến Minh (cựu tuyển thủ quốc gia). Sáng T2-T4-T6.',
         author: 'HLV Nguyễn Tiến Minh', authorInit: 'M',
         date: 'Khai giảng 01/10', meta: '👥 8/12 học viên',
-        ctaText: 'Đăng ký học', ctaUrl: 'news.html'
+        ctaText: 'Đăng ký học', ctaUrl: 'news.php'
     },
     {
         type: 'promo', tag: 'Ưu đãi', tagColor: '#10b981', tagBg: 'rgba(16,185,129,0.1)',
@@ -48,7 +48,7 @@ const EXPLORE_DATA = [
         desc: 'Nhập mã GODMINTON20 khi đặt sân lần đầu để được giảm ngay 20% tổng hoá đơn.',
         author: 'GODMINTON', authorInit: 'G',
         date: 'Hết hạn 31/10', meta: '🎁 Dùng 1 lần/tài khoản',
-        ctaText: 'Dùng mã ngay', ctaUrl: 'courts.html'
+        ctaText: 'Dùng mã ngay', ctaUrl: 'courts.php'
     },
     {
         type: 'pass', tag: 'Pass sân', tagColor: '#8b5cf6', tagBg: 'rgba(139,92,246,0.1)',
@@ -58,7 +58,7 @@ const EXPLORE_DATA = [
         desc: 'Mua trước 10 suất đặt sân tại Thanh Xuân Pro với giá ưu đãi, dùng bất kỳ khung giờ nào trong 3 tháng.',
         author: 'Thanh Xuân Pro', authorInit: 'T',
         date: 'Còn hiệu lực', meta: '✅ Còn 5 pass',
-        ctaText: 'Mua pass', ctaUrl: 'courts.html'
+        ctaText: 'Mua pass', ctaUrl: 'courts.php'
     }
 ];
 
@@ -153,8 +153,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h5 class="fw-bold mb-2 text-truncate">${court.name}</h5>
                     <p class="text-muted small mb-3 flex-grow-1 line-clamp-2">${court.description.substring(0, 110)}...</p>
                     <div class="d-flex gap-2">
-                        <a href="court-detail.html?id=${court.id}" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">Chi tiết</a>
-                        <a href="booking.html?court_id=${court.id}" class="btn btn-teal btn-sm rounded-pill flex-grow-1 fw-bold">Đặt sân ngay</a>
+                        <a href="court-detail.php?id=${court.id}" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">Chi tiết</a>
+                        <a href="booking.php?court_id=${court.id}" class="btn btn-teal btn-sm rounded-pill flex-grow-1 fw-bold">Đặt sân ngay</a>
                     </div>
                 </div>
             </div>
@@ -168,26 +168,26 @@ document.addEventListener('DOMContentLoaded', () => {
             spaceBetween: 20,
             pagination: { el: '.swiper-pagination', clickable: true },
             breakpoints: {
-                640: { slidesPerView: 2, spaceBetween: 20 },
+                640: { slidesPerView: 2, spaceTone: 20 },
                 1024: { slidesPerView: 3, spaceBetween: 24 }
             }
         });
     }
 
     // Render News
-    const news = MockDB.getNews().slice(0, 3);
+    const news = (typeof MockDB !== 'undefined' && MockDB.getNews) ? MockDB.getNews().slice(0, 3) : [];
     const newsContainer = document.getElementById('homeNewsContainer');
-    if (newsContainer) {
+    if (newsContainer && news.length) {
         newsContainer.innerHTML = news.map(n => `
         <div class="col-md-4" data-aos="fade-up">
             <div class="card h-100 border rounded-4 overflow-hidden shadow-sm">
                 <img src="${n.image_url}" class="card-img-top" style="height: 180px; object-fit: cover;" alt="${n.title}">
                 <div class="card-body d-flex flex-column">
                     <h6 class="card-title fw-bold mb-2">
-                        <a href="news.html#news-${n.id}" class="text-decoration-none text-body">${n.title}</a>
+                        <a href="news.php#news-${n.id}" class="text-decoration-none text-body">${n.title}</a>
                     </h6>
                     <p class="card-text text-muted small flex-grow-1">${n.summary.substring(0, 95)}...</p>
-                    <a href="news.html#news-${n.id}" class="text-teal fw-bold small text-decoration-none mt-2">
+                    <a href="news.php#news-${n.id}" class="text-teal fw-bold small text-decoration-none mt-2">
                         Đọc tiếp <i class="fa-solid fa-chevron-right ms-1"></i>
                     </a>
                 </div>
@@ -201,8 +201,8 @@ function handleHomeSearch(e) {
     const district = document.getElementById('homeDistrict').value;
     const maxPrice = document.getElementById('homeMaxPrice').value;
     const amenity = document.getElementById('homeAmenity').value;
-    let url = 'courts.html?';
-    if (district) url += `district=${encodeURIComponent(district)}&`;
+    let url = 'courts.php?';
+    if (district) url += `ward_id=${encodeURIComponent(district)}&`;
     if (maxPrice) url += `max_price=${maxPrice}&`;
     if (amenity) url += `amenity=${amenity}&`;
     if (typeof window.godmintonNavigate === 'function') {

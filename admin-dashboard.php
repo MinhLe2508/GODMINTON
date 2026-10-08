@@ -31,7 +31,7 @@
         </nav>
         <div class="admin-sidebar-footer">
             <div id="adminUserBox" class="mb-2"></div>
-            <a href="index.html" class="admin-back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại trang khách</a>
+            <a href="index.php" class="admin-back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại trang khách</a>
         </div>
     </aside>
     <div class="admin-overlay" id="adminOverlay"></div>
@@ -47,7 +47,7 @@
             <button id="themeToggle" class="btn btn-outline-secondary rounded-circle" style="width:40px;height:40px;" title="Chuyển giao diện sáng/tối">
                 <i class="fa-solid fa-moon"></i>
             </button>
-            <a href="admin-bookings.html" class="btn btn-teal rounded-pill px-3 fw-semibold d-none d-md-inline-flex">
+            <a href="admin-bookings.php" class="btn btn-teal rounded-pill px-3 fw-semibold d-none d-md-inline-flex">
                 <i class="fa-solid fa-clipboard-list me-1"></i> Xem đơn đặt
             </a>
         </header>
@@ -100,7 +100,7 @@
                     <div class="admin-panel h-100">
                         <div class="admin-panel-head">
                             <h2><i class="fa-solid fa-receipt text-teal me-2"></i>Đơn đặt gần đây</h2>
-                            <a href="admin-bookings.html" class="btn btn-sm btn-outline-teal rounded-pill">Xem tất cả</a>
+                            <a href="admin-bookings.php" class="btn btn-sm btn-outline-teal rounded-pill">Xem tất cả</a>
                         </div>
                         <div class="admin-panel-body p-0">
                             <div class="table-responsive">
@@ -129,7 +129,7 @@
                     <div class="admin-panel h-100">
                         <div class="admin-panel-head">
                             <h2><i class="fa-solid fa-layer-group text-teal me-2"></i>Sân của tôi</h2>
-                            <a href="admin-courts.html" class="btn btn-sm btn-outline-teal rounded-pill">Quản lý</a>
+                            <a href="admin-courts.php" class="btn btn-sm btn-outline-teal rounded-pill">Quản lý</a>
                         </div>
                         <div class="admin-panel-body">
                             <div id="myCourtsList" class="d-flex flex-column gap-3"></div>

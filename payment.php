@@ -19,7 +19,7 @@
 <!-- App Brand Header (Khung Cố Định) -->
 <header class="app-brand-head">
     <div class="container text-center">
-        <a href="index.html" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
+        <a href="index.php" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
             <img src="assets/img/logo-teal.svg" alt="GODMINTON" class="brand-logo-img">
         </a>
     </div>
@@ -364,7 +364,7 @@
 
             <!-- Back link -->
             <div class="text-center">
-                <a href="booking.html" style="font-size:0.8rem; color:var(--text-secondary); text-decoration:none;">
+                <a href="booking.php" style="font-size:0.8rem; color:var(--text-secondary); text-decoration:none;">
                     <i class="fa-solid fa-arrow-left me-1"></i>Quay lại chọn khung giờ
                 </a>
             </div>
@@ -402,10 +402,10 @@
         </p>
 
         <div class="d-flex gap-3 justify-content-center flex-wrap">
-            <a href="history.html" class="btn btn-teal rounded-pill px-4 fw-bold">
+            <a href="history.php" class="btn btn-teal rounded-pill px-4 fw-bold">
                 <i class="fa-solid fa-calendar-check me-1"></i>Xem lịch đặt
             </a>
-            <a href="courts.html" class="btn btn-outline-secondary rounded-pill px-4">
+            <a href="courts.php" class="btn btn-outline-secondary rounded-pill px-4">
                 Đặt sân khác
             </a>
         </div>

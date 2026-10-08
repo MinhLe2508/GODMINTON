@@ -116,7 +116,7 @@
     <!-- App Brand Header -->
     <header class="app-brand-head">
         <div class="container text-center">
-            <a href="index.html" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
+            <a href="index.php" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
                 <img src="assets/img/logo-teal.svg" alt="GODMINTON" class="brand-logo-img">
             </a>
         </div>
@@ -129,7 +129,7 @@
             <!-- Breadcrumb -->
             <nav aria-label="breadcrumb" class="mb-4">
                 <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="index.html" class="text-decoration-none text-muted">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="index.php" class="text-decoration-none text-muted">Trang chủ</a></li>
                     <li class="breadcrumb-item active text-teal fw-bold" aria-current="page">Trang cá nhân</li>
                 </ol>
             </nav>
@@ -212,16 +212,16 @@
 
                         <!-- Quick actions -->
                         <div class="d-flex flex-column gap-2">
-                            <a href="courts.html" class="btn btn-teal rounded-pill w-100 fw-bold">
+                            <a href="courts.php" class="btn btn-teal rounded-pill w-100 fw-bold">
                                 <i class="fa-solid fa-plus me-1"></i> Đặt sân mới
                             </a>
-                            <a href="admin-dashboard.html" class="btn btn-outline-secondary rounded-pill w-100 fw-semibold text-start px-3">
+                            <a href="admin-dashboard.php" class="btn btn-outline-secondary rounded-pill w-100 fw-semibold text-start px-3">
                                 <i class="fa-solid fa-gauge-high me-2 text-warning"></i> Chuyển trang Admin
                             </a>
-                            <a href="login.html" class="btn btn-outline-secondary rounded-pill w-100 fw-semibold text-start px-3">
+                            <a href="auth.php" class="btn btn-outline-secondary rounded-pill w-100 fw-semibold text-start px-3">
                                 <i class="fa-solid fa-arrow-right-arrow-left me-2 text-primary"></i> Đổi tài khoản khác
                             </a>
-                            <button type="button" class="btn btn-outline-danger rounded-pill w-100 fw-semibold text-start px-3" onclick="if(confirm('Bạn có chắc chắn muốn đăng xuất không?')) { MockDB.logout(); window.location.href='login.html'; }">
+                            <button type="button" class="btn btn-outline-danger rounded-pill w-100 fw-semibold text-start px-3" onclick="if(confirm('Bạn có chắc chắn muốn đăng xuất không?')) { MockDB.logout(); window.location.href='auth.php'; }">
                                 <i class="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất tài khoản
                             </button>
                         </div>
@@ -318,7 +318,7 @@
                                         <h5 class="fw-bold mb-1"><i class="fa-solid fa-clock-rotate-left text-teal me-2"></i>Đơn Đặt Sân Của Tôi</h5>
                                         <p class="text-muted small mb-0">Theo dõi lịch trình thi đấu và trạng thái cọc slot</p>
                                     </div>
-                                    <a href="courts.html" class="btn btn-sm btn-teal rounded-pill px-3 fw-semibold">
+                                    <a href="courts.php" class="btn btn-sm btn-teal rounded-pill px-3 fw-semibold">
                                         <i class="fa-solid fa-plus me-1"></i> Đặt thêm sân
                                     </a>
                                 </div>

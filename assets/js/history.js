@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const user = MockDB.getUser();
     if (!user) {
-        window.location.href = 'login.html';
+        window.location.href = 'auth.php';
         return;
     }
 
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <h5 class="fw-bold">Bạn chưa có đơn đặt sân nào</h5>
             <p class="text-muted small">Hãy tìm kiếm sân cầu lông ưng ý và đặt ngay hôm nay!</p>
             <div>
-                <a href="courts.html" class="btn btn-teal rounded-pill px-4">Khám phá các sân</a>
+                <a href="courts.php" class="btn btn-teal rounded-pill px-4">Khám phá các sân</a>
             </div>
         </div>`;
             return;
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ? `<button class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="cancelBooking(${b.id})">
                                 <i class="fa-solid fa-xmark me-1"></i> Hủy đơn
                                 </button>`
-                    : `<a href="booking.html?court_id=${b.court_id}" class="btn btn-outline-teal btn-sm rounded-pill px-3">Đặt lại</a>`
+                    : `<a href="booking.php?court_id=${b.court_id}" class="btn btn-outline-teal btn-sm rounded-pill px-3">Đặt lại</a>`
                 }
                     </div>
                 </div>
