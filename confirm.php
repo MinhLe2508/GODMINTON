@@ -1,3 +1,11 @@
+<?php
+require_once __DIR__ . '/includes/auth-check.php';
+$currentUser = [
+    'id' => (int)$_SESSION['user_id'],
+    'name' => $_SESSION['name'] ?? '',
+    'role' => $_SESSION['role'] ?? ''
+];
+?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 <head>
@@ -11,6 +19,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
+    <script>
+        window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE); ?>;
+    </script>
 </head>
 <body>
 

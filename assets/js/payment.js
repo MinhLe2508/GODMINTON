@@ -1,71 +1,119 @@
 /* ================================================================
-   PAYMENT PAGE LOGIC
+   PAYMENT PAGE LOGIC - Real-time Multi-Slot API Version
+   GODMINTON — Tuần 2: Hỗ trợ 1 tiếng / 1.5 tiếng / 2 tiếng trở lên
    ================================================================ */
-const fmt = n => typeof MockDB?.formatVND === 'function' ? MockDB.formatVND(n) : n.toLocaleString('vi-VN') + 'đ';
+const fmt = n => new Intl.NumberFormat('vi-VN').format(n) + ' đ';
 
 // --- Booking state ---
 let booking = {
-    courtId: 1, date: '', start: '07:00', end: '08:30',
-    courtNum: 'Sân 2', pricePerHour: 80000,
-    duration: 1.5, method: 'vnpay',
+    courtId: 1, 
+    slotIds: [],
+    date: '', 
+    start: '07:00', 
+    end: '08:30',
+    courtNum: 'Thảm A1', 
+    courtName: 'Cầu Lông Quận 1 – Lê Thánh Tôn Sport',
+    pricePerHour: 100000,
+    duration: 1.5, 
+    method: 'vnpay',
     _base: 0, _fee: 0, _total: 0, _deposit: 0
 };
 
 /* ---- Init ---- */
-document.addEventListener('DOMContentLoaded', () => {
-    // Guard: redirect nếu chưa đăng nhập
-    const user = typeof MockDB !== 'undefined' ? MockDB.getUser() : null;
-    if (!user) { window.location.href = 'auth.php?redirect=payment.php'; return; }
-
-    // Pre-fill form
-    document.getElementById('billingName').value  = user.name  || '';
-    document.getElementById('billingEmail').value = user.email || '';
-    document.getElementById('billingPhone').value = user.phone || '';
-
-    // URL params
+document.addEventListener('DOMContentLoaded', async () => {
     const p = new URLSearchParams(window.location.search);
     booking.courtId  = parseInt(p.get('court_id'))  || 1;
     booking.date     = p.get('date')     || new Date().toISOString().split('T')[0];
     booking.start    = p.get('start')    || '07:00';
     booking.end      = p.get('end')      || '08:30';
-    booking.courtNum = p.get('court_num')|| 'Sân 2';
+    booking.courtNum = p.get('court_num')|| 'Thảm A1';
 
-    // Duration
-    const [sh, sm] = booking.start.split(':').map(Number);
-    const [eh, em] = booking.end.split(':').map(Number);
-    booking.duration = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
-
-    // Court info from MockDB
-    const courts = typeof MockDB !== 'undefined' ? MockDB.getCourts() : [];
-    const court  = courts.find(c => c.id === booking.courtId) || courts[0];
-    if (court) {
-        booking.pricePerHour = court.min_price || 80000;
-        document.getElementById('courtNameEl').textContent = court.name;
-        document.getElementById('courtAddrEl').innerHTML   =
-            `<i class="fa-solid fa-location-dot me-1"></i>${court.address || ''}`;
-        if (court.image_url) document.getElementById('courtHeroImg').src = court.image_url;
-        booking.courtName = court.name;
+    // Đọc slot_ids hoặc slot_id
+    if (p.get('slot_ids')) {
+        booking.slotIds = p.get('slot_ids').split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
+    } else if (p.get('slot_id')) {
+        const sid = parseInt(p.get('slot_id'));
+        if (sid > 0) booking.slotIds = [sid];
     }
 
-    // Date display
+    // 1. Nạp chi tiết các slots từ MySQL qua API
+    try {
+        const slotsRes = await fetch(`api/slots.php?court_id=${booking.courtId}&date=${booking.date}`);
+        const slotsJson = await slotsRes.json();
+        if (slotsJson.status === 'success' && slotsJson.data) {
+            let matchedSlots = [];
+            if (booking.slotIds.length > 0) {
+                matchedSlots = slotsJson.data.filter(s => booking.slotIds.includes(s.id));
+            } else {
+                // Nếu chưa có trong URL, tìm các slot user đang hold
+                matchedSlots = slotsJson.data.filter(s => s.is_my_hold);
+                if (matchedSlots.length > 0) {
+                    booking.slotIds = matchedSlots.map(s => s.id);
+                }
+            }
+
+            if (matchedSlots.length > 0) {
+                matchedSlots.sort((a, b) => a.start_time.localeCompare(b.start_time));
+                booking.start = matchedSlots[0].start_time;
+                booking.end = matchedSlots[matchedSlots.length - 1].end_time;
+                booking.courtNum = matchedSlots[0].sub_court_name;
+                booking.duration = matchedSlots.length * 0.5;
+
+                let sumPrice = 0;
+                matchedSlots.forEach(s => { sumPrice += (s.price || 50000); });
+                booking.pricePerHour = Math.round(sumPrice / booking.duration);
+            }
+        }
+    } catch (e) {
+        console.warn('Không thể nạp chi tiết slot:', e);
+    }
+
+    // 2. Nạp thông tin sân thật từ MySQL
+    try {
+        const courtRes = await fetch(`api/court-detail.php?id=${booking.courtId}`);
+        const courtJson = await courtRes.json();
+        if (courtJson.status === 'success' && courtJson.data) {
+            const c = courtJson.data;
+            booking.courtName = c.name;
+            document.getElementById('courtNameEl').textContent = c.name;
+            document.getElementById('courtAddrEl').innerHTML   =
+                `<i class="fa-solid fa-location-dot me-1"></i>${c.address || ''}`;
+            if (c.image_url) document.getElementById('courtHeroImg').src = c.image_url;
+        }
+    } catch (e) {
+        console.warn('Lỗi nạp thông tin sân:', e);
+    }
+
+    // Pre-fill thông tin user
+    const user = (typeof window.__GODMINTON_USER__ !== 'undefined' && window.__GODMINTON_USER__) 
+                 || (typeof MockDB !== 'undefined' ? MockDB.getUser() : null);
+    if (user) {
+        if (document.getElementById('billingName'))  document.getElementById('billingName').value  = user.name  || '';
+        if (document.getElementById('billingEmail')) document.getElementById('billingEmail').value = user.email || '';
+        if (document.getElementById('billingPhone')) document.getElementById('billingPhone').value = user.phone || '';
+    }
+
+    // Hiển thị ngày & thời lượng
     const dateObj = new Date(booking.date + 'T00:00:00');
     const days = ['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
     const dd = d => String(d).padStart(2, '0');
     const dateStr = `${days[dateObj.getDay()]}, ${dd(dateObj.getDate())}/${dd(dateObj.getMonth()+1)}/${dateObj.getFullYear()}`;
+    const durationLabel = booking.duration === 1 ? '1 giờ' : (booking.duration === 1.5 ? '1.5 giờ (1 tiếng 30 phút)' : `${booking.duration} giờ`);
+
     document.getElementById('bdrDate').textContent     = dateStr;
     document.getElementById('bdrTime').textContent     = `${booking.start} – ${booking.end}`;
-    document.getElementById('bdrDuration').textContent = `${booking.duration} giờ`;
+    document.getElementById('bdrDuration').textContent = durationLabel;
     document.getElementById('bdrCourt').textContent    = booking.courtNum;
 
     calcPrices();
-    startCountdown(10 * 60);
+    startCountdown(5 * 60); // 5 phút chuẩn phiên giữ chỗ
     updateTransferRef();
 });
 
 /* ---- Price calculation ---- */
 function calcPrices() {
     const base    = Math.round(booking.pricePerHour * booking.duration);
-    const fee     = Math.round(base * 0.05);
+    const fee     = 0;
     const total   = base + fee;
     const deposit = Math.round(total * 0.5);
 
@@ -75,12 +123,11 @@ function calcPrices() {
     booking._deposit = deposit;
 
     document.getElementById('prBase').textContent    = fmt(base);
-    document.getElementById('prFee').textContent     = fmt(fee);
+    document.getElementById('prFee').textContent     = '0 đ (Miễn phí)';
     document.getElementById('prTotal').textContent   = fmt(total);
     document.getElementById('prDeposit').textContent = fmt(deposit);
     document.getElementById('bankAmountText').textContent = fmt(deposit);
 
-    // Update CTA text
     const ctaText = `Xác Nhận & Đặt Cọc — ${fmt(deposit)}`;
     ['btnPayMobileText','btnPayDesktopText'].forEach(id => {
         const el = document.getElementById(id);
@@ -126,7 +173,7 @@ function formatExpiry(inp) {
     inp.value = v;
 }
 
-/* ---- Countdown ---- */
+/* ---- Countdown: 5 phút ---- */
 function startCountdown(seconds) {
     const el   = document.getElementById('countdownEl');
     const wrap = el?.closest('.countdown-wrap');
@@ -137,18 +184,18 @@ function startCountdown(seconds) {
         const s = String(rem % 60).padStart(2, '0');
         if (el) el.textContent = `${m}:${s}`;
 
-        // Đổi màu đỏ khi < 60s
         if (rem <= 60 && wrap) wrap.style.background = 'rgba(239,68,68,0.12)';
 
         if (rem <= 0) {
             clearInterval(timer);
             Swal.fire({
-                icon: 'warning', title: 'Phiên giữ chỗ hết hạn',
-                text: 'Vui lòng chọn lại khung giờ.',
+                icon: 'warning', 
+                title: 'Phiên giữ chỗ hết hạn',
+                text: 'Thời hạn 5 phút giữ chỗ đã kết thúc. Vui lòng chọn lại khung giờ.',
                 confirmButtonText: 'Quay lại chọn giờ',
                 confirmButtonColor: '#0d9488',
                 allowOutsideClick: false
-            }).then(() => window.location.href = 'booking.php');
+            }).then(() => window.location.href = `booking.php?court_id=${booking.courtId}`);
         }
         rem--;
     };
@@ -156,71 +203,98 @@ function startCountdown(seconds) {
     const timer = setInterval(tick, 1000);
 }
 
-/* ---- Payment submit ---- */
-function handlePayment() {
-    // Validate form
+/* ---- Payment submit: Gửi slot_ids lên API POST api/bookings.php ---- */
+async function handlePayment() {
     const name  = document.getElementById('billingName').value.trim();
     const phone = document.getElementById('billingPhone').value.trim();
     const email = document.getElementById('billingEmail').value.trim();
+    const note  = document.getElementById('billingNote')?.value.trim() || '';
+
     if (!name || !phone || !email) {
-        Swal.fire({ icon: 'warning', title: 'Thiếu thông tin',
-            text: 'Vui lòng điền đầy đủ họ tên, số điện thoại và email.',
-            confirmButtonColor: '#0d9488' });
+        Swal.fire({ icon: 'warning', title: 'Thiếu thông tin', text: 'Vui lòng điền đầy đủ họ tên, số điện thoại và email nhận vé.', confirmButtonColor: '#0d9488' });
         return;
     }
     if (!/\S+@\S+\.\S+/.test(email)) {
-        Swal.fire({ icon: 'warning', title: 'Email không hợp lệ',
-            confirmButtonColor: '#0d9488' });
+        Swal.fire({ icon: 'warning', title: 'Email không hợp lệ', confirmButtonColor: '#0d9488' });
         return;
     }
     if (!document.getElementById('agreeTerms').checked) {
-        Swal.fire({ icon: 'info', title: 'Vui lòng đồng ý điều khoản',
-            confirmButtonColor: '#0d9488' });
+        Swal.fire({ icon: 'info', title: 'Vui lòng đồng ý điều khoản', confirmButtonColor: '#0d9488' });
         return;
     }
 
-    // Set loading state
     const btns = ['btnPayMobile','btnPayDesktop'];
     btns.forEach(id => {
         const b = document.getElementById(id);
-        if (b) { b.disabled = true; b.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...'; }
+        if (b) { b.disabled = true; b.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý giao dịch...'; }
     });
 
-    // Simulate API call
-    setTimeout(() => {
-        const methodNames = {
-            vnpay:'VNPay', momo:'MoMo', zalopay:'ZaloPay',
-            bank:'Chuyển khoản', card:'Thẻ quốc tế', cash:'Tiền mặt'
-        };
+    const methodNames = {
+        vnpay:'VNPay', momo:'MoMo', zalopay:'ZaloPay',
+        bank:'Chuyển khoản VietQR', card:'Thẻ quốc tế', cash:'Tiền mặt tại sân'
+    };
+    const paymentMethodLabel = methodNames[booking.method] || booking.method;
 
-        // Save to MockDB if available
-        if (typeof MockDB !== 'undefined' && MockDB.createBooking) {
-            MockDB.createBooking({
-                court_id:       booking.courtId,
-                court_name:     booking.courtName || 'Sân cầu lông',
-                booking_date:   booking.date,
-                start_time:     booking.start,
-                end_time:       booking.end,
-                total_price:    booking._total,
-                deposit_paid:   booking._deposit,
-                payment_method: methodNames[booking.method] || booking.method,
-                booking_status: 'confirmed'
+    try {
+        const response = await fetch('api/bookings.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                court_id: booking.courtId,
+                slot_ids: booking.slotIds,
+                payment_method: paymentMethodLabel,
+                notes: note,
+                billing_name: name,
+                billing_phone: phone,
+                billing_email: email
+            })
+        });
+
+        const result = await response.json();
+
+        if ((response.status === 200 || response.status === 201) && result.status === 'success') {
+            const bData = result.data;
+
+            document.getElementById('successCode').textContent  = bData.booking_code;
+            document.getElementById('sdCourt').textContent      = bData.court_name;
+            document.getElementById('sdDate').textContent       = document.getElementById('bdrDate').textContent;
+            document.getElementById('sdTime').textContent       = `${bData.time_range} (${booking.duration} giờ)`;
+            document.getElementById('sdDeposit').textContent    = fmt(bData.deposit_amount);
+            document.getElementById('sdMethod').textContent     = paymentMethodLabel;
+            document.getElementById('sdEmail').textContent      = email;
+
+            document.getElementById('successOverlay').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        } else if (response.status === 401 || result.code === 401) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Yêu cầu đăng nhập',
+                text: 'Vui lòng đăng nhập để hoàn tất tạo đơn đặt sân.',
+                confirmButtonColor: '#0d9488'
+            }).then(() => {
+                window.location.href = 'auth.php?redirect=payment.php';
+            });
+            btns.forEach(id => {
+                const b = document.getElementById(id);
+                if (b) { b.disabled = false; b.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Xác Nhận & Đặt Cọc'; }
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Không thể tạo đơn đặt sân',
+                text: result.message || 'Phiên giữ chỗ có thể đã hết hạn hoặc không hợp lệ. Vui lòng chọn lại khung giờ.',
+                confirmButtonColor: '#0d9488'
+            });
+            btns.forEach(id => {
+                const b = document.getElementById(id);
+                if (b) { b.disabled = false; b.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Xác Nhận & Đặt Cọc'; }
             });
         }
-
-        // Booking code
-        const code = 'GDM-' + String(Date.now() % 1000000).padStart(6, '0');
-
-        // Fill success screen
-        document.getElementById('successCode').textContent  = code;
-        document.getElementById('sdCourt').textContent      = booking.courtName || 'Sân cầu lông';
-        document.getElementById('sdDate').textContent       = document.getElementById('bdrDate').textContent;
-        document.getElementById('sdTime').textContent       = `${booking.start} – ${booking.end}`;
-        document.getElementById('sdDeposit').textContent    = fmt(booking._deposit);
-        document.getElementById('sdMethod').textContent     = methodNames[booking.method] || booking.method;
-        document.getElementById('sdEmail').textContent      = email;
-
-        document.getElementById('successOverlay').classList.add('show');
-        document.body.style.overflow = 'hidden';
-    }, 1800);
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Lỗi kết nối', text: 'Không thể kết nối máy chủ.', confirmButtonColor: '#0d9488' });
+        btns.forEach(id => {
+            const b = document.getElementById(id);
+            if (b) { b.disabled = false; b.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Xác Nhận & Đặt Cọc'; }
+        });
+    }
 }

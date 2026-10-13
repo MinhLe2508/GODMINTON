@@ -129,6 +129,7 @@ CREATE TABLE court_amenities (
 CREATE TABLE time_slots (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     court_id        INT UNSIGNED    NOT NULL,
+    sub_court_name  VARCHAR(50)     NOT NULL DEFAULT 'Thảm A1', -- Thảm A1, A2, A3...
     slot_date       DATE            NOT NULL,
     start_time      TIME            NOT NULL,
     end_time        TIME            NOT NULL,
@@ -141,7 +142,7 @@ CREATE TABLE time_slots (
     CONSTRAINT fk_slots_held_by
         FOREIGN KEY (held_by)  REFERENCES users(id)  ON DELETE SET NULL,
 
-    UNIQUE KEY uq_slot_per_court (court_id, slot_date, start_time),
+    UNIQUE KEY uq_slot_per_court (court_id, slot_date, start_time, sub_court_name),
     INDEX idx_slots_lookup (court_id, slot_date, status)
 ) ENGINE=InnoDB;
 

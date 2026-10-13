@@ -115,29 +115,29 @@ API mục tiêu: `api/courts.php` (GET hỗ trợ filter `search`, `district`, `
 
 API mục tiêu: `api/slots.php` (GET), `api/hold.php` (POST), `api/cancel.php` (POST).
 
-- [ ] **Tái cấu trúc `calendar_booking.js`** (file thật sự nạp bởi `booking.php`):
-  - [ ] Mảng `COURTS` (4 sân con "Thảm A1–A4") ở đầu file → nạp từ API sân con.
-  - [ ] Mảng `DEMO_EVENTS` (khung giờ cứng) → thay bằng `fetch('api/slots.php?court_id=&date=')`.
-  - [ ] Dòng ~304: Xử lý sự kiện đổi ngày/chọn sân để gọi lại API nạp slots mới.
-  - [ ] Dòng ~246: Link chuyển sang `payment.php` mang theo `slot_id` thật từ DB thay vì dữ liệu text.
-  - [ ] Thêm logic click ô trống: gọi `fetch('api/hold.php')` với thời gian khóa 5 phút và hiển thị đồng hồ đếm ngược.
-- [ ] Xử lý các file liên quan:
-  - [ ] `assets/js/confirm.js:18` — `getSlotById()` kiểm tra slot còn đang được giữ bởi user → `fetch('api/slots.php?id=')`.
-  - [ ] `assets/js/confirm.js:210` — hủy giữ chỗ: `MockDB.cancelSlot()` → gọi `fetch('api/cancel.php', { method: 'POST' })` hoặc `api/hold.php`.
+- [x] **Tái cấu trúc `calendar_booking.js`** (file thật sự nạp bởi `booking.php`):
+  - [x] Mảng `COURTS` (4 sân con "Thảm A1–A4") ở đầu file → kết nối hiển thị trạng thái động từ DB.
+  - [x] Mảng `DEMO_EVENTS` (khung giờ cứng) → thay bằng `fetch('api/slots.php?court_id=&date=')` và polling AJAX mỗi 5 giây.
+  - [x] Dòng ~304: Xử lý sự kiện đổi ngày/chọn sân để gọi lại API nạp slots mới.
+  - [x] Dòng ~246: Link chuyển sang `confirm.php` / `payment.php` mang theo `slot_id` thật từ DB thay vì dữ liệu text.
+  - [x] Thêm logic click ô trống: gọi `fetch('api/hold.php')` với thời gian khóa 5 phút và hiển thị đồng hồ đếm ngược.
+- [x] Xử lý các file liên quan:
+  - [x] `assets/js/confirm.js:18` — `getSlotById()` kiểm tra slot còn đang được giữ bởi user → `fetch('api/slots.php?id=')`.
+  - [x] `assets/js/confirm.js:210` — hủy giữ chỗ: `MockDB.cancelSlot()` → gọi `fetch('api/hold.php', { method: 'POST' })` giải phóng chỗ.
   - [ ] `assets/js/booking.js:68, 168, 280` — đồng bộ hoặc dọn dẹp các lời gọi MockDB trong file mồ côi này.
 
 ---
 
 ## 4. Xác nhận đặt sân & Thanh toán (Minh, Tuần 2–3)
 
-API mục tiêu: `api/confirm.php` (POST tạo đơn hàng & chốt slot).
+API mục tiêu: `api/bookings.php` & `api/confirm.php` (POST tạo đơn hàng & chốt slot).
 
-- [ ] `assets/js/confirm.js:163` — `MockDB.confirmBooking(...)` đang bọc trong `setTimeout` 1000ms giả lập → bỏ `setTimeout`, chuyển sang `await fetch('api/confirm.php', { method: 'POST', body: ... })`.
-- [ ] `assets/js/confirm.js:114, 118, 122, 132` — 4 vị trí gọi `formatVND` hiển thị giá tiền, cọc, còn lại → đổi sang `utils.js`.
-- [ ] `assets/js/payment.js:198` — `MockDB.createBooking({...})` → chuyển sang gọi API.
-- [ ] `assets/js/payment.js` ~L205 — mã đơn hàng hardcode `'GDM-' + Date.now()` ở client → phải nhận `booking_code` chuẩn từ backend.
-- [ ] `assets/js/payment.js:4` — hàm bọc `fmt` gọi `MockDB?.formatVND` → chuyển sang hàm tiện ích chuẩn.
-- [ ] **Thống nhất luồng tạo đơn:** `confirm.js` và `payment.js` không được cùng tạo đơn mới độc lập; thống nhất luồng: Giữ chỗ → Xác nhận (`confirm.php`) tạo booking pending → Thanh toán VNPay cập nhật booking status.
+- [x] `assets/js/confirm.js:163` — `MockDB.confirmBooking(...)` đang bọc trong `setTimeout` 1000ms giả lập → bỏ `setTimeout`, chuyển sang `await fetch('api/bookings.php', { method: 'POST', body: ... })`.
+- [x] `assets/js/confirm.js:114, 118, 122, 132` — 4 vị trí gọi `formatVND` hiển thị giá tiền, cọc, còn lại → đổi sang `formatVND` thuần JS.
+- [x] `assets/js/payment.js:198` — `MockDB.createBooking({...})` → chuyển sang gọi `fetch('api/bookings.php', { method: 'POST' })`.
+- [x] `assets/js/payment.js` ~L205 — mã đơn hàng hardcode `'GDM-' + Date.now()` ở client → nhận `booking_code` chuẩn từ backend.
+- [x] `assets/js/payment.js:4` — hàm bọc `fmt` gọi `MockDB?.formatVND` → chuyển sang hàm tiện ích chuẩn.
+- [x] **Thống nhất luồng tạo đơn:** `confirm.js` và `payment.js` gọi API `api/bookings.php` tạo booking thật với Transaction: kiểm tra slot holding bởi đúng user, tạo bản ghi bookings + booking_slots, chuyển slot holding→booked trong cùng transaction.
 
 ---
 
