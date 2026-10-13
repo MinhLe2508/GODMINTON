@@ -400,6 +400,9 @@
        6. INJECT VÀO DOM
        ============================================================ */
     function inject() {
+        // Không inject thanh điều hướng trên trang Đăng nhập / Đăng ký
+        if (currentPage === 'auth.php' || currentPage === 'auth.html') return;
+
         // Inject Theme Button nếu trang chưa có
         injectThemeToggle();
 
