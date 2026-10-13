@@ -7,25 +7,37 @@
 // THEME TOGGLE (Dark Mode)
 // ========================
 function initTheme() {
-    const saved = localStorage.getItem('bm_theme') || 'light';
+    const saved = localStorage.getItem('bm_theme') || localStorage.getItem('godminton_theme') || 'light';
     document.documentElement.setAttribute('data-bs-theme', saved);
     updateThemeIcon(saved);
+    if (typeof updateLogoTheme === 'function') {
+        updateLogoTheme();
+    }
 }
 
 function updateThemeIcon(theme) {
     const btn = document.getElementById('themeToggle');
     if (!btn) return;
-    btn.innerHTML = theme === 'dark'
-        ? '<i class="fa-solid fa-sun"></i>'
-        : '<i class="fa-solid fa-moon"></i>';
+    if (theme === 'dark') {
+        btn.innerHTML = '<i class="fa-solid fa-sun text-warning"></i>';
+        btn.setAttribute('title', 'Chuyển sang chế độ Sáng');
+    } else {
+        btn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+        btn.setAttribute('title', 'Chuyển sang chế độ Tối');
+    }
 }
 
-function toggleTheme() {
+function toggleTheme(e) {
+    if (e && e.preventDefault) e.preventDefault();
     const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-bs-theme', next);
     localStorage.setItem('bm_theme', next);
+    localStorage.setItem('godminton_theme', next);
     updateThemeIcon(next);
+    if (typeof updateLogoTheme === 'function') {
+        updateLogoTheme();
+    }
 }
 
 // ========================
@@ -110,5 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderNavbarUser();
 
     // Theme toggle button
-    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    const themeBtn = document.getElementById('themeToggle');
+    if (themeBtn && !themeBtn.hasAttribute('onclick') && !themeBtn.dataset.themeInit) {
+        themeBtn.dataset.themeInit = 'true';
+        themeBtn.addEventListener('click', toggleTheme);
+    }
 });

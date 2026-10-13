@@ -25,19 +25,16 @@ function updateThemeButton(theme) {
 (function() {
     const saved = localStorage.getItem('bm_theme') || localStorage.getItem('godminton_theme') || 'light';
     document.documentElement.setAttribute('data-bs-theme', saved);
-    updateThemeButton(saved);
+    if (typeof updateThemeIcon === 'function') {
+        updateThemeIcon(saved);
+    } else {
+        updateThemeButton(saved);
+    }
     updateLogoTheme();
 })();
 
-document.getElementById('themeToggle')?.addEventListener('click', function() {
-    const cur = document.documentElement.getAttribute('data-bs-theme') || 'light';
-    const next = cur === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-bs-theme', next);
-    localStorage.setItem('bm_theme', next);
-    localStorage.setItem('godminton_theme', next);
-    updateThemeButton(next);
-    updateLogoTheme();
-});
+// Đảm bảo updateLogoTheme khả dụng cho toggleTheme() trong app.js
+window.updateLogoTheme = updateLogoTheme;
 
 /* ---- Tab switch ---- */
 function switchTab(tab) {

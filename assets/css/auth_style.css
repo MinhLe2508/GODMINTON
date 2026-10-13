@@ -57,111 +57,146 @@ body.has-bottom-nav #godmintonBottomNav {
     pointer-events: none !important;
 }
 
-/* ---- Top Header Bar ---- */
-.auth-top-bar {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    height: 64px !important;
+/* ---- Top Control Row inside Card ---- */
+.auth-card-topbar {
     display: flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
-    padding: 0 1.5rem !important;
-    z-index: 100 !important;
-    pointer-events: none !important;
+    justify-content: flex-start !important;
+    margin-bottom: 1.25rem !important;
+    padding-bottom: 0.85rem !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+[data-bs-theme="light"] .auth-card-topbar {
+    border-bottom: 1px solid rgba(13, 148, 136, 0.15) !important;
+}
+[data-bs-theme="dark"] .auth-card-topbar {
+    border-bottom: 1px solid rgba(45, 212, 191, 0.18) !important;
 }
 
-.auth-top-bar > * {
-    pointer-events: auto !important;
-}
-
-.auth-back-link {
+.auth-card-back-btn {
     display: inline-flex !important;
     align-items: center !important;
     gap: 0.5rem !important;
-    padding: 0.5rem 1.1rem !important;
+    padding: 0.45rem 1.05rem !important;
     border-radius: 9999px !important;
-    background: rgba(255, 255, 255, 0.2) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    color: #ffffff !important;
-    font-size: 0.88rem !important;
+    font-size: 0.86rem !important;
     font-weight: 700 !important;
     text-decoration: none !important;
     transition: all 0.2s ease !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
 }
-.auth-back-link:hover {
-    background: rgba(255, 255, 255, 0.35) !important;
+[data-bs-theme="light"] .auth-card-back-btn {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1.5px solid rgba(13, 148, 136, 0.28) !important;
+    color: #0f766e !important;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.1) !important;
+}
+[data-bs-theme="light"] .auth-card-back-btn:hover {
+    background: #0d9488 !important;
+    border-color: #0d9488 !important;
     color: #ffffff !important;
     transform: translateX(-3px) !important;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3) !important;
+}
+[data-bs-theme="dark"] .auth-card-back-btn {
+    background: rgba(45, 212, 191, 0.12) !important;
+    border: 1px solid rgba(45, 212, 191, 0.32) !important;
+    color: #2dd4bf !important;
+}
+[data-bs-theme="dark"] .auth-card-back-btn:hover {
+    background: #0d9488 !important;
+    border-color: #2dd4bf !important;
+    color: #ffffff !important;
+    transform: translateX(-3px) !important;
+    box-shadow: 0 0 16px rgba(45, 212, 191, 0.4) !important;
 }
 
-.auth-theme-btn {
-    width: 42px !important;
-    height: 42px !important;
+/* ---- Fixed Floating Theme Toggle at Top-Right Corner ---- */
+.auth-theme-corner-btn {
+    position: fixed !important;
+    top: 1.25rem !important;
+    right: 1.35rem !important;
+    width: 44px !important;
+    height: 44px !important;
     border-radius: 50% !important;
-    background: rgba(255, 255, 255, 0.2) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    color: #ffffff !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     cursor: pointer !important;
-    font-size: 1rem !important;
-    transition: all 0.2s ease !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
+    z-index: 1050 !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    font-size: 1.05rem !important;
+    outline: none !important;
 }
-.auth-theme-btn:hover {
-    background: rgba(255, 255, 255, 0.35) !important;
-    transform: scale(1.08) rotate(15deg) !important;
+[data-bs-theme="light"] .auth-theme-corner-btn {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1.5px solid rgba(13, 148, 136, 0.35) !important;
+    color: #0d9488 !important;
+    box-shadow: 0 4px 18px rgba(13, 148, 136, 0.22), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+[data-bs-theme="light"] .auth-theme-corner-btn:hover {
+    background: #0d9488 !important;
+    border-color: #0d9488 !important;
     color: #ffffff !important;
+    transform: scale(1.1) rotate(15deg) !important;
+    box-shadow: 0 6px 22px rgba(13, 148, 136, 0.4) !important;
+}
+[data-bs-theme="dark"] .auth-theme-corner-btn {
+    background: rgba(6, 26, 32, 0.82) !important;
+    border: 1.5px solid rgba(45, 212, 191, 0.45) !important;
+    color: #fbbf24 !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 16px rgba(251, 191, 36, 0.25) !important;
+}
+[data-bs-theme="dark"] .auth-theme-corner-btn:hover {
+    background: rgba(13, 148, 136, 0.35) !important;
+    border-color: #2dd4bf !important;
+    transform: scale(1.1) rotate(15deg) !important;
+    box-shadow: 0 0 24px rgba(251, 191, 36, 0.5) !important;
 }
 
-/* ---- Center Viewport Container ---- */
+/* ---- Left-Aligned Viewport Container ---- */
 .auth-viewport,
 .auth-wrapper {
     min-height: 100vh !important;
     display: flex !important;
     align-items: center !important;
-    justify-content: center !important;
-    padding: 5rem 1rem 3rem !important;
+    justify-content: flex-start !important;
+    padding: 2.5rem 1.5rem 2.5rem clamp(2rem, 4.5vw, 5rem) !important;
     position: relative !important;
     z-index: 10 !important;
 }
 
-/* ---- Center Auth Card ---- */
+/* ---- Left-Aligned Auth Card (50% Màn hình & Frosted Blur) ---- */
 .auth-card,
 .auth-form-box {
-    width: 100% !important;
-    max-width: 560px !important;
-    border-radius: 1.6rem !important;
-    padding: 2.5rem 2.75rem !important;
-    margin: 0 auto !important;
+    width: 48vw !important;
+    max-width: 660px !important;
+    min-width: 440px !important;
+    border-radius: 1.85rem !important;
+    padding: 2.25rem 2.5rem !important;
+    margin: 0 !important;
     position: relative !important;
-    backdrop-filter: blur(24px) saturate(190%) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+    backdrop-filter: blur(30px) saturate(190%) !important;
+    -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
+/* Light Mode Card (Trong suốt 20% Gradient Xanh ngọc - Trắng xanh ngọc + Frosted Glass Blur) */
 [data-bs-theme="light"] .auth-card,
 [data-bs-theme="light"] .auth-form-box {
-    background: rgba(255, 255, 255, 0.85) !important;
-    border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
-    box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.4) !important;
-    color: #0f172a !important;
+    background: linear-gradient(145deg, rgba(211, 244, 238, 0.24) 0%, rgba(227, 248, 244, 0.18) 45%, rgba(255, 255, 255, 0.25) 100%) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.5), 0 0 35px rgba(20, 184, 166, 0.22), inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+    color: #ffffff !important;
 }
 
 [data-bs-theme="dark"] .auth-card,
 [data-bs-theme="dark"] .auth-form-box {
-    background: rgba(6, 25, 29, 0.82) !important;
-    border: 1.5px solid rgba(45, 212, 191, 0.38) !important;
-    box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.88), 0 0 35px rgba(13, 148, 136, 0.3) !important;
-    color: #f8fafc !important;
+    background: rgba(5, 22, 26, 0.24) !important;
+    border: 1.5px solid rgba(45, 212, 191, 0.35) !important;
+    box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.85), 0 0 40px rgba(13, 148, 136, 0.3), inset 0 1px 2px rgba(45, 212, 191, 0.25) !important;
+    color: #ffffff !important;
 }
 
 /* ---- Logo & Brand Header ---- */
@@ -176,17 +211,20 @@ body.has-bottom-nav #godmintonBottomNav {
 .auth-brand-logo {
     height: 44px !important;
     width: auto !important;
+    filter: drop-shadow(0 3px 10px rgba(13, 148, 136, 0.4)) !important;
 }
 
 /* ---- Tab Switcher ---- */
 .auth-tabs {
     display: flex !important;
-    background: var(--auth-tab-bg) !important;
-    border: 1px solid var(--auth-input-border) !important;
+    background: rgba(0, 0, 0, 0.28) !important;
+    border: 1.5px solid rgba(45, 212, 191, 0.3) !important;
     border-radius: 0.85rem !important;
     padding: 4px !important;
     margin-bottom: 1.6rem !important;
     gap: 4px !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
 }
 .auth-tab-btn {
     flex: 1 !important;
@@ -194,9 +232,9 @@ body.has-bottom-nav #godmintonBottomNav {
     border-radius: 0.65rem !important;
     border: none !important;
     background: transparent !important;
-    font-size: 0.92rem !important;
-    font-weight: 700 !important;
-    color: var(--auth-text-muted) !important;
+    font-size: 0.94rem !important;
+    font-weight: 800 !important;
+    color: rgba(255, 255, 255, 0.85) !important;
     cursor: pointer !important;
     transition: all 0.22s ease !important;
     font-family: inherit !important;
@@ -204,11 +242,13 @@ body.has-bottom-nav #godmintonBottomNav {
     align-items: center !important;
     justify-content: center !important;
     gap: 0.45rem !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 .auth-tab-btn.active {
-    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
+    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%) !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.38) !important;
+    box-shadow: 0 0 18px rgba(20, 184, 166, 0.5) !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 /* ---- Form Panels ---- */
@@ -223,29 +263,37 @@ body.has-bottom-nav #godmintonBottomNav {
     text-align: center !important;
     margin-bottom: 1.35rem !important;
 }
-.auth-panel-title {
-    font-size: 1.35rem !important;
+.auth-panel-title,
+.auth-card-title {
+    font-size: 1.45rem !important;
     font-weight: 800 !important;
-    color: var(--auth-text-title) !important;
+    color: #ffffff !important;
     margin-bottom: 0.35rem !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75) !important;
 }
-.auth-panel-desc {
-    font-size: 0.85rem !important;
-    color: var(--auth-text-muted) !important;
+.auth-panel-desc,
+.auth-card-subtitle {
+    font-size: 0.9rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    opacity: 0.95 !important;
     margin-bottom: 0 !important;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75) !important;
 }
 
-/* ---- Input Fields ---- */
+/* ---- Input Fields - 20% Translucent Frosted & Bold Unified Typography ---- */
 .auth-field {
-    margin-bottom: 1.1rem !important;
+    margin-bottom: 1.15rem !important;
     position: relative !important;
 }
 .auth-field label {
     display: block !important;
-    font-size: 0.82rem !important;
-    font-weight: 700 !important;
+    font-size: 0.86rem !important;
+    font-weight: 800 !important;
     margin-bottom: 0.4rem !important;
-    color: var(--auth-text-muted) !important;
+    letter-spacing: 0.25px !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75) !important;
 }
 .auth-field .field-wrap {
     position: relative !important;
@@ -255,30 +303,45 @@ body.has-bottom-nav #godmintonBottomNav {
     left: 14px !important;
     top: 50% !important;
     transform: translateY(-50%) !important;
-    color: var(--auth-text-muted) !important;
-    font-size: 0.95rem !important;
+    color: #2dd4bf !important;
+    font-size: 1rem !important;
     pointer-events: none !important;
     z-index: 1 !important;
 }
 .auth-field input,
 .auth-field select {
     width: 100% !important;
-    height: 48px !important;
+    height: 50px !important;
     padding: 0 1rem 0 2.65rem !important;
-    border: 1.5px solid var(--auth-input-border) !important;
+    border: 1.5px solid rgba(45, 212, 191, 0.38) !important;
     border-radius: 0.75rem !important;
-    background: var(--auth-input-bg) !important;
-    color: var(--auth-text-title) !important;
-    font-size: 0.92rem !important;
+    background: rgba(255, 255, 255, 0.18) !important;
+    color: #ffffff !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
     font-family: inherit !important;
     outline: none !important;
-    transition: border-color 0.18s, box-shadow 0.18s !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    transition: all 0.2s ease !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.auth-field input::placeholder {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.auth-field select option {
+    background: #062026 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
 }
 .auth-field input:focus,
 .auth-field select:focus {
-    border-color: var(--auth-input-focus-border) !important;
-    box-shadow: 0 0 0 3.5px var(--auth-input-focus-glow) !important;
-    background: var(--auth-card-bg) !important;
+    background: rgba(255, 255, 255, 0.26) !important;
+    border-color: #2dd4bf !important;
+    box-shadow: 0 0 0 3.5px rgba(45, 212, 191, 0.32) !important;
+    color: #ffffff !important;
 }
 
 .auth-field .btn-eye {
@@ -288,13 +351,37 @@ body.has-bottom-nav #godmintonBottomNav {
     transform: translateY(-50%) !important;
     background: none !important;
     border: none !important;
-    color: var(--auth-text-muted) !important;
+    color: #ffffff !important;
+    opacity: 0.85;
     cursor: pointer !important;
     font-size: 0.95rem !important;
     padding: 6px !important;
+    transition: all 0.15s ease;
 }
 .auth-field .btn-eye:hover {
-    color: var(--auth-teal) !important;
+    color: #2dd4bf !important;
+    opacity: 1;
+}
+
+.auth-forgot-link {
+    font-size: 0.82rem !important;
+    text-decoration: none !important;
+    font-weight: 800 !important;
+    color: #2dd4bf !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+}
+.auth-forgot-link:hover {
+    color: #5eead4 !important;
+    text-decoration: underline !important;
+}
+
+.auth-check-label {
+    cursor: pointer !important;
+    user-select: none !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
 }
 
 .auth-grid-2 {
@@ -307,26 +394,27 @@ body.has-bottom-nav #godmintonBottomNav {
 .btn-auth-submit {
     width: 100% !important;
     height: 50px !important;
-    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
+    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%) !important;
     color: #ffffff !important;
     border: none !important;
     border-radius: 0.75rem !important;
-    font-size: 0.96rem !important;
+    font-size: 0.98rem !important;
     font-weight: 800 !important;
-    letter-spacing: 0.4px !important;
+    letter-spacing: 0.5px !important;
     font-family: inherit !important;
     cursor: pointer !important;
-    transition: all 0.2s ease !important;
-    box-shadow: 0 6px 18px rgba(13, 148, 136, 0.35) !important;
+    transition: all 0.22s ease !important;
+    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.45) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     margin-top: 1.25rem !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 .btn-auth-submit:hover {
     background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 10px 24px rgba(13, 148, 136, 0.45) !important;
+    box-shadow: 0 10px 26px rgba(13, 148, 136, 0.55) !important;
     color: #ffffff !important;
 }
 
@@ -335,84 +423,91 @@ body.has-bottom-nav #godmintonBottomNav {
     display: flex !important;
     align-items: center !important;
     gap: 0.75rem !important;
-    color: var(--auth-text-muted) !important;
-    font-size: 0.78rem !important;
-    font-weight: 600 !important;
+    color: #ffffff !important;
+    font-size: 0.8rem !important;
+    font-weight: 800 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
     margin: 1.35rem 0 1.15rem !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
 }
 .auth-divider::before,
 .auth-divider::after {
     content: '' !important;
     flex: 1 !important;
     height: 1px !important;
-    background: var(--auth-input-border) !important;
+    background: rgba(255, 255, 255, 0.3) !important;
 }
 
-/* ---- Google Button (No Facebook) ---- */
+/* ---- Google Button - 20% Translucent Frosted Glass ---- */
 .btn-social-google {
     width: 100% !important;
     height: 48px !important;
     border-radius: 0.75rem !important;
-    border: 1.5px solid var(--auth-input-border) !important;
-    background: var(--auth-card-bg) !important;
-    color: var(--auth-text-title) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.38) !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 0.75rem !important;
-    font-size: 0.92rem !important;
-    font-weight: 700 !important;
+    font-size: 0.94rem !important;
+    font-weight: 800 !important;
     cursor: pointer !important;
     transition: all 0.2s ease !important;
     font-family: inherit !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
-    margin-top: 0.4rem !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    margin-top: 0.5rem !important;
 }
 .btn-social-google:hover {
-    border-color: var(--auth-teal) !important;
-    background: rgba(13, 148, 136, 0.06) !important;
-    transform: translateY(-1.5px) !important;
-    box-shadow: 0 6px 16px rgba(13, 148, 136, 0.18) !important;
-    color: var(--auth-teal) !important;
+    border-color: #2dd4bf !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+    color: #2dd4bf !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35) !important;
 }
 
 /* ---- Switch Tab Link ---- */
 .auth-switch-link {
     text-align: center !important;
-    font-size: 0.86rem !important;
-    color: var(--auth-text-muted) !important;
+    font-size: 0.88rem !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
     margin-top: 1.25rem !important;
     margin-bottom: 0 !important;
 }
 .auth-switch-btn {
     border: none !important;
     background: transparent !important;
-    color: var(--auth-teal) !important;
+    color: #2dd4bf !important;
     font-weight: 800 !important;
     cursor: pointer !important;
     padding: 0 !important;
     font-family: inherit !important;
-    text-decoration: none !important;
+    text-decoration: underline !important;
 }
 .auth-switch-btn:hover {
-    text-decoration: underline !important;
+    color: #5eead4 !important;
 }
 
 /* ---- Demo Accounts Section ---- */
 .auth-demo-wrap {
     margin-top: 1.35rem !important;
     padding-top: 1.15rem !important;
-    border-top: 1px dashed var(--auth-input-border) !important;
+    border-top: 1px dashed rgba(45, 212, 191, 0.32) !important;
 }
 .auth-demo-title {
-    font-size: 0.76rem !important;
-    font-weight: 700 !important;
-    color: var(--auth-text-muted) !important;
+    font-size: 0.78rem !important;
+    font-weight: 800 !important;
+    color: #2dd4bf !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
     text-align: center !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
+    letter-spacing: 0.6px !important;
     margin-bottom: 0.65rem !important;
     display: flex !important;
     align-items: center !important;
@@ -428,21 +523,23 @@ body.has-bottom-nav #godmintonBottomNav {
     display: flex !important;
     align-items: center !important;
     gap: 0.55rem !important;
-    background: var(--auth-tab-bg) !important;
-    border: 1px solid var(--auth-input-border) !important;
     border-radius: 0.75rem !important;
     padding: 0.45rem 0.65rem !important;
     cursor: pointer !important;
+    width: 100% !important;
     transition: all 0.18s ease !important;
     text-align: left !important;
-    font-family: inherit !important;
-    color: var(--auth-text-title) !important;
-    width: 100% !important;
+    background: rgba(255, 255, 255, 0.16) !important;
+    border: 1.5px solid rgba(45, 212, 191, 0.32) !important;
+    color: #ffffff !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
 }
 .demo-pill:hover {
-    border-color: var(--auth-teal) !important;
-    background: rgba(13, 148, 136, 0.08) !important;
-    transform: translateY(-1px) !important;
+    border-color: #2dd4bf !important;
+    background: rgba(13, 148, 136, 0.35) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 14px rgba(20, 184, 166, 0.3) !important;
 }
 .demo-avatar {
     width: 28px !important;
@@ -458,28 +555,62 @@ body.has-bottom-nav #godmintonBottomNav {
 }
 .demo-meta-role {
     font-size: 0.78rem !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     line-height: 1.2 !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
 }
 .demo-meta-sub {
-    font-size: 0.68rem !important;
-    color: var(--auth-text-muted) !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
+    color: #e2e8f0 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
     max-width: 120px !important;
 }
 
 /* Responsive */
-@media (max-width: 576px) {
+@media (max-width: 991.98px) {
+    body {
+        background-attachment: scroll !important;
+        background-position: 72% center !important;
+        background-size: cover !important;
+    }
     .auth-viewport,
     .auth-wrapper {
-        padding: 4.5rem 1rem 2rem !important;
+        justify-content: center !important;
+        padding: 4.25rem 1.25rem 2.5rem !important;
     }
     .auth-card,
     .auth-form-box {
-        padding: 1.75rem 1.25rem 1.6rem !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        max-width: 540px !important;
+        min-width: 0 !important;
+    }
+}
+
+@media (max-width: 576px) {
+    body {
+        background-attachment: scroll !important;
+        background-position: 68% 18% !important;
+        background-size: cover !important;
+        background-image:
+            linear-gradient(180deg, rgba(4, 20, 17, 0.48) 0%, rgba(2, 12, 10, 0.72) 100%),
+            url('../img/auth-bg.jpg') !important;
+    }
+    .auth-viewport,
+    .auth-wrapper {
+        padding: 3.85rem 0.85rem 2rem !important;
+    }
+    .auth-card,
+    .auth-form-box {
+        padding: 1.5rem 1.15rem 1.35rem !important;
         border-radius: 1.25rem !important;
+        width: 100% !important;
+        min-width: 0 !important;
     }
     .auth-grid-2 {
         grid-template-columns: 1fr !important;
@@ -487,5 +618,12 @@ body.has-bottom-nav #godmintonBottomNav {
     }
     .auth-demo-grid {
         grid-template-columns: 1fr !important;
+    }
+    .auth-theme-corner-btn {
+        top: 0.85rem !important;
+        right: 0.85rem !important;
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 0.95rem !important;
     }
 }

@@ -744,10 +744,118 @@ body {
     50% { opacity: 0.5; }
 }
 
-/* Responsive adjustments */
+/* =====================================================
+   GLOBAL RESPONSIVE SYSTEM (TOÀN BỘ CÁC TRANG DỰ ÁN)
+   ===================================================== */
+html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+/* An toàn cho các media elements không làm vỡ layout */
+img, svg, video, canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Bảng dữ liệu tự động cuộn ngang mượt mà trên mobile */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Tablets & Small Laptops (<= 991.98px) */
+@media (max-width: 991.98px) {
+    .hero-section {
+        padding: 2.25rem 0 1.75rem;
+    }
+    .search-card-floating {
+        margin-top: 1rem;
+        padding: 1.25rem;
+    }
+    .booking-toolbar {
+        padding: 1rem;
+    }
+    /* Layout Admin: sidebar thu gọn khi ở màn hình nhỏ */
+    .admin-sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        bottom: 0;
+        z-index: 1040;
+        transition: left 0.3s ease;
+    }
+    .admin-sidebar.show {
+        left: 0;
+    }
+    .admin-main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+}
+
+/* Mobile Devices (<= 767.98px) */
+@media (max-width: 767.98px) {
+    .container, .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    .search-card-floating {
+        padding: 1rem;
+        border-radius: 1rem;
+    }
+    .date-nav-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        display: flex;
+        gap: 0.5rem;
+        padding-bottom: 0.35rem;
+    }
+    .legend-bar {
+        justify-content: flex-start !important;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .court-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+        padding-bottom: 0.25rem;
+    }
+}
+
+/* Phones (<= 576px) */
 @media (max-width: 576px) {
     .slot-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+    }
+    .hero-title {
+        font-size: 1.65rem !important;
+        line-height: 1.25 !important;
+    }
+    .btn-lg {
+        font-size: 0.92rem !important;
+        padding: 0.6rem 1.15rem !important;
+    }
+    .card {
+        border-radius: 1rem !important;
+    }
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    .search-card-floating .row > div {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Small Phones (<= 380px) */
+@media (max-width: 380px) {
+    .slot-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .hero-title {
+        font-size: 1.4rem !important;
     }
 }
 
