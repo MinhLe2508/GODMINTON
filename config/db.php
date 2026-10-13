@@ -18,14 +18,13 @@ if (is_readable($envFile)) {
     }
 }
 
+date_default_timezone_set('Asia/Ho_Chi_Minh');
+
 $DB_HOST = getenv('DB_HOST') ?: '127.0.0.1';
 $DB_PORT = getenv('DB_PORT') ?: null;
 $DB_NAME = getenv('DB_NAME') ?: 'badminton_booking';
 $DB_USER = getenv('DB_USER') ?: 'root';
 $DB_PASS = getenv('DB_PASS') ?: ''; // XAMPP mặc định user root không có mật khẩu
-
-// Đồng bộ múi giờ chuẩn Việt Nam (GMT+7) cho toàn bộ ứng dụng
-date_default_timezone_set('Asia/Ho_Chi_Minh');
 
 // Cố gắng kết nối: nếu có cấu hình DB_PORT thì dùng, nếu không thì thử 3306 rồi fallback sang 3307
 $portsToTry = $DB_PORT ? [(int)$DB_PORT] : [3306, 3307];
@@ -44,7 +43,8 @@ foreach ($portsToTry as $port) {
                 PDO::ATTR_EMULATE_PREPARES   => false, // bắt buộc dùng prepared statement thật
             ]
         );
-        // Đồng bộ múi giờ phiên làm việc MySQL sang GMT+7
+        // Đồng bộ múi giờ PHP và MySQL (giờ Việt Nam) để NOW() / hold_expires_at
+        // luôn khớp nhau, bất kể múi giờ mặc định của máy chủ MySQL.
         $pdo->exec("SET time_zone = '+07:00'");
         break;
     } catch (PDOException $e) {
