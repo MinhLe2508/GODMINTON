@@ -73,17 +73,18 @@ Tuần 4 → `manifest.json`, `sw.js`, `api/push/*`.
 
 ## 4. Tuần 2 — Giữ chỗ 5 phút (Huy: task 7, 8, 11)
 
-1. Chạy trên MySQL **một lần**, theo thứ tự (sau `schema.sql` và `seed.sql`):
-   `database/migration_week2.sql` (thêm 3 cột cho `bookings`) rồi `database/seed_slots.sql`
-   (sinh khung giờ mẫu 7 sân × 8 ngày, chạy lại để nạp thêm ngày mới cũng an toàn).
-2. `api/hold.php` — `POST {"slot_id": 142}`: giữ chỗ 5 phút bằng transaction + `SELECT ... FOR UPDATE`
-   (200 thành công, 400 thiếu/sai tham số hoặc slot đã qua, 401 chưa đăng nhập, 404 không thấy slot,
-   409 đã bị người khác giữ hoặc đã đặt).
+1. `api/slots.php` (Minh) **tự sinh** khung giờ cho ngày chưa có slot (4 thảm A1–A4, 05:30–23:30) nên **không cần seed slot thủ công**.
+   Tuỳ chọn: chạy `database/migration_week2.sql` một lần (thêm 3 cột phụ cho `bookings`, cho phép NULL).
+   - Đã chạy bản migration cũ (lỗi `Field 'booking_code' doesn't have a default value`)? Chạy `database/fix_booking_code_nullable.sql`.
+   - Đã chạy `seed_slots.sql` cũ (lịch chỉ còn thảm A1)? Chạy `database/reset_slots_week2.sql` (⚠ xoá toàn bộ slot và đơn test).
+2. `api/hold.php` — giữ chỗ 5 phút bằng transaction + `SELECT ... FOR UPDATE`. Giao diện (đúng với `calendar_booking.js`):
+   `{"slot_ids":[101,102],"action":"hold"}` (hoặc `{"slot_id":101}`), `{"action":"release","slot_ids":[...]}`.
+   Mã trả về: 200 thành công · 401 chưa đăng nhập · 404 không thấy slot · 409 đã bị người khác giữ/đã đặt ·
+   422 thiếu/sai tham số (hoặc các ô khác sân/khác ngày).
 3. `api/cleanup-expired.php` — trả slot `holding` đã hết hạn về `available`. Dùng được 3 cách:
    - Linux (cron, mỗi phút): `* * * * * php /đường/dẫn/api/cleanup-expired.php`
    - Windows/XAMPP (Task Scheduler, lặp mỗi 1 phút): chạy `C:\xampp\php\php.exe <đường dẫn file>`
    - Gọi trong PHP: `require_once __DIR__ . '/cleanup-expired.php'; cleanup_expired_holds($pdo);`
-     (đặt ở đầu `api/slots.php` trước câu SELECT)
 4. Kiểm thử không oversell: `php tests/oversell_test.php`
-   (XAMPP/Apache thật: `BASE_URL=http://localhost/godminton php tests/oversell_test.php`).
-5. `config/db.php` đã đặt múi giờ PHP và MySQL là `+07:00` để `NOW()` luôn khớp giờ Việt Nam.
+   (XAMPP/Apache thật: `BASE_URL=http://localhost/GODMINTON php tests/oversell_test.php`). Kỳ vọng: `28 đạt, 0 lỗi`.
+5. `config/db.php` đặt múi giờ PHP và MySQL là `+07:00` để `NOW()` luôn khớp giờ Việt Nam.

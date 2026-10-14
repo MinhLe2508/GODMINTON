@@ -1,145 +1,236 @@
 <?php
 /**
  * api/hold.php
- * POST giữ chỗ 5 phút — transaction + SELECT ... FOR UPDATE ★★★ (Task 7)
+ * POST giữ chỗ 5 phút / huỷ giữ chỗ — Transaction + SELECT ... FOR UPDATE ★★★
+ * Hỗ trợ giữ 1 slot hoặc nhiều slot liên tiếp (1 tiếng, 1.5 tiếng, 2 tiếng...).
  *
- * Người phụ trách: Huy (Tuần 2)
- * Hợp đồng API: booking_api_contract.md, mục 4.
+ * Request JSON (giữ nguyên giao diện mà calendar_booking.js của Minh đang gọi):
+ *   { "slot_id": 101, "action": "hold" }
+ *   { "slot_ids": [101, 102, 103], "action": "hold" }      (action mặc định là "hold")
+ *   { "action": "release", "slot_ids": [101, 102] }         (không có slot_ids → huỷ mọi slot đang giữ)
  *
- * Request  (JSON): { "slot_id": 142 }
- * Response (JSON): { status, code, message, data }
- *   200  giữ chỗ thành công   → data: { slot_id, hold_expires_at (ISO 8601 +07:00), expires_in_seconds }
- *   400  thiếu/sai slot_id (hoặc khung giờ đã qua)
- *   401  chưa đăng nhập
- *   404  không tìm thấy khung giờ (hoặc sân đã ngưng hoạt động)
- *   405  sai phương thức (chỉ POST)
- *   409  slot đang được người khác giữ / đã được đặt
- *   500  lỗi hệ thống
+ * Phản hồi: { status, code, message, data } theo booking_api_contract.md.
+ *   200 thành công · 401 chưa đăng nhập · 404 không thấy slot · 405 sai phương thức
+ *   409 slot đã bị người khác giữ / đã đặt · 422 thiếu/sai tham số · 500 lỗi hệ thống
  *
- * Chống tranh chấp: 2 người bấm giữ cùng 1 slot cùng lúc → SELECT ... FOR UPDATE khoá dòng,
- * người đến sau phải chờ người trước COMMIT rồi mới đọc lại trạng thái → chỉ 1 người thành công.
+ * Người phụ trách: Huy (task 7) — hợp nhất với bản của Minh (nhiều slot + release).
+ *
+ * Chống tranh chấp (oversell):
+ *   - Khoá TẤT CẢ slot cần giữ trong 1 câu SELECT ... ORDER BY id ... FOR UPDATE (khoá theo thứ tự id
+ *     tăng dần → 2 request giữ nhiều slot giao nhau không khoá chéo nhau gây deadlock).
+ *   - Mọi so sánh thời gian dùng NOW() của MySQL (config/db.php đã SET time_zone '+07:00').
+ *   - Nếu vẫn gặp deadlock/lock timeout (MySQL 1213/1205) thì tự thử lại tối đa 3 lần.
  */
-require_once __DIR__ . '/../config/db.php'; // cung cấp $pdo (đã set múi giờ +07:00)
-
+require_once __DIR__ . '/../config/db.php';
 header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: Content-Type');
 
 const HOLD_MINUTES = 5;
+const MAX_RETRY    = 3;
 
-function respond(int $code, string $message, array $data = []): void
-{
+function jsonResponse(int $code, array $body): void {
     http_response_code($code);
-    $body = [
-        'status'  => $code === 200 ? 'success' : 'error',
-        'code'    => $code,
-        'message' => $message,
-    ];
-    if ($data) {
-        $body['data'] = $data;
+    if (!isset($body['code'])) {
+        $body = ['status' => $body['status'] ?? ($code < 400 ? 'success' : 'error'), 'code' => $code] + $body;
     }
     echo json_encode($body, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// --- 1. Phương thức + đăng nhập -------------------------------------------------
+/** Ngoại lệ nghiệp vụ: bị ném trong transaction để rollback rồi trả lỗi cho client. */
+class HoldError extends Exception {
+    public function __construct(public int $httpCode, string $message) { parent::__construct($message); }
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Allow: POST');
-    respond(405, 'Chỉ chấp nhận phương thức POST.');
+    jsonResponse(405, ['message' => 'Chỉ chấp nhận phương thức POST.']);
 }
 
 session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
-session_start();
-$userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
-session_write_close(); // nhả khoá session sớm để không chặn các request song song của cùng user
-if ($userId <= 0) {
-    respond(401, 'Vui lòng đăng nhập để thực hiện.');
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+session_write_close(); // nhả khoá session để không chặn các request song song của cùng user
+
+if ($currentUserId <= 0) {
+    jsonResponse(401, ['message' => 'Vui lòng đăng nhập để thực hiện giữ chỗ sân.']);
 }
 
-// --- 2. Đọc + kiểm tra đầu vào ---------------------------------------------------
 $input  = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) {
-    $input = $_POST; // cho phép form-urlencoded khi test nhanh bằng Postman
+    $input = $_POST;
 }
-$rawId = $input['slot_id'] ?? null;
-if ($rawId === null || $rawId === '' || filter_var($rawId, FILTER_VALIDATE_INT) === false || (int)$rawId <= 0) {
-    respond(400, 'Thiếu tham số slot_id.');
+$action = isset($input['action']) ? strtolower(trim((string)$input['action'])) : 'hold';
+if (!in_array($action, ['hold', 'release'], true)) {
+    jsonResponse(422, ['message' => 'Hành động không hợp lệ (chỉ hỗ trợ hold hoặc release).']);
 }
-$slotId = (int)$rawId;
 
-// --- 3. Transaction giữ chỗ ------------------------------------------------------
-try {
+// Gom slot_id / slot_ids thành mảng số nguyên dương, bỏ trùng, sắp tăng dần (thứ tự khoá cố định)
+$slotIds = [];
+if (!empty($input['slot_id'])) {
+    $slotIds[] = (int)$input['slot_id'];
+}
+if (!empty($input['slot_ids']) && is_array($input['slot_ids'])) {
+    foreach ($input['slot_ids'] as $sid) {
+        $slotIds[] = (int)$sid;
+    }
+}
+$slotIds = array_values(array_unique(array_filter($slotIds, fn($v) => $v > 0)));
+sort($slotIds);
+
+/** Giá 1 ô 30 phút: price_per_hour / 2, giờ cao điểm 17h–21h phụ thu 7.500đ (khớp slots.php / bookings.php). */
+function slotPrice(array $slot): int {
+    $p = (int)round((float)$slot['price_per_hour'] / 2);
+    $h = (int)substr($slot['start_time'], 0, 2);
+    return ($h >= 17 && $h <= 21) ? $p + 7500 : $p;
+}
+
+/** Thực hiện 1 lần giữ chỗ trong transaction. Trả mảng response data; ném HoldError nếu nghiệp vụ từ chối. */
+function doHold(PDO $pdo, int $userId, array $slotIds): array {
     $pdo->beginTransaction();
+    try {
+        $in = implode(',', array_fill(0, count($slotIds), '?'));
 
-    // Khoá dòng slot. Mọi so sánh thời gian tính bằng NOW() của MySQL (một nguồn thời gian duy nhất).
-    $stmt = $pdo->prepare(
-        "SELECT ts.id, ts.status, ts.held_by,
-                DATE_FORMAT(ts.start_time, '%H:%i') AS start_hm,
-                DATE_FORMAT(ts.end_time,   '%H:%i') AS end_hm,
-                (ts.status = 'holding' AND ts.hold_expires_at IS NOT NULL
-                    AND ts.hold_expires_at < NOW())                          AS hold_expired,
-                (TIMESTAMP(ts.slot_date, ts.start_time) < NOW())             AS is_past,
-                c.status AS court_status
-           FROM time_slots ts
-           JOIN courts c ON c.id = ts.court_id
-          WHERE ts.id = ?
-          FOR UPDATE"
-    );
-    $stmt->execute([$slotId]);
-    $slot = $stmt->fetch();
+        // Khoá toàn bộ slot theo thứ tự id. hold_expired do MySQL tính (NOW()) — một nguồn thời gian duy nhất.
+        $stmt = $pdo->prepare("
+            SELECT s.*, c.name AS court_name, c.price_per_hour, c.status AS court_status,
+                   (s.status = 'holding' AND s.hold_expires_at IS NOT NULL AND s.hold_expires_at < NOW()) AS hold_expired
+            FROM time_slots s
+            JOIN courts c ON c.id = s.court_id
+            WHERE s.id IN ($in)
+            ORDER BY s.id
+            FOR UPDATE
+        ");
+        $stmt->execute($slotIds);
+        $rows = $stmt->fetchAll();
 
-    if (!$slot || $slot['court_status'] !== 'active') {
-        $pdo->rollBack();
-        respond(404, 'Không tìm thấy khung giờ.');
+        $byId = [];
+        foreach ($rows as $r) { $byId[(int)$r['id']] = $r; }
+        foreach ($slotIds as $sid) {
+            if (!isset($byId[$sid]) || $byId[$sid]['court_status'] !== 'active') {
+                throw new HoldError(404, "Không tìm thấy khung giờ ID #{$sid}.");
+            }
+        }
+
+        $first = $byId[$slotIds[0]];
+        foreach ($slotIds as $sid) {
+            $s = $byId[$sid];
+            if ((int)$s['court_id'] !== (int)$first['court_id'] || $s['slot_date'] !== $first['slot_date']) {
+                throw new HoldError(422, 'Các khung giờ phải thuộc cùng một sân và cùng một ngày.');
+            }
+        }
+
+        $total = 0;
+        foreach ($slotIds as $sid) {
+            $s     = $byId[$sid];
+            $range = substr($s['start_time'], 0, 5) . '–' . substr($s['end_time'], 0, 5);
+
+            if ($s['status'] === 'booked') {
+                throw new HoldError(409, "Khung giờ {$s['sub_court_name']} {$range} đã có khách hàng khác đặt thành công.");
+            }
+            // Đang holding, còn hạn, của người khác → từ chối. (Hết hạn = coi như trống; của chính mình = gia hạn.)
+            if ($s['status'] === 'holding' && !$s['hold_expired'] && (int)$s['held_by'] !== $userId) {
+                throw new HoldError(409, "Khung giờ {$s['sub_court_name']} {$range} đang được khách khác giữ chỗ. Vui lòng chọn khung giờ khác!");
+            }
+            $total += slotPrice($s);
+        }
+
+        // Người dùng chọn lại vùng khác → trả các slot cũ họ đang giữ (không thuộc lần chọn này) về available.
+        $pdo->prepare("
+            UPDATE time_slots SET status = 'available', held_by = NULL, hold_expires_at = NULL
+            WHERE status = 'holding' AND held_by = ? AND id NOT IN ($in)
+        ")->execute(array_merge([$userId], $slotIds));
+
+        $pdo->prepare("
+            UPDATE time_slots
+            SET status = 'holding', held_by = ?, hold_expires_at = DATE_ADD(NOW(), INTERVAL " . HOLD_MINUTES . " MINUTE)
+            WHERE id IN ($in)
+        ")->execute(array_merge([$userId], $slotIds));
+
+        $chk = $pdo->prepare("SELECT hold_expires_at, TIMESTAMPDIFF(SECOND, NOW(), hold_expires_at) AS secs FROM time_slots WHERE id = ?");
+        $chk->execute([$slotIds[0]]);
+        $exp = $chk->fetch();
+
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) { $pdo->rollBack(); }
+        throw $e;
     }
 
-    $range = $slot['start_hm'] . '-' . $slot['end_hm'];
+    $last = $byId[end($slotIds)];
+    $n    = count($slotIds);
+    $hrs  = $n * 0.5;
+    $startHm = substr($first['start_time'], 0, 5);
+    $endHm   = substr($last['end_time'], 0, 5);
 
-    if ($slot['status'] === 'booked') {
-        $pdo->rollBack();
-        respond(409, "Khung giờ {$range} đã được đặt. Vui lòng chọn khung giờ khác!");
-    }
-
-    if ($slot['is_past']) {
-        $pdo->rollBack();
-        respond(400, "Khung giờ {$range} đã qua, không thể giữ chỗ.");
-    }
-
-    // Đang 'holding', còn hạn, của người khác → từ chối.
-    // (Hết hạn rồi thì coi như 'available' → cho phép giữ tiếp. Chính mình giữ lại thì gia hạn 5 phút.)
-    if ($slot['status'] === 'holding' && !$slot['hold_expired'] && (int)$slot['held_by'] !== $userId) {
-        $pdo->rollBack();
-        respond(409, "Khung giờ {$range} đã được người khác giữ chỗ. Vui lòng chọn khung giờ khác!");
-    }
-
-    $upd = $pdo->prepare(
-        "UPDATE time_slots
-            SET status = 'holding',
-                held_by = ?,
-                hold_expires_at = NOW() + INTERVAL " . HOLD_MINUTES . " MINUTE
-          WHERE id = ?"
-    );
-    $upd->execute([$userId, $slotId]);
-
-    // Đọc lại hạn giữ chỗ do chính MySQL tính, trong cùng transaction.
-    $chk = $pdo->prepare(
-        "SELECT hold_expires_at, TIMESTAMPDIFF(SECOND, NOW(), hold_expires_at) AS secs
-           FROM time_slots WHERE id = ?"
-    );
-    $chk->execute([$slotId]);
-    $row = $chk->fetch();
-
-    $pdo->commit();
-} catch (Throwable $e) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
-    error_log('[hold.php] ' . $e->getMessage());
-    respond(500, 'Lỗi hệ thống, vui lòng thử lại.');
+    return [
+        'slot_id'            => (int)$first['id'],
+        'slot_ids'           => $slotIds,
+        'court_id'           => (int)$first['court_id'],
+        'court_name'         => $first['court_name'],
+        'sub_court_name'     => $first['sub_court_name'],
+        'slot_date'          => $first['slot_date'],
+        'start_time'         => $startHm,
+        'end_time'           => $endHm,
+        'time_range'         => "{$startHm} – {$endHm}",
+        'duration'           => $hrs,
+        'duration_label'     => "{$hrs} giờ ({$n} ô)",
+        'total_price'        => $total,
+        'deposit_amount'     => (int)round($total * 0.5),
+        'status'             => 'holding',
+        'expires_in'         => (int)$exp['secs'],                 // giữ tên cũ mà frontend đang dùng
+        'expires_in_seconds' => (int)$exp['secs'],                 // tên theo hợp đồng API
+        'hold_expires_at'    => (new DateTime($exp['hold_expires_at'], new DateTimeZone('Asia/Ho_Chi_Minh')))->format('c'),
+    ];
 }
 
-$expiresIso = (new DateTime($row['hold_expires_at'], new DateTimeZone('Asia/Ho_Chi_Minh')))->format('c');
+try {
+    // ---- HUỶ GIỮ CHỖ ----
+    if ($action === 'release') {
+        if ($slotIds) {
+            $in = implode(',', array_fill(0, count($slotIds), '?'));
+            $st = $pdo->prepare("UPDATE time_slots SET status='available', held_by=NULL, hold_expires_at=NULL
+                                 WHERE status='holding' AND held_by = ? AND id IN ($in)");
+            $st->execute(array_merge([$currentUserId], $slotIds));
+        } else {
+            $st = $pdo->prepare("UPDATE time_slots SET status='available', held_by=NULL, hold_expires_at=NULL
+                                 WHERE status='holding' AND held_by = ?");
+            $st->execute([$currentUserId]);
+        }
+        jsonResponse(200, ['message' => 'Đã hủy giữ chỗ thành công.', 'data' => ['status' => 'available']]);
+    }
 
-respond(200, 'Giữ chỗ thành công! Bạn có ' . HOLD_MINUTES . ' phút để thanh toán.', [
-    'slot_id'            => $slotId,
-    'hold_expires_at'    => $expiresIso,
-    'expires_in_seconds' => (int)$row['secs'],
-]);
+    // ---- GIỮ CHỖ ----
+    if (!$slotIds) {
+        jsonResponse(422, ['message' => 'Vui lòng chọn ít nhất 1 khung giờ cần giữ chỗ (slot_id hoặc slot_ids).']);
+    }
+
+    $data = null;
+    for ($attempt = 1; $attempt <= MAX_RETRY; $attempt++) {
+        try {
+            $data = doHold($pdo, $currentUserId, $slotIds);
+            break;
+        } catch (PDOException $e) {
+            $mysqlCode = (int)($e->errorInfo[1] ?? 0);
+            if (in_array($mysqlCode, [1213, 1205], true) && $attempt < MAX_RETRY) {
+                usleep(random_int(20000, 80000)); // deadlock / lock timeout → thử lại
+                continue;
+            }
+            throw $e;
+        }
+    }
+
+    jsonResponse(200, [
+        'message' => 'Giữ chỗ thành công! Bạn có ' . HOLD_MINUTES . ' phút để hoàn tất đặt sân & thanh toán cọc.',
+        'data'    => $data,
+    ]);
+
+} catch (HoldError $e) {
+    jsonResponse($e->httpCode, ['message' => $e->getMessage()]);
+} catch (Throwable $e) {
+    error_log('[hold.php] ' . $e->getMessage());
+    jsonResponse(500, ['message' => 'Lỗi hệ thống, vui lòng thử lại.']);
+}
