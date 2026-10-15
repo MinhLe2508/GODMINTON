@@ -197,9 +197,13 @@
             // Popup HTML escape triệt để chống XSS
             const detailUrl = `court-detail.php?id=${encodeURIComponent(court.id)}`;
             const priceText = court.price_formatted || formatVND(court.price_per_hour);
+            const imageUrl = court.image_url || 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=600&auto=format&fit=crop';
 
             const popupContent = `
                 <div class="court-map-popup">
+                    <div class="popup-img-wrapper">
+                        <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(court.name)}" class="popup-thumb" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=600&auto=format&fit=crop';">
+                    </div>
                     <div class="popup-title">${escapeHtml(court.name)}</div>
                     <div class="popup-address">
                         <i class="fa-solid fa-location-dot text-teal me-1"></i>${escapeHtml(court.address || 'Đang cập nhật địa chỉ')}
@@ -213,7 +217,7 @@
                 </div>
             `;
 
-            marker.bindPopup(popupContent, { maxWidth: 280 });
+            marker.bindPopup(popupContent, { maxWidth: 300 });
             markersLayer.addLayer(marker);
         });
 
@@ -236,11 +240,106 @@
         map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
     }
 
+    // Bật/tắt chế độ toàn màn hình
+    function toggleFullscreen() {
+        const wrapper = document.querySelector('.court-map-wrapper');
+        if (!wrapper) return;
+
+        const isFullscreen = document.fullscreenElement ||
+                             document.webkitFullscreenElement ||
+                             document.mozFullScreenElement ||
+                             document.msFullscreenElement ||
+                             wrapper.classList.contains('court-map-is-fullscreen');
+
+        if (!isFullscreen) {
+            if (wrapper.requestFullscreen) {
+                wrapper.requestFullscreen().catch(() => {
+                    wrapper.classList.add('court-map-is-fullscreen');
+                    syncFullscreenUI(true);
+                });
+            } else if (wrapper.webkitRequestFullscreen) {
+                wrapper.webkitRequestFullscreen();
+            } else if (wrapper.msRequestFullscreen) {
+                wrapper.msRequestFullscreen();
+            } else {
+                wrapper.classList.add('court-map-is-fullscreen');
+                syncFullscreenUI(true);
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {
+                    wrapper.classList.remove('court-map-is-fullscreen');
+                    syncFullscreenUI(false);
+                });
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            } else {
+                wrapper.classList.remove('court-map-is-fullscreen');
+                syncFullscreenUI(false);
+            }
+        }
+
+        setTimeout(() => {
+            if (map) map.invalidateSize();
+        }, 200);
+    }
+
+    function syncFullscreenUI(isFs) {
+        // Cập nhật nút toolbar
+        const iconState = document.querySelector('.icon-fullscreen-state');
+        const textState = document.querySelector('.text-fullscreen-state');
+        if (iconState) {
+            iconState.className = isFs ? 'fa-solid fa-compress me-1 icon-fullscreen-state' : 'fa-solid fa-expand me-1 icon-fullscreen-state';
+        }
+        if (textState) {
+            textState.textContent = isFs ? 'Thu nhỏ' : 'Toàn màn hình';
+        }
+
+        // Cập nhật floating button
+        const iconExpand = document.querySelector('.court-map-floating-fs-btn .fs-icon-expand');
+        const iconCompress = document.querySelector('.court-map-floating-fs-btn .fs-icon-compress');
+        if (iconExpand && iconCompress) {
+            if (isFs) {
+                iconExpand.classList.add('d-none');
+                iconCompress.classList.remove('d-none');
+            } else {
+                iconExpand.classList.remove('d-none');
+                iconCompress.classList.add('d-none');
+            }
+        }
+
+        setTimeout(() => {
+            if (map) map.invalidateSize();
+        }, 150);
+    }
+
+    // Lắng nghe sự kiện thay đổi fullscreen toàn cục
+    ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(ev => {
+        document.addEventListener(ev, () => {
+            const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+            syncFullscreenUI(isFs);
+        });
+    });
+
+    // Lắng nghe phím ESC cho CSS fallback
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const wrapper = document.querySelector('.court-map-wrapper.court-map-is-fullscreen');
+            if (wrapper) {
+                wrapper.classList.remove('court-map-is-fullscreen');
+                syncFullscreenUI(false);
+            }
+        }
+    });
+
     // Xuất API công khai
     window.CourtMap = {
         init: initCourtMap,
         updateMarkers: updateMarkers,
         resetView: resetView,
+        toggleFullscreen: toggleFullscreen,
         getMap: function () { return map; }
     };
 

@@ -880,15 +880,58 @@ foreach ($targets as $idx => $t) {
             ]);
             $newCourtId = (int)$pdo->lastInsertId();
 
-            // Thêm 1 ảnh đại diện mẫu cho sân
-            $imgStmt = $pdo->prepare("INSERT INTO court_images (court_id, image_url, sort_order) VALUES (?, ?, 1)");
-            $imgStmt->execute([
-                $newCourtId,
-                'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop'
-            ]);
+            // 1. Gán ảnh đại diện đa dạng sắc nét từ kho ảnh cầu lông
+            $sampleBadmintonImages = [
+                'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1521537634581-0dced2fee2ef?w=800&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1613918108466-292b78a8ef95?w=800&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1526676037777-05a232554f77?w=800&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1599474924187-334a4ae5bd3c?w=800&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1511067007798-44670806348f?w=800&auto=format&fit=crop',
+                'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=800&auto=format&fit=crop'
+            ];
+            $selectedImg = $sampleBadmintonImages[$importedCount % count($sampleBadmintonImages)];
+
+            $imgStmt = $pdo->prepare("INSERT INTO court_images (court_id, image_url, sort_order) VALUES (?, ?, 0)");
+            $imgStmt->execute([$newCourtId, $selectedImg]);
+
+            // 2. Gán các tiện ích phổ biến cho sân (parking, wifi, indoor + tiện ích bổ trợ)
+            $commonAmenities = [2, 7, 8]; // Bãi đỗ xe, Wi-Fi, Sân trong nhà
+            $extraAmenities = [1, 3, 4, 5, 6]; // Điều hòa, Phòng tắm, Cho thuê vợt, Canteen, Tủ khóa
+            shuffle($extraAmenities);
+            $amenityList = array_unique(array_merge($commonAmenities, array_slice($extraAmenities, 0, 3)));
+
+            $amenStmt = $pdo->prepare("INSERT IGNORE INTO court_amenities (court_id, amenity_id) VALUES (?, ?)");
+            foreach ($amenityList as $amId) {
+                $amenStmt->execute([$newCourtId, $amId]);
+            }
+
+            // 3. Khởi tạo một số khung giờ mẫu hôm nay và ngày mai để khách có thể đặt ngay
+            $today = date('Y-m-d');
+            $tomorrow = date('Y-m-d', strtotime('+1 day'));
+            $slotTimes = [
+                ['08:00:00', '09:30:00'],
+                ['09:30:00', '11:00:00'],
+                ['17:00:00', '18:30:00'],
+                ['18:30:00', '20:00:00']
+            ];
+            $slotStmt = $pdo->prepare("
+                INSERT INTO time_slots (court_id, sub_court_name, slot_date, start_time, end_time, status)
+                VALUES (?, ?, ?, ?, ?, 'available')
+            ");
+            foreach ([$today, $tomorrow] as $sDate) {
+                foreach (['Thảm A1', 'Thảm A2'] as $subCourt) {
+                    foreach ($slotTimes as $st) {
+                        $slotStmt->execute([$newCourtId, $subCourt, $sDate, $st[0], $st[1]]);
+                    }
+                }
+            }
 
             $pdo->commit();
-            echo "  [THÀNH CÔNG] Đã lưu sân mới vào CSDL với ID = {$newCourtId}.\n";
+            echo "  [THÀNH CÔNG] Đã lưu sân mới vào CSDL với ID = {$newCourtId} (kèm ảnh, tiện ích và khung giờ mẫu).\n";
             $importedCount++;
         } catch (PDOException $e) {
             if ($pdo->inTransaction()) {
