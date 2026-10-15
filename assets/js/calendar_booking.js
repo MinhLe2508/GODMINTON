@@ -106,6 +106,8 @@ function buildEventMapForCourt(courtIndex) {
         let type = 'available';
         if (s.status === 'booked') {
             type = 'booked';
+        } else if (s.status === 'blocked') {
+            type = 'locked';
         } else if (s.status === 'holding') {
             type = s.is_my_hold ? 'holding' : 'locked';
         }
@@ -155,8 +157,8 @@ function buildEventMapForCourt(courtIndex) {
             label = `Bạn đang giữ (${durLabel})`;
             sub = `Còn ${mins}p${secs < 10 ? '0' : ''}${secs}s`;
         } else if (type === 'locked') {
-            label = 'Đang giữ';
-            sub = 'Khách đang cọc';
+            label = s.status === 'blocked' ? 'Ngừng nhận' : 'Đang giữ';
+            sub = s.status === 'blocked' ? `${s.start_time}–${s.end_time}` : 'Khách đang cọc';
         }
 
         const ev = {
@@ -343,7 +345,7 @@ async function handleSlotClick(courtIndex, slotIdx, type, slotId) {
 
         if (res.isConfirmed) {
             const heldIds = myHeldSlots.map(s => s.id).join(',');
-            window.location.href = `payment.php?court_id=${activeCourtId}&slot_ids=${heldIds}&date=${activeDateStr}`;
+            window.location.href = `confirm.php?court_id=${activeCourtId}&slot_ids=${heldIds}&date=${activeDateStr}`;
         } else if (res.dismiss === Swal.DismissReason.cancel) {
             await releaseHoldSlots(myHeldSlots.map(s => s.id));
         }
@@ -598,7 +600,7 @@ function updateSummaryBar() {
         const payBtn = document.getElementById('btnGoPayment');
         if (payBtn) {
             const heldIds = myHeldSlots.map(s => s.id).join(',');
-            payBtn.href = `payment.php?court_id=${activeCourtId}&slot_ids=${heldIds}&date=${activeDateStr}`;
+            payBtn.href = `confirm.php?court_id=${activeCourtId}&slot_ids=${heldIds}&date=${activeDateStr}`;
             payBtn.innerHTML = '<i class="fa-solid fa-lock me-2"></i>Đặt Cọc & Thanh Toán';
             payBtn.onclick = null;
         }

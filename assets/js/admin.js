@@ -1,119 +1,188 @@
 /**
- * GODMINTON - ADMIN (CHỦ SÂN) PANEL
- * Lớp mở rộng phía client cho khu vực quản trị chủ sân.
- * Không đụng tới mock-data.js — chỉ đọc/ghi thêm các key localStorage
- * theo đúng định dạng mà MockDB đã dùng, để tương thích với phần
- * giao diện khách hàng (booking.js, history.js ...).
+ * GODMINTON - ADMIN & OWNER PANEL (Tuần 3 — Kết nối API MySQL thật)
+ * Người phụ trách: Huy (Task 13, Task 14, Dashboard)
+ *
+ * Cung cấp các hàm gọi API thật (api/admin/courts.php, api/admin/slots.php,
+ * api/admin/dashboard.php, api/auth/logout.php) đồng thời giữ các hàm
+ * tương thích ngược cho admin-bookings.php.
  */
 
 const AdminApp = (() => {
+    let cachedCourts = [];
+    let cachedWards  = [];
 
-    /* ================= AUTH GUARD (CHẾ ĐỘ TĨNH) ================= */
-    // Luôn cho phép truy cập khu quản trị tĩnh với dữ liệu mẫu đầy đủ
+    /** Định dạng tiền tệ VNĐ thuần JS (không phụ thuộc MockDB) */
+    function formatVND(amount) {
+        return new Intl.NumberFormat('vi-VN').format(Number(amount) || 0) + ' đ';
+    }
+
+    /* ================= AUTH GUARD (SERVER SESSION) ================= */
     function requireAuth() {
-        MockDB.init();
-        let user = MockDB.getUser();
+        let user = (typeof window.__GODMINTON_USER__ !== 'undefined' && window.__GODMINTON_USER__)
+            ? window.__GODMINTON_USER__
+            : ((typeof MockDB !== 'undefined' && MockDB.getUser) ? MockDB.getUser() : null);
+
         if (!user || (user.role !== 'owner' && user.role !== 'admin')) {
-            user = {
-                id: 1,
-                name: "Quản Trị Viên (Demo)",
-                email: "admin@godminton.vn",
-                phone: "0900 000 001",
-                role: "admin"
-            };
+            const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `auth.php?redirect=${redirectUrl}`;
+            return null;
         }
         return user;
     }
 
+    /* ================= API HELPER ================= */
+    async function apiRequest(url, options = {}) {
+        const defaultHeaders = { 'Content-Type': 'application/json' };
+        const config = {
+            credentials: 'same-origin',
+            ...options,
+            headers: { ...defaultHeaders, ...(options.headers || {}) }
+        };
+        const res = await fetch(url, config);
+        let json = null;
+        try {
+            json = await res.json();
+        } catch (_) {
+            json = { status: 'error', message: 'Phản hồi máy chủ không hợp lệ.' };
+        }
+        if (!res.ok || json.status === 'error') {
+            const err = new Error(json?.message || `Lỗi HTTP ${res.status}`);
+            err.status = res.status;
+            err.payload = json;
+            throw err;
+        }
+        return json;
+    }
 
-    /* ================= OWNER -> COURTS SCOPE ================= */
-    // Chủ sân chỉ quản lý những sân mà họ đứng tên (owner_phone trùng
-    // với số điện thoại tài khoản). Admin (quản trị hệ thống) thấy tất cả.
+    /* ================= COURTS API (Task 13) ================= */
+    async function fetchCourts(search = '') {
+        const q = search ? `?search=${encodeURIComponent(search)}` : '';
+        const res = await apiRequest(`api/admin/courts.php${q}`, { method: 'GET' });
+        cachedCourts = Array.isArray(res.data) ? res.data : [];
+        if (Array.isArray(res.wards)) {
+            cachedWards = res.wards;
+        }
+        return { courts: cachedCourts, wards: cachedWards };
+    }
+
+    async function createCourt(payload) {
+        const res = await apiRequest('api/admin/courts.php', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        return res.data;
+    }
+
+    async function updateCourt(id, payload) {
+        const res = await apiRequest('api/admin/courts.php', {
+            method: 'PUT',
+            body: JSON.stringify({ id: Number(id), ...payload })
+        });
+        return res.data;
+    }
+
+    async function deleteCourtApi(id) {
+        const res = await apiRequest(`api/admin/courts.php?id=${encodeURIComponent(id)}`, {
+            method: 'DELETE'
+        });
+        return res;
+    }
+
+    /* ================= SLOTS API (Task 14) ================= */
+    async function fetchSlots(courtId, dateStr) {
+        const params = new URLSearchParams({ court_id: courtId, date: dateStr });
+        const res = await apiRequest(`api/admin/slots.php?${params.toString()}`, { method: 'GET' });
+        return res.data || [];
+    }
+
+    async function generateSlotsApi(courtId, dateStr, opts) {
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'generate',
+                court_id: Number(courtId),
+                slot_date: dateStr,
+                start_time: opts.startTime,
+                end_time: opts.endTime,
+                duration_min: Number(opts.durationMin),
+                price: Number(opts.price),
+                sub_courts: opts.subCourts
+            })
+        });
+        return res;
+    }
+
+    async function setSlotStatusApi(slotId, status) {
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'PATCH',
+            body: JSON.stringify({ slot_id: Number(slotId), status })
+        });
+        return res;
+    }
+
+    async function deleteSlotApi(slotId) {
+        const res = await apiRequest(`api/admin/slots.php?id=${encodeURIComponent(slotId)}`, {
+            method: 'DELETE'
+        });
+        return res;
+    }
+
+    async function clearDaySlotsApi(courtId, dateStr) {
+        const params = new URLSearchParams({
+            court_id: courtId,
+            date: dateStr,
+            clear_day: '1'
+        });
+        const res = await apiRequest(`api/admin/slots.php?${params.toString()}`, {
+            method: 'DELETE'
+        });
+        return res;
+    }
+
+    /* ================= DASHBOARD API ================= */
+    async function fetchDashboard() {
+        const res = await apiRequest('api/admin/dashboard.php', { method: 'GET' });
+        return res.data;
+    }
+
+    /* ================= TƯƠNG THÍCH NGƯỢC (CHO ADMIN-BOOKINGS.PHP) ================= */
     function getAllCourts() {
-        MockDB.init();
+        if (cachedCourts.length > 0) return cachedCourts;
+        if (typeof MockDB !== 'undefined' && MockDB.init) MockDB.init();
         return JSON.parse(localStorage.getItem('bm_courts') || '[]');
     }
 
     function saveAllCourts(courts) {
+        cachedCourts = courts;
         localStorage.setItem('bm_courts', JSON.stringify(courts));
     }
 
     function getMyCourts(user) {
+        if (cachedCourts.length > 0) return cachedCourts;
         const all = getAllCourts();
         if (!user) return [];
         if (user.role === 'admin') return all;
-        return all.filter(c => c.owner_phone && user.phone && c.owner_phone.replace(/\s/g, '') === user.phone.replace(/\s/g, ''));
+        return all.filter(c =>
+            (c.owner_id && Number(c.owner_id) === Number(user.id)) ||
+            (c.owner_phone && user.phone && c.owner_phone.replace(/\s/g, '') === user.phone.replace(/\s/g, ''))
+        );
     }
 
     function getMyCourtIds(user) {
         return getMyCourts(user).map(c => c.id);
     }
 
-    /* ================= BOOKINGS SCOPE ================= */
     function getMyBookings(user) {
+        if (typeof MockDB === 'undefined' || !MockDB.getBookings) return [];
+        if (user && user.role === 'admin') return MockDB.getBookings();
         const ids = getMyCourtIds(user);
         return MockDB.getBookings().filter(b => ids.includes(b.court_id));
     }
 
     function saveBookings(bookings) {
-        MockDB.saveBookings(bookings);
-    }
-
-    /* ================= SLOTS ================= */
-    function slotKey(courtId, dateStr) {
-        return `bm_slots_${courtId}_${dateStr}`;
-    }
-
-    function getSlots(courtId, dateStr) {
-        return JSON.parse(localStorage.getItem(slotKey(courtId, dateStr)) || '[]');
-    }
-
-    function saveSlots(courtId, dateStr, slots) {
-        localStorage.setItem(slotKey(courtId, dateStr), JSON.stringify(slots));
-    }
-
-    // Sinh khung giờ hàng loạt cho 1 sân / 1 ngày.
-    // opts: { startTime, endTime, durationMin, price, subCourts: [names] }
-    function generateSlots(court, dateStr, opts) {
-        const existing = getSlots(court.id, dateStr);
-        const [sh, sm] = opts.startTime.split(':').map(Number);
-        const [eh, em] = opts.endTime.split(':').map(Number);
-        let cursor = sh * 60 + sm;
-        const end = eh * 60 + em;
-        const created = [];
-        let idCounter = existing.reduce((max, s) => Math.max(max, s.id), Date.now() % 100000);
-
-        while (cursor + opts.durationMin <= end) {
-            const startStr = minutesToTime(cursor);
-            const endStr = minutesToTime(cursor + opts.durationMin);
-
-            opts.subCourts.forEach(subName => {
-                const clash = existing.some(s => s.sub_court_name === subName && s.start_time === startStr && s.end_time === endStr);
-                if (!clash) {
-                    idCounter += 1;
-                    created.push({
-                        id: idCounter,
-                        court_id: court.id,
-                        court_name: court.name,
-                        sub_court_name: subName,
-                        slot_date: dateStr,
-                        start_time: startStr,
-                        end_time: endStr,
-                        time_range: `${startStr} - ${endStr}`,
-                        price: opts.price,
-                        price_formatted: MockDB.formatVND(opts.price),
-                        status: 'available',
-                        holding_user_id: null,
-                        hold_expire: null
-                    });
-                }
-            });
-            cursor += opts.durationMin;
+        if (typeof MockDB !== 'undefined' && MockDB.saveBookings) {
+            MockDB.saveBookings(bookings);
         }
-
-        const merged = existing.concat(created);
-        saveSlots(court.id, dateStr, merged);
-        return { createdCount: created.length, total: merged.length };
     }
 
     function minutesToTime(total) {
@@ -122,60 +191,12 @@ const AdminApp = (() => {
         return `${h}:${m}`;
     }
 
-    function setSlotStatus(courtId, dateStr, slotId, status) {
-        const slots = getSlots(courtId, dateStr);
-        const slot = slots.find(s => s.id === slotId);
-        if (!slot) return false;
-        if (slot.status === 'booked' && status !== 'booked') {
-            // Không cho phép mở lại slot đã có khách đặt & xác nhận từ màn hình khung giờ.
-            return false;
-        }
-        slot.status = status;
-        if (status === 'available') { slot.holding_user_id = null; slot.hold_expire = null; }
-        saveSlots(courtId, dateStr, slots);
-        return true;
-    }
-
-    function deleteSlot(courtId, dateStr, slotId) {
-        const slots = getSlots(courtId, dateStr).filter(s => s.id !== slotId);
-        saveSlots(courtId, dateStr, slots);
-    }
-
-    /* ================= STATS ================= */
-    function computeStats(user) {
-        const courts = getMyCourts(user);
-        const bookings = getMyBookings(user);
-        const todayStr = new Date().toISOString().split('T')[0];
-
-        const startOfWeek = new Date();
-        const day = (startOfWeek.getDay() + 6) % 7; // Monday = 0
-        startOfWeek.setDate(startOfWeek.getDate() - day);
-        startOfWeek.setHours(0, 0, 0, 0);
-
-        const todayBookings = bookings.filter(b => b.booking_date === todayStr);
-        const weekBookings = bookings.filter(b => new Date(b.booking_date) >= startOfWeek);
-        const revenue = bookings
-            .filter(b => b.booking_status === 'confirmed' || b.booking_status === 'completed')
-            .reduce((sum, b) => sum + (b.total_amount || 0), 0);
-
-        return {
-            totalCourts: courts.length,
-            activeCourts: courts.filter(c => c.status === 'active').length,
-            todayCount: todayBookings.length,
-            weekCount: weekBookings.length,
-            totalBookings: bookings.length,
-            pendingCount: bookings.filter(b => b.booking_status === 'confirmed').length,
-            cancelledCount: bookings.filter(b => b.booking_status === 'cancelled').length,
-            revenue
-        };
-    }
-
     /* ================= UI: SIDEBAR / TOPBAR ================= */
     function renderShell(activePage, pageTitle, breadcrumb) {
         const user = requireAuth();
         if (!user) return null;
 
-        const initial = user.name ? user.name.charAt(0) : 'C';
+        const initial = user.name ? user.name.charAt(0).toUpperCase() : 'C';
         const roleLabel = user.role === 'admin' ? 'Quản trị viên' : 'Chủ sân';
 
         const navItems = [
@@ -190,9 +211,12 @@ const AdminApp = (() => {
                 <i class="fa-solid ${item.icon}"></i> ${item.label}
             </a>`).join('');
 
-        document.getElementById('adminSidebarNav').innerHTML = navHtml;
+        const navEl = document.getElementById('adminSidebarNav');
+        if (navEl) navEl.innerHTML = navHtml;
 
-        document.getElementById('adminUserBox').innerHTML = `
+        const userBoxEl = document.getElementById('adminUserBox');
+        if (userBoxEl) {
+            userBoxEl.innerHTML = `
             <div class="dropdown w-100">
                 <button class="btn w-100 d-flex align-items-center gap-2 border-0 text-start px-2" type="button" data-bs-toggle="dropdown" style="background:rgba(255,255,255,.04); border-radius:.75rem; color:#e2e8f0;">
                     <div class="avatar-sm rounded-circle bg-teal text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0">${initial}</div>
@@ -210,11 +234,19 @@ const AdminApp = (() => {
                     <li><a class="dropdown-item py-2 text-danger" href="#" id="adminLogoutBtn"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất</a></li>
                 </ul>
             </div>`;
+        }
 
-        document.getElementById('adminLogoutBtn')?.addEventListener('click', (e) => {
+        document.getElementById('adminLogoutBtn')?.addEventListener('click', async (e) => {
             e.preventDefault();
-            MockDB.logout();
-            window.location.href = 'index.php';
+            try {
+                await fetch('api/auth/logout.php', { method: 'POST', credentials: 'same-origin' });
+            } catch (_) {}
+            if (typeof MockDB !== 'undefined' && MockDB.logout) {
+                MockDB.logout();
+            } else {
+                localStorage.removeItem('bm_user');
+            }
+            window.location.href = 'auth.php';
         });
 
         const titleEl = document.getElementById('adminPageTitle');
@@ -224,12 +256,12 @@ const AdminApp = (() => {
 
         // Mobile sidebar toggle
         document.getElementById('adminSidebarToggle')?.addEventListener('click', () => {
-            document.getElementById('adminSidebar').classList.add('show');
-            document.getElementById('adminOverlay').classList.add('show');
+            document.getElementById('adminSidebar')?.classList.add('show');
+            document.getElementById('adminOverlay')?.classList.add('show');
         });
         document.getElementById('adminOverlay')?.addEventListener('click', () => {
-            document.getElementById('adminSidebar').classList.remove('show');
-            document.getElementById('adminOverlay').classList.remove('show');
+            document.getElementById('adminSidebar')?.classList.remove('show');
+            document.getElementById('adminOverlay')?.classList.remove('show');
         });
 
         return user;
@@ -250,13 +282,33 @@ const AdminApp = (() => {
     }
 
     return {
-        requireAuth, getAllCourts, saveAllCourts, getMyCourts, getMyCourtIds,
-        getMyBookings, saveBookings, getSlots, saveSlots, generateSlots,
-        setSlotStatus, deleteSlot, computeStats, renderShell, toast, confirmAction,
+        formatVND,
+        requireAuth,
+        fetchCourts,
+        createCourt,
+        updateCourt,
+        deleteCourtApi,
+        fetchSlots,
+        generateSlotsApi,
+        setSlotStatusApi,
+        deleteSlotApi,
+        clearDaySlotsApi,
+        fetchDashboard,
+        getAllCourts,
+        saveAllCourts,
+        getMyCourts,
+        getMyCourtIds,
+        getMyBookings,
+        saveBookings,
+        renderShell,
+        toast,
+        confirmAction,
         minutesToTime
     };
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
-    initTheme();
+    if (typeof initTheme === 'function') {
+        initTheme();
+    }
 });

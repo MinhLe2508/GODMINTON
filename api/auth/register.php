@@ -67,6 +67,8 @@ session_regenerate_id(true);
 $_SESSION['user_id'] = $id;
 $_SESSION['role']    = $role;
 $_SESSION['name']    = $name;
+$_SESSION['email']   = $email;
+$_SESSION['phone']   = $phone;
 
 out(201, ['status' => 'success', 'data' => ['user' => [
     'id' => $id, 'name' => $name, 'email' => $email, 'phone' => $phone, 'role' => $role,
