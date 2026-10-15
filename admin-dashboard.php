@@ -1,3 +1,13 @@
+<?php
+require_once __DIR__ . '/includes/auth-check.php';
+$currentUser = [
+    'id'    => (int)$_SESSION['user_id'],
+    'name'  => $_SESSION['name'] ?? '',
+    'email' => $_SESSION['email'] ?? '',
+    'phone' => $_SESSION['phone'] ?? '',
+    'role'  => $_SESSION['role'] ?? ''
+];
+?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 <head>
@@ -12,6 +22,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/admin_style.css">
+    <script>
+        window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE); ?>;
+    </script>
 </head>
 <body class="admin-body">
 
@@ -87,7 +100,7 @@
                     <div class="admin-stat-card">
                         <div class="admin-stat-icon bg-success bg-opacity-10 text-success"><i class="fa-solid fa-sack-dollar"></i></div>
                         <div>
-                            <div class="admin-stat-value" id="statRevenue">0đ</div>
+                            <div class="admin-stat-value" id="statRevenue">0 đ</div>
                             <div class="admin-stat-label">Doanh thu (đơn hợp lệ)</div>
                         </div>
                     </div>
@@ -152,59 +165,64 @@
 <script src="assets/js/admin.js"></script>
 <script src="assets/js/bottom-nav.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const user = AdminApp.renderShell('dashboard', 'Tổng quan', 'Kênh chủ sân / Thống kê tổng quan');
     if (!user) return;
 
-    const stats = AdminApp.computeStats(user);
-    document.getElementById('statCourts').textContent = stats.totalCourts;
-    document.getElementById('statToday').textContent = stats.todayCount;
-    document.getElementById('statWeek').textContent = stats.weekCount;
-    document.getElementById('statRevenue').textContent = MockDB.formatVND(stats.revenue);
+    try {
+        const data = await AdminApp.fetchDashboard();
+        const stats = data.stats || {};
+        const bookings = data.recentBookings || [];
+        const courts = data.courts || [];
 
-    // Recent bookings (5 mới nhất)
-    const bookings = AdminApp.getMyBookings(user)
-        .slice()
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .slice(0, 6);
+        document.getElementById('statCourts').textContent = stats.totalCourts ?? 0;
+        document.getElementById('statToday').textContent = stats.todayCount ?? 0;
+        document.getElementById('statWeek').textContent = stats.weekCount ?? 0;
+        document.getElementById('statRevenue').textContent = AdminApp.formatVND(stats.revenue ?? 0);
 
-    const statusMap = {
-        confirmed: { badge: 'bg-success', text: 'Đã xác nhận' },
-        completed: { badge: 'bg-primary', text: 'Hoàn thành' },
-        cancelled: { badge: 'bg-secondary', text: 'Đã hủy' }
-    };
+        const statusMap = {
+            pending:   { badge: 'bg-warning text-dark', text: 'Chờ xác nhận' },
+            confirmed: { badge: 'bg-success', text: 'Đã xác nhận' },
+            completed: { badge: 'bg-primary', text: 'Hoàn thành' },
+            cancelled: { badge: 'bg-secondary', text: 'Đã hủy' }
+        };
 
-    const body = document.getElementById('recentBookingsBody');
-    if (bookings.length === 0) {
-        document.getElementById('recentBookingsEmpty').style.display = 'block';
-    } else {
-        body.innerHTML = bookings.map(b => {
-            const s = statusMap[b.booking_status] || statusMap.confirmed;
-            return `<tr>
-                <td class="fw-semibold">${b.booking_code}</td>
-                <td>${b.court_name}<div class="small text-muted">${b.sub_court_name || ''}</div></td>
-                <td>${b.user_name}</td>
-                <td>${b.booking_date}<div class="small text-muted">${b.time_range}</div></td>
-                <td><span class="badge ${s.badge}">${s.text}</span></td>
-            </tr>`;
-        }).join('');
-    }
+        const body = document.getElementById('recentBookingsBody');
+        if (bookings.length === 0) {
+            body.innerHTML = '';
+            document.getElementById('recentBookingsEmpty').style.display = 'block';
+        } else {
+            document.getElementById('recentBookingsEmpty').style.display = 'none';
+            body.innerHTML = bookings.map(b => {
+                const s = statusMap[b.booking_status] || statusMap.confirmed;
+                return `<tr>
+                    <td class="fw-semibold">${b.booking_code}</td>
+                    <td>${b.court_name}<div class="small text-muted">${b.sub_court_name || ''}</div></td>
+                    <td>${b.user_name}</td>
+                    <td>${b.booking_date}<div class="small text-muted">${b.time_range}</div></td>
+                    <td><span class="badge ${s.badge}">${s.text}</span></td>
+                </tr>`;
+            }).join('');
+        }
 
-    // Courts summary
-    const courts = AdminApp.getMyCourts(user);
-    const list = document.getElementById('myCourtsList');
-    if (courts.length === 0) {
-        document.getElementById('myCourtsEmpty').style.display = 'block';
-    } else {
-        list.innerHTML = courts.slice(0, 5).map(c => `
-            <div class="d-flex align-items-center gap-3">
-                <img src="${c.image_url}" class="admin-court-thumb" alt="">
-                <div class="flex-grow-1 min-w-0">
-                    <div class="fw-semibold text-truncate">${c.name}</div>
-                    <div class="small text-muted">${c.district} · ${c.total_sub_courts} sân con</div>
-                </div>
-                <span class="badge ${c.status === 'active' ? 'bg-success' : 'bg-secondary'}">${c.status === 'active' ? 'Hoạt động' : 'Tạm ngưng'}</span>
-            </div>`).join('');
+        const list = document.getElementById('myCourtsList');
+        if (courts.length === 0) {
+            list.innerHTML = '';
+            document.getElementById('myCourtsEmpty').style.display = 'block';
+        } else {
+            document.getElementById('myCourtsEmpty').style.display = 'none';
+            list.innerHTML = courts.slice(0, 5).map(c => `
+                <div class="d-flex align-items-center gap-3">
+                    <img src="${c.image_url}" class="admin-court-thumb" alt="">
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="fw-semibold text-truncate">${c.name}</div>
+                        <div class="small text-muted">${c.district} · ${c.total_sub_courts || 6} sân con</div>
+                    </div>
+                    <span class="badge ${c.status === 'active' ? 'bg-success' : 'bg-secondary'}">${c.status === 'active' ? 'Hoạt động' : 'Tạm ngưng'}</span>
+                </div>`).join('');
+        }
+    } catch (err) {
+        AdminApp.toast('error', err.message || 'Không tải được dữ liệu thống kê.');
     }
 });
 </script>

@@ -40,6 +40,9 @@ session_regenerate_id(true);
 $_SESSION['user_id'] = (int)$u['id'];
 $_SESSION['role']    = $u['role'];
 $_SESSION['name']    = $u['name'];
+$_SESSION['email']   = $u['email'];
+$_SESSION['phone']   = $u['phone'] ?? '';
 
 unset($u['password_hash']);
+$u['id'] = (int)$u['id'];
 out(200, ['status' => 'success', 'data' => ['user' => $u]]);

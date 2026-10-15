@@ -66,9 +66,9 @@
 | 9 | `news.php` | `mock-data.js`, `app.js`, `news.js`, `bottom-nav.js` | `getUser` (3), `getNews` (1), `logout` (2) | `api/news.php` | `[ ]` |
 | 10 | `contact.php` | `mock-data.js`, `app.js`, `contact.js`, `bottom-nav.js` | `getUser` (3), `sendContact` (1), `logout` (2) | `api/contact.php` | `[ ]` |
 | 11 | `auth.php` | `mock-data.js`, `app.js`, `auth.js`, `bottom-nav.js` | `setUser` (2) *(auth.js đã gọi API thật)*, `getUser` (2), `logout` (2) | Đã có API login/register; cần bỏ cầu nối MockDB | `[~]` |
-| 12 | `admin-dashboard.php` | `mock-data.js`, `app.js`, `admin.js`, `bottom-nav.js` + inline | Inline L163 `formatVND`; qua AdminApp: `init`, `getUser`, `computeStats`, `getMyBookings`, `logout` | `api/admin/dashboard.php` | `[ ]` |
-| 13 | `admin-courts.php` | `mock-data.js`, `app.js`, `admin.js`, `bottom-nav.js` + inline | Inline L209, 267 `formatVND`; qua AdminApp: `getMyCourts`, `getAllCourts`, `saveAllCourts` | `api/admin/courts.php` | `[ ]` |
-| 14 | `admin-slots.php` | `mock-data.js`, `app.js`, `admin.js`, `bottom-nav.js` | Qua AdminApp: `getMyCourts`, `getSlots`, `generateSlots`, `setSlotStatus` | `api/admin/slots.php` | `[ ]` |
+| 12 | `admin-dashboard.php` | `mock-data.js`, `app.js`, `admin.js`, `bottom-nav.js` + inline | Inline L163 `formatVND`; qua AdminApp: `init`, `getUser`, `computeStats`, `getMyBookings`, `logout` | `api/admin/dashboard.php` | `[x]` |
+| 13 | `admin-courts.php` | `mock-data.js`, `app.js`, `admin.js`, `bottom-nav.js` + inline | Inline L209, 267 `formatVND`; qua AdminApp: `getMyCourts`, `getAllCourts`, `saveAllCourts` | `api/admin/courts.php` | `[x]` |
+| 14 | `admin-slots.php` | `mock-data.js`, `app.js`, `admin.js`, `bottom-nav.js` | Qua AdminApp: `getMyCourts`, `getSlots`, `generateSlots`, `setSlotStatus` | `api/admin/slots.php` | `[x]` |
 | 15 | `admin-bookings.php` | `mock-data.js`, `app.js`, `admin.js`, `bottom-nav.js` + inline | Inline L145 `formatVND`, L157 `getBookings`; qua AdminApp: `getMyBookings`, `saveBookings` | `api/admin/bookings.php` | `[ ]` |
 | 16 | *`login.html` (gốc)* | `mock-data.js`, `login.js` | `MockDB.login()` (L53) | Đã thay bằng `auth.php` — đề xuất dọn bỏ | `[ ]` |
 | 17 | *`register.html` (gốc)* | `mock-data.js`, `register.js` | `MockDB.register()` (L32) | Đã thay bằng `auth.php` — đề xuất dọn bỏ | `[ ]` |
@@ -173,9 +173,9 @@ File trung tâm: `assets/js/admin.js` (`AdminApp`). Hiện tại toàn bộ dữ
 | `formatVND` trong `generateSlots` | L104 | Chuyển sang hàm tiện ích | Huy |
 
 **Các trang admin PHP cần cập nhật inline script:**
-- [ ] `admin-dashboard.php:159, 163` — `AdminApp.computeStats(user)` + `MockDB.formatVND(stats.revenue)`.
-- [ ] `admin-courts.php:189, 258, 295, 306` — `getMyCourts`, `getAllCourts`, `saveAllCourts`; L209, 267 `formatVND`.
-- [ ] `admin-slots.php:160, 209, 253, 272, 275` — `getMyCourts`, `getSlots`, `generateSlots`, `setSlotStatus`.
+- [x] `admin-dashboard.php:159, 163` — `AdminApp.computeStats(user)` + `MockDB.formatVND(stats.revenue)`.
+- [x] `admin-courts.php:189, 258, 295, 306` — `getMyCourts`, `getAllCourts`, `saveAllCourts`; L209, 267 `formatVND`.
+- [x] `admin-slots.php:160, 209, 253, 272, 275` — `getMyCourts`, `getSlots`, `generateSlots`, `setSlotStatus`.
 - [ ] `admin-bookings.php:118, 157, 161` — `getMyBookings`, `MockDB.getBookings()`, `saveBookings`; L145 `formatVND`.
 
 ---
