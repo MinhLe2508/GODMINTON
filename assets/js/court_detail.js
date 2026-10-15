@@ -1,7 +1,7 @@
 /**
  * GODMINTON — court_detail.js
  * Trang chi tiết sân (court-detail.php) — Tuần 1: chuyển sang AJAX thật.
- * Thay MockDB.getCourtById() bằng fetch('api/court-detail.php?id=N').
+ * Thay dữ liệu giả bằng fetch('api/court-detail.php?id=N').
  * Giữ nguyên giao diện và luồng UX đã có.
  */
 

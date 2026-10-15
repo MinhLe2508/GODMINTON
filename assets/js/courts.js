@@ -1,7 +1,7 @@
 /* ================================================================
    GODMINTON — courts.js
    Trang danh sách sân (courts.php) — Tuần 1: chuyển sang AJAX thật.
-   Thay MockDB.getCourts() bằng fetch('api/courts.php').
+   Thay dữ liệu giả bằng fetch('api/courts.php').
    Giữ nguyên giao diện và luồng UX đã có.
    ================================================================ */
 

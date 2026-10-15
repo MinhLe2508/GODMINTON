@@ -98,12 +98,14 @@ try {
 
     // 3. Trường hợp lấy danh sách slots của 1 sân theo ngày
     $courtId = isset($_GET['court_id']) ? (int)$_GET['court_id'] : 1;
-    $dateStr = isset($_GET['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['date']) 
-        ? $_GET['date'] 
-        : date('Y-m-d');
+    $dateStr = $_GET['date'] ?? date('Y-m-d');
+    if (!is_string($dateStr) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr)) { http_response_code(422); echo json_encode(['status'=>'error','message'=>'Ngày không hợp lệ.']); exit; }
+
+    $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $dateStr);
+    if (!$parsed || $parsed->format('Y-m-d') !== $dateStr) { http_response_code(422); echo json_encode(['status'=>'error','message'=>'Ngày không hợp lệ.']); exit; }
 
     // Lấy thông tin sân
-    $courtStmt = $pdo->prepare("SELECT id, name, address, price_per_hour FROM courts WHERE id = ?");
+    $courtStmt = $pdo->prepare("SELECT id, name, address, price_per_hour FROM courts WHERE id = ? AND status='active'");
     $courtStmt->execute([$courtId]);
     $court = $courtStmt->fetch();
 
@@ -122,7 +124,7 @@ try {
     if ($slotCount === 0) {
         $subCourts = ['Thảm A1', 'Thảm A2', 'Thảm A3', 'Thảm A4'];
         $insertStmt = $pdo->prepare("
-            INSERT INTO time_slots (court_id, sub_court_name, slot_date, start_time, end_time, status)
+            INSERT IGNORE INTO time_slots (court_id, sub_court_name, slot_date, start_time, end_time, status)
             VALUES (?, ?, ?, ?, ?, ?)
         ");
 
@@ -135,12 +137,6 @@ try {
 
             foreach ($subCourts as $sub) {
                 $initStatus = 'available';
-                if ($sub === 'Thảm A1' && ($startStr === '18:00:00' || $startStr === '18:30:00')) {
-                    $initStatus = 'booked';
-                }
-                if ($sub === 'Thảm A2' && $startStr === '07:00:00') {
-                    $initStatus = 'booked';
-                }
 
                 $insertStmt->execute([
                     $courtId,

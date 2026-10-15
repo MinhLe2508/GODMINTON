@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/includes/auth-check.php';
+header('Cache-Control: no-store');
+?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 
@@ -147,16 +151,16 @@
                             </div>
                             <div>
                                 <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                                    <h3 class="fw-extrabold mb-0 text-white" id="profileHeaderName">Nguyễn Văn An</h3>
+                                    <h3 class="fw-extrabold mb-0 text-white" id="profileHeaderName">Đang tải</h3>
                                     <span class="badge bg-warning text-dark fw-bold rounded-pill px-2 py-1">
-                                        <i class="fa-solid fa-crown me-1"></i>Gold Member
+                                        <span id="profileRoleLabel">Đang tải</span>
                                     </span>
                                 </div>
                                 <div class="opacity-90 small mb-1" id="profileHeaderEmail">
-                                    <i class="fa-regular fa-envelope me-1"></i> khach1@gmail.com
+                                    Đang tải email
                                 </div>
                                 <div class="opacity-75 small">
-                                    <i class="fa-regular fa-calendar-check me-1"></i> Thành viên từ Tháng 03/2026 · TP. Hồ Chí Minh
+                                    <i class="fa-regular fa-calendar-check me-1"></i> <span id="profileMemberSince">Đang tải ngày tham gia</span>
                                 </div>
                             </div>
                         </div>
@@ -167,20 +171,20 @@
                         <div class="row g-2">
                             <div class="col-4">
                                 <div class="profile-stat-box">
-                                    <div class="fs-4 fw-extrabold text-warning" id="statBookingsCount">8</div>
+                                    <div class="fs-4 fw-extrabold text-warning" id="statBookingsCount">0</div>
                                     <div class="small opacity-80" style="font-size: 0.75rem;">Lượt đặt sân</div>
                                 </div>
                             </div>
                             <div class="col-4">
                                 <div class="profile-stat-box">
-                                    <div class="fs-4 fw-extrabold text-info">1.250</div>
-                                    <div class="small opacity-80" style="font-size: 0.75rem;">GodPoints</div>
+                                    <div class="fs-4 fw-extrabold text-info">—</div>
+                                    <div class="small opacity-80" style="font-size: 0.75rem;">Chưa hỗ trợ</div>
                                 </div>
                             </div>
                             <div class="col-4">
                                 <div class="profile-stat-box">
-                                    <div class="fs-4 fw-extrabold text-success">3</div>
-                                    <div class="small opacity-80" style="font-size: 0.75rem;">Voucher</div>
+                                    <div class="fs-4 fw-extrabold text-success">—</div>
+                                    <div class="small opacity-80" style="font-size: 0.75rem;">Chưa hỗ trợ</div>
                                 </div>
                             </div>
                         </div>
@@ -215,13 +219,10 @@
                             <a href="courts.php" class="btn btn-teal rounded-pill w-100 fw-bold">
                                 <i class="fa-solid fa-plus me-1"></i> Đặt sân mới
                             </a>
-                            <a href="admin-dashboard.php" class="btn btn-outline-secondary rounded-pill w-100 fw-semibold text-start px-3">
-                                <i class="fa-solid fa-gauge-high me-2 text-warning"></i> Chuyển trang Admin
-                            </a>
                             <a href="auth.php" class="btn btn-outline-secondary rounded-pill w-100 fw-semibold text-start px-3">
                                 <i class="fa-solid fa-arrow-right-arrow-left me-2 text-primary"></i> Đổi tài khoản khác
                             </a>
-                            <button type="button" class="btn btn-outline-danger rounded-pill w-100 fw-semibold text-start px-3" onclick="if(confirm('Bạn có chắc chắn muốn đăng xuất không?')) { MockDB.logout(); window.location.href='auth.php'; }">
+                            <button type="button" id="profileLogout" class="btn btn-outline-danger rounded-pill w-100 fw-semibold text-start px-3">
                                 <i class="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất tài khoản
                             </button>
                         </div>
@@ -249,54 +250,37 @@
                                             <label class="form-label fw-bold small">Họ và tên <span class="text-danger">*</span></label>
                                             <div class="input-group">
                                                 <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-regular fa-user text-muted"></i></span>
-                                                <input type="text" class="form-control border-start-0" id="inpFullName" value="Nguyễn Văn An" required>
+                                                <input type="text" class="form-control border-start-0" id="inpFullName" value="" required>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold small">Số điện thoại <span class="text-danger">*</span></label>
                                             <div class="input-group">
                                                 <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-phone text-muted"></i></span>
-                                                <input type="tel" class="form-control border-start-0" id="inpPhone" value="0912 345 678" required>
+                                                <input type="tel" class="form-control border-start-0" id="inpPhone" value="" required>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold small">Địa chỉ Email <span class="text-danger">*</span></label>
                                             <div class="input-group">
                                                 <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-regular fa-envelope text-muted"></i></span>
-                                                <input type="email" class="form-control border-start-0" id="inpEmail" value="khach1@gmail.com" required>
+                                                <input type="email" class="form-control border-start-0" id="inpEmail" value="" required>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold small">Khu vực sinh sống</label>
                                             <div class="input-group">
                                                 <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-location-dot text-muted"></i></span>
-                                                <select class="form-select border-start-0" id="inpDistrict">
-                                                    <option value="Quận 1" selected>Quận 1, TP.HCM</option>
-                                                    <option value="Quận 3">Quận 3, TP.HCM</option>
-                                                    <option value="Quận 7">Quận 7, TP.HCM</option>
-                                                    <option value="Quận 10">Quận 10, TP.HCM</option>
-                                                    <option value="Bình Thạnh">Bình Thạnh, TP.HCM</option>
-                                                    <option value="TP. Thủ Đức">TP. Thủ Đức, TP.HCM</option>
-                                                    <option value="Tân Bình">Tân Bình, TP.HCM</option>
-                                                </select>
+                                                <select class="form-select border-start-0" id="inpDistrict" disabled title="Chưa có trường lưu trong schema hiện tại"><option value="">Chưa hỗ trợ lưu</option></select>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold small">Trình độ chơi cầu lông</label>
-                                            <select class="form-select" id="inpLevel">
-                                                <option value="beginner">Người mới chơi (Dưới 6 tháng)</option>
-                                                <option value="intermediate" selected>Phong trào trung bình (1 - 3 năm)</option>
-                                                <option value="advanced">Bán chuyên / Chuyên nghiệp (Trên 3 năm)</option>
-                                            </select>
+                                            <select class="form-select" id="inpLevel" disabled title="Chưa có trường lưu trong schema hiện tại"><option value="">Chưa hỗ trợ lưu</option></select>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold small">Thời gian chơi yêu thích</label>
-                                            <select class="form-select" id="inpPreferredTime">
-                                                <option value="evening" selected>Buổi tối (18:00 - 22:00)</option>
-                                                <option value="morning">Buổi sáng (06:00 - 09:00)</option>
-                                                <option value="afternoon">Buổi chiều (14:00 - 18:00)</option>
-                                                <option value="weekend">Cuối tuần (Thứ 7 & CN)</option>
-                                            </select>
+                                            <select class="form-select" id="inpPreferredTime" disabled title="Chưa có trường lưu trong schema hiện tại"><option value="">Chưa hỗ trợ lưu</option></select>
                                         </div>
                                     </div>
 
@@ -331,66 +315,9 @@
 
                         <!-- TAB 3: MÃ GIẢM GIÁ & ƯU ĐÃI -->
                         <div class="tab-pane fade" id="tabProfileVouchers" role="tabpanel">
-                            <div class="profile-card">
-                                <div class="mb-4 pb-2 border-bottom">
-                                    <h5 class="fw-bold mb-1"><i class="fa-solid fa-ticket text-teal me-2"></i>Kho Voucher Của Bạn</h5>
-                                    <p class="text-muted small mb-0">Áp dụng trực tiếp tại bước thanh toán khi đặt sân</p>
-                                </div>
+<p class="p-4">Chưa triển khai voucher trong phạm vi tuần 3.</p>
+</div>
 
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <div class="voucher-card">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <div>
-                                                    <span class="badge bg-danger rounded-pill px-2 py-1 mb-1">GIẢM 50.000Đ</span>
-                                                    <h6 class="fw-extrabold mb-0">Ưu đãi Khách Hàng Thân Thiết</h6>
-                                                </div>
-                                                <i class="fa-solid fa-gift text-teal fs-3"></i>
-                                            </div>
-                                            <p class="small text-muted mb-3">Áp dụng cho đơn đặt sân từ 200.000đ tại tất cả cụm sân.</p>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <code class="fw-bold fs-6 text-teal">GODGOLD50</code>
-                                                <button class="btn btn-sm btn-outline-teal rounded-pill px-3" onclick="copyVoucher('GODGOLD50')">Sao chép mã</button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="voucher-card">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <div>
-                                                    <span class="badge bg-teal rounded-pill px-2 py-1 mb-1">GIẢM 20%</span>
-                                                    <h6 class="fw-extrabold mb-0">Giờ Vàng Buổi Sáng</h6>
-                                                </div>
-                                                <i class="fa-solid fa-sun text-warning fs-3"></i>
-                                            </div>
-                                            <p class="small text-muted mb-3">Áp dụng cho các khung giờ từ 06:00 - 09:00 các ngày trong tuần.</p>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <code class="fw-bold fs-6 text-teal">MORNING20</code>
-                                                <button class="btn btn-sm btn-outline-teal rounded-pill px-3" onclick="copyVoucher('MORNING20')">Sao chép mã</button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="voucher-card">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <div>
-                                                    <span class="badge bg-primary rounded-pill px-2 py-1 mb-1">FREE NƯỚC UỐNG</span>
-                                                    <h6 class="fw-extrabold mb-0">Tặng 02 Chai Revive 7Up</h6>
-                                                </div>
-                                                <i class="fa-solid fa-bottle-water text-primary fs-3"></i>
-                                            </div>
-                                            <p class="small text-muted mb-3">Đưa mã này cho quản lý sân khi check-in để nhận nước miễn phí.</p>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <code class="fw-bold fs-6 text-teal">DRINKFREE</code>
-                                                <button class="btn btn-sm btn-outline-teal rounded-pill px-3" onclick="copyVoucher('DRINKFREE')">Sao chép mã</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
                         <!-- TAB 4: MẬT KHẨU & BẢO MẬT -->
                         <div class="tab-pane fade" id="tabProfileSecurity" role="tabpanel">
@@ -403,7 +330,7 @@
                                 <form id="formChangePassword" style="max-width: 500px;">
                                     <div class="mb-3">
                                         <label class="form-label fw-bold small">Mật khẩu hiện tại</label>
-                                        <input type="password" class="form-control" id="oldPass" placeholder="Nhập mật khẩu cũ..." value="Khach@123">
+                                        <input type="password" class="form-control" id="oldPass" placeholder="Nhập mật khẩu cũ..." required autocomplete="current-password">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label fw-bold small">Mật khẩu mới</label>
@@ -429,8 +356,8 @@
 
     <!-- Footer -->
     <footer class="footer-custom mt-5 pt-5 pb-4 border-top">
-        <div class="container text-center small text-muted">
-            <p>&copy; 2026 GODMINTON - Đồ án môn Lập trình Web & Ứng dụng. Phiên bản Static Demo.</p>
+        <div class="container text-center small text-light">
+            <p style="color:#cbd5e1">&copy; 2026 GODMINTON - Đồ án môn Lập trình Web & Ứng dụng. Dữ liệu hồ sơ và lịch sử được lấy từ MySQL.</p>
         </div>
     </footer>
 
@@ -438,13 +365,15 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Mock Data -->
-    <script src="assets/js/mock-data.js"></script>
+    <!-- API helpers -->
+    <script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
     <!-- App JS -->
-    <script src="assets/js/app.js"></script>
+    <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
     <!-- Profile JS -->
-    <script src="assets/js/profile.js"></script>
+    <script src="assets/js/profile.js?v=<?= filemtime(__DIR__ . '/assets/js/profile.js') ?>"></script>
     <!-- Bottom Nav -->
-    <script src="assets/js/bottom-nav.js"></script>
+    <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>
+
+

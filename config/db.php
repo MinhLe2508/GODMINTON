@@ -53,11 +53,12 @@ foreach ($portsToTry as $port) {
 }
 
 if (!$pdo) {
+    error_log('[GODMINTON DB] ' . ($lastException ? $lastException->getMessage() : 'No connection'));
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([
         'status' => 'error',
-        'message' => 'Lỗi kết nối cơ sở dữ liệu: ' . ($lastException ? $lastException->getMessage() : 'Không thể kết nối')
+        'message' => 'Không kết nối được DB. Kiểm tra .env và log PHP.'
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }

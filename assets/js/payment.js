@@ -4,6 +4,12 @@
    ================================================================ */
 const fmt = n => new Intl.NumberFormat('vi-VN').format(n) + ' đ';
 
+let paymentReady = false;
+let paymentSubmitting = false;
+let paymentComplete = false;
+let countdownTimer;
+let holdRemaining = 0;
+
 // --- Booking state ---
 let booking = {
     courtId: 1, 
@@ -36,11 +42,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (sid > 0) booking.slotIds = [sid];
     }
 
+    setPaymentButtons(true);
     // 1. Nạp chi tiết các slots từ MySQL qua API
     try {
         const slotsRes = await fetch(`api/slots.php?court_id=${booking.courtId}&date=${booking.date}`);
         const slotsJson = await slotsRes.json();
-        if (slotsJson.status === 'success' && slotsJson.data) {
+        if (!slotsRes.ok || slotsJson.status !== 'success' || !Array.isArray(slotsJson.data)) throw new Error('Không tải được khung giờ.');
+        {
             let matchedSlots = [];
             if (booking.slotIds.length > 0) {
                 matchedSlots = slotsJson.data.filter(s => booking.slotIds.includes(s.id));
@@ -52,6 +60,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
 
+            booking.slotIds = [...new Set(booking.slotIds)];
+            if (!matchedSlots.length || matchedSlots.length !== booking.slotIds.length ||
+                matchedSlots.some(slot => slot.status !== 'holding' || !slot.is_my_hold || Number(slot.hold_seconds_left) <= 0)) {
+                throw new Error('Phiên giữ chỗ không còn hợp lệ. Vui lòng quay lại chọn khung giờ.');
+            }
+            holdRemaining = Math.min(...matchedSlots.map(slot => Number(slot.hold_seconds_left)));
             if (matchedSlots.length > 0) {
                 matchedSlots.sort((a, b) => a.start_time.localeCompare(b.start_time));
                 booking.start = matchedSlots[0].start_time;
@@ -66,6 +80,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (e) {
         console.warn('Không thể nạp chi tiết slot:', e);
+        await Swal.fire({icon: 'warning', title: 'Không thể tải phiên giữ chỗ', text: e.message || 'Vui lòng chọn lại khung giờ.'});
+        window.location.href = `booking.php?court_id=${booking.courtId}&date=${encodeURIComponent(booking.date)}`;
+        return;
     }
 
     // 2. Nạp thông tin sân thật từ MySQL
@@ -76,8 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const c = courtJson.data;
             booking.courtName = c.name;
             document.getElementById('courtNameEl').textContent = c.name;
-            document.getElementById('courtAddrEl').innerHTML   =
-                `<i class="fa-solid fa-location-dot me-1"></i>${c.address || ''}`;
+            document.getElementById('courtAddrEl').textContent = c.address || '';
             if (c.image_url) document.getElementById('courtHeroImg').src = c.image_url;
         }
     } catch (e) {
@@ -86,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Pre-fill thông tin user
     const user = (typeof window.__GODMINTON_USER__ !== 'undefined' && window.__GODMINTON_USER__) 
-                 || (typeof MockDB !== 'undefined' ? MockDB.getUser() : null);
+;
     if (user) {
         if (document.getElementById('billingName'))  document.getElementById('billingName').value  = user.name  || '';
         if (document.getElementById('billingEmail')) document.getElementById('billingEmail').value = user.email || '';
@@ -106,7 +122,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('bdrCourt').textContent    = booking.courtNum;
 
     calcPrices();
-    startCountdown(5 * 60); // 5 phút chuẩn phiên giữ chỗ
+    paymentReady = true;
+    setPaymentButtons(false);
+    startCountdown(holdRemaining); // Dùng thời hạn còn lại do máy chủ trả về.
     updateTransferRef();
 });
 
@@ -180,6 +198,7 @@ function startCountdown(seconds) {
     let rem = seconds;
 
     const tick = () => {
+        if (paymentComplete) return;
         const m = String(Math.floor(rem / 60)).padStart(2, '0');
         const s = String(rem % 60).padStart(2, '0');
         if (el) el.textContent = `${m}:${s}`;
@@ -187,7 +206,10 @@ function startCountdown(seconds) {
         if (rem <= 60 && wrap) wrap.style.background = 'rgba(239,68,68,0.12)';
 
         if (rem <= 0) {
-            clearInterval(timer);
+            clearInterval(countdownTimer);
+            paymentReady = false;
+            setPaymentButtons(true);
+            if (paymentSubmitting) return;
             Swal.fire({
                 icon: 'warning', 
                 title: 'Phiên giữ chỗ hết hạn',
@@ -200,11 +222,19 @@ function startCountdown(seconds) {
         rem--;
     };
     tick();
-    const timer = setInterval(tick, 1000);
+    countdownTimer = setInterval(tick, 1000);
 }
 
 /* ---- Payment submit: Gửi slot_ids lên API POST api/bookings.php ---- */
+function setPaymentButtons(disabled) {
+    ['btnPayMobile', 'btnPayDesktop'].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) button.disabled = disabled;
+    });
+}
+
 async function handlePayment() {
+    if (!paymentReady || paymentSubmitting || paymentComplete) return;
     const name  = document.getElementById('billingName').value.trim();
     const phone = document.getElementById('billingPhone').value.trim();
     const email = document.getElementById('billingEmail').value.trim();
@@ -223,6 +253,7 @@ async function handlePayment() {
         return;
     }
 
+    paymentSubmitting = true;
     const btns = ['btnPayMobile','btnPayDesktop'];
     btns.forEach(id => {
         const b = document.getElementById(id);
@@ -253,6 +284,9 @@ async function handlePayment() {
         const result = await response.json();
 
         if ((response.status === 200 || response.status === 201) && result.status === 'success') {
+            paymentComplete = true;
+            paymentReady = false;
+            clearInterval(countdownTimer);
             const bData = result.data;
 
             document.getElementById('successCode').textContent  = bData.booking_code;
@@ -272,7 +306,7 @@ async function handlePayment() {
                 text: 'Vui lòng đăng nhập để hoàn tất tạo đơn đặt sân.',
                 confirmButtonColor: '#0d9488'
             }).then(() => {
-                window.location.href = 'auth.php?redirect=payment.php';
+                window.location.href = 'auth.php?redirect=' + encodeURIComponent('payment.php' + window.location.search);
             });
             btns.forEach(id => {
                 const b = document.getElementById(id);
@@ -296,5 +330,8 @@ async function handlePayment() {
             const b = document.getElementById(id);
             if (b) { b.disabled = false; b.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Xác Nhận & Đặt Cọc'; }
         });
+    } finally {
+        paymentSubmitting = false;
+        setPaymentButtons(!paymentReady || paymentComplete);
     }
 }

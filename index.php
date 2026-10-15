@@ -1,3 +1,4 @@
+<?php header('Cache-Control: no-store, max-age=0'); ?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 <head>
@@ -262,69 +263,37 @@
     </main>
 
     <!-- Footer -->
-    <footer class="footer-custom mt-5 pt-5 pb-4">
+    <footer class="footer-custom mt-4 py-4">
         <div class="container">
-            <div class="row g-4 mb-4">
-                <div class="col-lg-4 col-md-6">
-                    <div class="mb-3"><img src="assets/img/logo.svg" alt="GODMINTON" style="height:38px; width:auto;"></div>
-                    <p class="text-muted-light">
-                        Nền tảng đặt sân cầu lông trực tuyến thông minh với cập nhật trạng thái thời gian thực (AJAX), hỗ trợ cài đặt PWA và thông báo đẩy nhắc lịch thi đấu.
-                    </p>
-                    <div class="d-flex gap-3">
-                        <a href="#" class="social-icon"><i class="fa-brands fa-facebook-f"></i></a>
-                        <a href="#" class="social-icon"><i class="fa-brands fa-youtube"></i></a>
-                        <a href="#" class="social-icon"><i class="fa-brands fa-tiktok"></i></a>
-                    </div>
+            <div class="row gy-4 gx-5 align-items-start">
+                <div class="col-md-6">
+                    <a href="index.php" class="d-inline-block mb-2" aria-label="GODMINTON - Trang chủ">
+                        <img src="assets/img/logo.svg" alt="GODMINTON" style="height:38px; width:auto;" loading="lazy">
+                    </a>
+                    <p class="text-muted-light small mb-0">Tìm sân phù hợp, chọn giờ thuận tiện và quản lý lịch đặt sân của bạn.</p>
                 </div>
-
-                <div class="col-lg-2 col-md-6">
-                    <h6 class="text-white fw-bold mb-3">Liên Kết Nhanh</h6>
-                    <ul class="list-unstyled footer-links">
-                        <li><a href="index.php">Trang chủ</a></li>
-                        <li><a href="courts.php">Tìm kiếm sân</a></li>
-                        <li><a href="profile.php">Trang cá nhân</a></li>
-                        <li><a href="admin-dashboard.php" class="text-warning fw-bold"><i class="fa-solid fa-gauge-high me-1"></i>Kênh Quản trị Admin</a></li>
-                        <li><a href="news.php">Tin tức - Giải đấu</a></li>
-                        <li><a href="contact.php">Hỗ trợ khách hàng</a></li>
-                    </ul>
+                <div class="col-6 col-md-3">
+                    <h6 class="text-white fw-bold mb-2">Đặt sân</h6>
+                    <nav aria-label="Liên kết đặt sân">
+                        <ul class="list-unstyled footer-links small mb-0 d-grid gap-1">
+                            <li><a href="courts.php">Tìm sân cầu lông</a></li>
+                            <li><a href="history.php">Lịch sử đặt sân</a></li>
+                            <li><a href="profile.php">Tài khoản của tôi</a></li>
+                        </ul>
+                    </nav>
                 </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <h6 class="text-white fw-bold mb-3">Tính Năng Nổi Bật</h6>
-                    <ul class="list-unstyled footer-links">
-                        <li><i class="fa-solid fa-bolt text-warning me-2"></i>Lưới Slot Realtime (AJAX)</li>
-                        <li><i class="fa-solid fa-shield-halved text-success me-2"></i>Khóa chống đặt trùng (ACID)</li>
-                        <li><i class="fa-solid fa-mobile-screen text-info me-2"></i>Cài đặt App PWA</li>
-                        <li><i class="fa-solid fa-bell text-primary me-2"></i>Web Push VAPID</li>
-                    </ul>
-                </div>
-
-                <div class="col-lg-3 col-md-6">
-                    <h6 class="text-white fw-bold mb-3">Hotline Hỗ Trợ</h6>
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div class="icon-circle bg-teal text-white">
-                            <i class="fa-solid fa-phone"></i>
-                        </div>
-                        <div>
-                            <div class="small text-muted-light">Tổng đài đặt sân 24/7</div>
-                            <div class="fs-5 fw-bold text-white">1900 8888</div>
-                        </div>
-                    </div>
-                    <div class="small text-muted-light">
-                        <i class="fa-solid fa-location-dot me-2 text-teal"></i>TP. Hồ Chí Minh, Việt Nam
-                    </div>
+                <div class="col-6 col-md-3">
+                    <h6 class="text-white fw-bold mb-2">Hỗ trợ</h6>
+                    <nav aria-label="Liên kết hỗ trợ">
+                        <ul class="list-unstyled footer-links small mb-0 d-grid gap-1">
+                            <li><a href="contact.php">Liên hệ hỗ trợ</a></li>
+                            <li><a href="news.php">Tin tức cầu lông</a></li>
+                        </ul>
+                    </nav>
                 </div>
             </div>
-
-            <hr class="border-secondary opacity-25 my-4">
-
-            <div class="d-flex flex-wrap justify-content-between align-items-center small text-muted-light">
-                <div>&copy; 2026 GODMINTON - Đồ án môn Lập trình Web & Ứng dụng (Đề tài 5, Nhóm 2).</div>
-                <div class="d-flex gap-3 mt-2 mt-md-0">
-                    <span class="badge bg-dark border border-secondary text-secondary">Vanilla HTML/JS</span>
-                    <span class="badge bg-dark border border-secondary text-secondary">Bootstrap 5.3</span>
-                    <span class="badge bg-dark border border-secondary text-secondary">PHP + MySQL (AJAX)</span>
-                </div>
+            <div class="border-top border-secondary border-opacity-25 mt-3 pt-3 small text-muted-light">
+                &copy; 2026 GODMINTON. Đặt sân cầu lông trực tuyến.
             </div>
         </div>
     </footer>
@@ -337,12 +306,12 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Mock Data (giữ lại cho các trang chưa migrate) -->
-    <script src="assets/js/mock-data.js"></script>
+    <!-- API helpers -->
+    <script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
     <!-- App JS -->
-    <script src="assets/js/app.js"></script>
+    <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
 
-    <script src="assets/js/index_explore_dt.js"></script>
+    <script src="assets/js/index_explore_dt.js?v=<?= filemtime(__DIR__ . '/assets/js/index_explore_dt.js') ?>"></script>
 
     <!-- ===== AJAX: Load Featured Courts & Home Search ===== -->
     <script>
@@ -435,7 +404,7 @@
     </script>
 
     <!-- Bottom Nav -->
-    <script src="assets/js/bottom-nav.js"></script>
+    <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>
 

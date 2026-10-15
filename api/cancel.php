@@ -1,12 +1,3 @@
 <?php
-/**
- * api/cancel.php
- * POST huỷ giữ chỗ hoặc huỷ đơn còn hiệu lực.
- *
- * Người phụ trách: Minh (Tuần 2)
- */
-require_once __DIR__ . '/../config/db.php'; // sửa số lượng '../' nếu đổi vị trí file
-header('Content-Type: application/json; charset=utf-8');
-
-// TODO: triển khai logic thật, dùng $pdo->prepare(...) — không nối chuỗi SQL trực tiếp.
-echo json_encode(['status' => 'not_implemented']);
+require_once __DIR__.'/../includes/booking-service.php';
+try{$user=booking_account_user();if($_SERVER['REQUEST_METHOD']!=='POST')booking_account_out(405,null,'Chỉ hỗ trợ POST.');booking_account_csrf();$in=booking_account_input();if(isset($in['booking_id']))booking_account_out(200,booking_transition(booking_account_id($in['booking_id']),'cancelled',$user),'Đã hủy đơn. Hoàn tiền cọc cần chủ sân xử lý.');$ids=$in['slot_ids']??(isset($in['slot_id'])?[$in['slot_id']]:[]);if(!is_array($ids)||!$ids)booking_account_out(422,null,'Thiếu booking_id hoặc slot_ids.');$ids=array_values(array_unique(array_map('booking_account_id',$ids)));sort($ids);$q=$pdo->prepare("UPDATE time_slots SET status='available',held_by=NULL,hold_expires_at=NULL WHERE held_by=? AND status='holding' AND id IN (".implode(',',array_fill(0,count($ids),'?')).')');$q->execute(array_merge([$user['id']],$ids));booking_account_out(200,['released'=>$q->rowCount()],'Đã nhả các khung giờ do bạn giữ.');}catch(Throwable $e){booking_account_error($e);}
