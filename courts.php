@@ -1,3 +1,4 @@
+<?php header('Cache-Control: no-store, max-age=0'); ?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 <head>
@@ -110,6 +111,11 @@
 
     <!-- Body -->
     <div class="drawer-body">
+        <div class="d-flex justify-content-end mb-3">
+            <button type="button" id="btnResetDrawer" class="btn-drawer-reset" onclick="resetAllFilters()" title="Xóa tất cả điều kiện tìm kiếm">
+                <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Đặt lại bộ lọc
+            </button>
+        </div>
 
         <!-- Khu vực -->
         <div class="drawer-section">
@@ -216,7 +222,7 @@
 
     <!-- Footer with reset + apply -->
     <div class="drawer-footer">
-        <button class="btn-drawer-reset" onclick="resetDrawerFilters()" title="Đặt lại tất cả bộ lọc">
+        <button class="btn-drawer-reset" type="button" onclick="resetAllFilters()" title="Đặt lại tất cả bộ lọc">
             <i class="fa-solid fa-rotate-left"></i> Đặt lại
         </button>
         <button class="btn-drawer-apply" onclick="applyDrawerFilters()">
@@ -257,7 +263,13 @@
     $courtMapData = [];
     try {
         require_once __DIR__ . '/config/db.php';
-        $mapStmt = $pdo->query("SELECT id, name, address, latitude, longitude, price_per_hour FROM courts WHERE status = 'active'");
+        $mapSql = "
+            SELECT c.id, c.name, c.address, c.latitude, c.longitude, c.price_per_hour,
+                   (SELECT ci.image_url FROM court_images ci WHERE ci.court_id = c.id ORDER BY ci.sort_order ASC LIMIT 1) AS image_url
+            FROM courts c
+            WHERE c.status = 'active'
+        ";
+        $mapStmt = $pdo->query($mapSql);
         $courtMapData = $mapStmt->fetchAll();
     } catch (Exception $e) {
         $courtMapData = [];
@@ -309,10 +321,10 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="assets/js/mock-data.js"></script>
-<script src="assets/js/app.js"></script>
-<script src="assets/js/courts.js?v=<?= time() ?>"></script>
+<script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
+<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
+<script src="assets/js/courts.js?v=<?= filemtime(__DIR__ . '/assets/js/courts.js') ?>"></script>
 <!-- Bottom Nav -->
-<script src="assets/js/bottom-nav.js"></script>
+<script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>

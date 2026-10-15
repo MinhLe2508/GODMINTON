@@ -80,6 +80,7 @@ if (!empty($input['slot_ids']) && is_array($input['slot_ids'])) {
 }
 $slotIds = array_values(array_unique(array_filter($slotIds, fn($v) => $v > 0)));
 sort($slotIds);
+if(count($slotIds)>48) jsonResponse(422,['message'=>'Tối đa 48 khung giờ.']);
 
 /** Giá 1 ô 30 phút: price_per_hour / 2, giờ cao điểm 17h–21h phụ thu 7.500đ (khớp slots.php / bookings.php). */
 function slotPrice(array $slot): int {
@@ -97,7 +98,8 @@ function doHold(PDO $pdo, int $userId, array $slotIds): array {
         // Khoá toàn bộ slot theo thứ tự id. hold_expired do MySQL tính (NOW()) — một nguồn thời gian duy nhất.
         $stmt = $pdo->prepare("
             SELECT s.*, c.name AS court_name, c.price_per_hour, c.status AS court_status,
-                   (s.status = 'holding' AND s.hold_expires_at IS NOT NULL AND s.hold_expires_at < NOW()) AS hold_expired
+                   (TIMESTAMP(s.slot_date,s.start_time)>NOW()) AS future_start,
+                   (s.status = 'holding' AND s.hold_expires_at IS NOT NULL AND s.hold_expires_at <= NOW()) AS hold_expired
             FROM time_slots s
             JOIN courts c ON c.id = s.court_id
             WHERE s.id IN ($in)
@@ -123,6 +125,16 @@ function doHold(PDO $pdo, int $userId, array $slotIds): array {
             }
         }
 
+        $ordered = array_values($byId);
+        usort($ordered, fn($a,$b) => strcmp($a['start_time'],$b['start_time']));
+        $previous = null;
+        foreach ($ordered as $slot) {
+            if (!$slot['future_start']) throw new HoldError(409, 'Khung giờ đã bắt đầu hoặc thuộc quá khứ.');
+            if ($slot['sub_court_name'] !== $first['sub_court_name']) throw new HoldError(422, 'Các ô phải thuộc cùng một thảm sân.');
+            if ($previous !== null && $previous !== $slot['start_time']) throw new HoldError(422, 'Các khung giờ phải liên tiếp.');
+            $previous = $slot['end_time'];
+        }
+        $first = $ordered[0];
         $total = 0;
         foreach ($slotIds as $sid) {
             $s     = $byId[$sid];
@@ -160,7 +172,7 @@ function doHold(PDO $pdo, int $userId, array $slotIds): array {
         throw $e;
     }
 
-    $last = $byId[end($slotIds)];
+    $last = end($ordered);
     $n    = count($slotIds);
     $hrs  = $n * 0.5;
     $startHm = substr($first['start_time'], 0, 5);

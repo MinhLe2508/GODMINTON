@@ -1,0 +1,557 @@
+{
+  "date": "2026-10-14",
+  "source_archive": "D:/xampp/htdocs/GODMINTON.zip",
+  "source_sha256": "30c7e603125f5aae976b185faf4f45bb2456301cba708b3615286d8b5741e85b",
+  "environment": {
+    "php": "8.2.12",
+    "mariadb": "10.4.32",
+    "isolated_db": true,
+    "two_php_processes_for_races": true
+  },
+  "baseline_api": {
+    "total": 15,
+    "passed": 11,
+    "checks": [
+      {
+        "name": "Auth login A",
+        "pass": true
+      },
+      {
+        "name": "Auth login B",
+        "pass": true
+      },
+      {
+        "name": "Anonymous hold denied",
+        "pass": true
+      },
+      {
+        "name": "Multi-slot hold + 300s",
+        "pass": true
+      },
+      {
+        "name": "Other customer cannot hold",
+        "pass": true
+      },
+      {
+        "name": "Confirm inserts booking + links",
+        "pass": true
+      },
+      {
+        "name": "Payment and notes persisted",
+        "pass": false
+      },
+      {
+        "name": "Booked slot cannot hold",
+        "pass": true
+      },
+      {
+        "name": "Duplicate confirm rejected",
+        "pass": true
+      },
+      {
+        "name": "Expired confirm rejected",
+        "pass": true
+      },
+      {
+        "name": "Cleanup succeeds",
+        "pass": true
+      },
+      {
+        "name": "Forged court_id rejected",
+        "pass": false
+      },
+      {
+        "name": "Cancel implemented",
+        "pass": false
+      },
+      {
+        "name": "Past slot hold rejected",
+        "pass": false
+      },
+      {
+        "name": "Real concurrent race 10 rounds",
+        "pass": true
+      }
+    ]
+  },
+  "week3_api": {
+    "total": 54,
+    "passed": 54,
+    "checks": [
+      {
+        "name": "Login a",
+        "pass": true
+      },
+      {
+        "name": "Login b",
+        "pass": true
+      },
+      {
+        "name": "Login owner",
+        "pass": true
+      },
+      {
+        "name": "Login other",
+        "pass": true
+      },
+      {
+        "name": "Login admin",
+        "pass": true
+      },
+      {
+        "name": "Anonymous history denied",
+        "pass": true
+      },
+      {
+        "name": "Anonymous profile denied",
+        "pass": true
+      },
+      {
+        "name": "Customer admin GET denied",
+        "pass": true
+      },
+      {
+        "name": "No CSRF profile denied",
+        "pass": true
+      },
+      {
+        "name": "Invalid profile denied",
+        "pass": true
+      },
+      {
+        "name": "Duplicate email denied",
+        "pass": true
+      },
+      {
+        "name": "Profile saved, role/user_id ignored",
+        "pass": true
+      },
+      {
+        "name": "Profile persisted on reread",
+        "pass": true
+      },
+      {
+        "name": "Wrong old password rejected",
+        "pass": true
+      },
+      {
+        "name": "Password changed",
+        "pass": true
+      },
+      {
+        "name": "Old password no longer accepted",
+        "pass": true
+      },
+      {
+        "name": "New password accepted",
+        "pass": true
+      },
+      {
+        "name": "Past hold rejected",
+        "pass": true
+      },
+      {
+        "name": "Noncontiguous hold rejected",
+        "pass": true
+      },
+      {
+        "name": "Hold fixture 1",
+        "pass": true
+      },
+      {
+        "name": "Confirm 201",
+        "pass": true
+      },
+      {
+        "name": "Code, method, note persisted",
+        "pass": true
+      },
+      {
+        "name": "Booking links inserted",
+        "pass": true
+      },
+      {
+        "name": "Double confirm rejected",
+        "pass": true
+      },
+      {
+        "name": "Own history ignores forged user_id",
+        "pass": true
+      },
+      {
+        "name": "Other customer history empty",
+        "pass": true
+      },
+      {
+        "name": "Hold fixture 3",
+        "pass": true
+      },
+      {
+        "name": "Owner sees own court only",
+        "pass": true
+      },
+      {
+        "name": "Owner cannot cancel other court",
+        "pass": true
+      },
+      {
+        "name": "Customer cannot cancel others",
+        "pass": true
+      },
+      {
+        "name": "Admin sees all",
+        "pass": true
+      },
+      {
+        "name": "Admin search by code",
+        "pass": true
+      },
+      {
+        "name": "Future complete rejected",
+        "pass": true
+      },
+      {
+        "name": "Invalid transition target rejected",
+        "pass": true
+      },
+      {
+        "name": "Customer cancels own future booking",
+        "pass": true
+      },
+      {
+        "name": "Cancelled slots reopened",
+        "pass": true
+      },
+      {
+        "name": "Cancel preserves links/history",
+        "pass": true
+      },
+      {
+        "name": "Hold fixture 1",
+        "pass": true
+      },
+      {
+        "name": "Cancelled slots can be booked again",
+        "pass": true
+      },
+      {
+        "name": "Repeat old cancel safe",
+        "pass": true
+      },
+      {
+        "name": "Cancelled history filtering",
+        "pass": true
+      },
+      {
+        "name": "Past booking cannot cancel",
+        "pass": true
+      },
+      {
+        "name": "Owner completes ended booking",
+        "pass": true
+      },
+      {
+        "name": "Completed cannot cancel",
+        "pass": true
+      },
+      {
+        "name": "Mixed court confirm rejected",
+        "pass": true
+      },
+      {
+        "name": "Forged court confirm rejected",
+        "pass": true
+      },
+      {
+        "name": "No partial booking on error",
+        "pass": true
+      },
+      {
+        "name": "Expired confirm is 410",
+        "pass": true
+      },
+      {
+        "name": "Cleanup succeeds",
+        "pass": true
+      },
+      {
+        "name": "Concurrent first slot initialization",
+        "pass": true
+      },
+      {
+        "name": "144 slots, no phantom booked",
+        "pass": true
+      },
+      {
+        "name": "Hold concurrency 10/10",
+        "pass": true
+      },
+      {
+        "name": "Confirm concurrency one booking only",
+        "pass": true
+      },
+      {
+        "name": "History works with ONLY_FULL_GROUP_BY",
+        "pass": true
+      }
+    ]
+  },
+  "week3_browser": [
+    {
+      "page": "history.php",
+      "width": 390,
+      "info": {
+        "width": 390,
+        "scroll": 390,
+        "text": false,
+        "mockScripts": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "page": "profile.php",
+      "width": 390,
+      "info": {
+        "width": 390,
+        "scroll": 390,
+        "text": false,
+        "mockScripts": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "page": "history.php",
+      "width": 768,
+      "info": {
+        "width": 768,
+        "scroll": 768,
+        "text": false,
+        "mockScripts": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "page": "profile.php",
+      "width": 768,
+      "info": {
+        "width": 768,
+        "scroll": 768,
+        "text": false,
+        "mockScripts": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "page": "history.php",
+      "width": 1440,
+      "info": {
+        "width": 1440,
+        "scroll": 1440,
+        "text": false,
+        "mockScripts": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "page": "profile.php",
+      "width": 1440,
+      "info": {
+        "width": 1440,
+        "scroll": 1440,
+        "text": false,
+        "mockScripts": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "page": "admin-bookings.php",
+      "width": 390,
+      "info": {
+        "width": 390,
+        "scroll": 390,
+        "text": false,
+        "mockScripts": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "page": "admin-bookings.php",
+      "width": 768,
+      "info": {
+        "width": 768,
+        "scroll": 768,
+        "text": false,
+        "mockScripts": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "page": "admin-bookings.php",
+      "width": 1440,
+      "info": {
+        "width": 1440,
+        "scroll": 1440,
+        "text": false,
+        "mockScripts": false
+      },
+      "errors": [],
+      "pass": true
+    }
+  ],
+  "week2_browser_regression": [
+    {
+      "file": "booking.php",
+      "width": 390,
+      "info": {
+        "width": 390,
+        "scroll": 390,
+        "notImplemented": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "file": "confirm.php",
+      "width": 390,
+      "info": {
+        "width": 390,
+        "scroll": 390,
+        "notImplemented": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "file": "payment.php",
+      "width": 390,
+      "info": {
+        "width": 390,
+        "scroll": 390,
+        "notImplemented": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "file": "booking.php",
+      "width": 768,
+      "info": {
+        "width": 768,
+        "scroll": 768,
+        "notImplemented": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "file": "confirm.php",
+      "width": 768,
+      "info": {
+        "width": 768,
+        "scroll": 768,
+        "notImplemented": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "file": "payment.php",
+      "width": 768,
+      "info": {
+        "width": 768,
+        "scroll": 768,
+        "notImplemented": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "file": "booking.php",
+      "width": 1440,
+      "info": {
+        "width": 1440,
+        "scroll": 1440,
+        "notImplemented": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "file": "confirm.php",
+      "width": 1440,
+      "info": {
+        "width": 1440,
+        "scroll": 1440,
+        "notImplemented": false
+      },
+      "errors": [],
+      "pass": true
+    },
+    {
+      "file": "payment.php",
+      "width": 1440,
+      "info": {
+        "width": 1440,
+        "scroll": 1440,
+        "notImplemented": false
+      },
+      "errors": [],
+      "pass": true
+    }
+  ],
+  "week1_browser_regression": [
+    {
+      "file": "index.php",
+      "errors": [],
+      "state": {
+        "mock": false,
+        "text": false
+      },
+      "pass": true
+    },
+    {
+      "file": "courts.php",
+      "errors": [],
+      "state": {
+        "mock": false,
+        "text": false
+      },
+      "pass": true
+    },
+    {
+      "file": "court-detail.php?id=1",
+      "errors": [],
+      "state": {
+        "mock": false,
+        "text": false
+      },
+      "pass": true
+    }
+  ],
+  "syntax": {
+    "php_files": 45,
+    "php_failures": 0,
+    "javascript_files": 20,
+    "javascript_failures": 0
+  },
+  "additional_checks": {
+    "migration_run_twice": "PASS",
+    "readonly_integrity": "PASS",
+    "invalid_dates_422": "PASS",
+    "valid_date_200": "PASS"
+  },
+  "limits": [
+    "Payment simulation only",
+    "No test on group live database",
+    "No verification of GitHub setup or actual Task Scheduler",
+    "No full security audit for APIs outside Minh scope"
+  ]
+}

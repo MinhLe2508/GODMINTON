@@ -1,12 +1,3 @@
 <?php
-/**
- * api/admin/bookings.php
- * Danh sách đơn, lọc trạng thái, đánh dấu hoàn thành/huỷ.
- *
- * Người phụ trách: Minh (Tuần 3)
- */
-require_once __DIR__ . '/../config/db.php'; // sửa số lượng '../' nếu đổi vị trí file
-header('Content-Type: application/json; charset=utf-8');
-
-// TODO: triển khai logic thật, dùng $pdo->prepare(...) — không nối chuỗi SQL trực tiếp.
-echo json_encode(['status' => 'not_implemented']);
+require_once __DIR__.'/../../includes/booking-service.php';
+try{$user=booking_account_user();if(!in_array($user['role'],['admin','owner'],true))booking_account_out(403,null,'Chỉ chủ sân hoặc quản trị viên được quản lý đơn.');if($_SERVER['REQUEST_METHOD']==='GET')booking_account_out(200,booking_list($user,true));if($_SERVER['REQUEST_METHOD']!=='PATCH')booking_account_out(405,null,'Chỉ hỗ trợ GET/PATCH.');booking_account_csrf();$in=booking_account_input();$id=booking_account_id($in['booking_id']??null);$target=$in['status']??null;if(!in_array($target,['completed','cancelled'],true))booking_account_out(422,null,'Trạng thái cập nhật không hợp lệ.');booking_account_out(200,booking_transition($id,$target,$user,true),'Đã cập nhật trạng thái đơn.');}catch(Throwable $e){booking_account_error($e);}

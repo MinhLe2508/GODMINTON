@@ -1,10 +1,17 @@
 <?php
+header('Cache-Control: no-store, max-age=0');
 require_once __DIR__ . '/includes/auth-check.php';
 $currentUser = [
     'id' => (int)$_SESSION['user_id'],
     'name' => $_SESSION['name'] ?? '',
     'role' => $_SESSION['role'] ?? ''
 ];
+if ($currentUser !== null) {
+    require_once __DIR__ . '/config/db.php';
+    $userStmt = $pdo->prepare('SELECT id,name,email,phone,role FROM users WHERE id=?');
+    $userStmt->execute([(int)$_SESSION['user_id']]);
+    $currentUser = $userStmt->fetch() ?: null;
+}
 ?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
@@ -22,7 +29,7 @@ $currentUser = [
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/payment_style.css">
     <script>
-        window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE); ?>;
+        window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
 </head>
 <body>
@@ -435,10 +442,10 @@ $currentUser = [
 <!-- ===================== SCRIPTS ===================== -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="assets/js/mock-data.js"></script>
-<script src="assets/js/app.js"></script>
-<script src="assets/js/payment.js"></script>
+<script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
+<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
+<script src="assets/js/payment.js?v=<?= filemtime(__DIR__ . '/assets/js/payment.js') ?>"></script>
 <!-- Bottom Nav -->
-<script src="assets/js/bottom-nav.js"></script>
+<script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>

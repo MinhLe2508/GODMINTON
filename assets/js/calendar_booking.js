@@ -343,7 +343,7 @@ async function handleSlotClick(courtIndex, slotIdx, type, slotId) {
 
         if (res.isConfirmed) {
             const heldIds = myHeldSlots.map(s => s.id).join(',');
-            window.location.href = `confirm.php?court_id=${activeCourtId}&slot_ids=${heldIds}&date=${activeDateStr}`;
+            window.location.href = `payment.php?court_id=${activeCourtId}&slot_ids=${heldIds}&date=${activeDateStr}`;
         } else if (res.dismiss === Swal.DismissReason.cancel) {
             await releaseHoldSlots(myHeldSlots.map(s => s.id));
         }
@@ -598,7 +598,7 @@ function updateSummaryBar() {
         const payBtn = document.getElementById('btnGoPayment');
         if (payBtn) {
             const heldIds = myHeldSlots.map(s => s.id).join(',');
-            payBtn.href = `confirm.php?court_id=${activeCourtId}&slot_ids=${heldIds}&date=${activeDateStr}`;
+            payBtn.href = `payment.php?court_id=${activeCourtId}&slot_ids=${heldIds}&date=${activeDateStr}`;
             payBtn.innerHTML = '<i class="fa-solid fa-lock me-2"></i>Đặt Cọc & Thanh Toán';
             payBtn.onclick = null;
         }

@@ -9,7 +9,11 @@
  * Tài khoản: khach1@gmail.com và khach2@gmail.com (mật khẩu Khach@123; khach2 tự tạo nếu chưa có).
  * Test chỉ đụng slot "Thảm A3" của sân 1 ngày mai, xoá đơn test tạo ra và trả slot về 'available' khi xong.
  */
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI test only.'); }
 require_once __DIR__ . '/../config/db.php';
+$testDatabase = (string)$pdo->query('SELECT DATABASE()')->fetchColumn();
+if (!preg_match('/(^test_|_test$|_review_)/', $testDatabase)) { fwrite(STDERR, "Only run this destructive fixture test on a separate test/review DB.\n"); exit(2); }
+if (PHP_OS_FAMILY === 'Windows' && !getenv('BASE_URL')) { fwrite(STDERR, "Windows: set BASE_URL to an independent Apache/PHP test server first.\n"); exit(2); }
 
 $ROUNDS = (int)(getenv('ROUNDS') ?: 20);
 $base   = rtrim(getenv('BASE_URL') ?: 'http://127.0.0.1:8099', '/');
@@ -202,3 +206,4 @@ $cleanup();
 echo "\n==== KẾT QUẢ: $pass đạt, $fail lỗi ====\n";
 @unlink($A['jar']); @unlink($B['jar']);
 exit($fail ? 1 : 0);
+

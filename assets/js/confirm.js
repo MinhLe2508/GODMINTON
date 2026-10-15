@@ -3,6 +3,8 @@
    GODMINTON — Tuần 2: Hỗ trợ 1 tiếng / 1.5 tiếng / 2 tiếng trở lên
    ================================================================ */
 
+(() => {
+const escapeConfirmText = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[character]));
 const formatVND = amount => new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -11,6 +13,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const dateStr = urlParams.get('date') || new Date().toISOString().split('T')[0];
     const confirmContent = document.getElementById('confirmContent');
 
+    if (!confirmContent) return;
+    try {
     // Hỗ trợ cả slot_ids (mảng) hoặc slot_id (đơn)
     let slotIds = [];
     if (urlParams.get('slot_ids')) {
@@ -26,22 +30,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 1. Nạp danh sách slots thật từ MySQL qua API
-    let slots = [];
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    let slots;
     try {
-        const res = await fetch(`api/slots.php?court_id=${courtId}&date=${dateStr}`);
+        const res = await fetch(`api/slots.php?court_id=${courtId}&date=${encodeURIComponent(dateStr)}`, {
+            signal: controller.signal,
+            credentials: 'same-origin',
+            cache: 'no-store'
+        });
+        if (!res.ok) throw new Error('Không tải được thông tin giữ chỗ. Vui lòng thử lại.');
         const data = await res.json();
-        if (data.status === 'success' && data.data) {
-            slots = data.data.filter(s => slotIds.includes(s.id));
+        if (data.status !== 'success' || !Array.isArray(data.data)) {
+            throw new Error('Máy chủ trả dữ liệu giữ chỗ không hợp lệ. Vui lòng thử lại.');
         }
-    } catch (err) {
-        console.error('Lỗi kiểm tra phiên giữ chỗ:', err);
+        slotIds = [...new Set(slotIds)];
+        slots = data.data.filter(slot => slotIds.includes(Number(slot.id)));
+    } finally {
+        clearTimeout(timeoutId);
     }
 
     // Sắp xếp các slot theo thứ tự thời gian
     slots.sort((a, b) => a.start_time.localeCompare(b.start_time));
 
     // 2. Kiểm tra tính hợp lệ: Tất cả các slot phải đang holding và do chính user giữ
-    const allValidHolding = slots.length > 0 && slots.every(s => s.status === 'holding' && s.is_my_hold);
+    const allValidHolding = slots.length === slotIds.length && slots.every(s => s.status === 'holding' && s.is_my_hold);
 
     if (!allValidHolding) {
         confirmContent.innerHTML = `
@@ -71,9 +84,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const remainAmount = totalPrice - depositAmount;
 
     // Lấy thông tin user
-    const user = (typeof window.__GODMINTON_USER__ !== 'undefined' && window.__GODMINTON_USER__) 
-                 || (typeof MockDB !== 'undefined' ? MockDB.getUser() : null) 
-                 || { name: 'Khách hàng', email: 'khach@gmail.com', phone: '0912345678' };
+    const rawUser = window.__GODMINTON_USER__ || {};
+    const user = Object.fromEntries(['name', 'email', 'phone'].map(key => [key, escapeConfirmText(rawUser[key])]));
 
     // 3. Render giao diện xác nhận
     confirmContent.innerHTML = `
@@ -96,7 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </h5>
 
                 <div class="p-3 bg-body-tertiary rounded-3 mb-3">
-                    <h6 class="fw-bold mb-1">${firstSlot.sub_court_name}</h6>
+                    <h6 class="fw-bold mb-1">${escapeConfirmText(firstSlot.sub_court_name)}</h6>
                     <div class="d-flex gap-2 mt-2">
                         <span class="badge bg-teal-subtle text-teal">${timeRangeStr}</span>
                         <span class="badge bg-warning text-dark">${durationLabel}</span>
@@ -277,4 +289,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.location.href = `booking.php?court_id=${courtId}&date=${dateStr}`;
         }
     });
+    } catch (error) {
+        console.error('Lỗi khởi tạo trang xác nhận:', error);
+        const message = error.name === 'AbortError'
+            ? 'Máy chủ phản hồi quá lâu. Vui lòng thử tải lại.'
+            : 'Không thể tải thông tin xác nhận. Vui lòng thử lại hoặc chọn lại khung giờ.';
+        confirmContent.innerHTML = `
+            <div class="card border rounded-4 p-5 text-center shadow-sm" role="alert">
+                <h4 class="fw-bold">Không thể xác minh phiên giữ chỗ</h4>
+                <p class="text-muted">${message}</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <button id="retryConfirm" type="button" class="btn btn-teal rounded-pill">Thử lại</button>
+                    <a class="btn btn-outline-secondary rounded-pill" href="booking.php?court_id=${courtId}&amp;date=${encodeURIComponent(dateStr)}">Chọn lại khung giờ</a>
+                </div>
+            </div>`;
+        document.getElementById('retryConfirm').addEventListener('click', () => window.location.reload());
+    }
+
 });
+})();
