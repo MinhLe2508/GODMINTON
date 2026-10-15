@@ -238,6 +238,11 @@ async function renderCourts() {
 
         document.getElementById('courtCountText').textContent = courts.length;
 
+        // Đồng bộ markers trên bản đồ tương ứng với kết quả lọc/tìm kiếm
+        if (window.CourtMap && typeof window.CourtMap.updateMarkers === 'function') {
+            window.CourtMap.updateMarkers(courts);
+        }
+
         if (!courts.length) {
             container.innerHTML = `
             <div class="col-12 text-center py-5">

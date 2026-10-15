@@ -252,14 +252,8 @@
         </div>
     </div>
 
-    <!-- Map placeholder -->
-    <div id="mapSection" class="mt-5 rounded-4 overflow-hidden border" style="height:300px; background:#0e1b2a; display:flex; align-items:center; justify-content:center;">
-        <div class="text-center text-muted">
-            <i class="fa-solid fa-map-location-dot fs-1 mb-2" style="color:#0d9488;"></i>
-            <div class="fw-bold">Bản đồ sân cầu lông</div>
-            <div class="small">Google Maps API — hiển thị vị trí các sân</div>
-        </div>
-    </div>
+    <!-- Bản Đồ Vị Trí Sân (Leaflet.js + OpenStreetMap) -->
+    <?php include __DIR__ . '/includes/partials/court-map.php'; ?>
 </div>
 </main>
 
