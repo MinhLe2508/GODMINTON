@@ -7,19 +7,31 @@
 (function (window, document) {
     'use strict';
 
-    // Cấu hình phạm vi địa lý đô thị lõi TP.HCM (maxBounds)
+    // Phạm vi địa lý bao quát toàn bộ khu vực đô thị Sài Gòn & vùng lân cận (maxBounds)
     const HCMC_BOUNDS = {
-        southWest: [10.6500, 106.5500],
-        northEast: [10.9500, 106.8500]
+        southWest: [10.5000, 106.3500],
+        northEast: [11.1500, 106.9500]
     };
     const DEFAULT_CENTER = [10.7769, 106.7009]; // Quận 1, TP.HCM
-    const DEFAULT_ZOOM = 13;
-    const MIN_ZOOM = 11;
+    const DEFAULT_ZOOM = 12;
+    const MIN_ZOOM = 10;
     const MAX_ZOOM = 18;
+
+    // Tọa độ dự phòng cho 7 sân mẫu mặc định (phòng trường hợp dữ liệu tĩnh client chưa có lat/lng)
+    const DEMO_COORDS = {
+        1: [10.7769, 106.7009], // Quận 1 – Lê Thánh Tôn
+        2: [10.8020, 106.7120], // Bình Thạnh – Arena Xô Viết
+        3: [10.8010, 106.6650], // Tân Bình – TBSport
+        4: [10.8230, 106.6830], // Gò Vấp – GV Arena
+        5: [10.7290, 106.7180], // Quận 7 – Phú Mỹ Hưng
+        6: [10.8510, 106.7720], // Thủ Đức – Thủ Đức Arena
+        7: [11.0100, 106.6530]  // Bình Dương – BD Sport Center
+    };
 
     let map = null;
     let markersLayer = null;
     let currentCourts = [];
+    let pendingCourts = null;
 
     // Helper: Escape chuỗi HTML chống tấn công XSS trong popup
     function escapeHtml(text) {
@@ -36,7 +48,7 @@
 
     // Helper: Định dạng tiền tệ VND
     function formatVND(amount) {
-        if (!amount || isNaN(amount)) return '0 đ';
+        if (!amount || isNaN(amount)) return '0 đ/h';
         return new Intl.NumberFormat('vi-VN').format(amount) + ' đ/h';
     }
 
@@ -55,19 +67,23 @@
         `;
     }
 
-    // Tạo icon SVG đặc trưng cho sân cầu lông (tông Teal)
-    function createCourtMarkerIcon() {
+    // Tạo icon SVG đặc trưng hình ghim bản đồ màu Teal sắc nét (không phụ thuộc font)
+    function createCourtMarkerIcon(courtName) {
         if (typeof L === 'undefined') return null;
         return L.divIcon({
-            className: 'court-custom-marker',
+            className: 'court-svg-marker-wrapper',
             html: `
-                <div class="court-marker-pin" title="Sân cầu lông">
-                    <i class="fa-solid fa-volleyball"></i>
+                <div class="court-svg-pin" title="${escapeHtml(courtName || 'Sân cầu lông')}">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="30" height="40" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.45)); cursor: pointer;">
+                        <path fill="#0d9488" stroke="#ffffff" stroke-width="16" d="M384 192C384 279.4 267 435 215.7 499.2C207.8 509.1 192.2 509.1 184.3 499.2C133 435 16 279.4 16 192C16 86 102 0 208 0C314 0 384 86 384 192z"/>
+                        <circle cx="192" cy="192" r="72" fill="#ffffff"/>
+                        <circle cx="192" cy="192" r="46" fill="#0d9488"/>
+                    </svg>
                 </div>
             `,
-            iconSize: [36, 36],
-            iconAnchor: [18, 36],
-            popupAnchor: [0, -32]
+            iconSize: [30, 40],
+            iconAnchor: [15, 40],
+            popupAnchor: [0, -38]
         });
     }
 
@@ -79,26 +95,24 @@
             return null;
         }
 
-        // Kiểm tra thư viện Leaflet (L)
         if (typeof L === 'undefined') {
-            showMapError(container, 'Không thể tải thư viện Leaflet từ CDN. Vui lòng kiểm tra kết nối Internet.');
+            showMapError(container, 'Không thể tải thư viện Leaflet từ CDN. Vui lòng kiểm tra kết nối mạng.');
             return null;
         }
 
         try {
-            // Giới hạn maxBounds theo vùng đô thị TP.HCM
+            // Giới hạn maxBounds theo toàn vùng đô thị
             const southWest = L.latLng(HCMC_BOUNDS.southWest[0], HCMC_BOUNDS.southWest[1]);
             const northEast = L.latLng(HCMC_BOUNDS.northEast[0], HCMC_BOUNDS.northEast[1]);
             const bounds = L.latLngBounds(southWest, northEast);
 
-            // Khởi tạo map instance
             map = L.map(container, {
                 center: DEFAULT_CENTER,
                 zoom: DEFAULT_ZOOM,
                 minZoom: MIN_ZOOM,
                 maxZoom: MAX_ZOOM,
                 maxBounds: bounds,
-                maxBoundsViscosity: 1.0, // Ngăn chặn hoàn toàn kéo/zoom ra ngoài phạm vi
+                maxBoundsViscosity: 1.0,
                 scrollWheelZoom: true
             });
 
@@ -115,15 +129,20 @@
 
             tileLayer.addTo(map);
 
-            // Layer nhóm các markers
+            // Layer nhóm markers
             markersLayer = L.layerGroup().addTo(map);
 
-            // Cập nhật danh sách sân ban đầu nếu có
-            if (Array.isArray(initialCourts) && initialCourts.length > 0) {
-                updateMarkers(initialCourts);
+            // Ưu tiên nạp danh sách sân chờ (pending) hoặc ban đầu
+            const courtsToLoad = (pendingCourts && pendingCourts.length > 0)
+                ? pendingCourts
+                : (Array.isArray(initialCourts) ? initialCourts : []);
+
+            if (courtsToLoad.length > 0) {
+                updateMarkers(courtsToLoad);
+                pendingCourts = null;
             }
 
-            // Đảm bảo kích thước hiển thị đúng sau khi DOM hoàn tất
+            // Invalidate size để hiển thị đầy đủ khi DOM render xong
             setTimeout(() => {
                 if (map) map.invalidateSize();
             }, 300);
@@ -137,26 +156,34 @@
         }
     }
 
-    // Cập nhật marker theo danh sách sân (gọi tự động khi lọc/tìm kiếm)
+    // Cập nhật marker theo danh sách sân
     function updateMarkers(courts) {
-        if (!map || !markersLayer) return;
+        if (!map || !markersLayer) {
+            pendingCourts = courts;
+            return;
+        }
 
         currentCourts = Array.isArray(courts) ? courts : [];
         markersLayer.clearLayers();
 
-        const customIcon = createCourtMarkerIcon();
         const validLatLngs = [];
 
         currentCourts.forEach(court => {
-            const lat = parseFloat(court.latitude);
-            const lng = parseFloat(court.longitude);
+            let lat = parseFloat(court.latitude);
+            let lng = parseFloat(court.longitude);
 
-            // Bỏ qua nếu sân chưa có tọa độ hợp lệ (không để bản đồ lỗi)
+            // Tự động đối soát tọa độ dự phòng nếu sân mẫu thiếu tọa độ
+            if ((isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) && court.id && DEMO_COORDS[court.id]) {
+                lat = DEMO_COORDS[court.id][0];
+                lng = DEMO_COORDS[court.id][1];
+            }
+
+            // Bỏ qua nếu sân không có tọa độ hợp lệ
             if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
                 return;
             }
 
-            // Kiểm tra tọa độ có nằm trong phạm vi TP.HCM không
+            // Kiểm tra tọa độ có nằm trong phạm vi hiển thị
             if (lat < HCMC_BOUNDS.southWest[0] || lat > HCMC_BOUNDS.northEast[0] ||
                 lng < HCMC_BOUNDS.southWest[1] || lng > HCMC_BOUNDS.northEast[1]) {
                 return;
@@ -164,9 +191,10 @@
 
             validLatLngs.push([lat, lng]);
 
+            const customIcon = createCourtMarkerIcon(court.name);
             const marker = L.marker([lat, lng], { icon: customIcon });
 
-            // Popup HTML được ESCAPE triệt để chống XSS
+            // Popup HTML escape triệt để chống XSS
             const detailUrl = `court-detail.php?id=${encodeURIComponent(court.id)}`;
             const priceText = court.price_formatted || formatVND(court.price_per_hour);
 
@@ -189,26 +217,26 @@
             markersLayer.addLayer(marker);
         });
 
-        // Tự động điều chỉnh góc nhìn để vừa các sân đang hiển thị
+        // Tự động điều chỉnh góc nhìn để thấy trọn các sân
         if (validLatLngs.length > 1) {
             try {
                 const groupBounds = L.latLngBounds(validLatLngs);
-                map.fitBounds(groupBounds, { padding: [40, 40], maxZoom: 15 });
+                map.fitBounds(groupBounds, { padding: [45, 45], maxZoom: 14 });
             } catch (e) {
-                // Giữ nguyên view nếu lỗi fit bounds
+                // Giữ nguyên view nếu lỗi fit
             }
         } else if (validLatLngs.length === 1) {
             map.setView(validLatLngs[0], 15);
         }
     }
 
-    // Đặt lại góc nhìn về trung tâm TP.HCM
+    // Đặt lại góc nhìn về trung tâm
     function resetView() {
         if (!map) return;
         map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
     }
 
-    // Xuất API công khai ra window.CourtMap
+    // Xuất API công khai
     window.CourtMap = {
         init: initCourtMap,
         updateMarkers: updateMarkers,

@@ -253,7 +253,17 @@
     </div>
 
     <!-- Bản Đồ Vị Trí Sân (Leaflet.js + OpenStreetMap) -->
-    <?php include __DIR__ . '/includes/partials/court-map.php'; ?>
+    <?php
+    $courtMapData = [];
+    try {
+        require_once __DIR__ . '/config/db.php';
+        $mapStmt = $pdo->query("SELECT id, name, address, latitude, longitude, price_per_hour FROM courts WHERE status = 'active'");
+        $courtMapData = $mapStmt->fetchAll();
+    } catch (Exception $e) {
+        $courtMapData = [];
+    }
+    include __DIR__ . '/includes/partials/court-map.php';
+    ?>
 </div>
 </main>
 
@@ -301,7 +311,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="assets/js/mock-data.js"></script>
 <script src="assets/js/app.js"></script>
-<script src="assets/js/courts.js"></script>
+<script src="assets/js/courts.js?v=<?= time() ?>"></script>
 <!-- Bottom Nav -->
 <script src="assets/js/bottom-nav.js"></script>
 </body>

@@ -20,7 +20,7 @@ $encodedData = json_encode($initialMapData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
 
 <!-- Leaflet 1.9.4 CSS (Ghim cố định phiên bản) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<link rel="stylesheet" href="assets/css/court-map.css">
+<link rel="stylesheet" href="assets/css/court-map.css?v=<?= @filemtime(__DIR__ . '/../../assets/css/court-map.css') ?: time() ?>">
 
 <div class="court-map-wrapper my-4" id="mapSection">
     <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
@@ -51,7 +51,7 @@ $encodedData = json_encode($initialMapData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
 
 <!-- Leaflet 1.9.4 JS (Ghim cố định phiên bản) -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="assets/js/court-map.js"></script>
+<script src="assets/js/court-map.js?v=<?= @filemtime(__DIR__ . '/../../assets/js/court-map.js') ?: time() ?>"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
