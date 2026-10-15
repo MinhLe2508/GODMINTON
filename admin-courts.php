@@ -1,3 +1,228 @@
+<?php
+require_once __DIR__ . '/includes/auth-check.php';
+require_once __DIR__ . '/config/db.php';
+
+// Giới hạn khu vực đô thị lõi TP.HCM (maxBounds)
+define('CORE_BOUNDS_LAT_MIN', 10.6500000);
+define('CORE_BOUNDS_LAT_MAX', 10.9500000);
+define('CORE_BOUNDS_LNG_MIN', 106.5500000);
+define('CORE_BOUNDS_LNG_MAX', 106.8500000);
+
+$currentUserId = (int)($_SESSION['user_id'] ?? 0);
+$currentUserRole = $_SESSION['role'] ?? 'customer';
+
+// Xử lý API POST lưu sân / xóa sân
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['action'])) {
+    header('Content-Type: application/json; charset=utf-8');
+
+    $raw = file_get_contents('php://input');
+    $input = json_decode($raw, true) ?: $_POST;
+    $action = $_GET['action'];
+
+    if ($action === 'save') {
+        $id = !empty($input['id']) ? (int)$input['id'] : null;
+        $name = trim($input['name'] ?? '');
+        $district = trim($input['district'] ?? '');
+        $address = trim($input['address'] ?? '');
+        $price = (float)($input['price_per_hour'] ?? 0);
+        $status = in_array($input['status'] ?? '', ['active', 'inactive'], true) ? $input['status'] : 'active';
+        $description = trim($input['description'] ?? '');
+        $imageUrl = trim($input['image_url'] ?? '');
+        $amenities = is_array($input['amenities'] ?? null) ? $input['amenities'] : [];
+
+        // Validate cơ bản
+        if ($name === '' || $address === '' || $price < 0) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Vui lòng điền đầy đủ tên sân, địa chỉ và giá hợp lệ.'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // Validate tọa độ server-side
+        $hasLat = isset($input['latitude']) && $input['latitude'] !== '' && $input['latitude'] !== null;
+        $hasLng = isset($input['longitude']) && $input['longitude'] !== '' && $input['longitude'] !== null;
+        $lat = null;
+        $lng = null;
+
+        if ($hasLat || $hasLng) {
+            if (!$hasLat || !$hasLng || !is_numeric($input['latitude']) || !is_numeric($input['longitude'])) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'Tọa độ kinh độ và vĩ độ phải cùng được nhập và là số thực hợp lệ.'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            $lat = (float)$input['latitude'];
+            $lng = (float)$input['longitude'];
+
+            if ($lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'Tọa độ vượt quá giới hạn địa lý chuẩn (lat: [-90, 90], lng: [-180, 180]).'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            if ($lat < CORE_BOUNDS_LAT_MIN || $lat > CORE_BOUNDS_LAT_MAX || $lng < CORE_BOUNDS_LNG_MIN || $lng > CORE_BOUNDS_LNG_MAX) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'Tọa độ nằm ngoài phạm vi khu vực đô thị TP.HCM (vĩ độ: 10.65–10.95, kinh độ: 106.55–106.85).'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+        }
+
+        // Tìm ward_id tương ứng
+        $wardId = 1;
+        if ($district !== '') {
+            $wStmt = $pdo->prepare("SELECT id FROM wards WHERE name LIKE :q OR old_area_label LIKE :q LIMIT 1");
+            $wStmt->execute([':q' => '%' . $district . '%']);
+            $wRow = $wStmt->fetch();
+            if ($wRow) {
+                $wardId = (int)$wRow['id'];
+            }
+        }
+
+        try {
+            $pdo->beginTransaction();
+
+            if ($id) {
+                // Kiểm tra quyền theo owner_id: chủ sân A không được sửa sân của chủ sân B
+                $checkStmt = $pdo->prepare("SELECT owner_id FROM courts WHERE id = :id FOR UPDATE");
+                $checkStmt->execute([':id' => $id]);
+                $courtRow = $checkStmt->fetch();
+
+                if (!$courtRow) {
+                    $pdo->rollBack();
+                    http_response_code(404);
+                    echo json_encode(['status' => 'error', 'message' => 'Sân không tồn tại.'], JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+
+                if ($currentUserRole !== 'admin' && (int)$courtRow['owner_id'] !== $currentUserId) {
+                    $pdo->rollBack();
+                    http_response_code(403);
+                    echo json_encode(['status' => 'error', 'message' => '403 Forbidden: Bạn không có quyền chỉnh sửa sân này.'], JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+
+                $uStmt = $pdo->prepare("
+                    UPDATE courts
+                    SET name = :name,
+                        ward_id = :ward_id,
+                        address = :address,
+                        latitude = :lat,
+                        longitude = :lng,
+                        price_per_hour = :price,
+                        description = :desc,
+                        status = :status
+                    WHERE id = :id
+                ");
+                $uStmt->execute([
+                    ':name'     => $name,
+                    ':ward_id'  => $wardId,
+                    ':address'  => $address,
+                    ':lat'      => $lat ?? 0.0000000,
+                    ':lng'      => $lng ?? 0.0000000,
+                    ':price'    => $price,
+                    ':desc'     => $description,
+                    ':status'   => $status,
+                    ':id'       => $id
+                ]);
+            } else {
+                $insStmt = $pdo->prepare("
+                    INSERT INTO courts (owner_id, ward_id, name, address, latitude, longitude, price_per_hour, description, status)
+                    VALUES (:owner_id, :ward_id, :name, :address, :lat, :lng, :price, :desc, :status)
+                ");
+                $insStmt->execute([
+                    ':owner_id' => $currentUserId ?: 3,
+                    ':ward_id'  => $wardId,
+                    ':name'     => $name,
+                    ':address'  => $address,
+                    ':lat'      => $lat ?? 0.0000000,
+                    ':lng'      => $lng ?? 0.0000000,
+                    ':price'    => $price,
+                    ':desc'     => $description,
+                    ':status'   => $status
+                ]);
+                $id = (int)$pdo->lastInsertId();
+            }
+
+            // Lưu ảnh nếu có
+            if ($imageUrl !== '') {
+                $delImg = $pdo->prepare("DELETE FROM court_images WHERE court_id = :id");
+                $delImg->execute([':id' => $id]);
+
+                $insImg = $pdo->prepare("INSERT INTO court_images (court_id, image_url, sort_order) VALUES (:id, :url, 1)");
+                $insImg->execute([':id' => $id, ':url' => $imageUrl]);
+            }
+
+            // Lưu tiện ích nếu có
+            if (!empty($amenities)) {
+                $delAmen = $pdo->prepare("DELETE FROM court_amenities WHERE court_id = :id");
+                $delAmen->execute([':id' => $id]);
+
+                $findAmen = $pdo->query("SELECT code, id FROM amenities");
+                $allAmen = $findAmen->fetchAll(PDO::FETCH_KEY_PAIR);
+
+                $insAmen = $pdo->prepare("INSERT INTO court_amenities (court_id, amenity_id) VALUES (:court_id, :amenity_id)");
+                foreach ($amenities as $code) {
+                    if (isset($allAmen[$code])) {
+                        $insAmen->execute([':court_id' => $id, ':amenity_id' => $allAmen[$code]]);
+                    }
+                }
+            }
+
+            $pdo->commit();
+
+            echo json_encode([
+                'status'  => 'success',
+                'message' => 'Lưu thông tin sân thành công!',
+                'data'    => ['id' => $id, 'latitude' => $lat, 'longitude' => $lng]
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+
+        } catch (PDOException $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Lỗi cơ sở dữ liệu: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+
+    if ($action === 'delete') {
+        $id = (int)($input['id'] ?? 0);
+        if ($id <= 0) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'ID sân không hợp lệ.'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        try {
+            $checkStmt = $pdo->prepare("SELECT owner_id FROM courts WHERE id = :id");
+            $checkStmt->execute([':id' => $id]);
+            $courtRow = $checkStmt->fetch();
+
+            if (!$courtRow) {
+                http_response_code(404);
+                echo json_encode(['status' => 'error', 'message' => 'Sân không tồn tại.'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            if ($currentUserRole !== 'admin' && (int)$courtRow['owner_id'] !== $currentUserId) {
+                http_response_code(403);
+                echo json_encode(['status' => 'error', 'message' => '403 Forbidden: Bạn không có quyền xóa sân này.'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            $delStmt = $pdo->prepare("UPDATE courts SET status = 'inactive' WHERE id = :id");
+            $delStmt->execute([':id' => $id]);
+
+            echo json_encode(['status' => 'success', 'message' => 'Đã cập nhật trạng thái sân thành công.'], JSON_UNESCAPED_UNICODE);
+            exit;
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Lỗi xóa sân: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 <head>
@@ -108,6 +333,18 @@
                         <div class="col-12">
                             <label class="form-label fw-semibold small">Địa chỉ chi tiết</label>
                             <input type="text" class="form-control" id="courtAddress" required placeholder="Số nhà, đường, phường...">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="courtLatitude" class="form-label fw-semibold small">Vĩ độ (Latitude)</label>
+                            <input type="number" step="0.0000001" min="-90" max="90" class="form-control" id="courtLatitude" placeholder="VD: 10.7769000">
+                            <div class="form-text text-muted" style="font-size:0.75rem;">Phạm vi đô thị TP.HCM: 10.6500000 đến 10.9500000</div>
+                            <div class="invalid-feedback" id="courtLatError">Vĩ độ không hợp lệ hoặc nằm ngoài khu vực đô thị (10.65 – 10.95).</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="courtLongitude" class="form-label fw-semibold small">Kinh độ (Longitude)</label>
+                            <input type="number" step="0.0000001" min="-180" max="180" class="form-control" id="courtLongitude" placeholder="VD: 106.7009000">
+                            <div class="form-text text-muted" style="font-size:0.75rem;">Phạm vi đô thị TP.HCM: 106.5500000 đến 106.8500000</div>
+                            <div class="invalid-feedback" id="courtLngError">Kinh độ không hợp lệ hoặc nằm ngoài khu vực đô thị (106.55 – 106.85).</div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold small">Giá / giờ (đ)</label>
@@ -223,6 +460,9 @@ function openCourtModal(courtId) {
     form.reset();
     document.querySelectorAll('#amenityChecks input').forEach(chk => chk.checked = false);
 
+    document.getElementById('courtLatitude').classList.remove('is-invalid');
+    document.getElementById('courtLongitude').classList.remove('is-invalid');
+
     if (courtId) {
         const court = AdminApp.getMyCourts(currentUser).find(c => c.id === courtId);
         if (!court) return;
@@ -238,6 +478,9 @@ function openCourtModal(courtId) {
         document.getElementById('courtClose').value = court.closing_time;
         document.getElementById('courtImage').value = court.image_url || '';
         document.getElementById('courtDesc').value = court.description || '';
+        document.getElementById('courtLatitude').value = (court.latitude !== undefined && court.latitude !== null && court.latitude !== 0) ? court.latitude : '';
+        document.getElementById('courtLongitude').value = (court.longitude !== undefined && court.longitude !== null && court.longitude !== 0) ? court.longitude : '';
+
         (court.amenities || []).forEach(a => {
             const chk = document.getElementById('am_' + a);
             if (chk) chk.checked = true;
@@ -245,23 +488,75 @@ function openCourtModal(courtId) {
     } else {
         document.getElementById('courtModalTitle').textContent = 'Thêm sân mới';
         document.getElementById('courtId').value = '';
+        document.getElementById('courtLatitude').value = '';
+        document.getElementById('courtLongitude').value = '';
     }
     modalInstance.show();
 }
 
-function handleSaveCourt(e) {
+async function handleSaveCourt(e) {
     e.preventDefault();
     const id = document.getElementById('courtId').value;
     const price = Number(document.getElementById('courtPrice').value);
     const amenities = Array.from(document.querySelectorAll('#amenityChecks input:checked')).map(c => c.value);
 
-    const allCourts = AdminApp.getAllCourts();
+    // Validate Tọa độ (Latitude / Longitude)
+    const latStr = document.getElementById('courtLatitude').value.trim();
+    const lngStr = document.getElementById('courtLongitude').value.trim();
+    const latInput = document.getElementById('courtLatitude');
+    const lngInput = document.getElementById('courtLongitude');
+    latInput.classList.remove('is-invalid');
+    lngInput.classList.remove('is-invalid');
+
+    let lat = null;
+    let lng = null;
+    let hasCoordError = false;
+
+    // Giới hạn maxBounds đô thị TP.HCM
+    const BOUNDS = {
+        latMin: 10.6500,
+        latMax: 10.9500,
+        lngMin: 106.5500,
+        lngMax: 106.8500
+    };
+
+    if (latStr !== '' || lngStr !== '') {
+        if (latStr === '' || isNaN(Number(latStr))) {
+            latInput.classList.add('is-invalid');
+            hasCoordError = true;
+        } else {
+            lat = Number(latStr);
+            if (lat < -90 || lat > 90 || lat < BOUNDS.latMin || lat > BOUNDS.latMax) {
+                latInput.classList.add('is-invalid');
+                hasCoordError = true;
+            }
+        }
+
+        if (lngStr === '' || isNaN(Number(lngStr))) {
+            lngInput.classList.add('is-invalid');
+            hasCoordError = true;
+        } else {
+            lng = Number(lngStr);
+            if (lng < -180 || lng > 180 || lng < BOUNDS.lngMin || lng > BOUNDS.lngMax) {
+                lngInput.classList.add('is-invalid');
+                hasCoordError = true;
+            }
+        }
+    }
+
+    if (hasCoordError) {
+        AdminApp.toast('error', 'Tọa độ không hợp lệ hoặc nằm ngoài khu vực đô thị (TP.HCM: 10.65–10.95, 106.55–106.85). Vui lòng kiểm tra lại!');
+        return;
+    }
 
     const payload = {
+        id: id ? Number(id) : null,
         name: document.getElementById('courtName').value.trim(),
         district: document.getElementById('courtDistrict').value.trim(),
         address: document.getElementById('courtAddress').value.trim(),
         city: 'TP. Hồ Chí Minh',
+        latitude: lat,
+        longitude: lng,
         price_per_hour: price,
         min_price: price,
         price_formatted: MockDB.formatVND(price),
@@ -272,29 +567,61 @@ function handleSaveCourt(e) {
         image_url: document.getElementById('courtImage').value.trim() || 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop',
         description: document.getElementById('courtDesc').value.trim(),
         amenities,
-        owner_name: currentUser.name,
-        owner_phone: currentUser.phone
+        owner_name: currentUser ? currentUser.name : '',
+        owner_phone: currentUser ? currentUser.phone : ''
     };
 
-    if (id) {
-        const idx = allCourts.findIndex(c => c.id === Number(id));
-        if (idx > -1) allCourts[idx] = { ...allCourts[idx], ...payload };
-        AdminApp.toast('success', 'Đã cập nhật thông tin sân');
-    } else {
-        const newId = allCourts.reduce((max, c) => Math.max(max, c.id), 0) + 1;
-        allCourts.push({
-            id: newId,
-            avg_rating: 0,
-            total_reviews: 0,
-            reviews: [],
-            ...payload
+    // Gửi lưu phía server qua PHP (Transaction + Prepared Statements)
+    try {
+        const res = await fetch('admin-courts.php?action=save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
-        AdminApp.toast('success', 'Đã thêm sân mới');
-    }
+        const json = await res.json();
 
-    AdminApp.saveAllCourts(allCourts);
-    modalInstance.hide();
-    renderCourts();
+        if (json.status !== 'success') {
+            AdminApp.toast('error', json.message || 'Lỗi khi lưu sân.');
+            return;
+        }
+
+        // Cập nhật mảng lưu trữ giao diện
+        const allCourts = AdminApp.getAllCourts();
+        if (id) {
+            const idx = allCourts.findIndex(c => c.id === Number(id));
+            if (idx > -1) allCourts[idx] = { ...allCourts[idx], ...payload };
+            AdminApp.toast('success', 'Đã cập nhật thông tin sân thành công');
+        } else {
+            const newId = json.data && json.data.id ? json.data.id : (allCourts.reduce((max, c) => Math.max(max, c.id), 0) + 1);
+            allCourts.push({
+                id: newId,
+                avg_rating: 0,
+                total_reviews: 0,
+                reviews: [],
+                ...payload
+            });
+            AdminApp.toast('success', 'Đã thêm sân mới thành công');
+        }
+
+        AdminApp.saveAllCourts(allCourts);
+        modalInstance.hide();
+        renderCourts();
+    } catch (err) {
+        // Fallback lưu local nếu mất kết nối server
+        const allCourts = AdminApp.getAllCourts();
+        if (id) {
+            const idx = allCourts.findIndex(c => c.id === Number(id));
+            if (idx > -1) allCourts[idx] = { ...allCourts[idx], ...payload };
+            AdminApp.toast('success', 'Đã cập nhật thông tin sân (offline)');
+        } else {
+            const newId = allCourts.reduce((max, c) => Math.max(max, c.id), 0) + 1;
+            allCourts.push({ id: newId, avg_rating: 0, total_reviews: 0, reviews: [], ...payload });
+            AdminApp.toast('success', 'Đã thêm sân mới (offline)');
+        }
+        AdminApp.saveAllCourts(allCourts);
+        modalInstance.hide();
+        renderCourts();
+    }
 }
 
 async function deleteCourt(courtId) {
@@ -302,6 +629,16 @@ async function deleteCourt(courtId) {
     if (!court) return;
     const ok = await AdminApp.confirmAction('Xóa sân này?', `"${court.name}" sẽ bị xóa khỏi hệ thống. Khung giờ đã tạo cho sân này sẽ không còn hiển thị cho khách.`);
     if (!ok) return;
+
+    try {
+        await fetch('admin-courts.php?action=delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: courtId })
+        });
+    } catch (err) {
+        console.warn('Lỗi gọi API xóa sân phía server:', err);
+    }
 
     const allCourts = AdminApp.getAllCourts().filter(c => c.id !== courtId);
     AdminApp.saveAllCourts(allCourts);
