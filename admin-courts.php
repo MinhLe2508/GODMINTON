@@ -115,14 +115,14 @@
                         <div class="col-md-6">
                             <label for="courtLatitude" class="form-label fw-semibold small">Vĩ độ (Latitude)</label>
                             <input type="number" step="0.0000001" min="-90" max="90" class="form-control" id="courtLatitude" placeholder="VD: 10.7769000">
-                            <div class="form-text text-muted" style="font-size:0.75rem;">Phạm vi đô thị TP.HCM: 10.6500000 đến 10.9500000</div>
-                            <div class="invalid-feedback" id="courtLatError">Vĩ độ không hợp lệ hoặc nằm ngoài khu vực đô thị (10.65 – 10.95).</div>
+                            <div class="form-text text-muted" style="font-size:0.75rem;">Phạm vi đô thị TP.HCM: 10.3500000 đến 11.2000000</div>
+                            <div class="invalid-feedback" id="courtLatError">Vĩ độ không hợp lệ hoặc nằm ngoài khu vực đô thị (10.35 – 11.20).</div>
                         </div>
                         <div class="col-md-6">
                             <label for="courtLongitude" class="form-label fw-semibold small">Kinh độ (Longitude)</label>
                             <input type="number" step="0.0000001" min="-180" max="180" class="form-control" id="courtLongitude" placeholder="VD: 106.7009000">
-                            <div class="form-text text-muted" style="font-size:0.75rem;">Phạm vi đô thị TP.HCM: 106.5500000 đến 106.8500000</div>
-                            <div class="invalid-feedback" id="courtLngError">Kinh độ không hợp lệ hoặc nằm ngoài khu vực đô thị (106.55 – 106.85).</div>
+                            <div class="form-text text-muted" style="font-size:0.75rem;">Phạm vi đô thị TP.HCM: 106.3000000 đến 107.0500000</div>
+                            <div class="invalid-feedback" id="courtLngError">Kinh độ không hợp lệ hoặc nằm ngoài khu vực đô thị (106.30 – 107.05).</div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold small">Giá / giờ (đ)</label>

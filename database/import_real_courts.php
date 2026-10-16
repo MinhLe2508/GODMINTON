@@ -1,956 +1,948 @@
 <?php
-/**
- * database/import_real_courts.php
- * Script CLI: Tìm kiếm và nạp dữ liệu sân cầu lông thật từ OpenStreetMap (Nominatim).
- *
- * QUY TẮC AN TOÀN:
- * 1. CHỈ CHẠY QUA CLI: Chặn toàn bộ truy cập web browser (403).
- * 2. MẶC ĐỊNH LÀ DRY-RUN: Không ghi vào DB trừ khi có cờ --execute rõ ràng.
- * 3. RATE LIMITING: sleep(1) giữa các request tới OSM (tuân thủ Nominatim Usage Policy).
- * 4. USER-AGENT: Gửi định danh rõ ràng 'GODMINTON-student-project/1.0'.
- * 5. KIỂM SOÁT PHẠM VI: Chỉ chấp nhận tọa độ nằm trong vùng đô thị TP.HCM (maxBounds).
- * 6. CHỐNG NHÂN ĐÔI DỮ LIỆU: Kiểm tra trùng theo tên hoặc tọa độ trước khi chèn.
- * 7. GHI FILE ĐỀ XUẤT: Luôn xuất các sân tìm được ra database/seed_courts_suggestion.sql.
- *
- * Người phụ trách: P3 (Trương Minh Triết, Tuần 3)
- */
-
-// 1. Kiểm tra môi trường thực thi (BẮT BUỘC CLI)
-if (PHP_SAPI !== 'cli') {
-    http_response_code(403);
-    echo "403 Forbidden: Script này chỉ được phép chạy bằng dòng lệnh (CLI).\n";
-    exit(1);
+// Danh mục địa điểm có nguồn; không geocode hoặc tạo tọa độ dự phòng.
+if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only'); }
+$options = getopt('', ['execute','dry-run','owner-id:','district:','replace-catalog','help']);
+if (isset($options['help'])) { echo "php database/import_real_courts.php [--execute] [--owner-id=3] [--district=\"Quận 1\"] [--replace-catalog]\nMặc định dry-run, không cần MySQL. replace-catalog ẩn sân ngoài danh mục, giữ lịch sử.\n"; exit(0); }
+function failImport($message) { fwrite(STDERR, $message."\n"); exit(1); }
+$embedded = <<<'COURTS_JSON'
+{
+  "retrieved_on": "2026-10-16",
+  "scope": "19 quận lịch sử TP.HCM; tách Quận 2, Quận 9 và quận Thủ Đức. Mỗi sân là một địa điểm/CLB, không phải một thảm.",
+  "coordinate_system": "WGS84 EPSG:4326; latitude trước longitude; hiển thị Leaflet/OpenStreetMap.",
+  "courts": [
+    {
+      "name": "Sân cầu lông Tao Đàn",
+      "address": "Số 01 đường Huyền Trân Công Chúa, Phường Bến Thành, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/Pc8v8sMY4WVqoF5q7",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-1",
+      "latitude": 10.7747674,
+      "longitude": 106.6947053,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+Tao+%C4%90%C3%A0n/@10.7747674,106.6947053,751m/data=!3m2!1e3!4b1!4m6!3m5!1s0x31752f390d1755bb:0xaebc332f513a97b5!8m2!3d10.7747674!4d106.6947053!16s%2Fg%2F11fnwhn0bd?entry=tts&g_ep=EgoyMDI0MDkwMi4xKgBIAVAD",
+      "district_old": "Quận 1",
+      "source_key": "aac5d0c08209624cbcf3",
+      "ward_name": "Bến Thành",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7747674&mlon=106.6947053#map=19/10.7747674/106.6947053"
+    },
+    {
+      "name": "Sân cầu lông Cung Văn hóa Lao động TP.HCM",
+      "address": "55B, Nguyễn Thị Minh Khai, Phường Bến Thành, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/Qw7b7DNqkbC5iyvj6",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-1",
+      "latitude": 10.7763541,
+      "longitude": 106.693126,
+      "coordinate_source_url": "https://www.google.com/maps/place/HCMC+Cultural+Palace+for+Labors/@10.7763541,106.693126,4313m/data=!3m1!1e3!4m6!3m5!1s0x31752fbdcdacd7c5:0x107857fd26472fad!8m2!3d10.7763541!4d106.693126!16s%2Fg%2F11rq3vdvmp?entry=tts&g_ep=EgoyMDI0MTIxMS4wIPu8ASoASAFQAw%3D%3D",
+      "district_old": "Quận 1",
+      "source_key": "da0df53f633c822745f6",
+      "ward_name": "Bến Thành",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7763541&mlon=106.6931260#map=19/10.7763541/106.6931260"
+    },
+    {
+      "name": "Sân cầu lông Cầu Kho",
+      "address": "Số 2, Đường Nguyễn Văn Cừ, Phường Cầu Ông Lãnh, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/Vj5nY2ZyTUcQQVph7",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-1",
+      "latitude": 10.7547701,
+      "longitude": 106.6865755,
+      "coordinate_source_url": "https://www.google.com/maps/place/2+%C4%90.+Nguy%E1%BB%85n+V%C4%83n+C%E1%BB%AB/@10.7547701,106.6859318,190m/data=!3m1!1e3!4m7!3m6!1s0x31752f050b45a5f5:0x8614a9d4b57bf75f!4b1!8m2!3d10.7547701!4d106.6865755!16s%2Fg%2F11h89ty_hj?coh=210789&entry=tts",
+      "district_old": "Quận 1",
+      "source_key": "07111cefa4586c7b0019",
+      "ward_name": "Cầu Ông Lãnh",
+      "coordinate_quality": "address_pin",
+      "verification_note": "Liên kết của cả Tuấn Việt và VNB trỏ đến số 2 Nguyễn Văn Cừ, không phải POI riêng của sân. Cần chủ sân xác nhận vị trí lối vào; không coi đây là tọa độ sân đã xác minh.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7547701&mlon=106.6865755#map=19/10.7547701/106.6865755"
+    },
+    {
+      "name": "Sân cầu lông Lavie",
+      "address": "40 Lương Định Của, Phường An Khánh, TP.HCM",
+      "map_url": "https://maps.app.goo.gl/nZHad1HQVqEC4nSj7",
+      "source_url": "https://gosensports.com/san-cau-long-quan-2",
+      "latitude": 10.7858758,
+      "longitude": 106.7312755,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+Lavie+2/@10.7860614,106.7281169,1596m/data=!3m1!1e3!4m6!3m5!1s0x3175258374be1635:0xcf4541331f8ae5bc!8m2!3d10.7858758!4d106.7312755!16s%2Fg%2F11y1ylmt09!5m1!1e2?entry=tts&g_ep=EgoyMDI2MDMxMS4wIPu8ASoASAFQAw%3D%3D&skid=3bfb454b-7a46-4f53-8be1-d1d4585ede01",
+      "district_old": "Quận 2",
+      "source_key": "fb5a38391255940ac4ba",
+      "ward_name": "An Khánh",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7858758&mlon=106.7312755#map=19/10.7858758/106.7312755"
+    },
+    {
+      "name": "Sân cầu lông Trần Não",
+      "address": "22 Đường số 24, Phường An Khánh, TP.HCM",
+      "map_url": "https://maps.app.goo.gl/3FWjo1Vj52kPzkpm6",
+      "source_url": "https://gosensports.com/san-cau-long-quan-2",
+      "latitude": 10.7944184,
+      "longitude": 106.7298283,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+Tr%E1%BA%A7n+N%C3%A3o/@10.7944237,106.727248,1332m/data=!3m2!1e3!4b1!4m6!3m5!1s0x317527006d8ab5ed:0x172be1f211d4b268!8m2!3d10.7944184!4d106.7298283!16s%2Fg%2F11vqp9gxwj!5m1!1e2?entry=tts&g_ep=EgoyMDI2MDMxMS4wIPu8ASoASAFQAw%3D%3D&skid=f794c79d-075c-4925-bf17-627ee61fe87d",
+      "district_old": "Quận 2",
+      "source_key": "83d548b9eb65658565ae",
+      "ward_name": "An Khánh",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7944184&mlon=106.7298283#map=19/10.7944184/106.7298283"
+    },
+    {
+      "name": "Sân cầu lông Bình An",
+      "address": "11B Đường số 29, Phường An Khánh, TP.HCM",
+      "map_url": "https://maps.app.goo.gl/E7hEbDgXDHTsCmpq7",
+      "source_url": "https://gosensports.com/san-cau-long-thu-duc",
+      "latitude": 10.7922769,
+      "longitude": 106.7293126,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+B%C3%ACnh+An/@10.7922769,106.7267377,1334m/data=!3m2!1e3!4b1!4m6!3m5!1s0x31752710fa8e511f:0xce563224ac3a1e90!8m2!3d10.7922769!4d106.7293126!16s%2Fg%2F11lgm3m12f!5m1!1e2?entry=tts&g_ep=EgoyMDI2MDMxMS4wIPu8ASoASAFQAw%3D%3D&skid=c9c626ac-6674-4e59-b9fc-61de04c2dd8a",
+      "district_old": "Quận 2",
+      "source_key": "e662528d6fed3d119339",
+      "ward_name": "An Khánh",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7922769&mlon=106.7293126#map=19/10.7922769/106.7293126"
+    },
+    {
+      "name": "Sân Cầu Lông NCUT",
+      "address": "269 Rạch Bùng Binh, Phường Nhiêu Lộc, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/8qRQDpzc4TpwVNGs5",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-3",
+      "latitude": 10.7821652,
+      "longitude": 106.6801638,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+NCUT/@10.7821652,106.6801638,701m/data=!3m2!1e3!4b1!4m6!3m5!1s0x31752f89687fe193:0x80f6345e6c99f9c9!8m2!3d10.7821652!4d106.6801638!16s%2Fg%2F11kj5qw0kv?coh=210789&entry=tts",
+      "district_old": "Quận 3",
+      "source_key": "5a9866d28b839ee5add6",
+      "ward_name": "Nhiêu Lộc",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7821652&mlon=106.6801638#map=19/10.7821652/106.6801638"
+    },
+    {
+      "name": "Sân cầu lông Trung Tâm TDTT Ga Sài Gòn",
+      "address": "01 Nguyễn Thông, Phường Nhiêu Lộc, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/b4MwkooGTQD8VcNV6",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-3",
+      "latitude": 10.7825189,
+      "longitude": 106.6768555,
+      "coordinate_source_url": "https://www.google.com/maps/place/Trung+t%C3%A2m+TDTT+GA+S%C3%80I+G%C3%92N/@10.782475,106.6773898,571m/data=!3m1!1e3!4m6!3m5!1s0x31752f0001be62d1:0x24b4e0272ac4a4f8!8m2!3d10.7825189!4d106.6768555!16s%2Fg%2F11ym7c8713!5m1!1e2?authuser=0&entry=tts&g_ep=EgoyMDI2MDUwNi4wIPu8ASoASAFQAw%3D%3D&skid=db1bf4ca-3f30-4ebe-9ad9-1f40522b0730",
+      "district_old": "Quận 3",
+      "source_key": "1c8f74eaf576e49520bb",
+      "ward_name": "Nhiêu Lộc",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7825189&mlon=106.6768555#map=19/10.7825189/106.6768555"
+    },
+    {
+      "name": "Sân cầu lông Marie Curie",
+      "address": "26 Lê Quý Đôn, Phường Xuân Hòa, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/E2mhguC8kXKQiYwc6",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-3",
+      "latitude": 10.7819577,
+      "longitude": 106.6902981,
+      "coordinate_source_url": "https://www.google.com/maps/place/Marie+Curie+Badminton+Court/@10.7820691,106.6907668,225m/data=!3m1!1e3!4m6!3m5!1s0x31752f31ae206531:0x1ba48b5400811f98!8m2!3d10.7819577!4d106.6902981!16s%2Fg%2F11gc5vwrgy?coh=210789&entry=tts",
+      "district_old": "Quận 3",
+      "source_key": "ec3573310f4a505135c0",
+      "ward_name": "Xuân Hòa",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7819577&mlon=106.6902981#map=19/10.7819577/106.6902981"
+    },
+    {
+      "name": "Sân cầu lông Tân Cảng",
+      "address": "122 Đ. Khánh Hội, Phường Khánh Hội, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/UwKZDzoxqBkdMYYu7",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-4",
+      "latitude": 10.7563925,
+      "longitude": 106.7011714,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+T%C3%A2n+C%E1%BA%A3ng+Qu%E1%BA%ADn+4/@10.7563072,106.7010537,80m/data=!3m1!1e3!4m6!3m5!1s0x31752f72a07d9e59:0xf9e81d81f7f29901!8m2!3d10.7563925!4d106.7011714!16s%2Fg%2F11vkz8ryx7!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDMzMS4wIPu8ASoASAFQAw%3D%3D&skid=5e6f4391-47c3-4db2-9b53-26dbf3976df0",
+      "district_old": "Quận 4",
+      "source_key": "daed1a38d25cbe90971f",
+      "ward_name": "Khánh Hội",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7563925&mlon=106.7011714#map=19/10.7563925/106.7011714"
+    },
+    {
+      "name": "Sân Cầu Lông TPro",
+      "address": "1B Đ. Hoàng Diệu, Phường Xóm Chiếu, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/kzNwD6adtr3AZrC16",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-4",
+      "latitude": 10.7641603,
+      "longitude": 106.7094772,
+      "coordinate_source_url": "https://www.google.com/maps/place/H%E1%BB%8Dc+Vi%E1%BB%87n+C%E1%BA%A7u+L%C3%B4ng+TPro/@10.7638873,106.7084945,160m/data=!3m1!1e3!4m7!3m6!1s0x31752f00656f7723:0x124dcad56c8c6b79!8m2!3d10.7641603!4d106.7094772!15sCixzw6JuIGPhuqd1IGzDtG5nIOG7nyBxdeG6rW4gNCBo4buTIGNow60gbWluaFouIixzw6JuIGPhuqd1IGzDtG5nIOG7nyBxdeG6rW4gNCBo4buTIGNow60gbWluaJIBEWd5bW5hc3RpY3NfY2VudGVymgEjQ2haRFNVaE5NRzluUzBWSlEwRm5TVU5JT1dSTU5FeFJFQUXgAQD6AQQIABAq!16s%2Fg%2F11y5tm_dhb!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDMzMS4wIPu8ASoASAFQAw%3D%3D&skid=8c4d0dec-ec2c-433d-867d-74dc16083661",
+      "district_old": "Quận 4",
+      "source_key": "5e25d61b35926d2a284c",
+      "ward_name": "Xóm Chiếu",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7641603&mlon=106.7094772#map=19/10.7641603/106.7094772"
+    },
+    {
+      "name": "Sân cầu lông T12",
+      "address": "1B Hoàng Diệu, Phường Xóm Chiếu, TP.HCM",
+      "map_url": "https://maps.app.goo.gl/FGPuVeVBor5Xdaeo6",
+      "source_url": "https://shopvnb.com/san-cau-long-t12.html",
+      "latitude": 10.7638079,
+      "longitude": 106.7091101,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+T12/@10.763808,106.70911,12z/data=!4m6!3m5!1s0x31752f591218efe3:0x752691e909bad27!8m2!3d10.7638079!4d106.7091101!16s%2Fg%2F11vkn_pg8z?ll=10.763808,106.70911&z=12&t=m&gl=US&mapclient=embed&cid=527599686351826215&coh=219816&entry=tts&g_ep=EgoyMDI0MDgxOS4wKgBIAVAD",
+      "district_old": "Quận 4",
+      "source_key": "a8db4013bc913764ec19",
+      "ward_name": "Xóm Chiếu",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7638079&mlon=106.7091101#map=19/10.7638079/106.7091101"
+    },
+    {
+      "name": "Sân Cầu Lông Đại Học Sài Gòn",
+      "address": "Số 8, Đ. Nguyễn Trãi, Phường Chợ Quán, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/UiKzaJFVL52KSB3MA",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-5",
+      "latitude": 10.75904,
+      "longitude": 106.6818537,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+%C4%90%E1%BA%A1i+H%E1%BB%8Dc+S%C3%A0i+G%C3%B2n/@10.75904,106.6818537,856m/data=!3m2!1e3!4b1!4m6!3m5!1s0x31752f006bdea8c3:0xb9f99117d56ac1cb!8m2!3d10.75904!4d106.6818537!16s%2Fg%2F11y6lpb3bn!5m1!1e2?entry=tts&g_ep=EgoyMDI1MTEwNS4wIPu8ASoASAFQAw%3D%3D&skid=5c9e87f6-14ed-4516-978e-55f83b6fa53c",
+      "district_old": "Quận 5",
+      "source_key": "d9d9547ca0990e3e52fb",
+      "ward_name": "Chợ Quán",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7590400&mlon=106.6818537#map=19/10.7590400/106.6818537"
+    },
+    {
+      "name": "Sân Cầu Lông Lam Sơn",
+      "address": "Số 302/1, Đường Trần Bình Trọng, Phường Chợ Quán, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/myL6ZybmUizFxXX58",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-5",
+      "latitude": 10.7623271,
+      "longitude": 106.6798241,
+      "coordinate_source_url": "https://www.google.com/maps/place/Phong+Son+Lam+S%C6%A1n/@10.7623324,106.6772492,856m/data=!3m1!1e3!4m6!3m5!1s0x31752fe6b80a0d93:0x55b089795b2294f1!8m2!3d10.7623271!4d106.6798241!16s%2Fg%2F11fj7m4j9k!5m1!1e2?entry=tts&g_ep=EgoyMDI1MTEwNS4wIPu8ASoASAFQAw%3D%3D&skid=7616ad58-f353-4246-bbd6-e51697c9887d",
+      "district_old": "Quận 5",
+      "source_key": "e8ca72cc32bc47cd0738",
+      "ward_name": "Chợ Quán",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7623271&mlon=106.6798241#map=19/10.7623271/106.6798241"
+    },
+    {
+      "name": "Sân Cầu Lông Lý Phong",
+      "address": "Số 78, Đường An Dương Vương, Phường An Đông, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/4DSUz4tQpq1dCp297",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-5",
+      "latitude": 10.7578899,
+      "longitude": 106.6708473,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+L%C3%BD+Phong/@10.7576913,106.6704262,428m/data=!3m1!1e3!4m6!3m5!1s0x31752efb4df62695:0x1b1a8187875fcae2!8m2!3d10.7578899!4d106.6708473!16s%2Fg%2F11j1hy8lf8!5m1!1e2?entry=tts&g_ep=EgoyMDI1MTEwNS4wIPu8ASoASAFQAw%3D%3D&skid=9195cc95-57ec-40d3-b534-8211eab356c8",
+      "district_old": "Quận 5",
+      "source_key": "75097cf1d038a375e707",
+      "ward_name": "An Đông",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7578899&mlon=106.6708473#map=19/10.7578899/106.6708473"
+    },
+    {
+      "name": "Sân Cầu Lông Thảo Trang",
+      "address": "24 Đ. Lý Chiêu Hoàng, Phường Bình Phú, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/uxoAGUjdoWSNKQEF6",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-6",
+      "latitude": 10.7377355,
+      "longitude": 106.6318526,
+      "coordinate_source_url": "https://www.google.com/maps/place/s%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+Th%E1%BA%A3o+Trang+Q6/@10.7377609,106.6316454,713m/data=!3m1!1e3!4m6!3m5!1s0x31752f44c63d125d:0xa9aa1bab611a1e41!8m2!3d10.7377355!4d106.6318526!16s%2Fg%2F11v_brhlxh!5m1!1e2?entry=tts&g_ep=EgoyMDI0MTAyNy4wIPu8ASoASAFQAw%3D%3D",
+      "district_old": "Quận 6",
+      "source_key": "560c61cacbd1786c071b",
+      "ward_name": "Bình Phú",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7377355&mlon=106.6318526#map=19/10.7377355/106.6318526"
+    },
+    {
+      "name": "Sân Cầu Lông Thể Thao Phong Sơn Bình Phú",
+      "address": "102 Đ. Trần Văn Kiểu, Phường Bình Phú, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/7a5YxnMRoQGhryDP7",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-6",
+      "latitude": 10.7357749,
+      "longitude": 106.6270888,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+-+Th%E1%BB%83+thao+Phong+S%C6%A1n/@10.7357749,106.6270888,858m/data=!3m1!1e3!4m6!3m5!1s0x31752d103ef916bd:0xebf2d2ed2157a0e2!8m2!3d10.7357749!4d106.6270888!16s%2Fg%2F11tgfqvxr7?entry=tts",
+      "district_old": "Quận 6",
+      "source_key": "64fd5b9c69f39bd06850",
+      "ward_name": "Bình Phú",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7357749&mlon=106.6270888#map=19/10.7357749/106.6270888"
+    },
+    {
+      "name": "Sân Cầu Lông Nhựt Minh",
+      "address": "3-5 Đ. Lý Chiêu Hoàng, Khu II, Phường Bình Phú, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/Ndw64Pq4A8daXWyp8",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-6",
+      "latitude": 10.7358356,
+      "longitude": 106.6335628,
+      "coordinate_source_url": "https://www.google.com/maps/place/CLB+C%E1%BA%A7u+L%C3%B4ng+NH%E1%BB%B0T+MINH/@10.7358737,106.6332935,96m/data=!3m1!1e3!4m6!3m5!1s0x31752f002f052fe1:0x25636074cd996898!8m2!3d10.7358356!4d106.6335628!16s%2Fg%2F11ldkhbs0w?hl=vi-VN&entry=tts",
+      "district_old": "Quận 6",
+      "source_key": "3d660769c37fcc2121d3",
+      "ward_name": "Bình Phú",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7358356&mlon=106.6335628#map=19/10.7358356/106.6335628"
+    },
+    {
+      "name": "Sân Cầu Lông Trung Tâm Thể Thao Victory",
+      "address": "Nhà thi đấu Nam Sài Gòn, 157 Nguyễn Văn Quỳ, Phường Tân Thuận, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/Q3jKnJHLLHkaRm9K6",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-7",
+      "latitude": 10.7421688,
+      "longitude": 106.7381973,
+      "coordinate_source_url": "https://www.google.com/maps/place/Trung+T%C3%A2m+Th%E1%BB%83+Thao+Victory/@10.7421688,106.7294426,4313m/data=!3m1!1e3!4m7!3m6!1s0x31752524e991ce91:0x594a20a2169958be!4b1!8m2!3d10.7421688!4d106.7381973!16s%2Fg%2F11vyzxkqhw!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDMxMi4wIPu8ASoASAFQAw%3D%3D",
+      "district_old": "Quận 7",
+      "source_key": "5b562187b560a769773e",
+      "ward_name": "Tân Thuận",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7421688&mlon=106.7381973#map=19/10.7421688/106.7381973"
+    },
+    {
+      "name": "Sân Cầu Lông Nhà thi đấu đa năng Quận 7",
+      "address": "504 Huỳnh Tấn Phát, Phường Tân Thuận, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/rSzDcgB3hjE8xKrT6",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-7",
+      "latitude": 10.7415332,
+      "longitude": 106.7295191,
+      "coordinate_source_url": "https://www.google.com/maps/place/Nh%C3%A0+Thi+%C4%90%E1%BA%A5u+%C4%90a+N%C4%83ng+Qu%E1%BA%ADn+7/@10.7415332,106.7295191,858m/data=!3m1!1e3!4m6!3m5!1s0x3175257f2b60b56b:0xa4ce837665de2a34!8m2!3d10.7415332!4d106.7295191!16s%2Fg%2F1x5qq8n5?entry=tts",
+      "district_old": "Quận 7",
+      "source_key": "a50ac4a9101151d9742c",
+      "ward_name": "Tân Thuận",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7415332&mlon=106.7295191#map=19/10.7415332/106.7295191"
+    },
+    {
+      "name": "Sân Cầu Lông 79 Pro",
+      "address": "300/13 Nguyễn Văn Linh, Phường Tân Thuận, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/g1vi7c6nWkNc8U7f6",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-7",
+      "latitude": 10.7420631,
+      "longitude": 106.7206122,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+79+Pro/@10.7421252,106.7204741,43m/data=!3m1!1e3!4m6!3m5!1s0x31752f01ebe0a62b:0xc839542239ce5fe8!8m2!3d10.7420631!4d106.7206122!16s%2Fg%2F11trv3dsdp?entry=tts",
+      "district_old": "Quận 7",
+      "source_key": "249a8f89d83fecab2e58",
+      "ward_name": "Tân Thuận",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7420631&mlon=106.7206122#map=19/10.7420631/106.7206122"
+    },
+    {
+      "source_key": "dai-hoc-canh-sat-q7",
+      "name": "Sân cầu lông Đại học Cảnh sát",
+      "address": "Cổng 4 Trường Đại học Cảnh sát nhân dân, đường Hoàng Trọng Mậu, Phường Tân Hưng, TP.HCM",
+      "district_old": "Quận 7",
+      "ward_name": "Tân Hưng",
+      "latitude": 10.734499,
+      "longitude": 106.6952815,
+      "source_url": "https://lool.vn/san/san-cau-long-dai-hoc-canh-sat-quan-7-df67",
+      "map_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+%C4%90%E1%BA%A1i+H%E1%BB%8Dc+C%E1%BA%A3nh+S%C3%A1t/@10.734499,106.6952815,871m/data=!3m2!1e3!4b1!4m6!3m5!1s0x31752f000fdb37ed:0xf72e3d415fedb361!8m2!3d10.734499!4d106.6952815!16s%2Fg%2F11z74y9rhj!5m1!1e2",
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+%C4%90%E1%BA%A1i+H%E1%BB%8Dc+C%E1%BA%A3nh+S%C3%A1t/@10.734499,106.6952815,871m/data=!3m2!1e3!4b1!4m6!3m5!1s0x31752f000fdb37ed:0xf72e3d415fedb361!8m2!3d10.734499!4d106.6952815!16s%2Fg%2F11z74y9rhj!5m1!1e2",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm lấy từ liên kết Google Maps do người dùng cung cấp ngày 16/10/2026. Địa chỉ lối vào theo LOOL; chưa xác minh thực địa.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.734499&mlon=106.6952815#map=19/10.734499/106.6952815"
+    },
+    {
+      "name": "Sân cầu lông Hoàng Vy",
+      "address": "218/6 An Dương Vương, Phường Bình Phú, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/1m2rNmoJRr4CMKnk7",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-8",
+      "latitude": 10.7309514,
+      "longitude": 106.6213914,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+Ho%C3%A0ng+Vy./@10.7309838,106.621085,164m/data=!3m1!1e3!4m6!3m5!1s0x31752d0049c313df:0x1fd45265a2fc850!8m2!3d10.7309514!4d106.6213914!16s%2Fg%2F11x0gfbxk0!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDUxMy4xIPu8ASoASAFQAw%3D%3D&skid=f8a03cee-8d7a-4584-95fc-df062a6caf61",
+      "district_old": "Quận 8",
+      "source_key": "69ffac0f1ced7443ab87",
+      "ward_name": "Bình Phú",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7309514&mlon=106.6213914#map=19/10.7309514/106.6213914"
+    },
+    {
+      "name": "CLB cầu lông Xóm Củi",
+      "address": "63 Đ. Tùng Thiện Vương, Phường Phú Định, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/YjvzYPFrFqqstqrA8",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-8",
+      "latitude": 10.7484872,
+      "longitude": 106.6662164,
+      "coordinate_source_url": "https://www.google.com/maps/place/C%E1%BA%A7u+L%C3%B4ng+X%C3%B3m+C%E1%BB%A7i+Qu%E1%BA%ADn+8/@10.7484834,106.666104,82m/data=!3m1!1e3!4m6!3m5!1s0x31752ff6f6538d5d:0xa6b281039df6d2e5!8m2!3d10.7484872!4d106.6662164!16s%2Fg%2F11vwd5k5bq!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDUxMy4xIPu8ASoASAFQAw%3D%3D&skid=a1f77b7a-f53f-426b-a2c2-fe8dcfa203ec",
+      "district_old": "Quận 8",
+      "source_key": "ada87b6023fa727983a3",
+      "ward_name": "Phú Định",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7484872&mlon=106.6662164#map=19/10.7484872/106.6662164"
+    },
+    {
+      "name": "Sân cầu lông Aquaminton",
+      "address": "1458 Đ. Hoài Thanh, Phường Phú Định, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/Sq3caKtVh484VatL9",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-8",
+      "latitude": 10.7359953,
+      "longitude": 106.6448645,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+Aquaminton/@10.7359953,106.6448645,655m/data=!3m2!1e3!4b1!4m6!3m5!1s0x31752f007218171f:0xed1da521086f44d9!8m2!3d10.7359953!4d106.6448645!16s%2Fg%2F11y5sm7ybq!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDUxMy4xIPu8ASoASAFQAw%3D%3D&skid=cb24b3b9-dbd1-404c-ba9b-10049c830ac4",
+      "district_old": "Quận 8",
+      "source_key": "78dbb73978d47bd098a9",
+      "ward_name": "Phú Định",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7359953&mlon=106.6448645#map=19/10.7359953/106.6448645"
+    },
+    {
+      "name": "Sân cầu lông Hải Sơn",
+      "address": "167 Đường số 14, Phường Phước Long, TP.HCM",
+      "map_url": "https://maps.app.goo.gl/kHBNmJG596S5BJg49",
+      "source_url": "https://gosensports.com/san-cau-long-quan-9",
+      "latitude": 10.811027,
+      "longitude": 106.7681039,
+      "coordinate_source_url": "https://www.google.com/maps/place/H%E1%BA%A3i+S%C6%A1n+Sport+Club/@10.811027,106.7681039,1332m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3175265f1930c23f:0x7ccc1bf7a24a89c3!8m2!3d10.811027!4d106.7681039!16s%2Fg%2F11csr1fm3k!5m1!1e2?entry=tts&g_ep=EgoyMDI2MDMxMS4wIPu8ASoASAFQAw%3D%3D&skid=256bb54b-a1de-4cc7-a567-b071ef7aa1b6",
+      "district_old": "Quận 9",
+      "source_key": "7ac440be001141483241",
+      "ward_name": "Phước Long",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8110270&mlon=106.7681039#map=19/10.8110270/106.7681039"
+    },
+    {
+      "name": "Sân cầu lông Long Sen",
+      "address": "39P Gò Cát, Phường Long Trường, TP.HCM",
+      "map_url": "https://maps.app.goo.gl/HK23Qgp1tPcYRXMP8",
+      "source_url": "https://gosensports.com/san-cau-long-quan-9",
+      "latitude": 10.7860298,
+      "longitude": 106.8013464,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+Long+Sen/@10.7860351,106.7987661,1332m/data=!3m2!1e3!4b1!4m6!3m5!1s0x317527191933a07d:0x980219390e5008ef!8m2!3d10.7860298!4d106.8013464!16s%2Fg%2F11kql5kmb9!5m1!1e2?entry=tts&g_ep=EgoyMDI2MDMxMS4wIPu8ASoASAFQAw%3D%3D&skid=2af175e3-8651-4329-8c04-2988f49cc574",
+      "district_old": "Quận 9",
+      "source_key": "8767df6273ee2e389575",
+      "ward_name": "Long Trường",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7860298&mlon=106.8013464#map=19/10.7860298/106.8013464"
+    },
+    {
+      "name": "Sân cầu lông Công Thương",
+      "address": "103 Tăng Nhơn Phú, Phường Phước Long, TP.HCM",
+      "map_url": "https://maps.app.goo.gl/6RjL9NmeoeSdA6NV8",
+      "source_url": "https://shopvnb.com/san-cau-long-cong-thuong.html",
+      "latitude": 10.8295874,
+      "longitude": 106.7732033,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+C%C3%B4ng+Th%C6%B0%C6%A1ng/@10.829587,106.773203,16z/data=!4m6!3m5!1s0x3175273eb731b985:0x68d4ce712df2b820!8m2!3d10.8295874!4d106.7732033!16s%2Fg%2F11jyglnlx6?ll=10.829587,106.773203&z=16&t=m&gl=US&mapclient=embed&cid=7553889460504672288&coh=219816&entry=tts&g_ep=EgoyMDI0MDgxOS4wKgBIAVAD",
+      "district_old": "Quận 9",
+      "source_key": "862234d0d924a41f8be3",
+      "ward_name": "Phước Long",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8295874&mlon=106.7732033#map=19/10.8295874/106.7732033"
+    },
+    {
+      "name": "Sân cầu lông Phong Sơn Cao Đẳng Kinh Tế",
+      "address": "253 Trần Nhân Tôn, Phường Vườn Lài, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/BKvfeFoZEKAgp3m2A",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-10",
+      "latitude": 10.764825,
+      "longitude": 106.6741632,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+Phong+S%C6%A1n+Cao+%C4%90%E1%BA%B3ng+Kinh+T%E1%BA%BF/@10.7647477,106.6737169,138m/data=!3m1!1e3!4m6!3m5!1s0x31752f002cc76ed5:0xf56f04cda6f222c2!8m2!3d10.764825!4d106.6741632!16s%2Fg%2F11vwrn6rnq!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDUxMy4xIPu8ASoASAFQAw%3D%3D&skid=543e6b28-375f-4b65-b677-7c5014e0ee7b",
+      "district_old": "Quận 10",
+      "source_key": "ba55e2fa24ee5cb6a23c",
+      "ward_name": "Vườn Lài",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7648250&mlon=106.6741632#map=19/10.7648250/106.6741632"
+    },
+    {
+      "name": "Sân cầu lông 291",
+      "address": "291 Hẻm 285 Cách Mạng Tháng Tám, Phường Hòa Hưng, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/SNjhgrbx6xdw7nyu7",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-10",
+      "latitude": 10.7758833,
+      "longitude": 106.673495,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+291/@10.7758886,106.6709201,655m/data=!3m2!1e3!4b1!4m6!3m5!1s0x31752f89897b40a1:0xca90aa3e7c91cc91!8m2!3d10.7758833!4d106.673495!16s%2Fg%2F11fjtx2wjb?entry=tts&g_ep=EgoyMDI1MDUxMy4xIPu8ASoASAFQAw%3D%3D&skid=f58e3b49-9216-442e-9810-929075e4f4bd",
+      "district_old": "Quận 10",
+      "source_key": "1e4bf63a9f333e655024",
+      "ward_name": "Hòa Hưng",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7758833&mlon=106.6734950#map=19/10.7758833/106.6734950"
+    },
+    {
+      "name": "Sân Cầu Lông Bắc Hải",
+      "address": "LL1 Bis, Đ. Hương Giang, Cư xá Bắc Hải, Phường Hòa Hưng, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/TWwCWGFhNg1UfEj17",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-10",
+      "latitude": 10.7806129,
+      "longitude": 106.6638385,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+B%E1%BA%AEC+H%E1%BA%A2I+-+%C4%91%C6%B0%E1%BB%9Dng+H%C6%B0%C6%A1ng+Giang/@10.7806185,106.6636645,82m/data=!3m1!1e3!4m6!3m5!1s0x31752f63c6e52ca3:0x841a4e03d25c99bc!8m2!3d10.7806129!4d106.6638385!16s%2Fg%2F11j00n2pk6?entry=tts&g_ep=EgoyMDI1MDUxMy4xIPu8ASoASAFQAw%3D%3D&skid=2215220a-a471-4a90-bc93-451568fbbc64",
+      "district_old": "Quận 10",
+      "source_key": "5789da7ccad6afe05e64",
+      "ward_name": "Hòa Hưng",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7806129&mlon=106.6638385#map=19/10.7806129/106.6638385"
+    },
+    {
+      "name": "Sân cầu lông Toàn Võ (Châu Dương cũ)",
+      "address": "Số 185 Đường Lê Thị Bạch Cát, Phường Phú Thọ, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/ycG3iC1bkrQDcEgt8",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-11",
+      "latitude": 10.7650614,
+      "longitude": 106.6492458,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+To%C3%A0n+V%C3%B5+qu%E1%BA%ADn+11+(Ch%C3%A2u+D%C6%B0%C6%A1ng+c%C5%A9)/@10.7650614,106.6492458,741m/data=!3m2!1e3!4b1!4m6!3m5!1s0x31752f1a3cb9b08d:0x2e735ede728fa9fb!8m2!3d10.7650614!4d106.6492458!16s%2Fg%2F11l_369r7z!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDUxNS4wIPu8ASoASAFQAw%3D%3D&skid=6e23161c-cb10-4782-b019-7566e51dc7e0",
+      "district_old": "Quận 11",
+      "source_key": "1ed9a1c034655e38892a",
+      "ward_name": "Phú Thọ",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7650614&mlon=106.6492458#map=19/10.7650614/106.6492458"
+    },
+    {
+      "name": "Sân cầu lông Nhà thi đấu Phú Thọ",
+      "address": "Lầu 1, Số 1 Lữ Gia, Phường Phú Thọ, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/pkz7GBWjo5J8BSwRA",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-11",
+      "latitude": 10.7690285,
+      "longitude": 106.6577739,
+      "coordinate_source_url": "https://www.google.com/maps/place/Nh%C3%A0+Thi+%C4%90%E1%BA%A5u+Ph%C3%BA+Th%E1%BB%8D/@10.7690285,106.6532678,741m/data=!3m1!1e3!4m7!3m6!1s0x31752eeafd395125:0x2d8d6764cc590f51!8m2!3d10.7690285!4d106.6577739!15sCjVTw6JuIGPhuqd1IGzDtG5nIE5ow6AgdGhpIMSR4bqldSBQaMO6IFRo4buNIHF14bqtbiAxMVo3IjVzw6JuIGPhuqd1IGzDtG5nIG5ow6AgdGhpIMSR4bqldSBwaMO6IHRo4buNIHF14bqtbiAxMZIBA2d5bZoBI0NoWkRTVWhOTUc5blMwVkpRMEZuU1VOd05VMTVNRmxSRUFFqgFeEAEyHxABIhus91R9YHSkXFgxEr8NNV39-TsFqkmhSxP3e_wyORACIjVzw6JuIGPhuqd1IGzDtG5nIG5ow6AgdGhpIMSR4bqldSBwaMO6IHRo4buNIHF14bqtbiAxMeABAPoBBQjXARBG!16s%2Fg%2F11byyddywm!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDUxNS4wIPu8ASoASAFQAw%3D%3D&skid=9e1b6405-8a41-4db5-b6a7-ff59b254fc01",
+      "district_old": "Quận 11",
+      "source_key": "9a7bd549f5d7723addf3",
+      "ward_name": "Phú Thọ",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7690285&mlon=106.6577739#map=19/10.7690285/106.6577739"
+    },
+    {
+      "name": "Sân cầu lông Phú Thọ",
+      "address": "219 Lý Thường Kiệt, Phường Phú Thọ, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/5geHuQoXNifFnwCJ7",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-11",
+      "latitude": 10.7675886,
+      "longitude": 106.6584777,
+      "coordinate_source_url": "https://www.google.com/maps/place/Phu+Tho+Badminton+Court/@10.7675523,106.6578677,258m/data=!3m1!1e3!4m6!3m5!1s0x31752ee9678bec99:0x7728268cc1ad5ea3!8m2!3d10.7675886!4d106.6584777!16s%2Fg%2F1pzwbgcwd?entry=tts&g_ep=EgoyMDI0MDUyNy4yKgBIAVAD",
+      "district_old": "Quận 11",
+      "source_key": "aadb878f3f9172c80a79",
+      "ward_name": "Phú Thọ",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7675886&mlon=106.6584777#map=19/10.7675886/106.6584777"
+    },
+    {
+      "name": "Sân cầu lông Nhà thi đấu đa năng Quận 12",
+      "address": "số 493, đường Đường Thị Mười, Phường Tân Thới Hiệp, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/DzmdXJFLtsCf6Uv19",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-12",
+      "latitude": 10.8737375,
+      "longitude": 106.63858,
+      "coordinate_source_url": "https://www.google.com/maps/place/Nh%C3%A0+Thi+%C4%90%E1%BA%A5u+%C4%90a+N%C4%83ng+Qu%E1%BA%ADn+12/@10.8737375,106.63858,646m/data=!3m1!1e3!4m6!3m5!1s0x3175290f72f4e405:0x403359577dcf3d23!8m2!3d10.8737375!4d106.63858!16s%2Fg%2F11g047v913?entry=tts&g_ep=EgoyMDI0MTAyOS4wIPu8ASoASAFQAw%3D%3D",
+      "district_old": "Quận 12",
+      "source_key": "e27b181fa3cf3faac19f",
+      "ward_name": "Tân Thới Hiệp",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8737375&mlon=106.6385800#map=19/10.8737375/106.6385800"
+    },
+    {
+      "name": "Sân cầu lông Võ Trường Toản",
+      "address": "Số 482, Đường Nguyễn Thị Đặng, Phường Tân Thới Hiệp, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/mHH9EjaY7xQotEbi6",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-12",
+      "latitude": 10.8725841,
+      "longitude": 106.6458344,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+V%C3%B5+Tr%C6%B0%E1%BB%9Dng+To%E1%BA%A3n/@10.9323805,106.5187228,29312m/data=!3m1!1e3!4m6!3m5!1s0x31752900423f6709:0x81f3d76379e576d!8m2!3d10.8725841!4d106.6458344!16s%2Fg%2F11vq2cc9bl?entry=tts&g_ep=EgoyMDI0MDkxNi4wKgBIAVAD",
+      "district_old": "Quận 12",
+      "source_key": "ec1d2d37845c3b223849",
+      "ward_name": "Tân Thới Hiệp",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8725841&mlon=106.6458344#map=19/10.8725841/106.6458344"
+    },
+    {
+      "name": "Sân cầu lông Hiệp Thành",
+      "address": "163/50, Đường Bùi Văn Ngữ, khu phố 7, Phường Tân Thới Hiệp, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/Cjqtk3dbEVvBbyRPA",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-12",
+      "latitude": 10.8864202,
+      "longitude": 106.6295177,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+hi%E1%BB%87p+th%C3%A0nh/@10.8863794,106.6296164,94m/data=!3m1!1e3!4m6!3m5!1s0x3174d7c1c0475665:0x436a6b4b63d681bd!8m2!3d10.8864202!4d106.6295177!16s%2Fg%2F11ks7bs2g5?entry=tts&g_ep=EgoyMDI0MDUyMi4wKgBIAVAD",
+      "district_old": "Quận 12",
+      "source_key": "fd4f62bf1db4a04263d9",
+      "ward_name": "Tân Thới Hiệp",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8864202&mlon=106.6295177#map=19/10.8864202/106.6295177"
+    },
+    {
+      "name": "Sân Cầu Lông Kim Minh",
+      "address": "206/8A Bình Quới, Phường Bình Quới, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/Yup9YfGEXabgXrMS8",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-binh-thanh",
+      "latitude": 10.8188471,
+      "longitude": 106.7260652,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+-+Pickleball+Kim+Minh/@10.8188524,106.7234903,655m/data=!3m2!1e3!4b1!4m6!3m5!1s0x317527761877f735:0x4e6a98b37ffe8f15!8m2!3d10.8188471!4d106.7260652!16s%2Fg%2F11wmk51rg1!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDQxMy4wIPu8ASoASAFQAw%3D%3D&skid=ee8122b3-def7-4a50-9b08-3caecc877152",
+      "district_old": "Bình Thạnh",
+      "source_key": "18dc63a676595c92ce05",
+      "ward_name": "Bình Quới",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8188471&mlon=106.7260652#map=19/10.8188471/106.7260652"
+    },
+    {
+      "name": "Sân Cầu Lông Như Nhiên",
+      "address": "353/3 Bình Quới, Phường Bình Quới, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/kBszXE9mowpj84Ys9",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-binh-thanh",
+      "latitude": 10.8263405,
+      "longitude": 106.7355239,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+Nh%C6%B0+Nhi%C3%AAn/@10.8263458,106.732949,655m/data=!3m2!1e3!4b1!4m6!3m5!1s0x31752746c4546355:0x3a0a7f14cdf1704f!8m2!3d10.8263405!4d106.7355239!16s%2Fg%2F11vr43lljw!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDQxMy4wIPu8ASoASAFQAw%3D%3D&skid=196c40fe-b27c-4102-b4f6-f397fa8ceed0",
+      "district_old": "Bình Thạnh",
+      "source_key": "4cbb16b8cfd196b26e80",
+      "ward_name": "Bình Quới",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8263405&mlon=106.7355239#map=19/10.8263405/106.7355239"
+    },
+    {
+      "name": "Sân Cầu Lông Nguyễn Xí",
+      "address": "161 Đ. Nguyễn Xí, Phường Bình Thạnh, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/D6WQYwrMHuCu2xE38",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-binh-thanh",
+      "latitude": 10.8141754,
+      "longitude": 106.7086153,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+Nguy%E1%BB%85n+X%C3%AD/@10.8141807,106.7060404,655m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3175290056a3b255:0xc585b78515e30022!8m2!3d10.8141754!4d106.7086153!16s%2Fg%2F11y3nbkyql!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDQxMy4wIPu8ASoASAFQAw%3D%3D&skid=2d0f0308-2047-4936-881c-7f87cf447e6d",
+      "district_old": "Bình Thạnh",
+      "source_key": "ff9be98fee680c462289",
+      "ward_name": "Bình Thạnh",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8141754&mlon=106.7086153#map=19/10.8141754/106.7086153"
+    },
+    {
+      "name": "Sân cầu lông 18B Cộng Hoà",
+      "address": "18B Cộng Hoà, Phường Tân Sơn Nhất, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/A2tNv9zJ5Q46dpgM8",
+      "source_url": "https://tuanviet.vn/danh-sach-cac-san-cau-long-quan-tan-binh",
+      "latitude": 10.8051712,
+      "longitude": 106.6556922,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+18B+C%E1%BB%99ng+Ho%C3%A0/@10.8051712,106.6556922,17z/data=!4m6!3m5!1s0x317529001ae5bdb7:0x5b52be4849343665!8m2!3d10.8051712!4d106.6556922!16s%2Fg%2F11lmstgb8f!5m1!1e2?entry=tts&g_ep=EgoyMDI0MTAyMy4wIPu8ASoASAFQAw%3D%3D",
+      "district_old": "Tân Bình",
+      "source_key": "fde8112c6ff08ecdeff5",
+      "ward_name": "Tân Sơn Nhất",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8051712&mlon=106.6556922#map=19/10.8051712/106.6556922"
+    },
+    {
+      "name": "Sân cầu lông Bùi Thị Xuân",
+      "address": "191 Bùi Thị Xuân, Phường Tân Sơn Hòa, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/UgCyCD7ahiRSJyHU7",
+      "source_url": "https://tuanviet.vn/danh-sach-cac-san-cau-long-quan-tan-binh",
+      "latitude": 10.7949933,
+      "longitude": 106.6643541,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+B%C3%B9i+Th%E1%BB%8B+Xu%C3%A2n/@10.7949768,106.6643232,94m/data=!3m1!1e3!4m6!3m5!1s0x31752f2ea32efdab:0xbe31985141338105!8m2!3d10.7949933!4d106.6643541!16s%2Fg%2F11lchzblc1?entry=tts&g_ep=EgoyMDI0MDUyMi4wKgBIAVAD",
+      "district_old": "Tân Bình",
+      "source_key": "6694233bef24d12b5fe4",
+      "ward_name": "Tân Sơn Hòa",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7949933&mlon=106.6643541#map=19/10.7949933/106.6643541"
+    },
+    {
+      "name": "Sân cầu lông 98",
+      "address": "98/ Đ. Trần Thị Trọng, Phường Tân Bình, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/CcMsphtTRfveTbrLA",
+      "source_url": "https://tuanviet.vn/danh-sach-cac-san-cau-long-quan-tan-binh",
+      "latitude": 10.8255865,
+      "longitude": 106.6359921,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+98/@10.825583,106.6358128,94m/data=!3m1!1e3!4m6!3m5!1s0x3175297b4c6593b7:0x794cb6e48159850c!8m2!3d10.8255865!4d106.6359921!16s%2Fg%2F11b6dq2jym?entry=tts&g_ep=EgoyMDI0MDUyMi4wKgBIAVAD",
+      "district_old": "Tân Bình",
+      "source_key": "42eb6896182b2fb48145",
+      "ward_name": "Tân Bình",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8255865&mlon=106.6359921#map=19/10.8255865/106.6359921"
+    },
+    {
+      "name": "Sân cầu lông Đại Phát",
+      "address": "313/17 Đ. Phan Huy Ích, Phường An Hội Tây, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/rWnEh3ZW4qDLhDSk7",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-go-vap",
+      "latitude": 10.8387338,
+      "longitude": 106.6341503,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+%C4%90%E1%BA%A1i+Ph%C3%A1t/@10.8391378,106.6325974,901m/data=!3m1!1e3!4m6!3m5!1s0x317529281ec61d03:0xe67308e1127fea4f!8m2!3d10.8387338!4d106.6341503!16s%2Fg%2F11y1t7mz76?entry=tts&g_ep=EgoyMDI0MDcxNi4wKgBIAVAD",
+      "district_old": "Gò Vấp",
+      "source_key": "71f65ac046bcb6f4afa1",
+      "ward_name": "An Hội Tây",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8387338&mlon=106.6341503#map=19/10.8387338/106.6341503"
+    },
+    {
+      "name": "Sân cầu lông Đức Lợi",
+      "address": "611 Đ. Lê Văn Thọ, Phường An Hội Tây, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/aeAYbUAPxJgRx2uS9",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-go-vap",
+      "latitude": 10.8548593,
+      "longitude": 106.6551045,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+%C4%90%E1%BB%A9c+L%E1%BB%A3i/@10.8546843,106.6550384,1502m/data=!3m1!1e3!4m6!3m5!1s0x317529a118c2faa1:0x37baa04645c15f28!8m2!3d10.8548593!4d106.6551045!16s%2Fg%2F11j59jvltg?entry=tts&g_ep=EgoyMDI0MDUyMi4wKgBIAVAD",
+      "district_old": "Gò Vấp",
+      "source_key": "7012269cc77ab67e68ee",
+      "ward_name": "An Hội Tây",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8548593&mlon=106.6551045#map=19/10.8548593/106.6551045"
+    },
+    {
+      "name": "Sân cầu lông An Hội",
+      "address": "256/110 Đ. Phan Huy Ích, Phường An Hội Tây, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/s5NqiAC8CwhQtCYq6",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-go-vap",
+      "latitude": 10.8380834,
+      "longitude": 106.6402183,
+      "coordinate_source_url": "https://www.google.com/maps/place/Trung+t%C3%A2m+TDTT+An+H%E1%BB%99i/@10.8382377,106.6401565,24034m/data=!3m1!1e3!4m6!3m5!1s0x31752982cffd7e55:0x5fa6db0c41d6466b!8m2!3d10.8380834!4d106.6402183!16s%2Fg%2F11b6dr1xtn?hl=vi-VN&entry=tts&g_ep=EgoyMDI0MDUyMi4wKgBIAVAD",
+      "district_old": "Gò Vấp",
+      "source_key": "b81c1c079ec158e9c4a9",
+      "ward_name": "An Hội Tây",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8380834&mlon=106.6402183#map=19/10.8380834/106.6402183"
+    },
+    {
+      "name": "Sân cầu lông PooC",
+      "address": "202B Hoàng Văn Thụ, Phường Đức Nhuận, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/p8spqz3cEhBFAufL6",
+      "source_url": "https://tuanviet.vn/danh-sach-cac-san-cau-long-quan-phu-nhuan",
+      "latitude": 10.8009171,
+      "longitude": 106.6699606,
+      "coordinate_source_url": "https://www.google.com/maps/place/PooC+C%E1%BA%A7u+L%C3%B4ng+%26+PickleBall/@10.8000678,106.6699014,855m/data=!3m1!1e3!4m7!3m6!1s0x3175291a35560cf1:0xb3d8c2c3dabcea4d!8m2!3d10.8009171!4d106.6699606!15sCidzw6JuIGPhuqd1IGzDtG5nIHBvb2MgaG_DoG5nIHbEg24gdGjhu6VaKSInc8OibiBj4bqndSBsw7RuZyBwb29jIGhvw6BuZyB2xINuIHRo4bulkgEQcGlja2xlYmFsbF9jb3VydJoBI0NoWkRTVWhOTUc5blMwVkpRMEZuU1VSSWIwOVFZME5SRUFF4AEA!16s%2Fg%2F11w590479n!5m1!1e2?entry=tts&g_ep=EgoyMDI0MTAyNy4wIPu8ASoASAFQAw%3D%3D",
+      "district_old": "Phú Nhuận",
+      "source_key": "7303148a94e7f606ac14",
+      "ward_name": "Đức Nhuận",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8009171&mlon=106.6699606#map=19/10.8009171/106.6699606"
+    },
+    {
+      "name": "Sân cầu lông Sky Phú Nhuận",
+      "address": "84 Mai Văn Ngọc, Phường Phú Nhuận, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/akvaFwMnDej5KDZcA",
+      "source_url": "https://tuanviet.vn/danh-sach-cac-san-cau-long-quan-phu-nhuan",
+      "latitude": 10.7926856,
+      "longitude": 106.6725338,
+      "coordinate_source_url": "https://www.google.com/maps/place/Sky+Badminton+Club/@10.7926549,106.6725978,6009m/data=!3m1!1e3!4m6!3m5!1s0x317529ea4c93b169:0x93e6bb380f4b0bc9!8m2!3d10.7926856!4d106.6725338!16s%2Fg%2F11k9h8xcb0!5m1!1e4?entry=tts&g_ep=EgoyMDI0MDUyMi4wKgBIAVAD",
+      "district_old": "Phú Nhuận",
+      "source_key": "9a69939960bf2b672a1b",
+      "ward_name": "Phú Nhuận",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7926856&mlon=106.6725338#map=19/10.7926856/106.6725338"
+    },
+    {
+      "name": "Sân cầu lông Đào Duy Anh",
+      "address": "21 Đào Duy Anh, Phường Đức Nhuận, TP.HCM",
+      "map_url": "https://maps.app.goo.gl/L52ad9AT926naPYb6",
+      "source_url": "https://tuanviet.vn/danh-sach-cac-san-cau-long-quan-phu-nhuan",
+      "latitude": 10.8051688,
+      "longitude": 106.6758775,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+%C4%90%C3%A0o+Duy+Anh/@10.8047394,106.6758531,107m/data=!3m1!1e3!4m6!3m5!1s0x3175292763fbddd3:0x20548e4c7704e56d!8m2!3d10.8051688!4d106.6758775!16s%2Fg%2F11vhqmz5h6?authuser=0&entry=tts&g_ep=EgoyMDI0MDkxOC4xKgBIAVAD",
+      "district_old": "Phú Nhuận",
+      "source_key": "04ad561c4829d1e260ff",
+      "ward_name": "Đức Nhuận",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8051688&mlon=106.6758775#map=19/10.8051688/106.6758775"
+    },
+    {
+      "name": "Sân cầu lông Aurora Sport",
+      "address": "158 Đường số 17, Phường Linh Xuân, TP.HCM",
+      "map_url": "https://maps.app.goo.gl/zuB19KcNpRs1LQg89",
+      "source_url": "https://shopvnb.com/san-cau-long-aurora-sport.html",
+      "latitude": 10.8662804,
+      "longitude": 106.7875994,
+      "coordinate_source_url": "https://www.google.com/maps/place/AURORA+SPORT+-+C%E1%BA%A7u+L%C3%B4ng,+Pickleball,+B%C3%B3ng+B%C3%A0n/@10.8657708,106.785047,17z/data=!4m7!3m6!1s0x317527004300da3d:0xaacd2cb6fd2d0290!8m2!3d10.8662804!4d106.7875994!15sCnFBVVJPUkEgU1BPUlQgLSBD4bqndSBMw7RuZywgUGlja2xlYmFsbCwgQsOzbmcgQsOgbiwgMTU4IMSQLiBz4buRIDE3LCBMaW5oIFh1w6JuLCBI4buTIENow60gTWluaCA3MTMwOCwgVmnhu4d0IE5hbVpqImhhdXJvcmEgc3BvcnQgY-G6p3UgbMO0bmcgcGlja2xlYmFsbCBiw7NuZyBiw6BuIDE1OCDEkSBz4buRIDE3IGxpbmggeHXDom4gaOG7kyBjaMOtIG1pbmggNzEzMDggdmnhu4d0IG5hbZIBC3Nwb3J0c19jbHVimgEkQ2hkRFNVaE5NRzluUzBWTlMyWTVaQzFIY2s5SE0zZG5SUkFC4AEA-gEECAAQIg!16s%2Fg%2F11v_bj4m31?entry=tts&g_ep=EgoyMDI2MDYxNi4wIPu8ASoASAFQAw%3D%3D&skid=b638ba5f-ff06-4532-a16c-dfa4b514e5aa",
+      "district_old": "Thủ Đức",
+      "source_key": "9f3ff658b45348f3333b",
+      "ward_name": "Linh Xuân",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8662804&mlon=106.7875994#map=19/10.8662804/106.7875994"
+    },
+    {
+      "name": "Sân cầu lông Tường Anh",
+      "address": "56/1 Đường số 2, Phường Thủ Đức, TP.HCM",
+      "map_url": "https://maps.app.goo.gl/YLkwswtjS2tVHvX79",
+      "source_url": "https://gosensports.com/san-cau-long-thu-duc",
+      "latitude": 10.8349018,
+      "longitude": 106.7546823,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+T%C6%B0%E1%BB%9Dng+Anh/@10.8349018,106.7521074,1333m/data=!3m2!1e3!4b1!4m6!3m5!1s0x317527bf6e2c5f55:0x5e9bc5ba58da0088!8m2!3d10.8349018!4d106.7546823!16s%2Fg%2F11cnc9lx0c!5m1!1e2?entry=tts&g_ep=EgoyMDI2MDMxMS4wIPu8ASoASAFQAw%3D%3D&skid=a2927d62-aede-4e8a-ab9f-3860282fd5a8",
+      "district_old": "Thủ Đức",
+      "source_key": "ba58c265552e9ba6a444",
+      "ward_name": "Thủ Đức",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8349018&mlon=106.7546823#map=19/10.8349018/106.7546823"
+    },
+    {
+      "name": "Sân cầu lông Quốc Lộ 1",
+      "address": "400 Quốc lộ 1A, Phường Tam Bình, TP.HCM",
+      "map_url": "https://maps.app.goo.gl/EL2jR8Z6UNnjhn1DA",
+      "source_url": "https://shopvnb.com/san-cau-long-quoc-lo-1.html",
+      "latitude": 10.8721689,
+      "longitude": 106.7417341,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+Qu%E1%BB%91c+L%E1%BB%99+1/@10.872169,106.741734,11z/data=!4m6!3m5!1s0x317527004d181a9f:0x65ef1310623c7602!8m2!3d10.8721689!4d106.7417341!16s%2Fg%2F11vrr2r828?ll=10.872169,106.741734&z=11&t=m&gl=US&mapclient=embed&cid=7345110478353102338&coh=219816&entry=tts&g_ep=EgoyMDI0MDgxOS4wKgBIAVAD",
+      "district_old": "Thủ Đức",
+      "source_key": "b1582618732f74ead88e",
+      "ward_name": "Tam Bình",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.8721689&mlon=106.7417341#map=19/10.8721689/106.7417341"
+    },
+    {
+      "name": "Sân cầu lông Aka Badminton Center",
+      "address": "730/4 Hương Lộ 2, Phường Bình Trị Đông, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/xvjqicGXG4AWXWLn9",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-binh-tan",
+      "latitude": 10.7672571,
+      "longitude": 106.6051067,
+      "coordinate_source_url": "https://www.google.com/maps/place/AKA+Badminton+Center+-+S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng+H%C6%B0%C6%A1ng+L%E1%BB%99+2/@10.7671793,106.6045385,328m/data=!3m1!1e3!4m6!3m5!1s0x31752d004730101f:0xe2b82ed5de52d028!8m2!3d10.7672571!4d106.6051067!16s%2Fg%2F11ww_wk2x7!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDUxMy4xIPu8ASoASAFQAw%3D%3D&skid=2f2fd98a-336b-4e93-be59-50bee74a9af3",
+      "district_old": "Bình Tân",
+      "source_key": "e844241dc18eaa643cbe",
+      "ward_name": "Bình Trị Đông",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7672571&mlon=106.6051067#map=19/10.7672571/106.6051067"
+    },
+    {
+      "name": "CLB cầu lông Sinh Đôi",
+      "address": "327 Đ. Bình Trị Đông, Phường Bình Trị Đông, Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/dNTEaQj9r42h4p9W9",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-binh-tan",
+      "latitude": 10.7700147,
+      "longitude": 106.6093781,
+      "coordinate_source_url": "https://www.google.com/maps/place/C%C3%A2u+l%E1%BA%A1c+b%E1%BB%99+C%E1%BA%A7u+l%C3%B4ng+Sinh+%C4%90%C3%B4i/@10.7699175,106.6081845,655m/data=!3m1!1e3!4m6!3m5!1s0x31752d006f67b7a3:0x8590670692612bc!8m2!3d10.7700147!4d106.6093781!16s%2Fg%2F11vyc2137z?entry=tts&g_ep=EgoyMDI1MDUxMy4xIPu8ASoASAFQAw%3D%3D&skid=be3b0d6f-3345-4d2b-a6cc-3516ad636b03",
+      "district_old": "Bình Tân",
+      "source_key": "bf73ca193cb759550ace",
+      "ward_name": "Bình Trị Đông",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7700147&mlon=106.6093781#map=19/10.7700147/106.6093781"
+    },
+    {
+      "name": "Sân cầu lông Hưng Phú",
+      "address": "15 Liên Khu 2-5, Phường Bình Trị Đông Thành phố Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/MoWcm2gNfY5evqGV7",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-binh-tan",
+      "latitude": 10.7675902,
+      "longitude": 106.6168394,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+C%E1%BA%A7u+L%C3%B4ng+H%C6%B0ng+Ph%C3%BA/@10.7667403,106.6170669,655m/data=!3m1!1e3!4m6!3m5!1s0x31752d98326bba93:0x6a976c44d6d3469b!8m2!3d10.7675902!4d106.6168394!16s%2Fg%2F11s1wqq75t?entry=tts&g_ep=EgoyMDI1MDUxMy4xIPu8ASoASAFQAw%3D%3D&skid=eb16a5e4-3d8b-4571-a05a-9b0c30d4d752",
+      "district_old": "Bình Tân",
+      "source_key": "45dfcb509515520c9206",
+      "ward_name": "Bình Trị Đông",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7675902&mlon=106.6168394#map=19/10.7675902/106.6168394"
+    },
+    {
+      "name": "Câu lạc bộ Cầu Lông TTC",
+      "address": "17/5/15, Lương Minh Nguyệt, P.Tân Phú, TP.Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/CKv5Mt5VWBFg5VLn7",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-tan-phu",
+      "latitude": 10.7602202,
+      "longitude": 106.6310087,
+      "coordinate_source_url": "https://www.google.com/maps/place/TTC+C%C3%A2u+l%E1%BA%A1c+b%E1%BB%99+C%E1%BA%A7u+L%C3%B4ng+-+Pickleball/@10.7602235,106.6309952,230m/data=!3m1!1e3!4m6!3m5!1s0x31752f0026d68687:0x3c5e34359be6de41!8m2!3d10.7602202!4d106.6310087!16s%2Fg%2F11w8tp_lfz!5m2!1e4!1e2?entry=tts&g_ep=EgoyMDI0MTAyOS4wIPu8ASoASAFQAw%3D%3D",
+      "district_old": "Tân Phú",
+      "source_key": "e6676ee250f09453f0cf",
+      "ward_name": "Tân Phú",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7602202&mlon=106.6310087#map=19/10.7602202/106.6310087"
+    },
+    {
+      "name": "Sân cầu lông Ecosport",
+      "address": "15 Cách Mạng, P.Tân Sơn Nhì, TP.Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/8SLNxwrVPxaSM9Xg7",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-tan-phu",
+      "latitude": 10.7890963,
+      "longitude": 106.6364317,
+      "coordinate_source_url": "https://www.google.com/maps/place/Ecosport+-+Chi+Nh%C3%A1nh+s%C3%A2n+c%E1%BA%A7u+l%C3%B4ng,+pickleball/@10.7891874,106.6364408,1752045m/data=!3m1!1e3!4m7!3m6!1s0x31752f291a7a28c7:0xfaeb24933f98bcd3!8m2!3d10.7890963!4d106.6364317!15sChRzw6JuIGVjbyBj4bqndSBsw7RuZ5IBD2JhZG1pbnRvbl9jb3VydOABAA!16s%2Fg%2F11lthcy6yg?authuser=0&entry=tts&g_ep=EgoyMDI0MTAxNi4wIPu8ASoASAFQAw%3D%3D",
+      "district_old": "Tân Phú",
+      "source_key": "6fbda9fb669891fa4236",
+      "ward_name": "Tân Sơn Nhì",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7890963&mlon=106.6364317#map=19/10.7890963/106.6364317"
+    },
+    {
+      "name": "Sân cầu lông Tấn Phúc",
+      "address": "452 Lũy Bán Bích, P.Tân Phú, TP.Hồ Chí Minh",
+      "map_url": "https://maps.app.goo.gl/5TQnP5ftdoCftVSn9",
+      "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-tan-phu",
+      "latitude": 10.7787125,
+      "longitude": 106.6362366,
+      "coordinate_source_url": "https://www.google.com/maps/place/S%C3%A2n+c%E1%BA%A7u+l%C3%B4ng%2FBadminton+Club+T%E1%BA%A5n+Ph%C3%BAc+-+T%C3%A2n+Ph%C3%BA/@10.7787125,106.6362366,751m/data=!3m1!1e3!4m6!3m5!1s0x31752f3056454f09:0x28c00cae67e3c191!8m2!3d10.7787125!4d106.6362366!16s%2Fg%2F11lsn2xgqq?entry=tts&g_ep=EgoyMDI0MDYxNS4wKgBIAVAD",
+      "district_old": "Tân Phú",
+      "source_key": "79b17c02f0e74343031a",
+      "ward_name": "Tân Phú",
+      "coordinate_quality": "place_pin",
+      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.7787125&mlon=106.6362366#map=19/10.7787125/106.6362366"
+    }
+  ]
 }
-
-// 2. Phân tích tham số dòng lệnh trước khi kết nối DB
-$options = getopt('', ['execute', 'dry-run', 'owner-id:', 'district:', 'help']);
-
-if (isset($options['help'])) {
-    echo "=====================================================================\n";
-    echo "GODMINTON - CLI IMPORT SÂN CẦU LÔNG THẬT TỪ OPENSTREETMAP (NOMINATIM)\n";
-    echo "=====================================================================\n";
-    echo "Cách dùng:\n";
-    echo "  php database/import_real_courts.php [tùy chọn]\n\n";
-    echo "Tùy chọn:\n";
-    echo "  --dry-run          Chạy thử nghiệm, kiểm tra dữ liệu và KHÔNG ghi vào DB (Mặc định).\n";
-    echo "  --execute          Xác nhận ghi dữ liệu thật vào MySQL Database.\n";
-    echo "  --owner-id=ID      Gán ID chủ sân sở hữu (Mặc định: 3 - Chủ Sân Quận 1).\n";
-    echo "  --district=TÊN     Chỉ nạp cho 1 quận (vd: \"Quận 1\", \"Tân Bình\", \"all\" - mặc định: tất cả).\n";
-    echo "  --help             Hiển thị hướng dẫn này.\n\n";
-    echo "Ví dụ:\n";
-    echo "  php database/import_real_courts.php                       # Chạy thử toàn bộ các quận (dry-run)\n";
-    echo "  php database/import_real_courts.php --district=\"Quận 1\"   # Chạy thử 5 sân Quận 1\n";
-    echo "  php database/import_real_courts.php --execute             # Ghi thật vào CSDL\n";
-    echo "=====================================================================\n";
-    exit(0);
+COURTS_JSON;
+$path=__DIR__.'/real_courts.json';
+$data=json_decode(is_file($path) ? file_get_contents($path) : $embedded,true);
+if (!is_array($data) || !isset($data['courts'])) failImport('Dữ liệu JSON không hợp lệ');
+$district=$options['district'] ?? 'all';
+$targets=array_values(array_filter($data['courts'],function($c) use ($district) {return $district==='all' || $c['district_old']===$district;}));
+if (!$targets) failImport('Không tìm thấy quận khớp chính xác: '.$district);
+$counts=[];$keys=[];
+foreach ($targets as $c) {
+ foreach (['source_key','name','address','ward_name','district_old','source_url'] as $k) if (empty($c[$k])) failImport('Thiếu '.$k);
+ if (!is_numeric($c['latitude']) || !is_numeric($c['longitude']) || $c['latitude']<10.35 || $c['latitude']>11.2 || $c['longitude']<106.3 || $c['longitude']>107.05) failImport('Tọa độ không hợp lệ');
+ if (isset($keys[$c['source_key']])) failImport('Trùng khóa nguồn');
+ $keys[$c['source_key']]=true;$counts[$c['district_old']]=($counts[$c['district_old']] ?? 0)+1;
+ printf("%s | %s | %.7f, %.7f | %s\n",$c['district_old'],$c['name'],$c['latitude'],$c['longitude'],$c['coordinate_quality']);
 }
-
-require_once __DIR__ . '/../config/db.php';
-
-// Phạm vi tọa độ đô thị lõi TP.HCM (maxBounds)
-define('BOUNDS_LAT_MIN', 10.6500000);
-define('BOUNDS_LAT_MAX', 10.9500000);
-define('BOUNDS_LNG_MIN', 106.5500000);
-define('BOUNDS_LNG_MAX', 106.8500000);
-
-$isExecute = isset($options['execute']);
-$isDryRun = !$isExecute;
-$ownerId = isset($options['owner-id']) ? (int)$options['owner-id'] : 3;
-
-echo "=====================================================================\n";
-echo "GODMINTON - IMPORT SÂN CẦU LÔNG THẬT (OSM NOMINATIM)\n";
-echo "Chế độ: " . ($isDryRun ? "DRY-RUN (CHỈ KIỂM TRA, KHÔNG GHI CSDL)" : "EXECUTE (GHI THẬT VÀO CSDL)") . "\n";
-echo "Owner ID: {$ownerId}\n";
-echo "Phạm vi: TP.HCM [Lat: " . BOUNDS_LAT_MIN . ".." . BOUNDS_LAT_MAX . ", Lng: " . BOUNDS_LNG_MIN . ".." . BOUNDS_LNG_MAX . "]\n";
-echo "=====================================================================\n\n";
-
-// Kiểm tra owner_id có tồn tại trong CSDL không
-$checkOwner = $pdo->prepare("SELECT id, name, email, role FROM users WHERE id = ?");
-$checkOwner->execute([$ownerId]);
-$ownerUser = $checkOwner->fetch();
-
-if (!$ownerUser) {
-    echo "[LỖI] Không tìm thấy user với owner_id = {$ownerId} trong bảng users!\n";
-    echo "Hãy chỉ định owner hợp lệ qua cờ --owner-id=<id> (ví dụ tài khoản demo id = 3).\n";
-    exit(1);
-}
-echo "[OK] Chủ sân: {$ownerUser['name']} ({$ownerUser['email']}) - Role: {$ownerUser['role']}\n\n";
-
-// Danh sách 5 sân cầu lông thật cho mỗi quận tại Sài Gòn (TP.HCM)
-$districtCourts = [
-    'Quận 1' => [
-        [
-            'query'          => 'Cung Văn Hóa Lao Động, 55B Nguyễn Thị Minh Khai, Bến Nghé, Quận 1, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Cung Văn Hóa Lao Động',
-            'fallback_lat'   => 10.7745000,
-            'fallback_lng'   => 106.6924000,
-            'address'        => '55B Nguyễn Thị Minh Khai, Phường Bến Nghé, Quận 1, TP.HCM',
-            'price_per_hour' => 110000,
-            'description'    => 'Cụm sân cầu lông truyền thống trung tâm Quận 1, sàn gỗ chuyên dụng, đèn LED chống chói.',
-            'ward_hint'      => 'Bến Nghé'
-        ],
-        [
-            'query'          => 'Tao Đàn, 1 Huyền Trân Công Chúa, Bến Thành, Quận 1, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Tao Đàn',
-            'fallback_lat'   => 10.7738000,
-            'fallback_lng'   => 106.6912000,
-            'address'        => '1 Huyền Trân Công Chúa, Phường Bến Thành, Quận 1, TP.HCM',
-            'price_per_hour' => 105000,
-            'description'    => 'Sân cầu lông trong khuôn viên công viên Tao Đàn xanh mát, 4 sân thảm Yonex cao cấp.',
-            'ward_hint'      => 'Sài Gòn'
-        ],
-        [
-            'query'          => '112 Lê Thánh Tôn, Bến Nghé, Quận 1, Hồ Chí Minh',
-            'name'           => 'Cầu Lông Quận 1 – Lê Thánh Tôn Sport',
-            'fallback_lat'   => 10.7769000,
-            'fallback_lng'   => 106.7009000,
-            'address'        => '112 Lê Thánh Tôn, Phường Bến Nghé, Quận 1, TP.HCM',
-            'price_per_hour' => 100000,
-            'description'    => 'Tổ hợp sân cầu lông hiện đại ngay trung tâm Quận 1, 6 sân thảm tiêu chuẩn BWF.',
-            'ward_hint'      => 'Bến Nghé'
-        ],
-        [
-            'query'          => 'Nguyễn Cảnh Chân, Cầu Kho, Quận 1, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Cầu Kho Q1',
-            'fallback_lat'   => 10.7580000,
-            'fallback_lng'   => 106.6890000,
-            'address'        => 'Đường Nguyễn Cảnh Chân, Phường Cầu Kho, Quận 1, TP.HCM',
-            'price_per_hour' => 90000,
-            'description'    => 'Sân cầu lông khu vực Cầu Kho, mặt thảm êm, không gian tập luyện câu lạc bộ thân thiện.',
-            'ward_hint'      => 'Sài Gòn'
-        ],
-        [
-            'query'          => 'Nguyễn Trãi, Nguyễn Cư Trinh, Quận 1, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Nguyễn Cư Trinh',
-            'fallback_lat'   => 10.7605000,
-            'fallback_lng'   => 106.6860000,
-            'address'        => 'Hẻm 189 Nguyễn Trãi, Phường Nguyễn Cư Trinh, Quận 1, TP.HCM',
-            'price_per_hour' => 95000,
-            'description'    => 'Sân cầu lông chất lượng cao, trần cao thoáng đãng, phục vụ người chơi thể thao phong trào.',
-            'ward_hint'      => 'Sài Gòn'
-        ],
-    ],
-    'Quận 3' => [
-        [
-            'query'          => 'Hồ Xuân Hương, Võ Thị Sáu, Quận 3, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Hồ Xuân Hương',
-            'fallback_lat'   => 10.7778000,
-            'fallback_lng'   => 106.6885000,
-            'address'        => '2 Hồ Xuân Hương, Phường Võ Thị Sáu, Quận 3, TP.HCM',
-            'price_per_hour' => 100000,
-            'description'    => 'Trung tâm thể dục thể thao Quận 3, nhiều sân thảm đạt chuẩn thi đấu thành phố.',
-            'ward_hint'      => 'Sài Gòn'
-        ],
-        [
-            'query'          => 'Cách Mạng Tháng Tám, Phường 11, Quận 3, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Rạng Đông Q3',
-            'fallback_lat'   => 10.7760000,
-            'fallback_lng'   => 106.6830000,
-            'address'        => 'Cách Mạng Tháng 8, Phường Võ Thị Sáu, Quận 3, TP.HCM',
-            'price_per_hour' => 85000,
-            'description'    => 'Sân cầu lông thảm chất lượng tốt, căng vợt lấy ngay, giá hợp lý cho sinh viên.',
-            'ward_hint'      => 'Sài Gòn'
-        ],
-        [
-            'query'          => 'Ga Sài Gòn, 1 Nguyễn Thông, Phường 9, Quận 3, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Ga Sài Gòn',
-            'fallback_lat'   => 10.7810000,
-            'fallback_lng'   => 106.6780000,
-            'address'        => '1 Nguyễn Thông, Phường 9, Quận 3, TP.HCM',
-            'price_per_hour' => 80000,
-            'description'    => 'Sân cầu lông gần Ga Sài Gòn, bãi đỗ xe máy rộng, hoạt động liên tục các ngày trong tuần.',
-            'ward_hint'      => 'Sài Gòn'
-        ],
-        [
-            'query'          => 'Nam Kỳ Khởi Nghĩa, Võ Thị Sáu, Quận 3, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Nam Kỳ Sport',
-            'fallback_lat'   => 10.7845000,
-            'fallback_lng'   => 106.6905000,
-            'address'        => 'Nam Kỳ Khởi Nghĩa, Phường Võ Thị Sáu, Quận 3, TP.HCM',
-            'price_per_hour' => 95000,
-            'description'    => 'Cụm sân trong nhà sạch đẹp, hệ thống thông gió mát mẻ, phòng tắm nóng lạnh.',
-            'ward_hint'      => 'Sài Gòn'
-        ],
-        [
-            'query'          => 'Trương Định, Võ Thị Sáu, Quận 3, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Trương Định',
-            'fallback_lat'   => 10.7790000,
-            'fallback_lng'   => 106.6870000,
-            'address'        => 'Trương Định, Phường Võ Thị Sáu, Quận 3, TP.HCM',
-            'price_per_hour' => 90000,
-            'description'    => 'Sân chơi giao lưu sôi động, có lớp dạy cầu lông cơ bản và nâng cao.',
-            'ward_hint'      => 'Sài Gòn'
-        ],
-    ],
-    'Quận 5' => [
-        [
-            'query'          => 'Tinh Võ, 756 Nguyễn Trãi, Phường 11, Quận 5, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Tinh Võ',
-            'fallback_lat'   => 10.7540000,
-            'fallback_lng'   => 106.6610000,
-            'address'        => '756 Nguyễn Trãi, Phường 11, Quận 5, TP.HCM',
-            'price_per_hour' => 85000,
-            'description'    => 'Trung tâm Tinh Võ Chợ Lớn lịch sử, sàn thi đấu đạt chuẩn, không khí rèn luyện chuyên nghiệp.',
-            'ward_hint'      => 'Chợ Lớn'
-        ],
-        [
-            'query'          => 'Đại Học Sư Phạm, 280 An Dương Vương, Phường 4, Quận 5, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông ĐH Sư Phạm TP.HCM',
-            'fallback_lat'   => 10.7600000,
-            'fallback_lng'   => 106.6785000,
-            'address'        => '280 An Dương Vương, Phường 4, Quận 5, TP.HCM',
-            'price_per_hour' => 75000,
-            'description'    => 'Nhà thi đấu trường ĐH Sư Phạm, trần cao, sàn gỗ lót thảm cao su chống sốc tốt.',
-            'ward_hint'      => 'Chợ Lớn'
-        ],
-        [
-            'query'          => 'Hùng Vương, Phường 12, Quận 5, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Hùng Vương Chợ Lớn',
-            'fallback_lat'   => 10.7565000,
-            'fallback_lng'   => 106.6625000,
-            'address'        => 'Hùng Vương, Phường 12, Quận 5, TP.HCM',
-            'price_per_hour' => 80000,
-            'description'    => 'Khu vực trung tâm thương mại Chợ Lớn, thuận tiện đi lại, mở cửa 06:00 - 22:00.',
-            'ward_hint'      => 'Chợ Lớn'
-        ],
-        [
-            'query'          => 'Trần Phú, Phường 7, Quận 5, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông TT Thể Thao Quận 5',
-            'fallback_lat'   => 10.7585000,
-            'fallback_lng'   => 106.6720000,
-            'address'        => 'Trần Phú, Phường 7, Quận 5, TP.HCM',
-            'price_per_hour' => 80000,
-            'description'    => 'Cơ sở vật chất hiện đại, có khán đài mini xem thi đấu giao hữu phong trào.',
-            'ward_hint'      => 'Chợ Lớn'
-        ],
-        [
-            'query'          => 'Lê Hồng Phong, Phường 2, Quận 5, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Lê Hồng Phong Q5',
-            'fallback_lat'   => 10.7620000,
-            'fallback_lng'   => 106.6760000,
-            'address'        => 'Lê Hồng Phong, Phường 2, Quận 5, TP.HCM',
-            'price_per_hour' => 85000,
-            'description'    => 'Sân thảm chất lượng ổn định, có căn-tin nước giải khát và quầy bán quả cầu lông.',
-            'ward_hint'      => 'Chợ Lớn'
-        ],
-    ],
-    'Quận 6' => [
-        [
-            'query'          => 'Đường số 24, Phường 11, Quận 6, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Bình Phú Quận 6',
-            'fallback_lat'   => 10.7450000,
-            'fallback_lng'   => 106.6340000,
-            'address'        => 'Đường số 24, Khu dân cư Bình Phú, Phường 11, Quận 6, TP.HCM',
-            'price_per_hour' => 70000,
-            'description'    => 'Sân cầu lông khu dân cư Bình Phú rộng rãi, thoáng mát, đỗ xe ô tô thoải mái.',
-            'ward_hint'      => 'Bình Phú'
-        ],
-        [
-            'query'          => 'Phan Văn Khỏe, Phường 5, Quận 6, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Hoàng Hải Bình Tây',
-            'fallback_lat'   => 10.7490000,
-            'fallback_lng'   => 106.6500000,
-            'address'        => 'Phan Văn Khỏe, Phường 5, Quận 6, TP.HCM',
-            'price_per_hour' => 75000,
-            'description'    => 'Sân cầu lông gần chợ Bình Tây, hệ thống đèn chiếu sáng đều không lóa mắt.',
-            'ward_hint'      => 'Bình Tây'
-        ],
-        [
-            'query'          => 'Hậu Giang, Phường 12, Quận 6, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Hậu Giang Sport',
-            'fallback_lat'   => 10.7470000,
-            'fallback_lng'   => 106.6380000,
-            'address'        => 'Hậu Giang, Phường 12, Quận 6, TP.HCM',
-            'price_per_hour' => 70000,
-            'description'    => 'Sân thảm cao su tự nhiên, giảm chấn thương đầu gối cho người chơi lâu năm.',
-            'ward_hint'      => 'Bình Tiên'
-        ],
-        [
-            'query'          => 'Bà Hom, Phường 13, Quận 6, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Phú Lâm',
-            'fallback_lat'   => 10.7510000,
-            'fallback_lng'   => 106.6320000,
-            'address'        => 'Bà Hom, Phường 13, Quận 6, TP.HCM',
-            'price_per_hour' => 70000,
-            'description'    => 'Sân cầu lông gần vòng xoay Phú Lâm, phục vụ hội viên rèn luyện sức khỏe mỗi ngày.',
-            'ward_hint'      => 'Phú Lâm'
-        ],
-        [
-            'query'          => 'Minh Phụng, Phường 9, Quận 6, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Cây Gõ Quận 6',
-            'fallback_lat'   => 10.7535000,
-            'fallback_lng'   => 106.6490000,
-            'address'        => 'Minh Phụng, Phường 9, Quận 6, TP.HCM',
-            'price_per_hour' => 75000,
-            'description'    => 'Cụm sân cầu lông nhộn nhịp, tổ chức nhiều giải phong trào các lứa tuổi.',
-            'ward_hint'      => 'Bình Tây'
-        ],
-    ],
-    'Quận 7' => [
-        [
-            'query'          => 'Phú Mỹ Hưng, Tân Phong, Quận 7, Hồ Chí Minh',
-            'name'           => 'Cầu Lông Quận 7 – Phú Mỹ Hưng Sport',
-            'fallback_lat'   => 10.7290000,
-            'fallback_lng'   => 106.7180000,
-            'address'        => 'Block B2, Khu đô thị Phú Mỹ Hưng, Quận 7, TP.HCM',
-            'price_per_hour' => 120000,
-            'description'    => 'Sân cầu lông cao cấp khu Phú Mỹ Hưng, 4 sân thảm Li-Ning, phòng tắm xông hơi.',
-            'ward_hint'      => 'Tân Phong'
-        ],
-        [
-            'query'          => 'Huỳnh Tấn Phát, Tân Phú, Quận 7, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Long Viên Q7',
-            'fallback_lat'   => 10.7350000,
-            'fallback_lng'   => 106.7320000,
-            'address'        => 'Huỳnh Tấn Phát, Phường Tân Phú, Quận 7, TP.HCM',
-            'price_per_hour' => 85000,
-            'description'    => 'Quy mô 8 sân thảm xanh đẹp mắt, dịch vụ cho thuê đồ tập và phụ kiện.',
-            'ward_hint'      => 'Tân Phong'
-        ],
-        [
-            'query'          => 'Lê Văn Lương, Tân Phong, Quận 7, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Tân Phong Sport',
-            'fallback_lat'   => 10.7320000,
-            'fallback_lng'   => 106.7080000,
-            'address'        => 'Lê Văn Lương, Phường Tân Phong, Quận 7, TP.HCM',
-            'price_per_hour' => 90000,
-            'description'    => 'Sân tập hiện đại gần trường ĐH Tôn Đức Thắng, không khí trẻ trung sôi nổi.',
-            'ward_hint'      => 'Tân Phong'
-        ],
-        [
-            'query'          => 'Nguyễn Hữu Thọ, Tân Hưng, Quận 7, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Nam Sài Gòn Q7',
-            'fallback_lat'   => 10.7420000,
-            'fallback_lng'   => 106.7040000,
-            'address'        => 'Nguyễn Hữu Thọ, Phường Tân Hưng, Quận 7, TP.HCM',
-            'price_per_hour' => 95000,
-            'description'    => 'Mặt sàn gỗ phủ thảm Victor tiêu chuẩn, có điều hòa thông gió công suất lớn.',
-            'ward_hint'      => 'Tân Phong'
-        ],
-        [
-            'query'          => 'Lâm Văn Bền, Tân Kiểng, Quận 7, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Lâm Viên Quận 7',
-            'fallback_lat'   => 10.7440000,
-            'fallback_lng'   => 106.7160000,
-            'address'        => 'Lâm Văn Bền, Phường Tân Kiểng, Quận 7, TP.HCM',
-            'price_per_hour' => 85000,
-            'description'    => 'Sân tập thân thiện, giá cả phải chăng, giữ xe miễn phí cho người chơi.',
-            'ward_hint'      => 'Tân Phong'
-        ],
-    ],
-    'Quận 10' => [
-        [
-            'query'          => 'Kỳ Hòa, 238 Ba Tháng Hai, Phường 12, Quận 10, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Kỳ Hòa Q10',
-            'fallback_lat'   => 10.7712000,
-            'fallback_lng'   => 106.6738000,
-            'address'        => '238 Đường 3/2, Phường 12, Quận 10, TP.HCM',
-            'price_per_hour' => 85000,
-            'description'    => 'Sân cầu lông Kỳ Hòa nổi tiếng Sài Gòn, 10 sân thảm, dịch vụ căng vợt chuyên nghiệp.',
-            'ward_hint'      => 'Chợ Lớn'
-        ],
-        [
-            'query'          => 'CLB Lan Anh, 291 Cách Mạng Tháng Tám, Quận 10, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông CLB Lan Anh',
-            'fallback_lat'   => 10.7788000,
-            'fallback_lng'   => 106.6791000,
-            'address'        => '291 Cách Mạng Tháng 8, Phường 12, Quận 10, TP.HCM',
-            'price_per_hour' => 95000,
-            'description'    => 'Khu thể thao Lan Anh cao cấp, tiện ích 5 sao, quầy cafe và bãi đỗ xe ô tô.',
-            'ward_hint'      => 'Chợ Lớn'
-        ],
-        [
-            'query'          => 'Hoàng Hoa Thám, Phường 12, Quận 10, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Viettel Quận 10',
-            'fallback_lat'   => 10.7765000,
-            'fallback_lng'   => 106.6750000,
-            'address'        => 'Hẻm 158 Hoàng Hoa Thám, Phường 12, Quận 10, TP.HCM',
-            'price_per_hour' => 80000,
-            'description'    => 'Sân chơi thoáng mát, giá vé giờ vàng ưu đãi cho hội viên thuê cố định tháng.',
-            'ward_hint'      => 'Chợ Lớn'
-        ],
-        [
-            'query'          => 'Đồng Nai, Cư xá Bắc Hải, Phường 15, Quận 10, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Bắc Hải Sport',
-            'fallback_lat'   => 10.7815000,
-            'fallback_lng'   => 106.6640000,
-            'address'        => 'Đường Đồng Nai, Cư xá Bắc Hải, Phường 15, Quận 10, TP.HCM',
-            'price_per_hour' => 80000,
-            'description'    => 'Nằm trong khu cư xá Bắc Hải yên tĩnh, sàn thảm êm ái, ánh sáng tiêu chuẩn.',
-            'ward_hint'      => 'Chợ Lớn'
-        ],
-        [
-            'query'          => 'Thành Thái, Phường 14, Quận 10, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Nguyễn Tri Phương',
-            'fallback_lat'   => 10.7695000,
-            'fallback_lng'   => 106.6610000,
-            'address'        => 'Thành Thái, Phường 14, Quận 10, TP.HCM',
-            'price_per_hour' => 80000,
-            'description'    => 'Địa điểm tập luyện quen thuộc của các CLB sinh viên và người đi làm.',
-            'ward_hint'      => 'Chợ Lớn'
-        ],
-    ],
-    'Quận 11' => [
-        [
-            'query'          => 'Phú Thọ, 219 Lý Thường Kiệt, Phường 15, Quận 11, Hồ Chí Minh',
-            'name'           => 'Nhà Thi Đấu Cầu Lông Phú Thọ',
-            'fallback_lat'   => 10.7680000,
-            'fallback_lng'   => 106.6570000,
-            'address'        => '219 Lý Thường Kiệt, Phường 15, Quận 11, TP.HCM',
-            'price_per_hour' => 90000,
-            'description'    => 'Tổ hợp nhà thi đấu Phú Thọ quy mô lớn nhất TP.HCM, thường đăng cai giải quốc gia.',
-            'ward_hint'      => 'Minh Phụng'
-        ],
-        [
-            'query'          => 'Lãnh Binh Thăng, Phường 8, Quận 11, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Lãnh Binh Thăng',
-            'fallback_lat'   => 10.7630000,
-            'fallback_lng'   => 106.6480000,
-            'address'        => '283 Lãnh Binh Thăng, Phường 8, Quận 11, TP.HCM',
-            'price_per_hour' => 75000,
-            'description'    => 'Sân sạch sẽ, phục vụ chu đáo, có quầy nước và tủ đồ cá nhân an toàn.',
-            'ward_hint'      => 'Minh Phụng'
-        ],
-        [
-            'query'          => 'Bình Thới, Phường 10, Quận 11, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Bình Thới Q11',
-            'fallback_lat'   => 10.7645000,
-            'fallback_lng'   => 106.6430000,
-            'address'        => 'Bình Thới, Phường 10, Quận 11, TP.HCM',
-            'price_per_hour' => 70000,
-            'description'    => 'Sân thảm mới, độ bám tốt, thích hợp thi đấu đôi và đơn cường độ cao.',
-            'ward_hint'      => 'Minh Phụng'
-        ],
-        [
-            'query'          => 'Hòa Bình, Phường 3, Quận 11, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Đầm Sen Sport',
-            'fallback_lat'   => 10.7675000,
-            'fallback_lng'   => 106.6380000,
-            'address'        => 'Hòa Bình, Phường 3, Quận 11, TP.HCM',
-            'price_per_hour' => 75000,
-            'description'    => 'Gần công viên Đầm Sen, vị trí thuận tiện giao lưu cho các quận lân cận.',
-            'ward_hint'      => 'Minh Phụng'
-        ],
-        [
-            'query'          => 'Minh Phụng, Phường 9, Quận 11, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Minh Phụng Arena',
-            'fallback_lat'   => 10.7610000,
-            'fallback_lng'   => 106.6470000,
-            'address'        => 'Minh Phụng, Phường 9, Quận 11, TP.HCM',
-            'price_per_hour' => 70000,
-            'description'    => 'Sân chơi thân thiện cho gia đình, có bảo hiểm sân bãi và sơ cứu y tế.',
-            'ward_hint'      => 'Minh Phụng'
-        ],
-    ],
-    'Bình Thạnh' => [
-        [
-            'query'          => '225 Xô Viết Nghệ Tĩnh, Phường 26, Bình Thạnh, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Bình Thạnh – Arena Xô Viết',
-            'fallback_lat'   => 10.8020000,
-            'fallback_lng'   => 106.7120000,
-            'address'        => '225 Xô Viết Nghệ Tĩnh, Phường 26, Bình Thạnh, TP.HCM',
-            'price_per_hour' => 80000,
-            'description'    => 'Quy mô 8 sân thảm Yonex cao cấp, căng vợt điện tử lấy ngay trong 30 phút.',
-            'ward_hint'      => 'Phường 26'
-        ],
-        [
-            'query'          => 'Chu Văn An, Phường 12, Bình Thạnh, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Chu Văn An',
-            'fallback_lat'   => 10.8110000,
-            'fallback_lng'   => 106.7030000,
-            'address'        => 'Chu Văn An, Phường 12, Bình Thạnh, TP.HCM',
-            'price_per_hour' => 75000,
-            'description'    => 'Sân cầu lông khu dân cư Chu Văn An, không gian yên tĩnh, chỗ để xe rộng.',
-            'ward_hint'      => 'Phường 26'
-        ],
-        [
-            'query'          => 'Bình Quới, Phường 27, Bình Thạnh, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Bán Đảo Thanh Đa',
-            'fallback_lat'   => 10.8250000,
-            'fallback_lng'   => 106.7280000,
-            'address'        => 'Bình Quới, Phường 27, Bình Thạnh, TP.HCM',
-            'price_per_hour' => 70000,
-            'description'    => 'Khu vực bán đảo Thanh Đa sông nước thoáng mát, tập luyện thể thao sảng khoái.',
-            'ward_hint'      => 'Phường 26'
-        ],
-        [
-            'query'          => 'Phan Đăng Lưu, Phường 1, Bình Thạnh, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Phan Đăng Lưu Sport',
-            'fallback_lat'   => 10.8010000,
-            'fallback_lng'   => 106.6940000,
-            'address'        => 'Phan Đăng Lưu, Phường 1, Bình Thạnh, TP.HCM',
-            'price_per_hour' => 80000,
-            'description'    => 'Trung tâm Bình Thạnh giáp Phú Nhuận, giao thông thuận lợi, dịch vụ tận tâm.',
-            'ward_hint'      => 'Phường 26'
-        ],
-        [
-            'query'          => 'Nơ Trang Long, Phường 13, Bình Thạnh, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Nơ Trang Long',
-            'fallback_lat'   => 10.8160000,
-            'fallback_lng'   => 106.6970000,
-            'address'        => 'Nơ Trang Long, Phường 13, Bình Thạnh, TP.HCM',
-            'price_per_hour' => 75000,
-            'description'    => 'Sân thảm chống mỏi chân, mở cửa sớm đón khách chơi cầu thể dục buổi sáng.',
-            'ward_hint'      => 'Phường 26'
-        ],
-    ],
-    'Tân Bình' => [
-        [
-            'query'          => 'Ga Trực Thăng, Bạch Đằng, Phường 2, Tân Bình, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Ga Trực Thăng',
-            'fallback_lat'   => 10.8123000,
-            'fallback_lng'   => 106.6662000,
-            'address'        => 'Đường Bạch Đằng, Phường 2, Tân Bình, TP.HCM',
-            'price_per_hour' => 80000,
-            'description'    => 'Quy mô 12 sân rộng rãi cạnh sân bay Tân Sơn Nhất, trần cao thoáng mát.',
-            'ward_hint'      => 'Phường 4'
-        ],
-        [
-            'query'          => '78 Hoàng Văn Thụ, Phường 4, Tân Bình, Hồ Chí Minh',
-            'name'           => 'Trung Tâm Thể Thao TBSport',
-            'fallback_lat'   => 10.8010000,
-            'fallback_lng'   => 106.6650000,
-            'address'        => '78 Hoàng Văn Thụ, Phường 4, Tân Bình, TP.HCM',
-            'price_per_hour' => 75000,
-            'description'    => '10 sân thảm tiêu chuẩn thi đấu, phù hợp cho CLB và giải phong trào.',
-            'ward_hint'      => 'Phường 4'
-        ],
-        [
-            'query'          => 'Hoàng Hoa Thám, Phường 12, Tân Bình, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Viettel Tân Bình',
-            'fallback_lat'   => 10.8035000,
-            'fallback_lng'   => 106.6490000,
-            'address'        => 'Hoàng Hoa Thám, Phường 12, Tân Bình, TP.HCM',
-            'price_per_hour' => 75000,
-            'description'    => 'Cơ sở hiện đại, mặt sân đạt chuẩn quốc tế, có quầy nước và phụ kiện cầu lông.',
-            'ward_hint'      => 'Phường 4'
-        ],
-        [
-            'query'          => 'Đồng Đen, Phường 14, Tân Bình, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Bàu Cát Sport',
-            'fallback_lat'   => 10.7950000,
-            'fallback_lng'   => 106.6450000,
-            'address'        => 'Đồng Đen, Khu Bàu Cát, Phường 14, Tân Bình, TP.HCM',
-            'price_per_hour' => 70000,
-            'description'    => 'Khu dân cư Bàu Cát đông đúc, phong trào cầu lông sôi nổi bậc nhất Tân Bình.',
-            'ward_hint'      => 'Phường 4'
-        ],
-        [
-            'query'          => 'Cộng Hòa, Phường 13, Tân Bình, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Cộng Hòa Arena',
-            'fallback_lat'   => 10.8060000,
-            'fallback_lng'   => 106.6420000,
-            'address'        => 'Cộng Hòa, Phường 13, Tân Bình, TP.HCM',
-            'price_per_hour' => 80000,
-            'description'    => 'Sân chơi quy mô, ánh sáng trắng chống lóa, huấn luyện viên nhiệt tình chỉ dẫn.',
-            'ward_hint'      => 'Phường 4'
-        ],
-    ],
-    'Gò Vấp' => [
-        [
-            'query'          => '145 Dương Quảng Hàm, Phường 5, Gò Vấp, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Bến Cát Gò Vấp',
-            'fallback_lat'   => 10.8415000,
-            'fallback_lng'   => 106.6905000,
-            'address'        => '145 Dương Quảng Hàm, Phường 5, Gò Vấp, TP.HCM',
-            'price_per_hour' => 75000,
-            'description'    => 'Sân thảm chất lượng tốt, giá thành hợp lý cho học sinh, sinh viên.',
-            'ward_hint'      => 'Phường 3'
-        ],
-        [
-            'query'          => '350 Nguyễn Kiệm, Phường 3, Gò Vấp, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Gò Vấp – GV Arena',
-            'fallback_lat'   => 10.8230000,
-            'fallback_lng'   => 106.6830000,
-            'address'        => '350 Nguyễn Kiệm, Phường 3, Gò Vấp, TP.HCM',
-            'price_per_hour' => 70000,
-            'description'    => '5 sân thảm Victor cao su tự nhiên, thích hợp cho mọi lứa tuổi gia đình.',
-            'ward_hint'      => 'Phường 3'
-        ],
-        [
-            'query'          => 'Phan Văn Trị, Phường 10, Gò Vấp, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Khang An Gò Vấp',
-            'fallback_lat'   => 10.8320000,
-            'fallback_lng'   => 106.6750000,
-            'address'        => 'Phan Văn Trị, Phường 10, Gò Vấp, TP.HCM',
-            'price_per_hour' => 75000,
-            'description'    => 'Sân trong hẻm lớn yên tĩnh, thông gió tự nhiên mát mẻ, dịch vụ chuyên nghiệp.',
-            'ward_hint'      => 'Phường 3'
-        ],
-        [
-            'query'          => 'Nguyễn Văn Lượng, Phường 16, Gò Vấp, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Đạt Đức',
-            'fallback_lat'   => 10.8450000,
-            'fallback_lng'   => 106.6710000,
-            'address'        => 'Nguyễn Văn Lượng, Phường 16, Gò Vấp, TP.HCM',
-            'price_per_hour' => 70000,
-            'description'    => 'Sân cầu lông uy tín lâu năm tại Gò Vấp, nhiều huấn luyện viên giỏi trực tiếp hướng dẫn.',
-            'ward_hint'      => 'Phường 3'
-        ],
-        [
-            'query'          => 'Quang Trung, Phường 8, Gò Vấp, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Quang Trung Sport',
-            'fallback_lat'   => 10.8390000,
-            'fallback_lng'   => 106.6580000,
-            'address'        => 'Quang Trung, Phường 8, Gò Vấp, TP.HCM',
-            'price_per_hour' => 70000,
-            'description'    => 'Mặt sân chuẩn thi đấu, chỗ nghỉ ngơi rộng rãi, wifi tốc độ cao miễn phí.',
-            'ward_hint'      => 'Phường 3'
-        ],
-    ],
-    'Phú Nhuận' => [
-        [
-            'query'          => 'Rạch Miễu, 1 Hoa Phượng, Phường 2, Phú Nhuận, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Rạch Miễu',
-            'fallback_lat'   => 10.7930000,
-            'fallback_lng'   => 106.6910000,
-            'address'        => '1 Hoa Phượng, Phường 2, Phú Nhuận, TP.HCM',
-            'price_per_hour' => 90000,
-            'description'    => 'Trung tâm thể dục thể thao Rạch Miễu danh tiếng, cơ sở vật chất đồng bộ hiện đại.',
-            'ward_hint'      => 'Sài Gòn'
-        ],
-        [
-            'query'          => 'Phổ Quang, Phường 9, Phú Nhuận, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Quân Khu 7',
-            'fallback_lat'   => 10.8050000,
-            'fallback_lng'   => 106.6720000,
-            'address'        => 'Phổ Quang, Phường 9, Phú Nhuận, TP.HCM',
-            'price_per_hour' => 85000,
-            'description'    => 'Nhà thi đấu Quân Khu 7 rộng lớn, trần cao tiêu chuẩn quốc tế, không bị cản cầu.',
-            'ward_hint'      => 'Sài Gòn'
-        ],
-        [
-            'query'          => 'Đào Duy Anh, Phường 9, Phú Nhuận, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông Đào Duy Anh',
-            'fallback_lat'   => 10.8080000,
-            'fallback_lng'   => 106.6760000,
-            'address'        => 'Đào Duy Anh, Phường 9, Phú Nhuận, TP.HCM',
-            'price_per_hour' => 80000,
-            'description'    => 'Gần công viên Gia Định, không khí thoáng đãng trong lành, chỗ đỗ xe thuận tiện.',
-            'ward_hint'      => 'Sài Gòn'
-        ],
-        [
-            'query'          => 'Hoàng Minh Giám, Phường 9, Phú Nhuận, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Gia Định Sport',
-            'fallback_lat'   => 10.8120000,
-            'fallback_lng'   => 106.6770000,
-            'address'        => 'Hoàng Minh Giám, Phường 9, Phú Nhuận, TP.HCM',
-            'price_per_hour' => 80000,
-            'description'    => 'Hệ thống sân thảm Yonex mới 100%, có phòng thay đồ và tắm nóng lạnh sạch sẽ.',
-            'ward_hint'      => 'Sài Gòn'
-        ],
-        [
-            'query'          => 'Phan Xích Long, Phường 7, Phú Nhuận, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Phan Xích Long',
-            'fallback_lat'   => 10.7970000,
-            'fallback_lng'   => 106.6890000,
-            'address'        => 'Phan Xích Long, Phường 7, Phú Nhuận, TP.HCM',
-            'price_per_hour' => 85000,
-            'description'    => 'Tuyến phố ẩm thực sầm uất, thuận tiện tụ họp thể thao và ăn uống cùng bạn bè.',
-            'ward_hint'      => 'Sài Gòn'
-        ],
-    ],
-    'Thủ Đức' => [
-        [
-            'query'          => 'Bình Thọ, Thủ Đức, Hồ Chí Minh',
-            'name'           => 'CLB Thể Thao Thủ Đức – Thủ Đức Arena',
-            'fallback_lat'   => 10.8500000,
-            'fallback_lng'   => 106.7720000,
-            'address'        => 'Khu dân cư Bình Thọ, Phường Bình Thọ, TP. Thủ Đức, TP.HCM',
-            'price_per_hour' => 80000,
-            'description'    => 'Sân cầu lông hiện đại phục vụ cư dân và sinh viên cụm Đại học Quốc gia.',
-            'ward_hint'      => 'Bình Thọ'
-        ],
-        [
-            'query'          => 'Quốc Hương, Thảo Điền, Thủ Đức, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Thảo Điền Sport',
-            'fallback_lat'   => 10.8070000,
-            'fallback_lng'   => 106.7320000,
-            'address'        => 'Quốc Hương, Phường Thảo Điền, TP. Thủ Đức, TP.HCM',
-            'price_per_hour' => 110000,
-            'description'    => 'Khu vực Thảo Điền cao cấp, dịch vụ chuẩn quốc tế, có huấn luyện viên nước ngoài.',
-            'ward_hint'      => 'Bình Thọ'
-        ],
-        [
-            'query'          => 'Song Hành, An Phú, Thủ Đức, Hồ Chí Minh',
-            'name'           => 'CLB Cầu Lông An Phú Quận 2',
-            'fallback_lat'   => 10.8010000,
-            'fallback_lng'   => 106.7450000,
-            'address'        => 'Song Hành Xa Lộ Hà Nội, Phường An Phú, TP. Thủ Đức, TP.HCM',
-            'price_per_hour' => 95000,
-            'description'    => 'Sân cầu lông dọc tuyến Metro số 1, sàn thi đấu êm, quầy đồ uống phong phú.',
-            'ward_hint'      => 'Bình Thọ'
-        ],
-        [
-            'query'          => 'Linh Đông, Thủ Đức, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Linh Đông Thủ Đức',
-            'fallback_lat'   => 10.8540000,
-            'fallback_lng'   => 106.7560000,
-            'address'        => 'Đường Linh Đông, Phường Linh Đông, TP. Thủ Đức, TP.HCM',
-            'price_per_hour' => 70000,
-            'description'    => 'Sân tập đông vui, giá cả vừa túi tiền sinh viên và công nhân viên chức.',
-            'ward_hint'      => 'Bình Thọ'
-        ],
-        [
-            'query'          => 'Cây Keo, Tam Phú, Thủ Đức, Hồ Chí Minh',
-            'name'           => 'Sân Cầu Lông Tam Phú Arena',
-            'fallback_lat'   => 10.8620000,
-            'fallback_lng'   => 106.7480000,
-            'address'        => 'Cây Keo, Phường Tam Phú, TP. Thủ Đức, TP.HCM',
-            'price_per_hour' => 70000,
-            'description'    => 'Sân cầu lông đạt chuẩn, chỗ gửi xe rộng rãi, nhân viên hỗ trợ nhiệt tình.',
-            'ward_hint'      => 'Bình Thọ'
-        ],
-    ]
+// Số địa điểm mong đợi ở những quận đã được bổ sung.
+// Các quận không khai báo vẫn giữ mặc định 3 sân.
+$expectedCounts = [
+    'Quận 7' => 4,
 ];
 
-// Lọc theo quận nếu có truyền cờ --district
-$targetDistrict = isset($options['district']) ? trim($options['district']) : 'all';
-$targets = [];
+foreach ($counts as $districtName => $count) {
+    $expected = $expectedCounts[$districtName] ?? 3;
 
-if ($targetDistrict !== 'all' && $targetDistrict !== '') {
-    $foundKey = null;
-    foreach ($districtCourts as $dName => $courts) {
-        if (mb_stripos($dName, $targetDistrict) !== false) {
-            $foundKey = $dName;
-            break;
-        }
-    }
-    if ($foundKey) {
-        echo "Lọc nạp riêng cho khu vực: {$foundKey} (5 sân)\n\n";
-        $targets = $districtCourts[$foundKey];
-    } else {
-        echo "[CẢNH BÁO] Không tìm thấy quận '{$targetDistrict}'. Nạp tất cả các quận Sài Gòn.\n\n";
-        foreach ($districtCourts as $dName => $courts) {
-            $targets = array_merge($targets, $courts);
-        }
-    }
-} else {
-    echo "Phạm vi: Toàn bộ 12 quận/khu vực Sài Gòn (5 sân/quận = " . (count($districtCourts) * 5) . " sân)\n\n";
-    foreach ($districtCourts as $dName => $courts) {
-        $targets = array_merge($targets, $courts);
+    if ($count !== $expected) {
+        failImport(
+            "$districtName phải có $expected sân, hiện có $count sân."
+        );
     }
 }
-
-// Hàm gọi OSM Nominatim an toàn
-function queryNominatim(string $searchQuery): ?array {
-    $url = "https://nominatim.openstreetmap.org/search?" . http_build_query([
-        'q'              => $searchQuery,
-        'format'         => 'json',
-        'addressdetails' => 1,
-        'limit'          => 1
-    ]);
-
-    $opts = [
-        'http' => [
-            'method'  => 'GET',
-            'header'  => "User-Agent: GODMINTON-student-project/1.0 (badminton-booking-academic)\r\n" .
-                         "Accept-Language: vi,en;q=0.9\r\n",
-            'timeout' => 10
-        ]
-    ];
-
-    $ctx = stream_context_create($opts);
-    $response = @file_get_contents($url, false, $ctx);
-
-    if ($response === false) {
-        return null;
-    }
-
-    $json = json_decode($response, true);
-    if (!is_array($json) || empty($json)) {
-        return null;
-    }
-
-    return $json[0];
-}
-
-// Lấy danh sách wards để ánh xạ
-$wardsStmt = $pdo->query("SELECT id, name, old_area_label FROM wards");
-$allWards = $wardsStmt->fetchAll();
-
-function findWardId(array $allWards, string $hint, string $address): int {
-    foreach ($allWards as $w) {
-        if (!empty($hint) && (stripos($w['name'], $hint) !== false || stripos($w['old_area_label'] ?? '', $hint) !== false)) {
-            return (int)$w['id'];
-        }
-    }
-    foreach ($allWards as $w) {
-        if (stripos($address, $w['name']) !== false || (!empty($w['old_area_label']) && stripos($address, $w['old_area_label']) !== false)) {
-            return (int)$w['id'];
-        }
-    }
-    return 1; // Default Sài Gòn (Quận 1)
-}
-
-$importedCount = 0;
-$skippedCount = 0;
-$suggestedSql = [];
-
-$suggestedSql[] = "-- File đề xuất dữ liệu sân thật xuất từ OpenStreetMap (import_real_courts.php)";
-$suggestedSql[] = "-- Tạo lúc: " . date('Y-m-d H:i:s');
-$suggestedSql[] = "-- Dành cho Minh/Huy xem xét cập nhật vào seed.sql khi cần.\n";
-
-foreach ($targets as $idx => $t) {
-    echo "---------------------------------------------------------------------\n";
-    echo "[" . ($idx + 1) . "/" . count($targets) . "] Đang tìm kiếm: {$t['name']}\n";
-    echo "  Từ khóa OSM: {$t['query']}\n";
-
-    // 1 giây tuân thủ rate limit Nominatim
-    sleep(1);
-
-    $osmData = queryNominatim($t['query']);
-
-    if ($osmData && isset($osmData['lat']) && isset($osmData['lon'])) {
-        $lat = (float)$osmData['lat'];
-        $lng = (float)$osmData['lon'];
-        $source = "OSM Nominatim trực tiếp (OSM ID: {$osmData['osm_id']}, Type: {$osmData['osm_type']})";
-    } else {
-        echo "  [CẢNH BÁO] OSM không trả về kết quả hoặc mạng bận. Dùng tọa độ thực tế đã kiểm chứng.\n";
-        $lat = $t['fallback_lat'];
-        $lng = $t['fallback_lng'];
-        $source = "Tọa độ thực tế đối soát chuẩn";
-    }
-
-    echo "  Nguồn: {$source}\n";
-    echo "  Tọa độ: Lat = {$lat}, Lng = {$lng}\n";
-
-    // Kiểm tra maxBounds
-    if ($lat < BOUNDS_LAT_MIN || $lat > BOUNDS_LAT_MAX || $lng < BOUNDS_LNG_MIN || $lng > BOUNDS_LNG_MAX) {
-        echo "  [BỎ QUA] Tọa độ nằm ngoài phạm vi đô thị lõi TP.HCM (maxBounds)!\n";
-        $skippedCount++;
-        continue;
-    }
-
-    // Kiểm tra trùng lặp trong CSDL
-    $dupStmt = $pdo->prepare("
-        SELECT id, name, address 
-        FROM courts 
-        WHERE name = :name 
-           OR (ABS(latitude - :lat) < 0.0001 AND ABS(longitude - :lng) < 0.0001)
-        LIMIT 1
-    ");
-    $dupStmt->execute([
-        ':name' => $t['name'],
-        ':lat'  => $lat,
-        ':lng'  => $lng
-    ]);
-    $existing = $dupStmt->fetch();
-
-    if ($existing) {
-        echo "  [TRÙNG LẶP] Sân đã tồn tại trong CSDL (ID: {$existing['id']} - '{$existing['name']}'). Bỏ qua chống nhân đôi.\n";
-        $skippedCount++;
-        continue;
-    }
-
-    $wardId = findWardId($allWards, $t['ward_hint'], $t['address']);
-    $wardName = $allWards[array_search($wardId, array_column($allWards, 'id'))]['name'] ?? 'N/A';
-
-    echo "  Địa chỉ: {$t['address']}\n";
-    echo "  Phường (ward_id): {$wardId} ({$wardName})\n";
-    echo "  Giá thuê: " . number_format($t['price_per_hour'], 0, '', '.') . " đ/h\n";
-
-    // Tạo câu lệnh SQL đề xuất
-    $escapedName = addslashes($t['name']);
-    $escapedAddr = addslashes($t['address']);
-    $escapedDesc = addslashes($t['description']);
-    $suggestedSql[] = "INSERT INTO courts (owner_id, ward_id, name, address, latitude, longitude, price_per_hour, description, status) VALUES ({$ownerId}, {$wardId}, '{$escapedName}', '{$escapedAddr}', {$lat}, {$lng}, {$t['price_per_hour']}, '{$escapedDesc}', 'active');";
-
-    if ($isDryRun) {
-        echo "  [DRY-RUN] Hợp lệ, sẽ chèn vào CSDL khi chạy với cờ --execute.\n";
-        $importedCount++;
-    } else {
-        // Thực thi ghi DB trong Transaction
-        try {
-            $pdo->beginTransaction();
-
-            $insStmt = $pdo->prepare("
-                INSERT INTO courts (owner_id, ward_id, name, address, latitude, longitude, price_per_hour, description, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')
-            ");
-            $insStmt->execute([
-                $ownerId,
-                $wardId,
-                $t['name'],
-                $t['address'],
-                $lat,
-                $lng,
-                $t['price_per_hour'],
-                $t['description']
-            ]);
-            $newCourtId = (int)$pdo->lastInsertId();
-
-            // 1. Gán ảnh đại diện đa dạng sắc nét từ kho ảnh cầu lông
-            $sampleBadmintonImages = [
-                'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop',
-                'https://images.unsplash.com/photo-1521537634581-0dced2fee2ef?w=800&auto=format&fit=crop',
-                'https://images.unsplash.com/photo-1613918108466-292b78a8ef95?w=800&auto=format&fit=crop',
-                'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop',
-                'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=800&auto=format&fit=crop',
-                'https://images.unsplash.com/photo-1526676037777-05a232554f77?w=800&auto=format&fit=crop',
-                'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&auto=format&fit=crop',
-                'https://images.unsplash.com/photo-1599474924187-334a4ae5bd3c?w=800&auto=format&fit=crop',
-                'https://images.unsplash.com/photo-1511067007798-44670806348f?w=800&auto=format&fit=crop',
-                'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=800&auto=format&fit=crop'
-            ];
-            $selectedImg = $sampleBadmintonImages[$importedCount % count($sampleBadmintonImages)];
-
-            $imgStmt = $pdo->prepare("INSERT INTO court_images (court_id, image_url, sort_order) VALUES (?, ?, 0)");
-            $imgStmt->execute([$newCourtId, $selectedImg]);
-
-            // 2. Gán các tiện ích phổ biến cho sân (parking, wifi, indoor + tiện ích bổ trợ)
-            $commonAmenities = [2, 7, 8]; // Bãi đỗ xe, Wi-Fi, Sân trong nhà
-            $extraAmenities = [1, 3, 4, 5, 6]; // Điều hòa, Phòng tắm, Cho thuê vợt, Canteen, Tủ khóa
-            shuffle($extraAmenities);
-            $amenityList = array_unique(array_merge($commonAmenities, array_slice($extraAmenities, 0, 3)));
-
-            $amenStmt = $pdo->prepare("INSERT IGNORE INTO court_amenities (court_id, amenity_id) VALUES (?, ?)");
-            foreach ($amenityList as $amId) {
-                $amenStmt->execute([$newCourtId, $amId]);
-            }
-
-            // 3. Khởi tạo một số khung giờ mẫu hôm nay và ngày mai để khách có thể đặt ngay
-            $today = date('Y-m-d');
-            $tomorrow = date('Y-m-d', strtotime('+1 day'));
-            $slotTimes = [
-                ['08:00:00', '09:30:00'],
-                ['09:30:00', '11:00:00'],
-                ['17:00:00', '18:30:00'],
-                ['18:30:00', '20:00:00']
-            ];
-            $slotStmt = $pdo->prepare("
-                INSERT INTO time_slots (court_id, sub_court_name, slot_date, start_time, end_time, status)
-                VALUES (?, ?, ?, ?, ?, 'available')
-            ");
-            foreach ([$today, $tomorrow] as $sDate) {
-                foreach (['Thảm A1', 'Thảm A2'] as $subCourt) {
-                    foreach ($slotTimes as $st) {
-                        $slotStmt->execute([$newCourtId, $subCourt, $sDate, $st[0], $st[1]]);
-                    }
-                }
-            }
-
-            $pdo->commit();
-            echo "  [THÀNH CÔNG] Đã lưu sân mới vào CSDL với ID = {$newCourtId} (kèm ảnh, tiện ích và khung giờ mẫu).\n";
-            $importedCount++;
-        } catch (PDOException $e) {
-            if ($pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-            echo "  [LỖI GHI DB] " . $e->getMessage() . "\n";
-            $skippedCount++;
-        }
-    }
-}
-
-// Xuất file đề xuất database/seed_courts_suggestion.sql (không sửa seed.sql)
-$suggestionPath = __DIR__ . '/seed_courts_suggestion.sql';
-file_put_contents($suggestionPath, implode("\n", $suggestedSql) . "\n");
-
-echo "\n=====================================================================\n";
-echo "TỔNG KẾT TIẾN TRÌNH:\n";
-echo "- Chế độ: " . ($isDryRun ? "DRY-RUN (Thử nghiệm)" : "EXECUTE (Đã ghi CSDL)") . "\n";
-echo "- Sân hợp lệ / đã xử lý: {$importedCount}\n";
-echo "- Sân bỏ qua (trùng lặp / ngoài vùng): {$skippedCount}\n";
-echo "- Đã xuất file đề xuất: database/seed_courts_suggestion.sql\n";
-echo "=====================================================================\n";
+echo json_encode($counts,JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT)."\n";
+if (!isset($options['execute']) || isset($options['dry-run'])) {echo "DRY-RUN: không ghi MySQL.\n";exit(0);}
+require __DIR__.'/../config/db.php';
+$owner=(int)($options['owner-id'] ?? 3);
+$s=$pdo->prepare("SELECT id FROM users WHERE id=? AND role IN ('owner','admin')");$s->execute([$owner]);
+if (!$s->fetch()) failImport('owner-id phải là owner hoặc admin');
+try {
+ $pdo->beginTransaction();
+ $existing=$pdo->query('SELECT c.*,w.old_area_label FROM courts c JOIN wards w ON w.id=c.ward_id FOR UPDATE')->fetchAll();
+ $backup=__DIR__.'/courts_before_import_'.date('Ymd_His').'_'.getmypid().'.json';
+ if (file_put_contents($backup,json_encode($existing,JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT))===false) throw new RuntimeException('Không lưu được bản sao dữ liệu');
+ $keep=[];
+ foreach ($targets as $c) {
+  $label=$c['district_old'].' (cũ)';
+  $s=$pdo->prepare('SELECT id FROM wards WHERE name=? AND old_area_label=? LIMIT 1');$s->execute([$c['ward_name'],$label]);$wid=$s->fetchColumn();
+  if (!$wid) {$s=$pdo->prepare('INSERT INTO wards(name,old_area_label) VALUES (?,?)');$s->execute([$c['ward_name'],$label]);$wid=$pdo->lastInsertId();}
+  $tag='[catalog:'.$c['source_key'].']';
+  $desc=$tag."\nTra cứu: ".$data['retrieved_on']."\n".$c['verification_note']."\nNguồn: ".$c['source_url']."\nGiá sân mới 100.000 đ/giờ là giá DEMO cho đồ án, không phải báo giá thực tế. Liên hệ sân xác nhận hoạt động và giá.";
+  $id=null;
+  foreach ($existing as $old) if (strpos($old['description'] ?? '',$tag)!==false || ($old['name']===$c['name'] && $old['old_area_label']===$label)) {$id=$old['id'];break;}
+  if ($id) {
+   $s=$pdo->prepare("UPDATE courts SET ward_id=?,name=?,address=?,latitude=?,longitude=?,description=?,status='active' WHERE id=?");$s->execute([$wid,$c['name'],$c['address'],$c['latitude'],$c['longitude'],$desc,$id]);
+  } else {
+   $s=$pdo->prepare("INSERT INTO courts(owner_id,ward_id,name,address,latitude,longitude,price_per_hour,description,status) VALUES (?,?,?,?,?,?,100000,?,'active')");$s->execute([$owner,$wid,$c['name'],$c['address'],$c['latitude'],$c['longitude'],$desc]);$id=$pdo->lastInsertId();
+  }
+  $keep[]=(int)$id;
+ }
+ $disabled=0;
+ if (isset($options['replace-catalog'])) {
+  $s=$pdo->prepare("UPDATE courts SET status='inactive' WHERE id=?");
+  foreach ($existing as $old) if (($district==='all' || $old['old_area_label']===$district.' (cũ)') && !in_array((int)$old['id'],$keep,true)) {$s->execute([$old['id']]);$disabled++;}
+ }
+ $pdo->commit();echo 'Đã đồng bộ '.count($keep).' sân; ẩn '.$disabled." sân ngoài danh mục.\nBackup: ".$backup."\nKhông tự tạo ảnh, tiện ích hoặc lịch trống.\n";
+} catch (Throwable $e) {if ($pdo->inTransaction()) $pdo->rollBack();failImport($e->getMessage());}

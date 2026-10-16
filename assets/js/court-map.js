@@ -9,25 +9,15 @@
 
     // Phạm vi địa lý bao quát toàn bộ khu vực đô thị Sài Gòn & vùng lân cận (maxBounds)
     const HCMC_BOUNDS = {
-        southWest: [10.5000, 106.3500],
-        northEast: [11.1500, 106.9500]
+        southWest: [10.3500, 106.3000],
+        northEast: [11.2000, 107.0500]
     };
     const DEFAULT_CENTER = [10.7769, 106.7009]; // Quận 1, TP.HCM
     const DEFAULT_ZOOM = 12;
     const MIN_ZOOM = 10;
     const MAX_ZOOM = 18;
 
-    // Tọa độ dự phòng cho 7 sân mẫu mặc định (phòng trường hợp dữ liệu tĩnh client chưa có lat/lng)
-    const DEMO_COORDS = {
-        1: [10.7769, 106.7009], // Quận 1 – Lê Thánh Tôn
-        2: [10.8020, 106.7120], // Bình Thạnh – Arena Xô Viết
-        3: [10.8010, 106.6650], // Tân Bình – TBSport
-        4: [10.8230, 106.6830], // Gò Vấp – GV Arena
-        5: [10.7290, 106.7180], // Quận 7 – Phú Mỹ Hưng
-        6: [10.8510, 106.7720], // Thủ Đức – Thủ Đức Arena
-        7: [11.0100, 106.6530]  // Bình Dương – BD Sport Center
-    };
-
+    // Chỉ hiển thị tọa độ trong dữ liệu.
     let map = null;
     let markersLayer = null;
     let currentCourts = [];
@@ -171,12 +161,6 @@
         currentCourts.forEach(court => {
             let lat = parseFloat(court.latitude);
             let lng = parseFloat(court.longitude);
-
-            // Tự động đối soát tọa độ dự phòng nếu sân mẫu thiếu tọa độ
-            if ((isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) && court.id && DEMO_COORDS[court.id]) {
-                lat = DEMO_COORDS[court.id][0];
-                lng = DEMO_COORDS[court.id][1];
-            }
 
             // Bỏ qua nếu sân không có tọa độ hợp lệ
             if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
