@@ -35,6 +35,7 @@ const AdminApp = (() => {
         const defaultHeaders = { 'Content-Type': 'application/json' };
         const config = {
             credentials: 'same-origin',
+            cache: 'no-store',
             ...options,
             headers: { ...defaultHeaders, ...(options.headers || {}) }
         };

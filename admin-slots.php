@@ -1,3 +1,4 @@
+<?php header('Cache-Control: no-store, max-age=0'); ?>
 <?php
 require_once __DIR__ . '/includes/auth-check.php';
 $currentUser = [
@@ -21,7 +22,7 @@ $currentUser = [
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/admin_style.css">
+    <link rel="stylesheet" href="assets/css/admin_style.css?v=<?= filemtime(__DIR__ . '/assets/css/admin_style.css') ?>">
     <style>
         .slot-chip { position: relative; }
         .slot-del-btn {
@@ -180,7 +181,7 @@ $currentUser = [
 <script src="assets/js/mock-data.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/admin.js"></script>
-<script src="assets/js/bottom-nav.js"></script>
+<script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 <script>
 let currentUser = null;
 let myCourts = [];

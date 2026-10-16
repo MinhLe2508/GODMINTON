@@ -57,6 +57,14 @@
        ============================================================ */
     const currentPage = (window.location.pathname.split('/').pop() || 'index.php').split('?')[0];
 
+    const isOwnerPage = /^admin-(dashboard|courts|slots|bookings)\.(php|html)$/.test(currentPage);
+    const ownerTabs = [
+        {id:'overview', label:'Tổng quan', icon:'fa-gauge-high', href:'admin-dashboard.php', match:['admin-dashboard.php', 'admin-dashboard.html']},
+        {id:'manage-courts', label:'Sân', icon:'fa-building', href:'admin-courts.php', match:['admin-courts.php', 'admin-courts.html']},
+        {id:'manage-slots', label:'Khung giờ', icon:'fa-clock', href:'admin-slots.php', match:['admin-slots.php', 'admin-slots.html']},
+        {id:'manage-bookings', label:'Đơn đặt', icon:'fa-clipboard-list', href:'admin-bookings.php', match:['admin-bookings.php', 'admin-bookings.html']}
+    ];
+
     function isActive(tab) {
         if (!tab.match) return false;
         return tab.match.includes(currentPage);
@@ -94,6 +102,33 @@
         body.admin-body #godmintonBottomNav {
             left: 260px;
         }
+    }
+
+    .owner-return-link {
+        position: fixed;
+        right: 16px;
+        bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+        z-index: 990;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border: 1px solid var(--border-color, #0d9488);
+        border-radius: 999px;
+        background: var(--bg-body, #fff);
+        color: var(--brand-teal, #0d9488);
+        box-shadow: 0 4px 16px rgba(0,0,0,.15);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .owner-return-link:hover, .owner-return-link:focus-visible {
+        background: var(--brand-teal, #0d9488);
+        color: #fff;
+    }
+    @media (min-width: 992px) {
+        body.has-owner-nav #godmintonBottomNav { display: none; }
+        body.has-owner-nav { padding-bottom: 0 !important; }
     }
 
     /* Dark mode adjustment */
@@ -312,7 +347,7 @@
        4. BUILD HTML
        ============================================================ */
     function buildNavHTML() {
-        return TABS.map(tab => {
+        return (isOwnerPage ? ownerTabs : TABS).map(tab => {
             const active = isActive(tab) ? ' active' : '';
             const logoutAttr = tab.isLogout ? ' data-is-logout="true"' : '';
 
@@ -399,6 +434,25 @@
     /* ============================================================
        6. INJECT VÀO DOM
        ============================================================ */
+    async function injectOwnerReturnLink() {
+        try {
+            // Read the current session; customer and guest pages keep their usual navigation.
+            const response = await fetch('api/auth/me.php', {credentials:'same-origin', cache:'no-store'});
+            if (!response.ok) return;
+            const result = await response.json();
+            const role = result.status === 'success' ? result.data?.user?.role : null;
+            if (!['owner', 'admin'].includes(role) || document.getElementById('ownerReturnLink')) return;
+            const link = document.createElement('a');
+            link.id = 'ownerReturnLink';
+            link.href = 'admin-dashboard.php';
+            link.className = 'owner-return-link';
+            link.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i><span>' + (role === 'admin' ? 'Về kênh quản trị' : 'Về kênh chủ sân') + '</span>';
+            document.body.appendChild(link);
+        } catch (_) {
+            // A temporary identity lookup failure must not block public-page navigation.
+        }
+    }
+
     function inject() {
         // Không inject thanh điều hướng trên trang Đăng nhập / Đăng ký
         if (currentPage === 'auth.php' || currentPage === 'auth.html') return;
@@ -411,12 +465,14 @@
 
         const nav = document.createElement('nav');
         nav.id = 'godmintonBottomNav';
-        nav.setAttribute('aria-label', 'Điều hướng chính');
+        nav.setAttribute('aria-label', isOwnerPage ? 'Điều hướng quản lý sân' : 'Điều hướng chính');
         nav.innerHTML = buildNavHTML();
         document.body.appendChild(nav);
 
         // Thêm class để body có padding-bottom đúng
         document.body.classList.add('has-bottom-nav');
+        if (isOwnerPage) document.body.classList.add('has-owner-nav');
+        else injectOwnerReturnLink();
 
         /* ---- Ripple effect khi tap ---- */
         nav.querySelectorAll('.bnav-item').forEach(item => {

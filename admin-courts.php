@@ -1,3 +1,8 @@
+<?php
+require_once __DIR__ . '/includes/auth-check.php';
+header('Cache-Control: no-store, max-age=0');
+$currentUser = ['id' => (int)$_SESSION['user_id'], 'name' => $_SESSION['name'] ?? '', 'role' => $_SESSION['role'] ?? '', 'phone' => $_SESSION['phone'] ?? ''];
+?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 <head>
@@ -11,9 +16,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/admin_style.css">
+    <link rel="stylesheet" href="assets/css/admin_style.css?v=<?= filemtime(__DIR__ . '/assets/css/admin_style.css') ?>">
     <script>
-        window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE); ?>;
+        window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
 </head>
 <body class="admin-body">
@@ -147,11 +152,7 @@
                             <label class="form-label fw-semibold small">Giờ đóng cửa</label>
                             <input type="time" class="form-control" id="courtClose" value="22:00" required>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold small">Vĩ độ (Latitude)</label>
-                            <input type="number" step="0.0000001" class="form-control" id="courtLat" value="10.7769000" placeholder="10.7769000">
-                        </div>
-                        <div class="col-md-6">
+<div class="col-md-6">
                             <label class="form-label fw-semibold small">Kinh độ (Longitude)</label>
                             <input type="number" step="0.0000001" class="form-control" id="courtLng" value="106.7009000" placeholder="106.7009000">
                         </div>
@@ -189,10 +190,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="assets/js/mock-data.js"></script>
 <script src="assets/js/app.js"></script>
-<script src="assets/js/admin.js"></script>
-<script src="assets/js/bottom-nav.js"></script>
+<script src="assets/js/admin.js?v=<?= filemtime(__DIR__ . '/assets/js/admin.js') ?>"></script>
+<script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 <script>
 let currentUser = null;
 let modalInstance = null;
@@ -313,8 +313,6 @@ function openCourtModal(courtId) {
         document.getElementById('courtStatus').value = court.status || 'active';
         document.getElementById('courtOpen').value = court.opening_time || '06:00';
         document.getElementById('courtClose').value = court.closing_time || '22:00';
-        document.getElementById('courtLat').value = court.latitude ?? 10.7769000;
-        document.getElementById('courtLng').value = court.longitude ?? 106.7009000;
         document.getElementById('courtImage').value = court.image_url || '';
         document.getElementById('courtDesc').value = court.description || '';
         document.getElementById('courtLatitude').value = (court.latitude !== undefined && court.latitude !== null && court.latitude !== 0) ? court.latitude : '';
@@ -339,7 +337,13 @@ async function handleSaveCourt(e) {
     const price = Number(document.getElementById('courtPrice').value);
     const amenities = Array.from(document.querySelectorAll('#amenityChecks input:checked')).map(c => c.value);
 
-    const allCourts = AdminApp.getAllCourts();
+    if (btn.disabled) return;
+    const latitude = Number(document.getElementById('courtLatitude').value);
+    const longitude = Number(document.getElementById('courtLongitude').value);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < 10.35 || latitude > 11.2 || longitude < 106.3 || longitude > 107.05) {
+        AdminApp.toast('error', 'Vui lòng nhập tọa độ hợp lệ trong phạm vi TP.HCM.');
+        return;
+    }
 
     const payload = {
         id: id ? Number(id) : null,
@@ -352,8 +356,8 @@ async function handleSaveCourt(e) {
         status: document.getElementById('courtStatus').value,
         opening_time: document.getElementById('courtOpen').value,
         closing_time: document.getElementById('courtClose').value,
-        latitude: parseFloat(document.getElementById('courtLat').value) || 10.7769000,
-        longitude: parseFloat(document.getElementById('courtLng').value) || 106.7009000,
+        latitude,
+        longitude,
         image_url: document.getElementById('courtImage').value.trim() || 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop',
         description: document.getElementById('courtDesc').value.trim(),
         amenities,
@@ -361,25 +365,26 @@ async function handleSaveCourt(e) {
         owner_phone: currentUser.phone
     };
 
-    if (id) {
-        const idx = allCourts.findIndex(c => c.id === Number(id));
-        if (idx > -1) allCourts[idx] = { ...allCourts[idx], ...payload };
-        AdminApp.toast('success', 'Đã cập nhật thông tin sân');
-    } else {
-        const newId = allCourts.reduce((max, c) => Math.max(max, c.id), 0) + 1;
-        allCourts.push({
-            id: newId,
-            avg_rating: 0,
-            total_reviews: 0,
-            reviews: [],
-            ...payload
-        });
-        AdminApp.toast('success', 'Đã thêm sân mới');
+    const originalLabel = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = 'Đang lưu...';
+    try {
+        if (id) await AdminApp.updateCourt(Number(id), payload);
+        else await AdminApp.createCourt(payload);
+        // Reload from MySQL so reopening the editor reflects exactly what was saved.
+        const {courts, wards} = await AdminApp.fetchCourts();
+        myCourts = courts;
+        wardsList = wards;
+        populateWardSelect();
+        renderCourtsTable();
+        modalInstance.hide();
+        AdminApp.toast('success', id ? 'Đã cập nhật thông tin và tiện ích sân.' : 'Đã thêm sân mới.');
+    } catch (err) {
+        AdminApp.toast('error', err.message || 'Không thể lưu thông tin sân. Vui lòng thử lại.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalLabel;
     }
-
-    AdminApp.saveAllCourts(allCourts);
-    modalInstance.hide();
-    renderCourts();
 }
 
 async function deleteCourt(courtId) {

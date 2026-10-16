@@ -285,3 +285,16 @@ body.admin-body {
     }
     .admin-overlay.show { display: block; }
 }
+
+/* Keep desktop management navigation attached to the viewport while lists scroll. */
+@media (min-width: 992px) {
+    .admin-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        height: 100vh;
+        height: 100dvh;
+    }
+    .admin-main { margin-left: 260px; }
+}
+.admin-sidebar-brand, .admin-sidebar-footer { flex-shrink: 0; }
+.admin-sidebar .admin-nav { min-height: 0; overscroll-behavior: contain; }

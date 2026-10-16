@@ -1,3 +1,4 @@
+<?php header('Cache-Control: no-store, max-age=0'); ?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 <head>
@@ -145,7 +146,7 @@
     <script src="assets/js/app.js"></script>
     <script src="assets/js/contact.js"></script>
     <!-- Bottom Nav -->
-    <script src="assets/js/bottom-nav.js"></script>
+    <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>
 

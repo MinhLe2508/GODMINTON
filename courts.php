@@ -14,7 +14,7 @@
     <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/courts_style.css">
+    <link rel="stylesheet" href="assets/css/courts_style.css?v=<?= filemtime(__DIR__ . '/assets/css/courts_style.css') ?>">
 </head>
 <body>
 
@@ -111,12 +111,6 @@
 
     <!-- Body -->
     <div class="drawer-body">
-        <div class="d-flex justify-content-end mb-3">
-            <button type="button" id="btnResetDrawer" class="btn-drawer-reset" onclick="resetAllFilters()" title="Xóa tất cả điều kiện tìm kiếm">
-                <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Đặt lại bộ lọc
-            </button>
-        </div>
-
         <!-- Khu vực -->
         <div class="drawer-section">
             <div class="drawer-section-title">
@@ -225,8 +219,8 @@
         <button class="btn-drawer-reset" type="button" onclick="resetAllFilters()" title="Đặt lại tất cả bộ lọc">
             <i class="fa-solid fa-rotate-left"></i> Đặt lại
         </button>
-        <button class="btn-drawer-apply" onclick="applyDrawerFilters()">
-            <i class="fa-solid fa-magnifying-glass me-1"></i>Tìm Sân
+        <button type="button" id="btnApplyFilters" class="btn-drawer-apply" onclick="applyDrawerFilters()">
+            <i class="fa-solid fa-magnifying-glass me-1"></i>Tìm kiếm
         </button>
     </div>
 </div>

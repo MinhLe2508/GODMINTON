@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-        const res  = await fetch(`api/court-detail.php?id=${courtId}`);
+        const res  = await fetch(`api/court-detail.php?id=${courtId}`, {cache: 'no-store'});
         const json = await res.json();
 
         if (json.status !== 'success' || !json.data) {
@@ -28,33 +28,80 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Cập nhật tiêu đề trang
         document.title = `${court.name} - Thông Tin Chi Tiết | GODMINTON`;
 
-        // Amenity map — icon & label mở rộng
-        const amenityMap = {
-            aircon:  { icon: 'fa-snowflake',       color: 'text-info',    label: 'Hệ Thống Làm Mát',  sub: 'Điều hòa / Thông gió' },
-            parking: { icon: 'fa-square-parking',   color: 'text-primary', label: 'Bãi Đỗ Xe',          sub: 'Ô tô & Xe máy rộng' },
-            shower:  { icon: 'fa-shower',           color: 'text-success', label: 'Phòng Tắm',          sub: 'Nóng lạnh sạch sẽ' },
-            wifi:    { icon: 'fa-wifi',             color: 'text-warning', label: 'Wifi Miễn Phí',       sub: 'Tốc độ cao' },
-            cafe:    { icon: 'fa-shop',             color: 'text-danger',  label: 'Căn Tin & Nước',      sub: 'Giải khát & Đồ ăn nhẹ' },
-            rental:  { icon: 'fa-medal',            color: 'text-teal',    label: 'Thuê Dụng Cụ',        sub: 'Vợt, Giày, Quả cầu' },
-            locker:  { icon: 'fa-lock',             color: 'text-secondary', label: 'Tủ Khóa',          sub: 'An toàn, tiện lợi' },
-            indoor:  { icon: 'fa-warehouse',        color: 'text-info',    label: 'Sân Trong Nhà',       sub: 'Không bị ảnh hưởng thời tiết' }
-        };
-
-        // Build amenities HTML
-        const amenitiesHtml = (court.amenity_codes || []).map(code => {
-            const a = amenityMap[code];
-            if (!a) return '';
-            return `
-            <div class="col-sm-6 col-md-4">
-                <div class="p-3 rounded-3 bg-body-tertiary border d-flex align-items-center gap-3">
-                    <i class="fa-solid ${a.icon} ${a.color} fs-4"></i>
-                    <div>
-                        <div class="fw-bold small">${a.label}</div>
-                        <div class="text-muted small">${a.sub}</div>
-                    </div>
+        const escapeText = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[ch]));
+        const description = String(court.description || '').trim();
+        const isCatalog = /\[catalog:[^\]]+\]/i.test(description);
+        const area = [court.ward_name, court.old_area_label].filter(Boolean).join(' · ');
+        const introduction = isCatalog
+            ? `${court.name} là địa điểm cầu lông tại ${area || 'TP. Hồ Chí Minh'}. Xem thông tin địa điểm và các tiện ích được cập nhật bên dưới trước khi chọn khung giờ.`
+            : description || `Khám phá thông tin địa điểm và lựa chọn khung giờ tại ${court.name}.`;
+        const sourceMatch = description.match(/Nguồn:\s*(https?:\/\/[^\s]+)/i);
+        let sourceLink = '';
+        if (sourceMatch) {
+            try {
+                const url = new URL(sourceMatch[1]);
+                if (['https:', 'http:'].includes(url.protocol)) sourceLink = `<a class="text-teal" href="${escapeText(url.href)}" target="_blank" rel="noopener noreferrer">${escapeText(url.hostname)} <i class="fa-solid fa-arrow-up-right-from-square ms-1" aria-hidden="true"></i></a>`;
+            } catch (_) {}
+        }
+        const retrieved = description.match(/Tra cứu:\s*(\d{4}-\d{2}-\d{2})/);
+        const notes = description.split(/\r?\n/).filter(line => line.trim() && !/^\s*(\[catalog:|Tra cứu:|Nguồn:|Giá sân mới)/i.test(line)).join(' ');
+        const sourceHtml = isCatalog ? `
+            <details class="border rounded-3 p-3 mt-3 small">
+                <summary class="text-muted" style="cursor:pointer">Nguồn thông tin địa điểm</summary>
+                <div class="pt-2 text-muted lh-lg">
+                    ${sourceLink ? `<div>Tham khảo: ${sourceLink}</div>` : ''}
+                    ${retrieved ? `<div>Ngày tra cứu: ${escapeText(retrieved[1].split('-').reverse().join('/'))}</div>` : ''}
+                    ${notes ? `<p class="mb-0 mt-1">${escapeText(notes)}</p>` : ''}
                 </div>
+            </details>` : '';
+
+        // Labels come from DB; icons do not imply additional service promises.
+        const amenityIcons = {aircon:'fa-snowflake', parking:'fa-square-parking', shower:'fa-shower', wifi:'fa-wifi', cafe:'fa-mug-saucer', rental:'fa-table-tennis-paddle-ball', locker:'fa-lock', indoor:'fa-warehouse'};
+        const fallbackLabels = {aircon:'Điều hòa', parking:'Bãi đỗ xe', shower:'Phòng tắm', wifi:'Wi-Fi', cafe:'Căn tin / Cà phê', rental:'Cho thuê vợt', locker:'Tủ khóa', indoor:'Sân trong nhà'};
+        const amenities = Array.isArray(court.amenities) ? court.amenities : (court.amenity_codes || []).map(code => ({code, label:fallbackLabels[code] || code}));
+        const uniqueAmenities = [...new Map(amenities.filter(a => a && a.code).map(a => [a.code, a])).values()];
+        const amenitiesHtml = uniqueAmenities.length ? `
+            <div class="row g-2">${uniqueAmenities.map(a => `
+                <div class="col-12 col-sm-6">
+                    <div class="d-flex align-items-center gap-3 border rounded-3 p-3 h-100 bg-body-tertiary">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-teal-subtle text-teal flex-shrink-0" style="width:40px;height:40px">
+                            <i class="fa-solid ${amenityIcons[a.code] || 'fa-circle-check'}" aria-hidden="true"></i>
+                        </span>
+                        <span class="fw-semibold small">${escapeText(a.label || fallbackLabels[a.code] || a.code)}</span>
+                    </div>
+                </div>`).join('')}
+            </div>` : `
+            <div class="d-flex align-items-start gap-3 border rounded-3 p-3 bg-body-tertiary">
+                <i class="fa-solid fa-circle-info text-teal mt-1" aria-hidden="true"></i>
+                <div><div class="fw-semibold mb-1">Tiện ích đang được cập nhật</div>
+                <p class="small text-muted mb-0">Chưa có danh sách tiện ích cho sân này. Bạn nên liên hệ sân để xác nhận dịch vụ cần sử dụng trước khi đặt.</p></div>
             </div>`;
-        }).join('');
+        const overviewHtml = `
+            <section class="mb-4" aria-labelledby="courtOverviewTitle">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <i class="fa-solid fa-circle-info text-teal" aria-hidden="true"></i>
+                    <h5 id="courtOverviewTitle" class="fw-bold mb-0">Giới thiệu cụm sân</h5>
+                </div>
+                <p class="text-body-secondary lh-lg mb-3" style="white-space:pre-line">${escapeText(introduction)}</p>
+                <div class="row g-2">
+                    <div class="col-sm-6"><div class="border rounded-3 p-3 h-100">
+                        <div class="small text-muted mb-1"><i class="fa-solid fa-location-dot text-teal me-2" aria-hidden="true"></i>Địa điểm</div>
+                        <div class="small fw-semibold">${escapeText(court.address || 'Đang cập nhật địa chỉ')}</div>
+                    </div></div>
+                    <div class="col-sm-6"><div class="border rounded-3 p-3 h-100">
+                        <div class="small text-muted mb-1"><i class="fa-solid fa-map text-teal me-2" aria-hidden="true"></i>Khu vực</div>
+                        <div class="small fw-semibold">${escapeText(area || 'Đang cập nhật khu vực')}</div>
+                    </div></div>
+                </div>
+                ${sourceHtml}
+            </section>
+            <section class="border-top pt-4 mb-2" aria-labelledby="courtAmenitiesTitle">
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+                    <h5 id="courtAmenitiesTitle" class="fw-bold mb-0">Tiện ích & dịch vụ</h5>
+                    ${uniqueAmenities.length ? `<span class="badge bg-teal-subtle text-teal rounded-pill">${uniqueAmenities.length} tiện ích</span>` : ''}
+                </div>
+                ${amenitiesHtml}
+            </section>`;
 
         // Format giá VND
         const formatVND = (amt) => new Intl.NumberFormat('vi-VN').format(amt) + ' đ';
@@ -88,11 +135,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <h2 class="fw-extrabold mb-3">${court.name}</h2>
                         <p class="text-muted mb-4"><i class="fa-solid fa-map-location-dot me-2 text-teal"></i>${court.address}</p>
 
-                        <h5 class="fw-bold mb-3 border-start border-4 border-teal ps-3">Mô Tả Cụm Sân</h5>
-                        <p class="text-secondary lh-lg mb-4">${court.description}</p>
-
-                        <h5 class="fw-bold mb-3 border-start border-4 border-teal ps-3">Tiện Ích & Dịch Vụ</h5>
-                        <div class="row g-3 mb-4">${amenitiesHtml}</div>
+                        ${overviewHtml}
                     </div>
                 </div>
 
@@ -106,12 +149,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             <!-- Cột Phải: Box Đặt Sân Nhanh -->
             <div class="col-lg-4">
                 <div class="card border rounded-4 p-4 shadow-sm sticky-top" style="top:85px;">
-                    <div class="small text-muted text-uppercase fw-bold mb-1">Giá Thuê Tiêu Chuẩn</div>
+                    <div class="small text-muted text-uppercase fw-bold mb-1">${isCatalog ? 'Giá đặt sân mô phỏng' : 'Giá thuê tham khảo'}</div>
                     <div class="d-flex align-items-baseline gap-2 mb-3">
                         <span class="fs-2 fw-extrabold text-teal">${formatVND(court.price_per_hour)}</span>
                         <span class="text-muted">/ 1 giờ</span>
                     </div>
 
+                    ${isCatalog ? '<p class="small text-muted mb-3">Giá trên hệ thống dùng để trải nghiệm đặt sân, không phải báo giá thực tế. Liên hệ sân để xác nhận giá và tình trạng hoạt động.</p>' : ''}
                     <div class="p-3 bg-body-tertiary rounded-3 mb-4 small">
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted"><i class="fa-solid fa-location-dot me-1 text-teal"></i> Khu vực:</span>
@@ -119,7 +163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted"><i class="fa-solid fa-phone me-1 text-teal"></i> Hotline sân:</span>
-                            <strong class="text-teal">${court.owner_phone || '1900 8888'}</strong>
+                            <strong class="text-teal">${escapeText(court.owner_phone || 'Chưa cập nhật')}</strong>
                         </div>
                         <div class="d-flex justify-content-between">
                             <span class="text-muted"><i class="fa-solid fa-user me-1 text-teal"></i> Chủ sân:</span>
@@ -138,7 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     <div class="mt-4 pt-3 border-top text-center small text-muted">
                         <i class="fa-solid fa-shield-halved text-success me-1"></i>
-                        Bảo đảm giữ slot không bị đặt trùng với công nghệ Transaction Locking.
+                        Chọn ngày và khung giờ để xem lịch trống trên hệ thống.
                     </div>
                 </div>
             </div>
