@@ -152,10 +152,7 @@ $currentUser = ['id' => (int)$_SESSION['user_id'], 'name' => $_SESSION['name'] ?
                             <label class="form-label fw-semibold small">Giờ đóng cửa</label>
                             <input type="time" class="form-control" id="courtClose" value="22:00" required>
                         </div>
-<div class="col-md-6">
-                            <label class="form-label fw-semibold small">Kinh độ (Longitude)</label>
-                            <input type="number" step="0.0000001" class="form-control" id="courtLng" value="106.7009000" placeholder="106.7009000">
-                        </div>
+
                         <div class="col-12">
                             <label class="form-label fw-semibold small">Ảnh đại diện (URL)</label>
                             <input type="url" class="form-control" id="courtImage" placeholder="https://...">

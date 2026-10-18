@@ -139,6 +139,49 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </div>
                 </div>
 
+                <!-- Bản Đồ Vị Trí Sân (Leaflet.js + OpenStreetMap) -->
+                <div class="court-map-wrapper mb-4" id="courtDetailMapWrapper">
+                    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rounded-circle bg-teal-subtle text-teal d-flex align-items-center justify-content-center" style="width:38px;height:38px;">
+                                <i class="fa-solid fa-map-location-dot fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0">Vị Trí Sân Trên Bản Đồ</h5>
+                                <small class="text-muted">Khu vực: ${escapeText(area || 'TP. Hồ Chí Minh')} (OpenStreetMap)</small>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center">
+                            <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3" onclick="if(window.CourtMap && window.CourtMap.resetView) window.CourtMap.resetView();" title="Quay về góc nhìn trung tâm">
+                                <i class="fa-solid fa-crosshairs me-1"></i> Định vị
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3 btn-court-map-fullscreen" onclick="if(window.CourtMap && window.CourtMap.toggleFullscreen) window.CourtMap.toggleFullscreen();" title="Phóng to toàn màn hình">
+                                <i class="fa-solid fa-expand me-1 icon-fullscreen-state"></i> <span class="text-fullscreen-state">Toàn màn hình</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="courtDetailMapContainer" class="court-map-container" style="height:350px;">
+                        <button type="button" class="court-map-floating-fs-btn" onclick="if(window.CourtMap && window.CourtMap.toggleFullscreen) window.CourtMap.toggleFullscreen();" title="Phóng to / Thu nhỏ toàn màn hình" aria-label="Toàn màn hình">
+                            <svg class="fs-icon-expand" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <polyline points="9 21 3 21 3 15"></polyline>
+                                <line x1="21" y1="3" x2="14" y2="10"></line>
+                                <line x1="3" y1="21" x2="10" y2="14"></line>
+                            </svg>
+                            <svg class="fs-icon-compress d-none" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="4 14 10 14 10 20"></polyline>
+                                <polyline points="20 10 14 10 14 4"></polyline>
+                                <line x1="14" y1="10" x2="21" y2="3"></line>
+                                <line x1="10" y1="14" x2="3" y2="21"></line>
+                            </svg>
+                        </button>
+                        <div class="court-map-error-state">
+                            <div class="spinner-border text-teal spinner-border-sm mb-2" role="status"></div>
+                            <div class="small text-muted">Đang khởi tạo bản đồ OpenStreetMap...</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Đánh Giá -->
                 <div class="card border rounded-4 p-4 shadow-sm mb-4">
                     <h5 class="fw-bold mb-4"><i class="fa-solid fa-comments text-teal me-2"></i>Đánh Giá Từ Vợt Thủ</h5>
@@ -187,6 +230,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             </div>
         </div>`;
+
+        // Khởi tạo bản đồ Leaflet vị trí sân
+        if (window.CourtMap && typeof window.CourtMap.init === 'function') {
+            const lat = parseFloat(court.latitude);
+            const lng = parseFloat(court.longitude);
+            if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+                window.CourtMap.init('courtDetailMapContainer', [court]);
+            } else {
+                const container = document.getElementById('courtDetailMapContainer');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="court-map-error-state text-center p-4">
+                            <i class="fa-solid fa-location-dot fs-2 text-muted mb-2"></i>
+                            <div class="small text-muted">Tọa độ của sân đang được cập nhật.</div>
+                        </div>`;
+                }
+            }
+        }
 
     } catch (err) {
         console.error('[court_detail.js] Lỗi fetch:', err);
