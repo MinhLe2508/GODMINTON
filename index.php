@@ -26,7 +26,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
     <!-- Index Explore Tabs Style CSS -->
-    <link rel="stylesheet" href="assets/css/index_explore_tabs_style.css">
+    <link rel="stylesheet" href="assets/css/index_explore_tabs_style.css?v=<?= filemtime(__DIR__ . '/assets/css/index_explore_tabs_style.css') ?>">
 </head>
 <body>
 
