@@ -1,0 +1,70 @@
+{
+  "name": "GODMINTON – Đặt Sân Cầu Lông Trực Tuyến",
+  "short_name": "GODMINTON",
+  "description": "Nền tảng đặt sân cầu lông trực tuyến hàng đầu TP.HCM. Tìm kiếm sân nhanh chóng, giữ chỗ tức thì 5 phút và nhận thông báo nhắc lịch.",
+  "start_url": "./index.php",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#0d9488",
+  "lang": "vi-VN",
+  "dir": "ltr",
+  "categories": [
+    "sports",
+    "lifestyle",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "assets/img/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/img/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/img/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "assets/img/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tìm sân cầu lông",
+      "short_name": "Tìm sân",
+      "description": "Xem danh sách và bản đồ sân cầu lông",
+      "url": "./courts.php",
+      "icons": [
+        {
+          "src": "assets/img/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Lịch đặt của tôi",
+      "short_name": "Lịch đặt",
+      "description": "Xem các đơn đặt sân đã xác nhận",
+      "url": "./history.php",
+      "icons": [
+        {
+          "src": "assets/img/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

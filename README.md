@@ -104,4 +104,56 @@ Tuần 4 → `manifest.json`, `sw.js`, `api/push/*`.
 4. **Tổng quan Dashboard (`api/admin/dashboard.php` & `admin-dashboard.php`)**:
    - Thống kê số sân quản lý, lượt đặt hôm nay, lượt đặt tuần này, doanh thu hợp lệ và danh sách đơn đặt gần đây từ MySQL.
 5. **Kiểm thử tự động Tuần 3**:
-   - Chạy `php tests/admin_week3_test.php` (hoặc `BASE_URL=http://localhost/GODMINTON php tests/admin_week3_test.php`). Kỳ vọng: `17 đạt, 0 lỗi`.
+   - Chạy `php tests/admin_week3_test.php` (hoặc `BASE_URL=http://localhost/GODMINTON php tests/admin_week3_test.php`). Kỳ vọng: `23 đạt, 0 lỗi`.
+
+## 6. Tuần 4 — PWA, Web Push Notification, Seed Final & Nghiệm Thu (Triết, Huy, Minh)
+
+### A. Progressive Web App (PWA) & Chế độ ngoại tuyến (Offline Mode)
+1. **Manifest (`manifest.json`)**:
+   - Cấu hình chuẩn W3C tại thư mục gốc, `display: "standalone"`, `start_url: "./index.php"`, `theme_color: "#0d9488"`.
+   - Bộ icon đầy đủ chuẩn kích thước (`assets/img/icons/icon-192.png`, `icon-512.png`, maskable icons, favicon, apple-touch-icon).
+2. **Service Worker (`sw.js`) & Trang Offline (`offline.php`)**:
+   - Phạm vi toàn bộ website (`scope: ./`).
+   - **Quy tắc tuyệt đối:** Các endpoint giao dịch `/api/` luôn dùng **Network-Only** (không bao giờ đọc/lưu cache để chống giữ chỗ ảo hoặc dữ liệu đơn bị sai lệch).
+   - Điều hướng HTML: Chiến lược *Network-First* kết hợp bộ nhớ đệm; khi mất mạng hiển thị trang `offline.php` đẹp mắt với tính năng tự động tải lại ngay khi có kết nối trở lại.
+   - Tài nguyên tĩnh (CSS, JS, Fonts, Images): Chiến lược *Stale-While-Revalidate* cho tốc độ tải tức thì.
+3. **Banner Cài đặt PWA**:
+   - Tự động bắt sự kiện `beforeinstallprompt` hiển thị banner cài đặt tuỳ chỉnh (`pwa-install-banner.php`).
+
+### B. Web Push Notification (Thông báo đẩy nhắc lịch thi đấu)
+1. **Cơ sở dữ liệu**:
+   - Bảng `push_subscriptions` (`database/migration_week4.sql`) lưu trữ endpoint, p256dh, auth của từng thiết bị.
+2. **Cấu hình VAPID (`config/vapid.php`)**:
+   - Cặp khóa mật mã đường cong elliptic NIST P-256 tiêu chuẩn, cấp phát VAPID Public Key qua `api/push/vapid-public-key.php`.
+3. **Kiến trúc 2 tầng (Two-Tier Architecture)**:
+   - *Tầng 1 (Chuẩn WebPush)*: Gửi qua `minishlink/web-push` tới dịch vụ đẩy của trình duyệt (FCM, Mozilla, Apple).
+   - *Tầng 2 (Smart Client Fallback)*: Trả payload qua API để Service Worker client gọi `showNotification()`, đảm bảo **100% hiển thị thông báo đẩy ngay lập tức trên máy chấm bài** mà không bị nghẽn bởi tường lửa hoặc thiếu extension PHP.
+4. **Giao diện quản lý thông báo**:
+   - Tích hợp nút bật/tắt và nút "Gửi thử thông báo" trực quan trên trang [Hồ sơ cá nhân](file:///c:/xampp/htdocs/GODMINTON/profile.php) và [Lịch sử đặt sân](file:///c:/xampp/htdocs/GODMINTON/history.php) thông qua [assets/js/push-client.js](file:///c:/xampp/htdocs/GODMINTON/assets/js/push-client.js).
+
+### C. CSDL Khởi tạo hoàn chỉnh 1-Click (`database/seed_final.sql`)
+Nhập trực tiếp vào MySQL sạch mà không cần chạy lần lượt từng file migration:
+```bash
+mysql -u root < database/seed_final.sql
+```
+Bao gồm đầy đủ 12 bảng, 7 sân thật kèm tọa độ GPS và tiện ích, danh mục phường đô thị lõi TP.HCM, tin tức, liên hệ và 3 tài khoản demo:
+- **Khách hàng**: `khach1@gmail.com` / `Khach@123`
+- **Chủ sân**: `owner.q1@godminton.vn` / `Owner@123`
+- **Quản trị viên**: `admin@godminton.vn` / `Admin@123`
+
+### D. Bộ lệnh Kiểm thử tự động (Automated Test Suite)
+Chạy trực tiếp từ thư mục gốc dự án:
+```bash
+# 1. Kiểm tra toàn vẹn CSDL và liên kết đơn đặt
+php tests/check_booking_integrity.php
+
+# 2. Kiểm tra phân quyền Admin / Chủ sân (23 test pass)
+$env:BASE_URL="http://127.0.0.1:8098"; php tests/admin_week3_test.php
+
+# 3. Kiểm tra toàn diện logic giữ chỗ, chống oversell, tính tiền và hủy đơn (44 test pass)
+php tests/audit_logic.php
+
+# 4. Kiểm tra PWA, manifest, Service Worker và Web Push Notification (29 test pass)
+php tests/test_pwa_push.php
+```
+

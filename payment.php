@@ -20,6 +20,7 @@ if ($currentUser !== null) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thanh Toán Đặt Cọc | GODMINTON</title>
     <meta name="description" content="Xác nhận và thanh toán đặt cọc sân cầu lông trực tuyến tại GODMINTON.">
+<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
@@ -182,29 +183,38 @@ if ($currentUser !== null) {
             <!-- QR bank transfer details -->
             <div class="bank-panel" id="bankPanel">
                 <div class="d-flex gap-3 flex-wrap align-items-start">
-                    <div class="qr-box">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?data=GODMINTON-BANK&size=120x120&bgcolor=ffffff&color=0d9488"
-                             alt="QR" onerror="this.style.padding='1rem'; this.alt='QR Code';">
+                    <div class="qr-box" onclick="openQrModal()" title="Nhấn để phóng to mã QR">
+                        <img src="assets/img/vietqr-payment.png"
+                             alt="VietQR MB Bank - TRUONG MINH TRIET"
+                             onerror="this.src='assets/img/vietqr-card.png';">
+                        <div class="qr-zoom-hint">
+                            <i class="fa-solid fa-magnifying-glass-plus"></i> Phóng to
+                        </div>
                     </div>
                     <div class="flex-grow-1 min-w-0">
-                        <div class="fw-bold small mb-2">Thông tin chuyển khoản</div>
-                        <div class="copy-row">
-                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0;">Ngân hàng</span>
-                            <strong>Vietcombank (VCB)</strong>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-bold small">Thông tin chuyển khoản VietQR</span>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size:0.7rem;">
+                                <i class="fa-solid fa-bolt me-1"></i>Tự động 24/7
+                            </span>
                         </div>
                         <div class="copy-row">
-                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0;">Số TK</span>
-                            <strong>1234 5678 9012</strong>
-                            <button class="copy-btn" onclick="copyText('1234567890 12')">
+                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:65px;">Ngân hàng</span>
+                            <strong>MB Bank (Ngân hàng Quân Đội)</strong>
+                        </div>
+                        <div class="copy-row">
+                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:65px;">Số TK</span>
+                            <strong id="bankAccNum">0783547289</strong>
+                            <button class="copy-btn" onclick="copyText('0783547289')">
                                 <i class="fa-regular fa-copy"></i> Copy
                             </button>
                         </div>
                         <div class="copy-row">
-                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0;">Chủ TK</span>
-                            <strong>GODMINTON JSC</strong>
+                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:65px;">Chủ TK</span>
+                            <strong>TRUONG MINH TRIET</strong>
                         </div>
                         <div class="copy-row">
-                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0;">Nội dung</span>
+                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:65px;">Nội dung</span>
                             <strong id="transferRef" style="word-break:break-all;">DATSAN-...</strong>
                             <button class="copy-btn" onclick="copyTransferRef()">
                                 <i class="fa-regular fa-copy"></i> Copy
@@ -213,6 +223,14 @@ if ($currentUser !== null) {
                         <div class="mt-2 d-flex align-items-start gap-1" style="font-size:0.73rem; color:var(--text-secondary);">
                             <i class="fa-solid fa-circle-exclamation text-warning mt-1 flex-shrink-0"></i>
                             <span>Chuyển đúng nội dung để hệ thống tự xác nhận. Số tiền: <strong class="text-warning" id="bankAmountText">--</strong></span>
+                        </div>
+                        <div class="mt-2 d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-teal rounded-pill" onclick="openQrModal()" style="font-size:0.75rem; padding:0.25rem 0.75rem;">
+                                <i class="fa-solid fa-expand me-1"></i> Xem QR cỡ lớn
+                            </button>
+                            <a href="assets/img/vietqr-payment.png" download="VietQR-GODMINTON.png" class="btn btn-sm btn-outline-secondary rounded-pill" style="font-size:0.75rem; padding:0.25rem 0.75rem;">
+                                <i class="fa-solid fa-download me-1"></i> Tải ảnh QR
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -426,6 +444,50 @@ if ($currentUser !== null) {
             <a href="courts.php" class="btn btn-outline-secondary rounded-pill px-4">
                 Đặt sân khác
             </a>
+        </div>
+</div>
+
+<!-- Modal Phóng to mã VietQR MB Bank -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 pb-0 pt-3 px-3">
+                <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="qrModalLabel">
+                    <i class="fa-solid fa-qrcode text-teal"></i> Quét Mã VietQR MB Bank
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-3">
+                <div class="qr-modal-img-wrap rounded-3 overflow-hidden shadow-sm bg-white p-2 mb-3">
+                    <img src="assets/img/vietqr-payment.png" alt="Mã VietQR" class="img-fluid rounded-3" style="max-height: 520px; width: auto; object-fit: contain;">
+                </div>
+                <div class="bg-light rounded-3 p-3 text-start small mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Chủ TK:</span>
+                        <span class="fw-bold">TRUONG MINH TRIET</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Số TK:</span>
+                        <span class="fw-bold font-monospace text-teal">0783547289</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Ngân hàng:</span>
+                        <span class="fw-bold">MB Bank (Quân Đội)</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Nội dung:</span>
+                        <span class="fw-bold font-monospace text-warning" id="modalTransferRef">DATSAN-...</span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="assets/img/vietqr-payment.png" download="VietQR-GODMINTON.png" class="btn btn-teal rounded-pill px-3 py-1 text-sm">
+                        <i class="fa-solid fa-download me-1"></i> Tải ảnh QR
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-3 py-1 text-sm" data-bs-dismiss="modal">
+                        Đóng
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
