@@ -104,9 +104,6 @@ document.getElementById('loginForm')?.addEventListener('submit', async e => {
 
     const result = await callAuthApi('api/auth/login.php', { email, password });
     if (result.status === 'success') {
-        if (typeof MockDB !== 'undefined' && MockDB.setUser) {
-            MockDB.setUser(result.data.user);
-        }
         Swal.fire({
             icon: 'success',
             title: `Chào mừng, ${result.data.user.name}!`,
@@ -140,9 +137,6 @@ document.getElementById('registerForm')?.addEventListener('submit', async e => {
         role: document.getElementById('regRole').value
     });
     if (result.status === 'success') {
-        if (typeof MockDB !== 'undefined' && MockDB.setUser) {
-            MockDB.setUser(result.data.user);
-        }
         Swal.fire({
             icon: 'success',
             title: 'Đăng ký thành công!',

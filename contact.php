@@ -142,9 +142,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/mock-data.js"></script>
-    <script src="assets/js/app.js"></script>
-    <script src="assets/js/contact.js"></script>
+    <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
+    <script src="assets/js/content-client.js?v=<?= filemtime(__DIR__ . '/assets/js/content-client.js') ?>"></script>
+    <script src="assets/js/contact.js?v=<?= filemtime(__DIR__ . '/assets/js/contact.js') ?>"></script>
     <!-- Bottom Nav -->
     <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 </body>

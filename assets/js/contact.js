@@ -1,35 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const user = MockDB.getUser();
-    const navHistoryEl = document.getElementById('navHistoryItem');
-    if (user && navHistoryEl) navHistoryEl.style.display = '';
-
-    const form = document.getElementById('contactForm');
-    const btn = document.getElementById('btnContactSubmit');
-    const alertSuccess = document.getElementById('alertSuccess');
-
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-
-        const data = {
-            name: document.getElementById('contactName').value.trim(),
-            phone: document.getElementById('contactPhone').value.trim(),
-            email: document.getElementById('contactEmail').value.trim(),
-            subject: document.getElementById('contactSubject').value.trim() || 'Liên hệ từ website',
-            message: document.getElementById('contactMessage').value.trim()
-        };
-
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang gửi...';
-
-        setTimeout(() => {
-            MockDB.sendContact(data);
-            alertSuccess.classList.remove('d-none');
-            form.reset();
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Gửi Tin Nhắn';
-
-            // Scroll to success
-            alertSuccess.scrollIntoView({ behavior: 'smooth' });
-        }, 800);
+    const form=document.getElementById('contactForm'), button=document.getElementById('btnContactSubmit'), success=document.getElementById('alertSuccess');
+    const errorBox=document.createElement('div');errorBox.className='alert alert-danger d-none';errorBox.setAttribute('role','alert');form.prepend(errorBox);
+    let submitting=false;
+    form.addEventListener('submit',async event=>{
+        event.preventDefault();if(submitting || !form.reportValidity())return;
+        submitting=true;button.disabled=true;success.classList.add('d-none');errorBox.classList.add('d-none');
+        const original=button.innerHTML;button.textContent='Đang gửi...';
+        try {
+            const data=Object.fromEntries(['name','phone','email','subject','message'].map(key=>[key,document.getElementById('contact'+key[0].toUpperCase()+key.slice(1)).value.trim()]));
+            data.subject ||= 'Liên hệ từ website';
+            const {csrf_token}=await ContentClient.request('api/contact.php');
+            await ContentClient.request('api/contact.php',{method:'POST',headers:{'Content-Type':'application/json','X-GODMINTON-CSRF':csrf_token},body:JSON.stringify(data)});
+            success.classList.remove('d-none');form.reset();success.scrollIntoView({behavior:'smooth',block:'nearest'});
+        } catch(error) {errorBox.textContent=error.message;errorBox.classList.remove('d-none');}
+        finally {submitting=false;button.disabled=false;button.innerHTML=original;}
     });
 });

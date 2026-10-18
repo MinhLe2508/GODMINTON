@@ -294,7 +294,7 @@ async function renderCourts() {
                         ${(court.amenity_codes || []).slice(0, 3).map(code => {
                             const ic = amenityIconMap[code] || 'fa-check text-muted';
                             const label = (court.amenities || []).find(a => a.code === code)?.label || code;
-                            return `<span class="badge bg-body-tertiary border small fw-semibold">
+                            return `<span class="badge bg-body-tertiary text-body-secondary border small fw-semibold">
                                 <i class="fa-solid ${ic} me-1"></i>${label}</span>`;
                         }).join('')}
                     </div>

@@ -4,11 +4,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const {user}=await BookingAccount.identity();
         if(!user||!['owner','admin'].includes(user.role))throw new Error('Bạn không có quyền quản lý đơn.');
-        document.getElementById('adminUserBox').textContent=user.name+' · '+(user.role==='admin'?'Quản trị viên':'Chủ sân');
-        document.getElementById('adminSidebarNav').innerHTML=[['dashboard','Tổng quan'],['courts','Quản lý sân'],['slots','Quản lý khung giờ'],['bookings','Quản lý đơn']].map(([key,label])=>`<a class="admin-nav-link ${key==='bookings'?'active':''}" href="admin-${key}.php">${label}</a>`).join('');
+        window.__GODMINTON_USER__ = user;
+        AdminApp.renderShell('bookings', 'Quản lý đơn đặt', 'Kênh chủ sân / Quản lý đơn đặt');
     }catch(e){empty.textContent=e.message;empty.style.display='block';return;}
-    document.getElementById('adminSidebarToggle').addEventListener('click',()=>{document.getElementById('adminSidebar').classList.add('show');document.getElementById('adminOverlay').classList.add('show');});
-    document.getElementById('adminOverlay').addEventListener('click',()=>{document.getElementById('adminSidebar').classList.remove('show');document.getElementById('adminOverlay').classList.remove('show');});
     let sequence=0;
     async function load() {
         const own=++sequence;const params=new URLSearchParams({q:document.getElementById('searchBooking').value.trim(),status:document.getElementById('filterStatus').value});

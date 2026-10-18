@@ -139,8 +139,8 @@
         <div class="container">
             <div class="d-flex flex-wrap justify-content-between align-items-end mb-4">
                 <div>
-                    <span class="text-teal fw-bold text-uppercase tracking-wider small">Điểm Đến Hàng Đầu</span>
-                    <h2 class="fw-extrabold mb-0">Tổ Hợp Sân Cầu Lông Cao Cấp</h2>
+                    <span class="text-teal fw-bold text-uppercase tracking-wider small">Tìm Sân Phù Hợp</span>
+                    <h2 class="fw-extrabold mb-0">Khám Phá Các Cụm Sân Cầu Lông</h2>
                 </div>
                 <a href="courts.php" class="btn btn-outline-teal rounded-pill px-3 mt-2 mt-sm-0">
                     Xem tất cả sân <i class="fa-solid fa-arrow-right ms-1"></i>
@@ -311,7 +311,10 @@
     <!-- App JS -->
     <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
 
+    <script src="assets/js/content-client.js?v=<?= filemtime(__DIR__ . '/assets/js/content-client.js') ?>"></script>
     <script src="assets/js/index_explore_dt.js?v=<?= filemtime(__DIR__ . '/assets/js/index_explore_dt.js') ?>"></script>
+
+    <script src="assets/js/home-court-cards.js?v=<?= filemtime(__DIR__ . '/assets/js/home-court-cards.js') ?>"></script>
 
     <!-- ===== AJAX: Load Featured Courts & Home Search ===== -->
     <script>
@@ -333,35 +336,14 @@
 
         // --- Load featured courts via AJAX ---
         try {
-            const res  = await fetch('api/courts.php');
+            const res  = await fetch('api/courts.php', {cache:'no-store'});
             const json = await res.json();
 
-            if (json.status === 'success' && json.data.length > 0) {
+            if (!res.ok || json.status !== 'success' || !Array.isArray(json.data)) throw new Error('Không tải được danh sách sân.');
+            if (json.data.length === 0) document.getElementById('featuredCourtsWrapper').innerHTML = HomeCourtCards.render([]);
+            if (json.data.length > 0) {
                 const wrapper = document.getElementById('featuredCourtsWrapper');
-                const formatVND = (amt) => new Intl.NumberFormat('vi-VN').format(amt) + ' đ';
-
-                wrapper.innerHTML = json.data.map(court => `
-                    <div class="swiper-slide">
-                        <div class="court-card">
-                            <div class="court-img-wrapper">
-                                <img src="${court.image_url}" alt="${court.name}" class="court-img" loading="lazy">
-                                <div class="court-badge-price">${formatVND(court.price_per_hour)} <span class="small opacity-75">/ giờ</span></div>
-                            </div>
-                            <div class="p-3 d-flex flex-column flex-grow-1">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="badge bg-teal-subtle text-teal">
-                                        <i class="fa-solid fa-location-dot me-1"></i>${court.old_area_label || court.ward_name}
-                                    </span>
-                                </div>
-                                <h5 class="fw-bold mb-2 text-truncate">${court.name}</h5>
-                                <p class="text-muted small mb-3 flex-grow-1 line-clamp-2">${(court.description || '').substring(0, 120)}...</p>
-                                <div class="d-flex gap-2">
-                                    <a href="court-detail.php?id=${court.id}" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1">Chi tiết</a>
-                                    <a href="booking.php?court_id=${court.id}" class="btn btn-teal btn-sm rounded-pill flex-grow-1 fw-bold">Đặt sân ngay</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`).join('');
+                wrapper.innerHTML = HomeCourtCards.render(json.data);
 
                 // Khởi tạo Swiper sau khi có slides
                 new Swiper('.featuredCourtsSwiper', {

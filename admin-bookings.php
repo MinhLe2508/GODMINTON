@@ -103,79 +103,10 @@ $currentUser = [
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="assets/js/mock-data.js"></script>
-<script src="assets/js/app.js"></script>
-<script src="assets/js/admin.js"></script>
+<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
+<script src="assets/js/admin.js?v=<?= filemtime(__DIR__ . '/assets/js/admin.js') ?>"></script>
 <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
-<script>
-let currentUser = null;
-
-const STATUS_MAP = {
-    confirmed: { badge: 'bg-success', text: 'Đã xác nhận' },
-    completed: { badge: 'bg-primary', text: 'Hoàn thành' },
-    cancelled: { badge: 'bg-secondary', text: 'Đã hủy' }
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-    currentUser = AdminApp.renderShell('bookings', 'Quản lý đơn đặt', 'Kênh chủ sân / Quản lý đơn đặt');
-    if (!currentUser) return;
-
-    document.getElementById('searchBooking').addEventListener('input', renderBookings);
-    document.getElementById('filterStatus').addEventListener('change', renderBookings);
-    renderBookings();
-});
-
-function renderBookings() {
-    const q = (document.getElementById('searchBooking').value || '').toLowerCase().trim();
-    const statusFilter = document.getElementById('filterStatus').value;
-
-    let bookings = AdminApp.getMyBookings(currentUser)
-        .slice()
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-    if (statusFilter) bookings = bookings.filter(b => b.booking_status === statusFilter);
-    if (q) {
-        bookings = bookings.filter(b =>
-            b.booking_code.toLowerCase().includes(q) ||
-            b.user_name.toLowerCase().includes(q) ||
-            b.court_name.toLowerCase().includes(q));
-    }
-
-    const body = document.getElementById('bookingsTableBody');
-    document.getElementById('bookingsEmpty').style.display = bookings.length ? 'none' : 'block';
-
-    body.innerHTML = bookings.map(b => {
-        const s = STATUS_MAP[b.booking_status] || STATUS_MAP.confirmed;
-        const actions = b.booking_status === 'confirmed' ? `
-            <button class="btn btn-sm btn-outline-primary rounded-pill me-1" onclick="setStatus(${b.id}, 'completed')" title="Đánh dấu hoàn thành"><i class="fa-solid fa-flag-checkered"></i></button>
-            <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="setStatus(${b.id}, 'cancelled')" title="Hủy đơn"><i class="fa-solid fa-ban"></i></button>
-        ` : '<span class="text-muted small">—</span>';
-
-        return `<tr>
-            <td class="fw-semibold">${b.booking_code}</td>
-            <td>${b.court_name}<div class="small text-muted">${b.sub_court_name || ''}</div></td>
-            <td>${b.user_name}<div class="small text-muted">${b.user_phone || ''}</div></td>
-            <td>${b.booking_date}<div class="small text-muted">${b.time_range}</div></td>
-            <td>${MockDB.formatVND(b.total_amount)}</td>
-            <td><span class="badge ${s.badge}">${s.text}</span></td>
-            <td class="text-end">${actions}</td>
-        </tr>`;
-    }).join('');
-}
-
-async function setStatus(bookingId, newStatus) {
-    const label = newStatus === 'completed' ? 'đánh dấu hoàn thành' : 'hủy';
-    const ok = await AdminApp.confirmAction(`Xác nhận ${label} đơn này?`, 'Hành động này sẽ cập nhật trạng thái đơn đặt sân.');
-    if (!ok) return;
-
-    const all = MockDB.getBookings();
-    const idx = all.findIndex(b => b.id === bookingId);
-    if (idx === -1) return;
-    all[idx].booking_status = newStatus;
-    AdminApp.saveBookings(all);
-    AdminApp.toast('success', 'Đã cập nhật trạng thái đơn đặt');
-    renderBookings();
-}
-</script>
+<script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
+<script src="assets/js/admin-bookings.js?v=<?= filemtime(__DIR__ . '/assets/js/admin-bookings.js') ?>"></script>
 </body>
 </html>

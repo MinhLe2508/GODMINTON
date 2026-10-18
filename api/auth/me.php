@@ -6,6 +6,7 @@
  */
 require_once __DIR__ . '/../../config/db.php';
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
 
 session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
 if (session_status() === PHP_SESSION_NONE) {
@@ -41,6 +42,7 @@ if (!$user) {
     exit;
 }
 
+if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 $user['id'] = (int)$user['id'];
 $_SESSION['name']  = $user['name'];
 $_SESSION['email'] = $user['email'];
@@ -50,5 +52,5 @@ $_SESSION['role']  = $user['role'];
 echo json_encode([
     'status' => 'success',
     'code'   => 200,
-    'data'   => ['user' => $user]
+    'data'   => ['user' => $user, 'csrf_token' => $_SESSION['csrf_token']]
 ], JSON_UNESCAPED_UNICODE);

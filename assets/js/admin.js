@@ -11,16 +11,14 @@ const AdminApp = (() => {
     let cachedCourts = [];
     let cachedWards  = [];
 
-    /** Định dạng tiền tệ VNĐ thuần JS (không phụ thuộc MockDB) */
+    /** Định dạng tiền tệ VNĐ thuần JS */
     function formatVND(amount) {
         return new Intl.NumberFormat('vi-VN').format(Number(amount) || 0) + ' đ';
     }
 
     /* ================= AUTH GUARD (SERVER SESSION) ================= */
     function requireAuth() {
-        let user = (typeof window.__GODMINTON_USER__ !== 'undefined' && window.__GODMINTON_USER__)
-            ? window.__GODMINTON_USER__
-            : ((typeof MockDB !== 'undefined' && MockDB.getUser) ? MockDB.getUser() : null);
+        const user = window.__GODMINTON_USER__ || null;
 
         if (!user || (user.role !== 'owner' && user.role !== 'admin')) {
             const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
@@ -146,46 +144,6 @@ const AdminApp = (() => {
         return res.data;
     }
 
-    /* ================= TƯƠNG THÍCH NGƯỢC (CHO ADMIN-BOOKINGS.PHP) ================= */
-    function getAllCourts() {
-        if (cachedCourts.length > 0) return cachedCourts;
-        if (typeof MockDB !== 'undefined' && MockDB.init) MockDB.init();
-        return JSON.parse(localStorage.getItem('bm_courts') || '[]');
-    }
-
-    function saveAllCourts(courts) {
-        cachedCourts = courts;
-        localStorage.setItem('bm_courts', JSON.stringify(courts));
-    }
-
-    function getMyCourts(user) {
-        if (cachedCourts.length > 0) return cachedCourts;
-        const all = getAllCourts();
-        if (!user) return [];
-        if (user.role === 'admin') return all;
-        return all.filter(c =>
-            (c.owner_id && Number(c.owner_id) === Number(user.id)) ||
-            (c.owner_phone && user.phone && c.owner_phone.replace(/\s/g, '') === user.phone.replace(/\s/g, ''))
-        );
-    }
-
-    function getMyCourtIds(user) {
-        return getMyCourts(user).map(c => c.id);
-    }
-
-    function getMyBookings(user) {
-        if (typeof MockDB === 'undefined' || !MockDB.getBookings) return [];
-        if (user && user.role === 'admin') return MockDB.getBookings();
-        const ids = getMyCourtIds(user);
-        return MockDB.getBookings().filter(b => ids.includes(b.court_id));
-    }
-
-    function saveBookings(bookings) {
-        if (typeof MockDB !== 'undefined' && MockDB.saveBookings) {
-            MockDB.saveBookings(bookings);
-        }
-    }
-
     function minutesToTime(total) {
         const h = String(Math.floor(total / 60)).padStart(2, '0');
         const m = String(total % 60).padStart(2, '0');
@@ -240,13 +198,9 @@ const AdminApp = (() => {
         document.getElementById('adminLogoutBtn')?.addEventListener('click', async (e) => {
             e.preventDefault();
             try {
-                await fetch('api/auth/logout.php', { method: 'POST', credentials: 'same-origin' });
-            } catch (_) {}
-            if (typeof MockDB !== 'undefined' && MockDB.logout) {
-                MockDB.logout();
-            } else {
-                localStorage.removeItem('bm_user');
-            }
+                const response = await fetch('api/auth/logout.php', { method: 'POST', credentials: 'same-origin' });
+                if (!response.ok) throw new Error('Đăng xuất thất bại.');
+            } catch (error) {toast('error', error.message);return;}
             window.location.href = 'auth.php';
         });
 
@@ -295,12 +249,6 @@ const AdminApp = (() => {
         deleteSlotApi,
         clearDaySlotsApi,
         fetchDashboard,
-        getAllCourts,
-        saveAllCourts,
-        getMyCourts,
-        getMyCourtIds,
-        getMyBookings,
-        saveBookings,
         renderShell,
         toast,
         confirmAction,

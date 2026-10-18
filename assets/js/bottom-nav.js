@@ -9,7 +9,6 @@
     /* ============================================================
        1. CẤU HÌNH CÁC TAB
        ============================================================ */
-    const user = (typeof MockDB !== 'undefined' && MockDB.getUser) ? MockDB.getUser() : null;
 
     const TABS = [
         {
@@ -489,41 +488,6 @@
                 this.appendChild(ripple);
                 ripple.addEventListener('animationend', () => ripple.remove());
             });
-        });
-
-        /* ---- Xử lý Đăng xuất khi click tab Đăng xuất ---- */
-        nav.querySelectorAll('.bnav-item').forEach(item => {
-            if (item.dataset.isLogout === 'true') {
-                item.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            title: 'Đăng xuất tài khoản?',
-                            text: `Bạn đang đăng nhập với tên "${user ? user.name : 'Khách'}". Bạn có chắc chắn muốn đăng xuất không?`,
-                            icon: 'question',
-                            showCancelButton: true,
-                            confirmButtonColor: '#0d9488',
-                            cancelButtonColor: '#64748b',
-                            confirmButtonText: '<i class="fa-solid fa-right-from-bracket me-1"></i> Đăng xuất',
-                            cancelButtonText: 'Ở lại'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                if (typeof MockDB !== 'undefined' && MockDB.logout) {
-                                    MockDB.logout();
-                                }
-                                window.location.href = 'auth.php';
-                            }
-                        });
-                    } else {
-                        if (confirm('Bạn có chắc chắn muốn đăng xuất không?')) {
-                            if (typeof MockDB !== 'undefined' && MockDB.logout) {
-                                MockDB.logout();
-                            }
-                            window.location.href = 'auth.php';
-                        }
-                    }
-                });
-            }
         });
 
         /* ---- Kích hoạt hiệu ứng Slide trượt chuyển trang ---- */
