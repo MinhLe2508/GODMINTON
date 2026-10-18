@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Trang Chủ - Đặt Sân Cầu Lông Trực Tuyến | GODMINTON</title>
     <meta name="description" content="Hệ thống đặt sân cầu lông trực tuyến theo thời gian thực (AJAX), hỗ trợ PWA cài đặt app và thông báo đẩy nhắc lịch thi đấu.">
-    <meta name="theme-color" content="#0d9488">
+<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -297,6 +297,7 @@
             </div>
         </div>
     </footer>
+<?php include_once __DIR__ . '/includes/partials/pwa-install-banner.php'; ?>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

@@ -83,12 +83,86 @@ function setActiveNav(pageId) {
 }
 
 // ========================
+// PWA & SERVICE WORKER
+// ========================
+let deferredInstallPrompt = null;
+
+function initServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(registration => {
+                    console.log('[PWA] Service Worker registered with scope:', registration.scope);
+                    // Check for updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        if (newWorker) {
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('[PWA] Phiên bản mới đã sẵn sàng. Tự động cập nhật.');
+                                }
+                            });
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.warn('[PWA] Đăng ký Service Worker thất bại:', error);
+                });
+        });
+    }
+}
+
+function initPwaInstallPrompt() {
+    window.addEventListener('beforeinstallprompt', e => {
+        // Ngăn chặn thanh prompt mặc định của trình duyệt để hiển thị giao diện tùy chỉnh đẹp mắt
+        e.preventDefault();
+        deferredInstallPrompt = e;
+
+        // Hiển thị nút hoặc banner cài đặt nếu có chỗ đặt
+        const installBtn = document.getElementById('btnPwaInstall');
+        const installBanner = document.getElementById('pwaInstallBanner');
+
+        if (installBtn) {
+            installBtn.style.display = 'inline-flex';
+            installBtn.onclick = triggerPwaInstall;
+        }
+
+        if (installBanner) {
+            installBanner.classList.add('show');
+            const actionBtn = document.getElementById('btnBannerInstall');
+            if (actionBtn) actionBtn.onclick = triggerPwaInstall;
+            const closeBtn = document.getElementById('btnBannerDismiss');
+            if (closeBtn) closeBtn.onclick = () => installBanner.classList.remove('show');
+        }
+    });
+
+    window.addEventListener('appinstalled', () => {
+        console.log('[PWA] Ứng dụng GODMINTON đã được cài đặt thành công!');
+        deferredInstallPrompt = null;
+        const installBtn = document.getElementById('btnPwaInstall');
+        if (installBtn) installBtn.style.display = 'none';
+        const installBanner = document.getElementById('pwaInstallBanner');
+        if (installBanner) installBanner.classList.remove('show');
+    });
+}
+
+async function triggerPwaInstall() {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    console.log('[PWA] Lựa chọn của người dùng:', outcome);
+    deferredInstallPrompt = null;
+}
+
+// ========================
 // DOCUMENT READY
 // ========================
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initAOS();
     renderNavbarUser();
+    initServiceWorker();
+    initPwaInstallPrompt();
 
     // Theme toggle button
     const themeBtn = document.getElementById('themeToggle');

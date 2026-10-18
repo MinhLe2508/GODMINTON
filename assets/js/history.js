@@ -23,4 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         catch(e){await BookingAccount.notify(e.message,true);}finally{button.disabled=false;}
     });
     load();
+    if (window.PushClient) {
+        PushClient.renderPushControls('pushNotificationContainer');
+    }
 });

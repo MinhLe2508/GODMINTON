@@ -176,6 +176,18 @@ function copyText(txt) {
 function copyTransferRef() {
     copyText(document.getElementById('transferRef').textContent);
 }
+function openQrModal() {
+    const transferRef = document.getElementById('transferRef');
+    const modalRef = document.getElementById('modalTransferRef');
+    if (transferRef && modalRef) {
+        modalRef.textContent = transferRef.textContent;
+    }
+    const modalEl = document.getElementById('qrModal');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+}
 function toast(msg) {
     Swal.fire({ toast: true, position: 'top-end', icon: 'success',
         title: msg, showConfirmButton: false, timer: 1600, timerProgressBar: true });

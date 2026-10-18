@@ -9,6 +9,7 @@ header('Cache-Control: no-store');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trang Cá Nhân | GODMINTON</title>
+<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -291,6 +292,9 @@ header('Cache-Control: no-store');
                                         </button>
                                     </div>
                                 </form>
+
+                                <!-- Khối cấu hình Web Push Notification -->
+                                <div id="pushNotificationContainer" class="mt-4"></div>
                             </div>
                         </div>
 
@@ -367,6 +371,8 @@ header('Cache-Control: no-store');
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- API helpers -->
     <script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
+    <!-- Web Push Client -->
+    <script src="assets/js/push-client.js?v=<?= filemtime(__DIR__ . '/assets/js/push-client.js') ?>"></script>
     <!-- App JS -->
     <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
     <!-- Profile JS -->

@@ -7,6 +7,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lịch Sử Đặt Sân | GODMINTON</title>
+<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
@@ -41,6 +42,9 @@
                     <i class="fa-solid fa-plus me-1"></i> Đặt Sân Mới
                 </a>
             </div>
+
+            <!-- Khối cấu hình Web Push Notification -->
+            <div id="pushNotificationContainer" class="mb-4"></div>
 
             <div id="bookingListContainer">
                 <div class="text-center py-5">
@@ -80,6 +84,7 @@
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
+    <script src="assets/js/push-client.js?v=<?= filemtime(__DIR__ . '/assets/js/push-client.js') ?>"></script>
     <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
     <script src="assets/js/history.js?v=<?= filemtime(__DIR__ . '/assets/js/history.js') ?>"></script>
     <!-- Bottom Nav -->

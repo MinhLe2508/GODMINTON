@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danh Sách Sân Cầu Lông - Tìm Kiếm & Lọc Nhanh | GODMINTON</title>
     <meta name="description" content="Tìm kiếm và lọc sân cầu lông theo khu vực, giá và tiện ích tại TP.HCM.">
+<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">

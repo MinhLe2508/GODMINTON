@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const bookings=await BookingAccount.request('api/bookings.php');document.getElementById('statBookingsCount').textContent=bookings.length;
         const area=document.getElementById('profileBookingsList');
         area.innerHTML=bookings.length?bookings.slice(0,6).map(b=>`<div class="card p-3">${BookingAccount.badge(b.booking_status)}<h6 class="mt-2">${BookingAccount.escape(b.court_name)}</h6><p>${BookingAccount.escape(b.booking_code)} · ${BookingAccount.escape(b.booking_date)} · ${BookingAccount.escape(b.time_range)}</p><strong>${BookingAccount.money(b.total_amount)}</strong><a href="history.php">Xem lịch sử đầy đủ</a></div>`).join(''):'<p>Bạn chưa có đơn đặt sân.</p>';
+        if (window.PushClient) { PushClient.renderPushControls('pushNotificationContainer'); }
     }catch(e){await BookingAccount.notify(e.message,true);}
     update.addEventListener('submit',async event=>{
         event.preventDefault();save.disabled=true;
