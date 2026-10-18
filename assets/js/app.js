@@ -55,19 +55,25 @@ function initAOS() {
 async function renderNavbarUser() {
     const area = document.getElementById('navbarUserArea');
     if (!area) return;
-    const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     try {
-        const response = await fetch('api/auth/me.php', {credentials:'same-origin',cache:'no-store'});
+        const response = await fetch('api/auth/me.php', { credentials: 'same-origin', cache: 'no-store' });
         const result = await response.json();
         if (!response.ok || result.status !== 'success') throw new Error('Không tải được tài khoản.');
         const user = result.data.user;
-        if (!user) {area.innerHTML='<a class="btn btn-light rounded-pill" href="auth.php">Đăng nhập / Đăng ký</a>';return;}
-        area.innerHTML=`<span class="text-white me-2">${esc(user.name)}</span><a class="btn btn-light btn-sm" href="profile.php">Hồ sơ</a> ${['admin','owner'].includes(user.role)?'<a class="btn btn-warning btn-sm" href="admin-bookings.php">Quản lý đơn</a>':''} <button class="btn btn-outline-light btn-sm" id="btnLogout">Đăng xuất</button>`;
-        document.getElementById('btnLogout').addEventListener('click',async()=>{
-            const out=await fetch('api/auth/logout.php',{method:'POST',credentials:'same-origin'});
-            if(out.ok)location.href='auth.php';else alert('Đăng xuất thất bại.');
+        if (!user) { area.innerHTML = '<a class="btn btn-light rounded-pill" href="auth.php">Đăng nhập / Đăng ký</a>'; return; }
+        area.innerHTML = `<span class="text-white me-2">${esc(user.name)}</span><a class="btn btn-light btn-sm" href="profile.php">Hồ sơ</a> ${['admin', 'owner'].includes(user.role) ? '<a class="btn btn-warning btn-sm" href="admin-bookings.php">Quản lý đơn</a>' : ''} <button class="btn btn-outline-light btn-sm" id="btnLogout">Đăng xuất</button>`;
+        document.getElementById('btnLogout').addEventListener('click', async () => {
+            const out = await fetch('api/auth/logout.php', { method: 'POST', credentials: 'same-origin' });
+            if (out.ok) {
+                location.href = 'auth.php';
+            } else if (window.Swal) {
+                Swal.fire({ icon: 'error', title: 'Đăng xuất thất bại', text: 'Vui lòng thử lại sau.' });
+            } else {
+                alert('Đăng xuất thất bại.');
+            }
         });
-    } catch(e) {area.textContent=e.message;}
+    } catch (e) { area.textContent = e.message; }
 }
 
 // ========================

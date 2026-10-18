@@ -905,3 +905,30 @@ img, svg, video, canvas {
     animation-timing-function: var(--page-transition-timing, cubic-bezier(0.16, 1, 0.3, 1)) !important;
 }
 
+/* ==========================================================
+   WEB PUSH NOTIFICATION CARD (Profile & History)
+   ========================================================== */
+.push-notification-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-xl);
+    transition: var(--transition-fast);
+}
+.push-notification-card:hover {
+    box-shadow: var(--shadow-md) !important;
+}
+.push-icon-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(13, 148, 136, 0.12);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+[data-bs-theme="dark"] .push-icon-circle {
+    background: rgba(20, 184, 166, 0.2);
+}
+
+
