@@ -29,7 +29,7 @@ function buildTimeSlots() {
 const TIME_SLOTS = buildTimeSlots(); // 37 slots
 
 /* -------- State -------- */
-let activeCourtId = 1;          // ID sân cha từ MySQL (ví dụ: Lê Thánh Tôn Sport = 1)
+let activeCourtId = null;       // Selected venue ID, validated by booking.php.
 let activeDateStr = null;       // YYYY-MM-DD
 let currentWeekStart = null;
 let serverSlots = [];           // Danh sách slots thật từ MySQL
@@ -801,7 +801,8 @@ function startPolling() {
 /* -------- Init on Page Load -------- */
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
-    activeCourtId = parseInt(urlParams.get('court_id')) || 1;
+    activeCourtId = Number(urlParams.get('court_id'));
+    if (!Number.isSafeInteger(activeCourtId) || activeCourtId<=0) {window.location.replace('courts.php');return;}
 
     const today = new Date(); today.setHours(0,0,0,0);
     currentWeekStart = getMondayOf(today);

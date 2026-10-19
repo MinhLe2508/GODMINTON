@@ -29,7 +29,7 @@ if ($currentUser !== null) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
     <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/payment_style.css">
+    <link rel="stylesheet" href="assets/css/payment_style.css?v=<?= filemtime(__DIR__ . '/assets/css/payment_style.css') ?>">
     <script>
         window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
@@ -413,40 +413,37 @@ if ($currentUser !== null) {
 </div><!-- /container -->
 </main>
 
-<!-- ===================== SUCCESS OVERLAY ===================== -->
-<div class="success-overlay" id="successOverlay">
-    <div class="success-inner">
-        <div class="success-ring"><i class="fa-solid fa-check"></i></div>
+<!-- ===================== SUCCESS SCREEN ===================== -->
+<section class="success-overlay" id="successOverlay" aria-labelledby="successTitle" aria-hidden="true" tabindex="-1" inert>
+    <div class="success-content">
+        <div class="success-inner">
+            <div class="success-ring" aria-hidden="true"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg></div>
+            <p class="success-eyebrow">GODMINTON · XÁC NHẬN ĐẶT SÂN</p>
+            <h1 class="success-heading" id="successTitle">Đặt cọc thành công!</h1>
+            <p class="success-description">Thông tin đặt sân đã được lưu. Bạn có thể xem lại đơn trong lịch sử đặt sân.</p>
 
-        <h3 class="fw-extrabold mb-1">Đặt Cọc Thành Công!</h3>
-        <p class="text-muted mb-3" style="font-size:0.88rem;">
-            Sân của bạn đã được giữ chỗ. Mã đặt lịch:
-        </p>
+            <div class="success-code-box">
+                <span class="success-code-label">Mã đặt sân</span>
+                <strong class="booking-code" id="successCode">—</strong>
+            </div>
 
-        <div class="booking-code mb-4" id="successCode">GDM-000000</div>
-
-        <div class="success-detail-card mb-4 mx-auto" style="max-width:360px;">
-            <div class="sdrow"><span class="text-muted">Sân</span><strong id="sdCourt">--</strong></div>
-            <div class="sdrow"><span class="text-muted">Ngày</span><strong id="sdDate">--</strong></div>
-            <div class="sdrow"><span class="text-muted">Giờ</span><strong id="sdTime">--</strong></div>
-            <div class="sdrow"><span class="text-muted">Đã cọc</span><strong class="text-teal" style="color:var(--brand-teal);" id="sdDeposit">--</strong></div>
-            <div class="sdrow"><span class="text-muted">Phương thức</span><strong id="sdMethod">--</strong></div>
+            <div class="success-detail-card">
+                <div class="sdrow"><span class="text-muted">Sân cầu lông</span><strong id="sdCourt">—</strong></div>
+                <div class="sdrow"><span class="text-muted">Ngày chơi</span><strong id="sdDate">—</strong></div>
+                <div class="sdrow"><span class="text-muted">Khung giờ</span><strong id="sdTime">—</strong></div>
+                <div class="sdrow success-deposit-row"><span>Tiền đặt cọc</span><strong id="sdDeposit">—</strong></div>
+                <div class="sdrow"><span class="text-muted">Phương thức</span><strong id="sdMethod">—</strong></div>
+            </div>
+            <p class="success-contact"><i class="fa-regular fa-envelope" aria-hidden="true"></i> Email liên hệ: <strong id="sdEmail">—</strong></p>
+            <p class="success-demo-note" id="successPaymentNote" hidden>Giao dịch đang ở chế độ mô phỏng, chưa xác nhận thu tiền thực tế.</p>
+            <div class="success-actions">
+                <a href="history.php" class="btn btn-teal rounded-pill fw-bold"><i class="fa-solid fa-calendar-check me-2" aria-hidden="true"></i>Xem lịch đặt</a>
+                <a href="courts.php" class="btn btn-outline-secondary rounded-pill">Đặt sân khác <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i></a>
+            </div>
         </div>
-
-        <p class="small text-muted mb-4">
-            <i class="fa-solid fa-envelope me-1" style="color:var(--brand-teal);"></i>
-            Xác nhận đã gửi đến <strong id="sdEmail">--</strong>
-        </p>
-
-        <div class="d-flex gap-3 justify-content-center flex-wrap">
-            <a href="history.php" class="btn btn-teal rounded-pill px-4 fw-bold">
-                <i class="fa-solid fa-calendar-check me-1"></i>Xem lịch đặt
-            </a>
-            <a href="courts.php" class="btn btn-outline-secondary rounded-pill px-4">
-                Đặt sân khác
-            </a>
-        </div>
-</div>
+    </div>
+    <footer class="success-footer">&copy; 2026 GODMINTON · Đặt sân cầu lông trực tuyến</footer>
+</section>
 
 <!-- Modal Phóng to mã VietQR MB Bank -->
 <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">

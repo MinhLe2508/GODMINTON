@@ -309,7 +309,14 @@ async function handlePayment() {
             document.getElementById('sdMethod').textContent     = paymentMethodLabel;
             document.getElementById('sdEmail').textContent      = email;
 
-            document.getElementById('successOverlay').classList.add('show');
+            const successOverlay = document.getElementById('successOverlay');
+            const paymentNote = document.getElementById('successPaymentNote');
+            if (paymentNote) paymentNote.hidden = !bData.payment_is_demo;
+            successOverlay.inert = false;
+            successOverlay.ariaHidden = 'false';
+            successOverlay.classList.add('show');
+            successOverlay.scrollTop = 0;
+            successOverlay.focus?.();
             document.body.style.overflow = 'hidden';
         } else if (response.status === 401 || result.code === 401) {
             Swal.fire({

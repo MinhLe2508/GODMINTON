@@ -18,6 +18,29 @@ if ($currentUser !== null) {
     $userStmt->execute([(int)$_SESSION['user_id']]);
     $currentUser = $userStmt->fetch() ?: null;
 }
+
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/court-resolver.php';
+$requestedCourt = $_GET['court_id'] ?? '';
+if (!is_string($requestedCourt) || !ctype_digit($requestedCourt) || (int)$requestedCourt<=0) {
+    header('Location: courts.php');exit;
+}
+$requestedCourt = (int)$requestedCourt;
+$resolvedCourt = court_rebooking_target($pdo, $requestedCourt);
+if ($resolvedCourt === null) {
+    http_response_code(404);
+    echo '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sân không còn nhận đặt | GODMINTON</title><body style="margin:0;background:#f0fdfa;font:16px/1.6 system-ui;color:#134e4a"><main style="max-width:520px;margin:15vh auto;padding:28px;background:white;border-radius:20px"><h1 style="font-size:24px">Sân không còn nhận đặt</h1><p>Địa điểm này không tồn tại hoặc đã ngừng nhận đặt. Lịch sử đơn cũ vẫn được giữ nguyên.</p><a href="courts.php">Chọn sân khác</a> · <a href="history.php">Về lịch sử đặt sân</a></main></body></html>';
+    exit;
+}
+if ($resolvedCourt !== $requestedCourt) {
+    $selection=['court_id'=>$resolvedCourt];
+    if (isset($_GET['date']) && is_string($_GET['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['date'])) $selection['date']=$_GET['date'];
+    header('Location: booking.php?' . http_build_query($selection));exit;
+}
+$courtStmt=$pdo->prepare('SELECT id,name,address,opening_time,closing_time FROM courts WHERE id=?');
+$courtStmt->execute([$resolvedCourt]);$bookingCourt=$courtStmt->fetch();
+$switchCourts=$pdo->query("SELECT id,name FROM courts WHERE status='active' ORDER BY name")->fetchAll();
+function booking_text($value): string {return htmlspecialchars((string)$value,ENT_QUOTES,'UTF-8');}
 ?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
@@ -61,31 +84,30 @@ if ($currentUser !== null) {
                 </div>
                 <div>
                     <div class="d-flex align-items-center gap-2">
-                        <h5 class="fw-extrabold mb-0" id="courtNameTitle">Cầu Lông Quận 1 – Lê Thánh Tôn Sport</h5>
+                        <h5 class="fw-extrabold mb-0" id="courtNameTitle"><?= booking_text($bookingCourt['name']) ?></h5>
                         <span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.7rem;">
-                            <i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> Đang mở cửa
+                            <i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> Đang nhận đặt
                         </span>
                     </div>
                     <div class="small text-muted">
-                        <i class="fa-solid fa-map-pin text-teal me-1"></i>Số 12 Lê Thánh Tôn, Quận 1, TP.HCM
+                        <i class="fa-solid fa-map-pin text-teal me-1"></i><?= booking_text($bookingCourt['address']) ?>
                         <span class="mx-2 opacity-50">|</span>
-                        <i class="fa-regular fa-clock text-teal me-1"></i>06:00 – 23:00
+                        <i class="fa-regular fa-clock text-teal me-1"></i><?= booking_text(substr($bookingCourt['opening_time'],0,5)) ?> – <?= booking_text(substr($bookingCourt['closing_time'],0,5)) ?>
                     </div>
                 </div>
             </div>
             <div class="d-flex gap-2">
-                <a href="court-detail.php?id=1" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <a href="court-detail.php?id=<?= (int)$bookingCourt['id'] ?>" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                     <i class="fa-solid fa-circle-info me-1"></i>Thông tin sân
                 </a>
                 <div class="dropdown">
                     <button class="btn btn-outline-teal btn-sm rounded-pill px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         <i class="fa-solid fa-shuffle me-1"></i>Đổi sân
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4">
-                        <li><a class="dropdown-item" href="#">Quận 1 –  Lê Thánh Tôn Sport</a></li>
-                        <li><a class="dropdown-item" href="#">Quận 3 – Nguyễn Đình Chiểu Arena</a></li>
-                        <li><a class="dropdown-item" href="#">Quận 5 – Nguyễn Trãi Badminton</a></li>
-                        <li><a class="dropdown-item" href="#">Quận 10 – Sư Vạn Hạnh Court</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4" style="max-height:320px;overflow-y:auto">
+                        <?php foreach ($switchCourts as $switchCourt): ?>
+                        <li><a class="dropdown-item" href="booking.php?court_id=<?= (int)$switchCourt['id'] ?>"><?= booking_text($switchCourt['name']) ?></a></li>
+                        <?php endforeach; ?>
                     </ul>
                 </div>
             </div>

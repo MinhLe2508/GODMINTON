@@ -428,3 +428,38 @@ textarea.pay-input {
 @media (max-width: 400px) {
     .pm-grid { grid-template-columns: repeat(3, 1fr); }
 }
+/* Completed booking screen: centered card with a separate bottom footer. */
+.success-overlay {
+    display: flex; flex-direction: column; align-items: stretch;
+    justify-content: flex-start; overflow-y: auto; overscroll-behavior: contain;
+}
+.success-content { flex: 1 0 auto; display: grid; place-items: center; width: 100%; padding: 36px 20px; }
+.success-inner {
+    width: 100%; max-width: 600px; padding: 32px;
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: 24px; box-shadow: 0 16px 48px rgba(0,0,0,.08); text-align: center;
+}
+.success-ring { width: 72px; height: 72px; font-size: 30px; margin-bottom: 18px; }
+.success-eyebrow { color: var(--brand-teal); font-size: .68rem; font-weight: 800; letter-spacing: 1px; margin-bottom: 8px; }
+.success-heading { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; color: var(--text-primary); margin: 0 0 10px; }
+.success-description { color: var(--text-secondary); font-size: .875rem; line-height: 1.6; margin: 0 auto 20px; max-width: 430px; }
+.success-code-box { padding: 14px; border: 1px dashed var(--brand-teal); background: rgba(13,148,136,.06); border-radius: 14px; margin-bottom: 20px; }
+.success-code-label { display: block; color: var(--text-secondary); font-size: .75rem; margin-bottom: 4px; }
+.success-code-box .booking-code { display: block; font-size: clamp(1rem, 4vw, 1.4rem); letter-spacing: 1px; overflow-wrap: anywhere; }
+.success-detail-card { width: 100%; margin: 0 0 16px; background: var(--bg-body); }
+.success-detail-card .sdrow { display: grid; grid-template-columns: 110px minmax(0,1fr); gap: 16px; align-items: start; padding: 12px 16px; }
+.success-detail-card .sdrow strong { text-align: right; overflow-wrap: anywhere; color: var(--text-primary); }
+.success-detail-card .success-deposit-row { background: rgba(13,148,136,.07); color: var(--brand-teal); }
+.success-detail-card .success-deposit-row strong { color: var(--brand-teal); font-size: 1rem; }
+.success-contact { color: var(--text-secondary); font-size: .78rem; margin: 0 0 16px; overflow-wrap: anywhere; }
+.success-contact i { color: var(--brand-teal); margin-right: 4px; }
+.success-demo-note { color: var(--text-secondary); font-size: .75rem; margin: 0 0 16px; }
+.success-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.success-actions .btn { padding: 11px 14px; font-size: .875rem; }
+.success-footer { flex-shrink: 0; width: 100%; padding: 18px 20px calc(18px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--border-color); text-align: center; color: var(--text-secondary); background: var(--bg-surface); font-size: .75rem; }
+@media (max-width: 575.98px) {
+    .success-content { padding: 20px 12px; }
+    .success-inner { padding: 24px 16px; border-radius: 18px; }
+    .success-detail-card .sdrow { grid-template-columns: 85px minmax(0,1fr); gap: 10px; padding: 11px 12px; }
+    .success-actions { grid-template-columns: 1fr; gap: 8px; }
+}

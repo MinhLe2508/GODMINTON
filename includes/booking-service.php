@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/booking-account-api.php';
+require_once __DIR__.'/court-resolver.php';
 function booking_code(array $b,?string $date=null):string{return $b['booking_code']?:'GDM-'.str_replace('-','',substr($date?:$b['created_at'],0,10)).'-'.str_pad((string)$b['id'],4,'0',STR_PAD_LEFT);}
 function booking_list(array $user,bool $admin=false):array{
  global $pdo;$where=[];$args=[];
@@ -7,11 +8,12 @@ function booking_list(array $user,bool $admin=false):array{
  $status=$_GET['status']??'';if(!is_string($status)||!in_array($status,['','pending','confirmed','completed','cancelled'],true))throw new BookingError(422,'Bộ lọc trạng thái không hợp lệ.');if($status!==''){$where[]='b.status=?';$args[]=$status;}
  $query=$_GET['q']??'';if(!is_string($query)||mb_strlen($query)>150)throw new BookingError(422,'Từ khóa tìm kiếm không hợp lệ.');$q=trim($query);
  if($q!==''){$where[]='(b.booking_code LIKE ? OR u.name LIKE ? OR u.email LIKE ? OR c.name LIKE ?)';foreach(range(1,4)as $_)$args[]='%'.$q.'%';}
- $sql='SELECT b.*,c.name AS court_name,c.address AS court_address,c.owner_id,u.name AS user_name,u.phone AS user_phone,u.email AS user_email FROM bookings b JOIN courts c ON c.id=b.court_id JOIN users u ON u.id=b.user_id';
+ $sql='SELECT b.*,c.name AS court_name,c.address AS court_address,c.status AS court_status,c.owner_id,u.name AS user_name,u.phone AS user_phone,u.email AS user_email FROM bookings b JOIN courts c ON c.id=b.court_id JOIN users u ON u.id=b.user_id';
  if($where)$sql.=' WHERE '.implode(' AND ',$where);$s=$pdo->prepare($sql.' ORDER BY b.created_at DESC,b.id DESC');$s->execute($args);$rows=$s->fetchAll();if(!$rows)return [];
  $ids=array_column($rows,'id');$in=implode(',',array_fill(0,count($ids),'?'));
  $s=$pdo->prepare("SELECT bs.booking_id,s.id,s.court_id,s.sub_court_name,s.slot_date,s.start_time,s.end_time,(TIMESTAMP(s.slot_date,s.start_time)>NOW()) AS future_start,(TIMESTAMP(s.slot_date,s.end_time)<=NOW()) AS ended FROM booking_slots bs JOIN time_slots s ON s.id=bs.slot_id WHERE bs.booking_id IN ($in) ORDER BY s.slot_date,s.start_time,s.id");$s->execute($ids);$groups=[];foreach($s->fetchAll()as $slot)$groups[$slot['booking_id']][]=$slot;
  foreach($rows as &$b){$slots=$groups[$b['id']]??[];$first=$slots[0]??null;$last=$slots?end($slots):null;
+ $b['rebook_court_id']=court_rebooking_target($pdo,(int)$b['court_id'],$b['court_status']);$b['can_rebook']=$b['rebook_court_id']!==null;
  $b['id']=(int)$b['id'];$b['court_id']=(int)$b['court_id'];$b['user_id']=(int)$b['user_id'];$b['booking_code']=booking_code($b,$first['slot_date']??null);$b['booking_status']=$b['status'];$b['total_amount']=(int)$b['total_price'];$b['deposit_amount']=(int)$b['deposit_amount'];
  $b['booking_date']=$first['slot_date']??null;$b['start_time']=$first?substr($first['start_time'],0,5):'';$b['end_time']=$last?substr($last['end_time'],0,5):'';$b['time_range']=$b['start_time'].' - '.$b['end_time'];$b['sub_court_name']=implode(', ',array_unique(array_column($slots,'sub_court_name')));
  $b['can_cancel']=in_array($b['status'],['pending','confirmed'],true)&&count($slots)>0&&!array_filter($slots,fn($s)=>!(bool)$s['future_start']);$b['can_complete']=$admin&&$b['status']==='confirmed'&&count($slots)>0&&!array_filter($slots,fn($s)=>!(bool)$s['ended']);

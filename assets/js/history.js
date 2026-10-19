@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p>${BookingAccount.escape(b.sub_court_name)} · ${BookingAccount.escape(b.booking_date)} · ${BookingAccount.escape(b.time_range)}</p>
                 <p>Tổng tiền: <strong>${BookingAccount.money(b.total_amount)}</strong> · Cọc mô phỏng: ${BookingAccount.money(b.deposit_amount)}</p>
                 <p>Phương thức: ${BookingAccount.escape(b.payment_method || 'Chưa lưu trong bản cũ')}<br>Ghi chú: ${BookingAccount.escape(b.notes || '—')}</p>
-                <div>${b.can_cancel ? `<button class="btn btn-outline-danger rounded-pill" data-cancel="${b.id}">Hủy đơn</button>` : `<a class="btn btn-outline-secondary rounded-pill" href="booking.php?court_id=${b.court_id}">Đặt lại</a>`}</div>
+                <div>${b.can_cancel ? `<button class="btn btn-outline-danger rounded-pill" data-cancel="${b.id}">Hủy đơn</button>` : (b.can_rebook === false ? '<span class="small text-muted">Sân đã ngừng nhận đặt</span>' : `<a class="btn btn-outline-secondary rounded-pill" href="booking.php?court_id=${Number(b.rebook_court_id || b.court_id)}">Đặt lại</a>`)}</div>
             </div>`).join('');
         } catch (e) {container.textContent=e.message;const retry=document.createElement('button');retry.textContent='Thử lại';retry.className='btn btn-outline-secondary m-2';retry.onclick=load;container.append(retry);}
     }
