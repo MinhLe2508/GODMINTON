@@ -161,19 +161,20 @@ $embedded = <<<'COURTS_JSON'
       "osm_url": "https://www.openstreetmap.org/?mlat=10.7563925&mlon=106.7011714#map=19/10.7563925/106.7011714"
     },
     {
-      "name": "Sân Cầu Lông TPro",
-      "address": "1B Đ. Hoàng Diệu, Phường Xóm Chiếu, Thành phố Hồ Chí Minh",
-      "map_url": "https://maps.app.goo.gl/kzNwD6adtr3AZrC16",
+      "name": "Học viện cầu lông TPro",
+      "address": "1k Ngô Văn Sở, Xóm Chiếu, Hồ Chí Minh, Việt Nam",
+      "map_url": "https://www.google.com/maps/search/?api=1&query=10.762291,106.710475",
       "source_url": "https://tuanviet.vn/danh-sach-san-cau-long-quan-4",
-      "latitude": 10.7641603,
-      "longitude": 106.7094772,
-      "coordinate_source_url": "https://www.google.com/maps/place/H%E1%BB%8Dc+Vi%E1%BB%87n+C%E1%BA%A7u+L%C3%B4ng+TPro/@10.7638873,106.7084945,160m/data=!3m1!1e3!4m7!3m6!1s0x31752f00656f7723:0x124dcad56c8c6b79!8m2!3d10.7641603!4d106.7094772!15sCixzw6JuIGPhuqd1IGzDtG5nIOG7nyBxdeG6rW4gNCBo4buTIGNow60gbWluaFouIixzw6JuIGPhuqd1IGzDtG5nIOG7nyBxdeG6rW4gNCBo4buTIGNow60gbWluaJIBEWd5bW5hc3RpY3NfY2VudGVymgEjQ2haRFNVaE5NRzluUzBWSlEwRm5TVU5JT1dSTU5FeFJFQUXgAQD6AQQIABAq!16s%2Fg%2F11y5tm_dhb!5m1!1e2?entry=tts&g_ep=EgoyMDI1MDMzMS4wIPu8ASoASAFQAw%3D%3D&skid=8c4d0dec-ec2c-433d-867d-74dc16083661",
+      "latitude": 10.762291,
+      "longitude": 106.710475,
+      "coordinate_source_url": "https://www.google.com/maps/search/?api=1&query=10.762291,106.710475",
       "district_old": "Quận 4",
       "source_key": "5e25d61b35926d2a284c",
       "ward_name": "Xóm Chiếu",
-      "coordinate_quality": "place_pin",
-      "verification_note": "Tọa độ ghim địa điểm từ liên kết bản đồ của nguồn; chưa đo đạc thực địa hoặc xác nhận hoạt động qua điện thoại.",
-      "osm_url": "https://www.openstreetmap.org/?mlat=10.7641603&mlon=106.7094772#map=19/10.7641603/106.7094772"
+      "coordinate_quality": "user_provided_map_pin",
+      "verification_note": "Tên, địa chỉ và tọa độ được người dùng đính chính ngày 19/10/2026 theo ảnh Google Maps cung cấp; chưa kiểm tra thực địa. TPro và T12 là hai địa điểm riêng.",
+      "osm_url": "https://www.openstreetmap.org/?mlat=10.762291&mlon=106.710475#map=19/10.762291/106.710475",
+      "corrected_on": "2026-10-19"
     },
     {
       "name": "Sân cầu lông T12",
