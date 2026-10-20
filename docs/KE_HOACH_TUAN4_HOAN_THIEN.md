@@ -28,7 +28,7 @@
     - **Critical Rule**: Không cache các endpoint API xử lý giao dịch (`api/hold.php`, `api/bookings.php`, `api/slots.php`) để tránh dữ liệu ảo.
   - Đăng ký Service Worker trong `assets/js/app.js` và thêm thẻ `<link rel="manifest">` vào các trang PHP.
 - [ ] **STT 22 — Web Push Notification nhắc lịch:**
-  - Viết migration `database/migration_week4.sql` tạo bảng `push_subscriptions` (`id`, `user_id`, `endpoint`, `p256dh`, `auth`, `created_at`).
+  - Viết migration `database/migration_push_subscriptions.sql` tạo bảng `push_subscriptions` (`id`, `user_id`, `endpoint`, `p256dh`, `auth`, `created_at`).
   - Hoàn thiện `api/push/subscribe.php`: Nhận push subscription từ trình duyệt qua AJAX và lưu vào MySQL theo đúng `user_id`.
   - Hoàn thiện `api/push/send.php`: 
     - Quét các đơn đặt sân trạng thái `confirmed` sắp diễn ra trong ngày để gửi thông báo nhắc nhở.
@@ -41,9 +41,9 @@
 - [ ] Rà soát toàn bộ kết nối DB và câu truy vấn: Đảm bảo 100% dùng PDO prepared statements, kiểm tra lại cấu hình timezone `Asia/Ho_Chi_Minh` (`+07:00`) trên cả MySQL và PHP để `NOW()` luôn đồng bộ.
 - [ ] Xây dựng script tạo sẵn cặp khóa VAPID (Public/Private Key) hoặc tích hợp cấu hình VAPID mặc định chạy được ngay trên localhost mà không phụ thuộc cài đặt phức tạp.
 - [ ] Chạy script dọn slot tự động `api/cleanup-expired.php` trên cron/Task Scheduler hoặc kích hoạt ngầm khi người dùng load trang.
-- [ ] Soạn thảo và kiểm tra file seed CSDL hoàn chỉnh cuối cùng (`database/seed_final.sql`), đảm bảo khi import trên một máy hoàn toàn mới có đủ:
+- [ ] Soạn thảo và kiểm tra file seed CSDL hoàn chỉnh cuối cùng (`database/seed.sql`), đảm bảo khi import trên một máy hoàn toàn mới có đủ:
   - 3 tài khoản demo đã băm mật khẩu bcrypt chuẩn (`khach1@gmail.com`, `owner.q1@godminton.vn`, `admin@godminton.vn`).
-  - Danh mục sân có tọa độ thật, tiện ích, khung giờ mẫu và lịch sử đơn đặt mẫu cho cả 3 trạng thái (`confirmed`, `completed`, `cancelled`).
+  - Danh mục sân có tọa độ thật, tiện ích, ảnh và tiện ích hiện tại; dữ liệu đơn/khung giờ kiểm thử được tạo riêng, không đưa vào seed cài mới.
 
 ---
 
@@ -119,7 +119,7 @@ gantt
 
 ### 📌 Sản phẩm nộp bài đầy đủ theo quy định
 - [ ] Mã nguồn sạch sẽ, không còn file thừa, đẩy toàn bộ lên nhánh `main`/`project` trên GitHub.
-- [ ] File CSDL `database/seed_final.sql` import chạy ngay không lỗi.
+- [ ] Cặp `database/schema.sql` → `database/seed.sql` import trên DB trống không lỗi.
 - [ ] Video demo `demo.mp4` thời lượng 5–10 phút, đầy đủ mặt và giọng nói 3 thành viên trình bày từng phân hệ.
 - [ ] Báo cáo cuối kỳ PDF hoàn chỉnh (gộp Báo cáo giao diện tĩnh + Thiết kế CSDL + Kiến trúc PHP/MySQL + Kết quả kiểm thử).
 - [ ] Bảng điểm tự đánh giá `Rubric.xlsx` điền đầy đủ minh chứng.

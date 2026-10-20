@@ -43,7 +43,7 @@ if (!in_array($currentRole, ['admin', 'owner'], true)) {
 
 /**
  * Tự động kiểm tra và bổ sung các cột mở rộng của Tuần 3 (total_sub_courts, opening_time, closing_time)
- * vào bảng courts nếu người dùng chưa chạy database/migration_week3.sql.
+ * vào bảng courts nếu người dùng chưa chạy database/migration_admin_management.sql.
  */
 function ensureCourtsSchema(PDO $pdo): void {
     static $checked = false;

@@ -56,7 +56,7 @@ Set-Location 'D:\xampp\htdocs\GODMINTON-tuan3-Minh'
 
 Migration đọc .env, thêm booking_code/payment_method/notes nếu thiếu, sửa booking_code nullable cho INSERT tạo ID trước, bổ sung mã cho đơn cũ còn trống và tạo unique index nếu cần. Có thể chạy lại. Kết quả cần là “Migration tuần 3 thành công” và đúng tên DB đã chọn.
 
-Nếu thất bại, đọc thông báo; không chạy reset_slots_week2.sql để chữa. Các phương thức/ghi chú đã không được lưu trong bản cũ không thể tự khôi phục bằng migration. Migration chỉ backfill mã đơn từ slot_date/id, không dựng giả dữ liệu thanh toán cũ.
+Nếu thất bại, đọc thông báo; không dùng script xóa lịch/đơn để chữa. Các phương thức/ghi chú đã không được lưu trong bản cũ không thể tự khôi phục bằng migration. Migration chỉ backfill mã đơn từ slot_date/id, không dựng giả dữ liệu thanh toán cũ.
 
 ## 5. Kiểm tra ba trang
 

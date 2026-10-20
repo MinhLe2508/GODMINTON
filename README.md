@@ -37,8 +37,8 @@ godminton/
 │   └── auth-check.php        ← include ở đầu trang cần đăng nhập
 │
 ├── database/
-│   ├── schema.sql             ← đúng schema đã thiết kế (9 bảng)
-│   └── seed.sql                ← dữ liệu mẫu, khớp 3 tài khoản demo cũ
+│   ├── schema.sql             ← cấu trúc hiện tại (12 bảng)
+│   └── seed.sql                ← danh mục hiện tại và tài khoản phát triển
 │
 ├── .env.example, .gitignore, composer.json
 ```
@@ -74,9 +74,7 @@ Tuần 4 → `manifest.json`, `sw.js`, `api/push/*`.
 ## 4. Tuần 2 — Giữ chỗ 5 phút (Huy: task 7, 8, 11)
 
 1. `api/slots.php` (Minh) **tự sinh** khung giờ cho ngày chưa có slot (4 thảm A1–A4, 05:30–23:30) nên **không cần seed slot thủ công**.
-   Tuỳ chọn: chạy `database/migration_week2.sql` một lần (thêm 3 cột phụ cho `bookings`, cho phép NULL).
-   - Đã chạy bản migration cũ (lỗi `Field 'booking_code' doesn't have a default value`)? Chạy `database/fix_booking_code_nullable.sql`.
-   - Đã chạy `seed_slots.sql` cũ (lịch chỉ còn thảm A1)? Chạy `database/reset_slots_week2.sql` (⚠ xoá toàn bộ slot và đơn test).
+   DB cài mới đã có đủ cột. Với DB cũ, xem [hướng dẫn database](database/README.md); không dùng script reset dữ liệu để sửa lỗi.
 2. `api/hold.php` — giữ chỗ 5 phút bằng transaction + `SELECT ... FOR UPDATE`. Giao diện (đúng với `calendar_booking.js`):
    `{"slot_ids":[101,102],"action":"hold"}` (hoặc `{"slot_id":101}`), `{"action":"release","slot_ids":[...]}`.
    Mã trả về: 200 thành công · 401 chưa đăng nhập · 404 không thấy slot · 409 đã bị người khác giữ/đã đặt ·
@@ -91,7 +89,7 @@ Tuần 4 → `manifest.json`, `sw.js`, `api/push/*`.
 
 ## 5. Tuần 3 — Khu quản trị Sân, Khung giờ & Dashboard (Huy: task 13, 14)
 
-1. **Migration CSDL Tuần 3 (`database/migration_week3.sql`)**:
+1. **Migration CSDL Tuần 3 (`database/migration_admin_management.sql`)**:
    - Mở rộng `time_slots.status` thêm trạng thái `'blocked'` (Ngừng nhận đặt) và cột `price`.
    - Bổ sung `total_sub_courts`, `opening_time`, `closing_time` cho bảng `courts`.
    - *Lưu ý:* `api/admin/courts.php` và `api/admin/slots.php` có cơ chế tự kiểm tra và nâng cấp bảng tự động (`ensureCourtsSchema` / `ensureSlotsSchema`) nên hệ thống vẫn chạy trơn tru ngay cả khi quên chạy file migration thủ công.
@@ -122,7 +120,7 @@ Tuần 4 → `manifest.json`, `sw.js`, `api/push/*`.
 
 ### B. Web Push Notification (Thông báo đẩy nhắc lịch thi đấu)
 1. **Cơ sở dữ liệu**:
-   - Bảng `push_subscriptions` (`database/migration_week4.sql`) lưu trữ endpoint, p256dh, auth của từng thiết bị.
+   - Bảng `push_subscriptions` (`database/migration_push_subscriptions.sql`) lưu trữ endpoint, p256dh, auth của từng thiết bị.
 2. **Cấu hình VAPID (`config/vapid.php`)**:
    - Cặp khóa mật mã đường cong elliptic NIST P-256 tiêu chuẩn, cấp phát VAPID Public Key qua `api/push/vapid-public-key.php`.
 3. **Kiến trúc 2 tầng (Two-Tier Architecture)**:
@@ -131,15 +129,11 @@ Tuần 4 → `manifest.json`, `sw.js`, `api/push/*`.
 4. **Giao diện quản lý thông báo**:
    - Tích hợp nút bật/tắt và nút "Gửi thử thông báo" trực quan trên trang [Hồ sơ cá nhân](file:///c:/xampp/htdocs/GODMINTON/profile.php) và [Lịch sử đặt sân](file:///c:/xampp/htdocs/GODMINTON/history.php) thông qua [assets/js/push-client.js](file:///c:/xampp/htdocs/GODMINTON/assets/js/push-client.js).
 
-### C. CSDL Khởi tạo hoàn chỉnh 1-Click (`database/seed_final.sql`)
-Nhập trực tiếp vào MySQL sạch mà không cần chạy lần lượt từng file migration:
-```bash
-mysql -u root < database/seed_final.sql
-```
-Bao gồm đầy đủ 12 bảng, 7 sân thật kèm tọa độ GPS và tiện ích, danh mục phường đô thị lõi TP.HCM, tin tức, liên hệ và 3 tài khoản demo:
-- **Khách hàng**: `khach1@gmail.com` / `Khach@123`
-- **Chủ sân**: `owner.q1@godminton.vn` / `Owner@123`
-- **Quản trị viên**: `admin@godminton.vn` / `Admin@123`
+### C. CSDL cài mới và nâng cấp
+
+Thực hiện theo [database/README.md](database/README.md). Trên database trống, import `schema.sql` trước rồi `seed.sql`. Không import seed lên DB nhóm đang chạy. Bộ cài đã bao gồm đầy đủ cấu trúc 12 bảng; migration chỉ dành cho DB cũ.
+
+Seed giữ danh mục sân/tiện ích/ảnh, địa chỉ TPro và trạng thái ngừng hoạt động của các bản trùng. Không chứa đơn đặt, khung giờ, liên hệ, tài khoản thật hoặc thiết bị nhận thông báo. Ba tài khoản phát triển và mật khẩu được ghi trong hướng dẫn database.
 
 ### D. Bộ lệnh Kiểm thử tự động (Automated Test Suite)
 Chạy trực tiếp từ thư mục gốc dự án:

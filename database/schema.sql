@@ -1,196 +1,166 @@
--- =====================================================================
--- CƠ SỞ DỮ LIỆU: Website Đặt Sân Cầu Lông Trực Tuyến
--- Phạm vi: khu vực đô thị lõi cũ TP.HCM (các phường trung tâm)
--- Engine: MySQL 8.0+ (InnoDB, hỗ trợ FOREIGN KEY)
--- =====================================================================
+-- GODMINTON schema, exported 2026-10-20 21:29:46 +07:00
+-- Select an EMPTY database before importing. No DROP/USE/CREATE DATABASE statements.
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS=0;
 
-CREATE DATABASE IF NOT EXISTS badminton_booking
-  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE badminton_booking;
+CREATE TABLE `amenities` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `code` varchar(30) NOT NULL,
+  `label` varchar(50) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ---------------------------------------------------------------------
--- 1. USERS — tài khoản khách hàng / chủ sân / quản trị viên
--- ---------------------------------------------------------------------
-CREATE TABLE users (
-    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name            VARCHAR(150)    NOT NULL,
-    email           VARCHAR(150)    NOT NULL UNIQUE,
-    phone           VARCHAR(20)     NULL,
-    password_hash   VARCHAR(255)    NOT NULL,           -- luôn lưu bcrypt, không lưu plaintext
-    role            ENUM('customer', 'owner', 'admin') NOT NULL DEFAULT 'customer',
-    avatar_url      VARCHAR(255)    NULL,
-    is_verified     TINYINT(1)      NOT NULL DEFAULT 0, -- đã kích hoạt qua email hay chưa
-    created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
-                                    ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+CREATE TABLE `booking_slots` (
+  `booking_id` int(10) unsigned NOT NULL,
+  `slot_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`booking_id`,`slot_id`),
+  KEY `fk_bs_slot` (`slot_id`),
+  CONSTRAINT `fk_bs_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_bs_slot` FOREIGN KEY (`slot_id`) REFERENCES `time_slots` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ---------------------------------------------------------------------
--- 2. WARDS — danh mục phường thuộc khu vực đô thị lõi cũ
---    (không dùng "quận" vì cấp quận/huyện đã bị bãi bỏ từ 1/7/2025;
---     old_area chỉ để hiển thị cho người dùng quen tên cũ)
---    Đây là DANH SÁCH VÍ DỤ — nhóm cần bổ sung đầy đủ các phường
---    thuộc khu vực lõi mà đồ án chọn làm phạm vi hoạt động.
--- ---------------------------------------------------------------------
-CREATE TABLE wards (
-    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name            VARCHAR(100)    NOT NULL,           -- tên phường hiện hành, vd "Sài Gòn"
-    old_area_label  VARCHAR(100)    NULL                -- tên gợi nhớ khu vực cũ, vd "Quận 1 (cũ)"
-) ENGINE=InnoDB;
+CREATE TABLE `bookings` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
+  `court_id` int(10) unsigned NOT NULL,
+  `booking_code` varchar(30) DEFAULT NULL,
+  `total_price` decimal(12,0) NOT NULL,
+  `deposit_amount` decimal(12,0) NOT NULL DEFAULT 0,
+  `payment_method` varchar(30) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `status` enum('pending','confirmed','cancelled','completed') NOT NULL DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_booking_code` (`booking_code`),
+  KEY `idx_bookings_user` (`user_id`),
+  KEY `idx_bookings_court` (`court_id`),
+  CONSTRAINT `fk_bookings_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`),
+  CONSTRAINT `fk_bookings_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO wards (name, old_area_label) VALUES
-    ('Sài Gòn',      'Quận 1 (cũ)'),
-    ('Chợ Lớn',      'Quận 5 (cũ)'),
-    ('Bình Tây',     'Quận 6 (cũ)'),
-    ('Bình Tiên',    'Quận 6 (cũ)'),
-    ('Bình Phú',     'Quận 6 (cũ)'),
-    ('Phú Lâm',      'Quận 6 (cũ)'),
-    ('Minh Phụng',   'Quận 11 (cũ)');
-    -- TODO: bổ sung đầy đủ các phường còn lại trong phạm vi đô án chọn
+CREATE TABLE `contacts` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned DEFAULT NULL,
+  `name` varchar(120) NOT NULL,
+  `phone` varchar(30) NOT NULL,
+  `email` varchar(254) NOT NULL,
+  `subject` varchar(200) NOT NULL,
+  `message` text NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'new',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ---------------------------------------------------------------------
--- 3. COURTS — sân cầu lông
--- ---------------------------------------------------------------------
-CREATE TABLE courts (
-    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    owner_id        INT UNSIGNED    NOT NULL,
-    ward_id         INT UNSIGNED    NOT NULL,
-    name            VARCHAR(150)    NOT NULL,
-    address         VARCHAR(255)    NOT NULL,
-    latitude        DECIMAL(10,7)   NOT NULL,           -- ví dụ 10.7769000
-    longitude       DECIMAL(10,7)   NOT NULL,           -- ví dụ 106.7009000
-    price_per_hour  DECIMAL(10,0)   NOT NULL,
-    description     TEXT            NULL,
-    status          ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
-    created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+CREATE TABLE `court_amenities` (
+  `court_id` int(10) unsigned NOT NULL,
+  `amenity_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`court_id`,`amenity_id`),
+  KEY `fk_ca_amenity` (`amenity_id`),
+  CONSTRAINT `fk_ca_amenity` FOREIGN KEY (`amenity_id`) REFERENCES `amenities` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ca_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    CONSTRAINT fk_courts_owner
-        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_courts_ward
-        FOREIGN KEY (ward_id)  REFERENCES wards(id)  ON DELETE RESTRICT,
+CREATE TABLE `court_images` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `court_id` int(10) unsigned NOT NULL,
+  `image_url` varchar(255) NOT NULL,
+  `sort_order` int(10) unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_images_court` (`court_id`),
+  CONSTRAINT `fk_images_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    INDEX idx_courts_ward (ward_id),
-    INDEX idx_courts_location (latitude, longitude)     -- đủ dùng ở quy mô 1 khu vực,
-                                                         -- không cần kiểu POINT/spatial index
-) ENGINE=InnoDB;
+CREATE TABLE `courts` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `owner_id` int(10) unsigned NOT NULL,
+  `ward_id` int(10) unsigned NOT NULL,
+  `name` varchar(150) NOT NULL,
+  `address` varchar(255) NOT NULL,
+  `latitude` decimal(10,7) NOT NULL,
+  `longitude` decimal(10,7) NOT NULL,
+  `price_per_hour` decimal(10,0) NOT NULL,
+  `total_sub_courts` int(10) unsigned NOT NULL DEFAULT 6,
+  `opening_time` time NOT NULL DEFAULT '06:00:00',
+  `closing_time` time NOT NULL DEFAULT '22:00:00',
+  `description` text DEFAULT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_courts_owner` (`owner_id`),
+  KEY `idx_courts_ward` (`ward_id`),
+  KEY `idx_courts_location` (`latitude`,`longitude`),
+  CONSTRAINT `fk_courts_owner` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_courts_ward` FOREIGN KEY (`ward_id`) REFERENCES `wards` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ---------------------------------------------------------------------
--- 4. COURT_IMAGES — ảnh sân (1 sân có nhiều ảnh)
--- ---------------------------------------------------------------------
-CREATE TABLE court_images (
-    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    court_id        INT UNSIGNED    NOT NULL,
-    image_url       VARCHAR(255)    NOT NULL,
-    sort_order      INT UNSIGNED    NOT NULL DEFAULT 0,
+CREATE TABLE `news` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL,
+  `summary` text NOT NULL,
+  `content` mediumtext NOT NULL,
+  `image_url` varchar(2048) DEFAULT NULL,
+  `category` varchar(30) NOT NULL DEFAULT 'notice',
+  `status` varchar(20) NOT NULL DEFAULT 'draft',
+  `published_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_news_publication` (`status`,`published_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    CONSTRAINT fk_images_court
-        FOREIGN KEY (court_id) REFERENCES courts(id) ON DELETE CASCADE,
+CREATE TABLE `push_subscriptions` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned DEFAULT NULL,
+  `endpoint` text NOT NULL,
+  `p256dh` varchar(255) NOT NULL,
+  `auth` varchar(255) NOT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_endpoint` (`endpoint`(191)),
+  KEY `idx_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-    INDEX idx_images_court (court_id)
-) ENGINE=InnoDB;
+CREATE TABLE `time_slots` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `court_id` int(10) unsigned NOT NULL,
+  `sub_court_name` varchar(50) NOT NULL DEFAULT 'Thảm A1',
+  `slot_date` date NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL,
+  `price` decimal(10,0) DEFAULT NULL,
+  `status` enum('available','holding','booked','blocked') NOT NULL DEFAULT 'available',
+  `held_by` int(10) unsigned DEFAULT NULL,
+  `hold_expires_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_slot_per_court` (`court_id`,`slot_date`,`start_time`,`sub_court_name`),
+  KEY `fk_slots_held_by` (`held_by`),
+  KEY `idx_slots_lookup` (`court_id`,`slot_date`,`status`),
+  CONSTRAINT `fk_slots_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_slots_held_by` FOREIGN KEY (`held_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ---------------------------------------------------------------------
--- 5. AMENITIES — danh mục tiện ích (khớp bộ lọc trên courts.html)
--- ---------------------------------------------------------------------
-CREATE TABLE amenities (
-    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    code            VARCHAR(30)     NOT NULL UNIQUE,    -- aircon, parking, shower, rental, cafe, locker, wifi, indoor
-    label           VARCHAR(50)     NOT NULL            -- Điều hòa, Bãi đỗ xe, Phòng tắm, ...
-) ENGINE=InnoDB;
+CREATE TABLE `users` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(150) NOT NULL,
+  `email` varchar(150) NOT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `role` enum('customer','owner','admin') NOT NULL DEFAULT 'customer',
+  `avatar_url` varchar(255) DEFAULT NULL,
+  `is_verified` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO amenities (code, label) VALUES
-    ('aircon',  'Điều hòa'),
-    ('parking', 'Bãi đỗ xe'),
-    ('shower',  'Phòng tắm'),
-    ('rental',  'Cho thuê vợt'),
-    ('cafe',    'Canteen/Cafe'),
-    ('locker',  'Tủ khóa'),
-    ('wifi',    'Wi-Fi'),
-    ('indoor',  'Sân trong nhà');
+CREATE TABLE `wards` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `old_area_label` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ---------------------------------------------------------------------
--- 6. COURT_AMENITIES — bảng trung gian N-N giữa courts và amenities
--- ---------------------------------------------------------------------
-CREATE TABLE court_amenities (
-    court_id        INT UNSIGNED    NOT NULL,
-    amenity_id      INT UNSIGNED    NOT NULL,
-
-    PRIMARY KEY (court_id, amenity_id),
-    CONSTRAINT fk_ca_court
-        FOREIGN KEY (court_id)   REFERENCES courts(id)    ON DELETE CASCADE,
-    CONSTRAINT fk_ca_amenity
-        FOREIGN KEY (amenity_id) REFERENCES amenities(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- ---------------------------------------------------------------------
--- 7. TIME_SLOTS — khung giờ theo từng sân, từng ngày
---    (status 'holding' phục vụ cơ chế giữ chỗ 5 phút trước khi thanh toán)
--- ---------------------------------------------------------------------
-CREATE TABLE time_slots (
-    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    court_id        INT UNSIGNED    NOT NULL,
-    sub_court_name  VARCHAR(50)     NOT NULL DEFAULT 'Thảm A1', -- Thảm A1, A2, A3...
-    slot_date       DATE            NOT NULL,
-    start_time      TIME            NOT NULL,
-    end_time        TIME            NOT NULL,
-    status          ENUM('available', 'holding', 'booked') NOT NULL DEFAULT 'available',
-    held_by         INT UNSIGNED    NULL,               -- user đang giữ chỗ (nếu status='holding')
-    hold_expires_at DATETIME        NULL,               -- hết hạn giữ chỗ (now() + 5 phút)
-
-    CONSTRAINT fk_slots_court
-        FOREIGN KEY (court_id) REFERENCES courts(id) ON DELETE CASCADE,
-    CONSTRAINT fk_slots_held_by
-        FOREIGN KEY (held_by)  REFERENCES users(id)  ON DELETE SET NULL,
-
-    UNIQUE KEY uq_slot_per_court (court_id, slot_date, start_time, sub_court_name),
-    INDEX idx_slots_lookup (court_id, slot_date, status)
-) ENGINE=InnoDB;
-
--- ---------------------------------------------------------------------
--- 8. BOOKINGS — đơn đặt sân (đã xác nhận/thanh toán)
--- ---------------------------------------------------------------------
-CREATE TABLE bookings (
-    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id         INT UNSIGNED    NOT NULL,
-    court_id        INT UNSIGNED    NOT NULL,
-    total_price     DECIMAL(12,0)   NOT NULL,
-    deposit_amount  DECIMAL(12,0)   NOT NULL DEFAULT 0,
-    status          ENUM('pending', 'confirmed', 'cancelled', 'completed')
-                    NOT NULL DEFAULT 'pending',
-    created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_bookings_user
-        FOREIGN KEY (user_id)  REFERENCES users(id)  ON DELETE RESTRICT,
-    CONSTRAINT fk_bookings_court
-        FOREIGN KEY (court_id) REFERENCES courts(id) ON DELETE RESTRICT,
-
-    INDEX idx_bookings_user (user_id),
-    INDEX idx_bookings_court (court_id)
-) ENGINE=InnoDB;
-
--- ---------------------------------------------------------------------
--- 9. BOOKING_SLOTS — 1 đơn đặt có thể gồm nhiều khung giờ liên tiếp
--- ---------------------------------------------------------------------
-CREATE TABLE booking_slots (
-    booking_id      INT UNSIGNED    NOT NULL,
-    slot_id         INT UNSIGNED    NOT NULL,
-
-    PRIMARY KEY (booking_id, slot_id),
-    CONSTRAINT fk_bs_booking
-        FOREIGN KEY (booking_id) REFERENCES bookings(id)   ON DELETE CASCADE,
-    CONSTRAINT fk_bs_slot
-        FOREIGN KEY (slot_id)    REFERENCES time_slots(id) ON DELETE RESTRICT
-) ENGINE=InnoDB;
-
--- =====================================================================
--- Ghi chú triển khai:
--- 1. Ràng buộc "giữ chỗ 5 phút" (held_by / hold_expires_at) nên được xử lý
---    bằng transaction PDO có SELECT ... FOR UPDATE khi cập nhật time_slots,
---    để tránh race condition khi 2 người bấm giữ cùng 1 slot cùng lúc.
--- 2. latitude/longitude dùng DECIMAL thường là đủ ở quy mô 1 khu vực đô
---    thị lõi; chỉ cần cân nhắc kiểu POINT + SPATIAL INDEX nếu sau này mở
---    rộng ra hàng nghìn sân trải khắp TP.HCM sau sáp nhập.
--- 3. Khi mở rộng phạm vi, chỉ cần thêm cột "region" vào bảng wards
---    (vd: 'hcm_loi' / 'binh_duong_cu' / 'ba_ria_vung_tau_cu') làm tầng
---    lọc thô phía trên ward, không cần đổi cấu trúc các bảng còn lại.
--- =====================================================================
+SET FOREIGN_KEY_CHECKS=1;

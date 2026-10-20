@@ -1,8 +1,8 @@
--- database/migration_week4.sql
+-- database/migration_push_subscriptions.sql
 -- Tuần 4 (Triết & Huy — STT 22): CSDL cho Web Push Notification
 -- Chạy 1 lần trên MySQL để lưu trữ các subscription từ trình duyệt người dùng.
 
-USE badminton_booking;
+-- Select the target database before running this migration.
 
 CREATE TABLE IF NOT EXISTS push_subscriptions (
     id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

@@ -225,7 +225,7 @@ API mục tiêu: `api/news.php` (GET), `api/contact.php` (POST).
 - **Tuần 3:**
   - [ ] `admin-courts.php` — thêm 2 ô nhập tọa độ `latitude` / `longitude` khi tạo/sửa sân.
   - [ ] `courts.php` & `court-detail.php` — tích hợp bản đồ OpenStreetMap / Leaflet hiển thị vị trí sân.
-  - [ ] `database/import_real_courts.php` — rà soát trường `osm_type`, `osm_id` và giá trị tọa độ.
+  - [ ] `database/seed.sql` — rà soát danh mục hiện tại; cập nhật tọa độ trong MySQL qua trang quản lý sân, không chạy lại importer cũ.
   - [ ] **Rà soát bảo mật toàn diện**:
     - [ ] Mọi file PHP nghiệp vụ nhúng `includes/auth-check.php` để bảo vệ từ server thay vì chỉ dựa vào JS client.
     - [ ] `api/admin/*` bắt buộc kiểm tra `$_SESSION['role'] === 'admin'` hoặc `'owner'`.
