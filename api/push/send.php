@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/../../includes/auth-session.php';
 /**
  * api/push/send.php
  * Gửi thông báo đẩy (Web Push Notification) tới trình duyệt.
@@ -13,7 +14,8 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    god_auth_start();
+    god_auth_user($pdo);
 }
 
 $currentUser = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;

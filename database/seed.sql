@@ -1,4 +1,4 @@
--- GODMINTON installation reference data, exported 2026-10-20 21:29:46 +07:00
+-- GODMINTON installation reference data, exported 2026-10-20 23:16:52 +07:00
 -- Import AFTER schema.sql into a new database only.
 -- Development accounts are generated, not copied from live users.
 -- No bookings, slots, contacts, device subscriptions or private accounts are exported.
@@ -6,9 +6,9 @@ SET NAMES utf8mb4;
 START TRANSACTION;
 
 INSERT INTO `users` (`id`,`name`,`email`,`phone`,`password_hash`,`role`,`is_verified`) VALUES
-('1','Khách phát triển','khach1@gmail.com','0900000001','$2y$10$x1t.yRA87No/PWdnSpY3uOhjVALLQIWMbzNs6j8XbjS3ejRomro7.','customer','1'),
-('2','Quản trị phát triển','admin@godminton.vn','0900000002','$2y$10$iROK1yM.D0ZB7dZlNHeXC.iaKbJKjltrcckqEB0EMvC9t82OAmwbG','admin','1'),
-('3','Chủ sân phát triển','owner.q1@godminton.vn','0900000003','$2y$10$kVNoC5XVlSCoXJIcRbmwbuR6RbOvfZvvwL7cpprfs0GyUJIOKeTPa','owner','1');
+('1','Khách phát triển','khach1@gmail.com','0900000001','$2y$10$hCgwuSbX7ExnzIIuYIYpleNISkJ8ec/3D1Q2d7vjJfRnWguwS6z2G','customer','1'),
+('2','Quản trị phát triển','admin@godminton.vn','0900000002','$2y$10$LkwOntnnsp0vssF73MN3T.aCmpvNDbxArcYccXCD1sawoFmMYTi1y','admin','1'),
+('3','Chủ sân phát triển','owner.q1@godminton.vn','0900000003','$2y$10$f31wRAsZiVVc2DN1SKyyTueqKCLaLXEt.Yc3NmN0OjhY5Hg.pBjQ6','owner','1');
 
 INSERT INTO `wards` (`id`,`name`,`old_area_label`) VALUES
 ('1','Sài Gòn','Quận 1 (cũ)'),

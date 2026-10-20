@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__.'/auth-session.php';
+require_once __DIR__.'/../config/db.php';
 /**
  * includes/auth-check.php
  * Include ở đầu các trang yêu cầu đăng nhập (booking.php, confirm.php, payment.php,
@@ -6,8 +8,10 @@
  */
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
-    session_start();
+    god_auth_start();
 }
+
+god_auth_user($pdo);
 
 // Thư mục gốc web của dự án (vd "/godminton"), tránh hard-code "/auth.php"
 $base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');

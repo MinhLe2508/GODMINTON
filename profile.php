@@ -266,8 +266,9 @@ header('Cache-Control: no-store');
                                             <label class="form-label fw-bold small">Địa chỉ Email <span class="text-danger">*</span></label>
                                             <div class="input-group">
                                                 <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-regular fa-envelope text-muted"></i></span>
-                                                <input type="email" class="form-control border-start-0" id="inpEmail" value="" required>
+                                                <input type="email" class="form-control border-start-0" id="inpEmail" value="" readonly aria-describedby="emailVerifiedNote">
                                             </div>
+<small id="emailVerifiedNote" class="text-muted">Email đăng nhập đã xác minh. Liên hệ quản trị nếu cần thay đổi.</small>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold small">Khu vực sinh sống</label>
@@ -339,7 +340,8 @@ header('Cache-Control: no-store');
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label fw-bold small">Mật khẩu mới</label>
-                                        <input type="password" class="form-control" id="newPass" placeholder="Tối thiểu 6 ký tự..." required>
+                                        <input type="password" class="form-control" id="newPass" pattern="(?=[\s\S]*\p{Lu})(?=[\s\S]*\p{Ll})(?=[\s\S]*\p{Nd})(?=[\s\S]*[\p{P}\p{S}])[\s\S]*" title="Mật khẩu phải có chữ hoa, chữ thường, chữ số và ký tự đặc biệt." autocomplete="new-password" placeholder="Chữ hoa, chữ thường, số và ký tự đặc biệt" required>
+<small class="text-muted">Mật khẩu phải có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.</small>
                                     </div>
                                     <div class="mb-4">
                                         <label class="form-label fw-bold small">Xác nhận mật khẩu mới</label>
@@ -349,6 +351,12 @@ header('Cache-Control: no-store');
                                         <i class="fa-solid fa-key me-1"></i> Cập nhật mật khẩu
                                     </button>
                                 </form>
+<section class="mt-4 pt-4 border-top" aria-labelledby="deleteAccountTitle">
+    <h6 id="deleteAccountTitle" class="text-danger fw-bold">Xóa tài khoản</h6>
+    <p class="text-muted small">Nếu không còn sử dụng GODMINTON, bạn có thể yêu cầu xóa tài khoản. Thông tin hồ sơ sẽ được ẩn danh; lịch sử giao dịch được giữ để đối soát.</p>
+    <button type="button" id="btnDeleteAccount" class="btn btn-outline-danger rounded-pill px-4"><i class="fa-solid fa-user-xmark me-2"></i>Xóa tài khoản</button>
+</section>
+
                             </div>
                         </div>
 
@@ -383,5 +391,3 @@ header('Cache-Control: no-store');
     <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>
-
-

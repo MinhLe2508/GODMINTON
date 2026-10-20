@@ -1,8 +1,11 @@
 <?php
+require_once __DIR__.'/config/db.php';
+require_once __DIR__.'/includes/auth-session.php';
 header('Cache-Control: no-store, max-age=0');
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
-    session_start();
+    god_auth_start();
+    god_auth_user($pdo);
 }
 $currentUser = null;
 if (!empty($_SESSION['user_id'])) {
@@ -245,8 +248,3 @@ function booking_text($value): string {return htmlspecialchars((string)$value,EN
     <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>
-
-
-
-
-

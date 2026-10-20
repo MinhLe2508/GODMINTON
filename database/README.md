@@ -1,12 +1,12 @@
 # Database GODMINTON
 
-Đã đối chiếu cấu trúc MySQL đang chạy ngày 20/10/2026. Bộ cài gồm **12 bảng**, không dùng seed/dump cũ theo tuần.
+Đã đối chiếu cấu trúc MySQL đang chạy ngày 20/10/2026. Bộ cài gồm **14 bảng**, không dùng seed/dump cũ theo tuần.
 
 ## File được giữ
 
 | File | Mục đích |
 |---|---|
-| `schema.sql` | Cấu trúc 12 bảng, khóa và chỉ mục hiện tại. Chỉ import vào DB trống. |
+| `schema.sql` | Cấu trúc 14 bảng, khóa và chỉ mục hiện tại. Chỉ import vào DB trống. |
 | `seed.sql` | Danh mục phường, tiện ích, sân, ảnh, liên kết tiện ích và tin tức hiện có; tài khoản phát triển được tạo riêng. |
 | `export_installation.php` | Đọc DB hiện tại, tạo lại schema/seed cài mới mà không xuất dữ liệu cá nhân/giao dịch. |
 | `migrate_booking_metadata.php` | Nâng cấp metadata đơn đặt trên DB cũ, giữ lịch sử. |
@@ -14,6 +14,7 @@
 | `migration_content.sql` | Tạo bảng tin tức và liên hệ nếu chưa có. |
 | `migration_admin_management.sql` | Thêm cột quản lý sân, khung giờ cho DB cũ. Không sửa giá/giờ của sân theo dữ liệu mẫu. |
 | `migration_push_subscriptions.sql` | Tạo bảng thiết bị Web Push cho DB cũ. |
+| `migrate_auth_security.php` | Thêm token xác minh/đặt lại mật khẩu, bộ đếm giới hạn và phiên bản phiên đăng nhập. Chạy CLI, có thể chạy lại. |
 
 ## Cài mới
 
@@ -62,3 +63,11 @@ Script chỉ SELECT/SHOW từ DB theo `.env`, rồi ghi đè **hai file** schema
 Đã lưu riêng các bản dump/seed cũ, JSON danh mục, importer dữ liệu nhúng, script thêm bài/đính chính tọa độ/ẩn sân trùng, script reset lịch và `.gitkeep`. Không cần chạy các script đó để cài hoặc vận hành phiên bản hiện tại.
 
 Bản lưu trước khi dọn trên máy Minh: `D:\MinhDangHocCode\Web\Project\database-cleanup-2026-10-20`. Bản này chứa snapshot riêng của DB hiện tại, không đưa vào Git hoặc thư mục public của website.
+
+## Nâng cấp xác thực email
+
+Sau khi pull, chạy `php database/migrate_auth_security.php` một lần (có thể chạy lại an toàn), rồi `composer install` và cấu hình SMTP trong `.env`. Không import lại schema/seed vào DB đang dùng. Hướng dẫn chi tiết: [AUTH_EMAIL_SETUP.md](../docs/AUTH_EMAIL_SETUP.md). Hai bảng auth không chứa dữ liệu seed.
+
+## Xóa tài khoản
+
+Sau khi pull, chạy `php database/migrate_account_deletion.php` sau migration xác thực. Migration thêm `users.deleted_at` và mục đích token `delete`, không xóa dữ liệu. Không import lại seed/schema vào DB đang dùng.

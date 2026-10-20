@@ -1,4 +1,4 @@
--- GODMINTON schema, exported 2026-10-20 21:29:46 +07:00
+-- GODMINTON schema, exported 2026-10-20 23:16:52 +07:00
 -- Select an EMPTY database before importing. No DROP/USE/CREATE DATABASE statements.
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS=0;
@@ -9,6 +9,29 @@ CREATE TABLE `amenities` (
   `label` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `auth_rate_limits` (
+  `key_hash` char(64) NOT NULL,
+  `attempts` int(10) unsigned NOT NULL DEFAULT 0,
+  `window_started_at` datetime NOT NULL,
+  PRIMARY KEY (`key_hash`),
+  KEY `idx_auth_rate_window` (`window_started_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `auth_tokens` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
+  `purpose` enum('verify','reset','delete') NOT NULL,
+  `token_hash` char(64) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token_hash` (`token_hash`),
+  KEY `idx_auth_user` (`user_id`,`purpose`),
+  KEY `idx_auth_expiry` (`expires_at`),
+  CONSTRAINT `fk_auth_token_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `booking_slots` (
@@ -152,6 +175,8 @@ CREATE TABLE `users` (
   `is_verified` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `session_version` int(10) unsigned NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

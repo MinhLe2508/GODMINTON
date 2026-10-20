@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/../../includes/auth-session.php';
 /**
  * api/admin/dashboard.php
  * GET số liệu thống kê tổng quan, danh sách đơn gần đây và sân quản lý cho chủ sân / admin.
@@ -21,7 +22,8 @@ function jsonOut(int $code, array $body): void {
 
 session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    god_auth_start();
+    god_auth_user($pdo);
 }
 $currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
 $currentRole   = $_SESSION['role'] ?? '';

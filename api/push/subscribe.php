@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/../../includes/auth-session.php';
 /**
  * api/push/subscribe.php
  * Lưu hoặc hủy push subscription của trình duyệt vào MySQL.
@@ -9,7 +10,8 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    god_auth_start();
+    god_auth_user($pdo);
 }
 
 $userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;

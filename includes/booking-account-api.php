@@ -1,8 +1,9 @@
 <?php
+require_once __DIR__.'/auth-session.php';
 require_once __DIR__.'/../config/db.php';
 header('Content-Type: application/json; charset=utf-8');header('Cache-Control: no-store');
-if(session_status()===PHP_SESSION_NONE){session_set_cookie_params(['httponly'=>true,'samesite'=>'Lax','path'=>'/','secure'=>!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off']);session_start();}
-if(empty($_SESSION['csrf_token']))$_SESSION['csrf_token']=bin2hex(random_bytes(32));
+god_auth_start();
+god_auth_user($pdo);
 class BookingError extends RuntimeException{public function __construct(public int $httpCode,string $message){parent::__construct($message);}}
 function booking_account_out(int $code,$data=null,string $message=''):never{http_response_code($code);echo json_encode(['status'=>$code<400?'success':'error','code'=>$code,'message'=>$message,'data'=>$data],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);exit;}
 function booking_account_input():array{$raw=file_get_contents('php://input');if($raw==='')return $_POST;$in=json_decode($raw,true);if(!is_array($in))booking_account_out(422,null,'JSON không hợp lệ.');return $in;}

@@ -40,3 +40,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('profileLogout')?.addEventListener('click',async()=>{try{await BookingAccount.logout();}catch(e){await BookingAccount.notify(e.message,true);}});
 });
 
+
+document.getElementById('btnDeleteAccount')?.addEventListener('click',async()=>{
+    const button=document.getElementById('btnDeleteAccount');
+    if(!window.Swal){await BookingAccount.notify('Vui lòng tải lại trang để mở bước xác nhận.',true);return;}
+    const reply=await Swal.fire({icon:'warning',titleText:'Yêu cầu xóa tài khoản?',
+        text:'Nhập mật khẩu hiện tại. Chúng tôi sẽ gửi email xác nhận; tài khoản chỉ bị xóa khi bạn mở liên kết và xác nhận. Thao tác không thể hoàn tác.',
+        input:'password',inputPlaceholder:'Nhập mật khẩu hiện tại',inputAttributes:{autocomplete:'current-password'},
+        showCancelButton:true,confirmButtonText:'Gửi email xác nhận',cancelButtonText:'Giữ tài khoản',confirmButtonColor:'#b83240',
+        showLoaderOnConfirm:true,allowOutsideClick:()=>!Swal.isLoading(),
+        preConfirm:async password=>{
+            if(!password){Swal.showValidationMessage('Vui lòng nhập mật khẩu hiện tại.');return false;}
+            try{return await BookingAccount.request('api/auth/delete-account.php',{method:'POST',body:JSON.stringify({password,confirm_delete:true})});}
+            catch(error){Swal.showValidationMessage(error.message);return false;}
+        }});
+    if(reply.isConfirmed)await Swal.fire({icon:'info',titleText:'Kiểm tra email của bạn',text:reply.value.message||'Đã gửi liên kết xác nhận. Liên kết có hiệu lực 15 phút.'});
+});

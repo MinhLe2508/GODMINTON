@@ -1,0 +1,5 @@
+Options -Indexes
+RedirectMatch 403 "(?i)/(?:config|database|includes|vendor)(?:/|$)"
+<FilesMatch "^(\.env(?:\..*)?|composer\.(?:json|lock))$">
+    Require all denied
+</FilesMatch>

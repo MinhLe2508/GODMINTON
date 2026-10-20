@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/../includes/auth-session.php';
 /**
  * api/hold.php
  * POST giữ chỗ 5 phút / huỷ giữ chỗ — Transaction + SELECT ... FOR UPDATE ★★★
@@ -44,7 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    god_auth_start();
+    god_auth_user($pdo);
 }
 $currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
 session_write_close(); // nhả khoá session để không chặn các request song song của cùng user

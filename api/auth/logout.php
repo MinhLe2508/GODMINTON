@@ -1,16 +1,7 @@
 <?php
-/**
- * api/auth/logout.php
- * Huỷ session đăng nhập.
- */
-header('Content-Type: application/json; charset=utf-8');
-
-session_start();
-$_SESSION = [];
-if (ini_get('session.use_cookies')) {
-    $p = session_get_cookie_params();
-    setcookie(session_name(), '', time() - 42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
-}
-session_destroy();
-
-echo json_encode(['status' => 'success'], JSON_UNESCAPED_UNICODE);
+require_once __DIR__.'/../../includes/auth-security.php';
+if ($_SERVER['REQUEST_METHOD']!=='POST') god_auth_out(405,'Chỉ hỗ trợ POST.');
+$origin=$_SERVER['HTTP_ORIGIN']??'';
+$expected=(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off'?'https':'http').'://'.($_SERVER['HTTP_HOST']??'');
+if (($_SERVER['HTTP_SEC_FETCH_SITE']??'')==='cross-site' || ($origin!=='' && $origin!==$expected)) god_auth_out(403,'Nguồn yêu cầu không hợp lệ.');
+god_auth_clear();god_auth_out(200,'Đã đăng xuất.');

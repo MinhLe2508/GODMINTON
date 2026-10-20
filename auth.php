@@ -336,32 +336,6 @@ $v = time();
             background: rgba(255, 255, 255, 0.3) !important;
         }
 
-        /* Google Login Button - 20% Translucent Frosted Glass */
-        .btn-social-google {
-            width: 100% !important; height: 48px !important;
-            border-radius: 0.75rem !important;
-            display: flex !important; align-items: center !important; justify-content: center !important;
-            gap: 0.75rem !important;
-            font-size: 0.94rem !important; font-weight: 800 !important;
-            cursor: pointer !important;
-            transition: all 0.2s ease !important;
-            margin-top: 0.5rem !important;
-            background: rgba(255, 255, 255, 0.2) !important;
-            border: 1.5px solid rgba(255, 255, 255, 0.38) !important;
-            color: #ffffff !important;
-            backdrop-filter: blur(12px) !important;
-            -webkit-backdrop-filter: blur(12px) !important;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6) !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-        }
-        .btn-social-google:hover {
-            border-color: #2dd4bf !important;
-            background: rgba(255, 255, 255, 0.3) !important;
-            color: #2dd4bf !important;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35) !important;
-        }
-
         /* Switch Tab Link */
         .auth-switch-link {
             text-align: center; font-size: 0.88rem; margin-top: 1.25rem; margin-bottom: 0;
@@ -374,52 +348,6 @@ $v = time();
             color: #2dd4bf !important; text-decoration: underline !important;
         }
         .auth-switch-btn:hover { color: #5eead4 !important; }
-
-        /* Demo Accounts Section */
-        .auth-demo-wrap {
-            margin-top: 1.35rem; padding-top: 1.15rem;
-            border-top: 1px dashed rgba(45, 212, 191, 0.32) !important;
-        }
-
-        .auth-demo-title {
-            font-size: 0.78rem; font-weight: 800 !important; text-align: center; text-transform: uppercase;
-            letter-spacing: 0.6px; margin-bottom: 0.65rem;
-            display: flex; align-items: center; justify-content: center; gap: 0.4rem;
-            color: #2dd4bf !important; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
-        }
-
-        .auth-demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
-        .demo-pill {
-            display: flex; align-items: center; gap: 0.55rem;
-            border-radius: 0.75rem; padding: 0.45rem 0.65rem;
-            cursor: pointer; width: 100%; transition: all 0.18s ease; text-align: left;
-            background: rgba(255, 255, 255, 0.16) !important;
-            border: 1.5px solid rgba(45, 212, 191, 0.32) !important;
-            color: #ffffff !important;
-            backdrop-filter: blur(10px) !important;
-            -webkit-backdrop-filter: blur(10px) !important;
-        }
-        .demo-pill:hover {
-            border-color: #2dd4bf !important;
-            background: rgba(13, 148, 136, 0.35) !important;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 14px rgba(20, 184, 166, 0.3) !important;
-        }
-
-        .demo-avatar {
-            width: 28px; height: 28px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.76rem; font-weight: 800; color: #fff; flex-shrink: 0;
-        }
-        .demo-meta-role {
-            font-size: 0.78rem !important; font-weight: 800 !important; line-height: 1.2 !important;
-            color: #ffffff !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
-        }
-        .demo-meta-sub {
-            font-size: 0.7rem !important; font-weight: 700 !important;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            color: #e2e8f0 !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
-        }
 
         .auth-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 
@@ -454,7 +382,7 @@ $v = time();
             .auth-viewport { padding: 3.85rem 0.85rem 2rem !important; }
             .auth-card { padding: 1.5rem 1.15rem 1.35rem !important; border-radius: 1.25rem !important; width: 100% !important; min-width: 0 !important; }
             .auth-grid-2 { grid-template-columns: 1fr !important; gap: 0 !important; }
-            .auth-demo-grid { grid-template-columns: 1fr !important; }
+
             .auth-theme-corner-btn {
                 top: 0.85rem !important;
                 right: 0.85rem !important;
@@ -514,7 +442,7 @@ $v = time();
                     <label for="loginEmail">Địa chỉ Email</label>
                     <div class="field-wrap">
                         <i class="fa-regular fa-envelope field-icon"></i>
-                        <input type="email" id="loginEmail" placeholder="name@example.com" value="khach1@gmail.com" required autocomplete="email">
+                        <input type="email" id="loginEmail" placeholder="name@example.com" required autocomplete="email">
                     </div>
                 </div>
 
@@ -525,31 +453,18 @@ $v = time();
                     </div>
                     <div class="field-wrap">
                         <i class="fa-solid fa-lock field-icon"></i>
-                        <input type="password" id="loginPassword" placeholder="Nhập mật khẩu..." value="Khach@123" required autocomplete="current-password">
+                        <input type="password" id="loginPassword" placeholder="Nhập mật khẩu..." required autocomplete="current-password">
                         <button type="button" class="btn-eye" onclick="toggleEye('loginPassword', this)" aria-label="Ẩn / hiện mật khẩu">
                             <i class="fa-regular fa-eye"></i>
                         </button>
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center mb-2">
-                    <input type="checkbox" class="form-check-input me-2 mt-0" id="rememberMe" checked>
-                    <label class="auth-check-label" for="rememberMe">Ghi nhớ đăng nhập trên thiết bị này</label>
-                </div>
-
                 <button type="submit" class="btn-auth-submit" id="btnLoginSubmit">
                     <i class="fa-solid fa-right-to-bracket me-2"></i>ĐĂNG NHẬP
                 </button>
             </form>
-
-            <!-- Phân cách -->
-            <div class="auth-divider">hoặc tiếp tục với</div>
-
-            <!-- Nút đăng nhập Google (Không có Facebook) -->
-            <button type="button" class="btn-social-google" id="btnGoogleLogin" onclick="handleGoogleLogin()">
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="18" height="18" alt="Google">
-                <span>Đăng nhập với Google</span>
-            </button>
+<p class="auth-switch-link"><button type="button" class="auth-switch-btn" onclick="requestAuthEmail('resend-verification')">Gửi lại email xác minh</button></p>
 
             <!-- Chuyển sang Đăng ký -->
             <p class="auth-switch-link">
@@ -557,28 +472,6 @@ $v = time();
                 <button type="button" class="auth-switch-btn" onclick="switchTab('register')">Đăng ký ngay</button>
             </p>
 
-            <!-- Tài khoản demo nhanh -->
-            <div class="auth-demo-wrap">
-                <div class="auth-demo-title">
-                    <i class="fa-solid fa-key" style="color:var(--brand-teal,#0d9488);"></i> Tài khoản demo nhanh
-                </div>
-                <div class="auth-demo-grid">
-                    <button class="demo-pill" type="button" onclick="fillLogin('khach1@gmail.com','Khach@123')" title="Click để điền tài khoản Khách hàng">
-                        <div class="demo-avatar" style="background:linear-gradient(135deg,#0d9488,#0f766e);">K</div>
-                        <div style="overflow:hidden; text-align:left;">
-                            <div style="font-size:0.78rem; font-weight:700;">Khách hàng</div>
-                            <div class="demo-meta-sub">khach1@gmail.com</div>
-                        </div>
-                    </button>
-                    <button class="demo-pill" type="button" onclick="fillLogin('admin@datsancaulong.vn','Admin@123')" title="Click để điền tài khoản Quản trị viên">
-                        <div class="demo-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706);">A</div>
-                        <div style="overflow:hidden; text-align:left;">
-                            <div style="font-size:0.78rem; font-weight:700;">Quản trị viên</div>
-                            <div class="demo-meta-sub">admin@...</div>
-                        </div>
-                    </button>
-                </div>
-            </div>
         </div><!-- /#panelLogin -->
 
         <!-- ==================== PANEL REGISTER ==================== -->
@@ -619,14 +512,15 @@ $v = time();
                         <label for="regPassword">Mật Khẩu *</label>
                         <div class="field-wrap">
                             <i class="fa-solid fa-lock field-icon"></i>
-                            <input type="password" id="regPassword" placeholder="Tối thiểu 6 ký tự" minlength="6" required autocomplete="new-password">
+                            <input type="password" id="regPassword" pattern="(?=[\s\S]*\p{Lu})(?=[\s\S]*\p{Ll})(?=[\s\S]*\p{Nd})(?=[\s\S]*[\p{P}\p{S}])[\s\S]*" title="Mật khẩu phải có chữ hoa, chữ thường, chữ số và ký tự đặc biệt." placeholder="Nhập mật khẩu" required autocomplete="new-password">
                             <button type="button" class="btn-eye" onclick="toggleEye('regPassword', this)" aria-label="Ẩn / hiện mật khẩu">
                                 <i class="fa-regular fa-eye"></i>
                             </button>
                         </div>
+<small class="d-block mt-2 text-white">Mật khẩu phải có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.</small>
                     </div>
                     <div class="auth-field">
-                        <label for="regConfirmPassword">Xác Nhận MK *</label>
+                        <label for="regConfirmPassword">Xác Nhận Mật Khẩu *</label>
                         <div class="field-wrap">
                             <i class="fa-solid fa-lock field-icon"></i>
                             <input type="password" id="regConfirmPassword" placeholder="Nhập lại mật khẩu" required autocomplete="new-password">
@@ -656,15 +550,6 @@ $v = time();
                     <i class="fa-solid fa-user-plus me-2"></i>TẠO TÀI KHOẢN MIỄN PHÍ
                 </button>
             </form>
-
-            <!-- Phân cách -->
-            <div class="auth-divider">hoặc tiếp tục với</div>
-
-            <!-- Nút đăng ký Google (Không có Facebook) -->
-            <button type="button" class="btn-social-google" id="btnGoogleRegister" onclick="handleGoogleLogin()">
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="18" height="18" alt="Google">
-                <span>Tiếp tục với Google</span>
-            </button>
 
             <!-- Chuyển sang Đăng nhập -->
             <p class="auth-switch-link">

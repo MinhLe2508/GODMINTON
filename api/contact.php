@@ -1,10 +1,12 @@
 <?php
+require_once __DIR__.'/../includes/auth-session.php';
 require_once __DIR__ . '/../config/db.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params(['httponly'=>true,'samesite'=>'Lax']);
-    session_start();
+    god_auth_start();
+    god_auth_user($pdo);
 }
 function contact_out(int $code, array $body): void {
     http_response_code($code);

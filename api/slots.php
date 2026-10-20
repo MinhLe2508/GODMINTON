@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__.'/../includes/auth-session.php';
 /**
  * api/slots.php
  * GET danh sách khung giờ theo sân và ngày từ MySQL.
@@ -19,7 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    god_auth_start();
+    god_auth_user($pdo);
 }
 $currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
 

@@ -4,7 +4,7 @@
  * Hỗ trợ: Pre-cache, Offline Fallback, Dynamic Network-First, Web Push Notification
  */
 
-const CACHE_VERSION = 'godminton-v1.0.0';
+const CACHE_VERSION = 'godminton-v1.1.0-auth-security';
 const CACHE_STATIC  = `godminton-static-${CACHE_VERSION}`;
 const CACHE_RUNTIME = `godminton-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL   = 'offline.php';
@@ -72,6 +72,9 @@ self.addEventListener('fetch', event => {
     // Bỏ qua các scheme không hỗ trợ (chrome-extension://, v.v.)
     if (!url.protocol.startsWith('http')) return;
 
+    // Never cache authentication or account pages, even when offline.
+    if (req.method !== 'GET' || /\/(?:auth(?:-action)?|profile|history|payment|confirm|booking|admin-[^/]+)\.php$/i.test(url.pathname)) return;
+
     // QUY TẮC SỐ 1: API GIAO DỊCH → NETWORK-ONLY TUYỆT ĐỐI
     // Không bao giờ cache api/hold, api/bookings, api/slots, api/auth, v.v.
     if (url.pathname.includes('/api/')) {
@@ -84,7 +87,7 @@ self.addEventListener('fetch', event => {
             fetch(req)
                 .then(networkRes => {
                     // Lưu bản sao vào cache runtime nếu response hợp lệ
-                    if (networkRes && networkRes.status === 200) {
+                    if (networkRes && networkRes.status === 200 && !/no-store|private/i.test(networkRes.headers.get('Cache-Control') || '')) {
                         const copy = networkRes.clone();
                         caches.open(CACHE_RUNTIME).then(cache => cache.put(req, copy));
                     }
@@ -117,7 +120,7 @@ self.addEventListener('fetch', event => {
         event.respondWith(
             caches.match(req).then(cached => {
                 const fetchPromise = fetch(req).then(networkRes => {
-                    if (networkRes && networkRes.status === 200) {
+                    if (networkRes && networkRes.status === 200 && !/no-store|private/i.test(networkRes.headers.get('Cache-Control') || '')) {
                         const copy = networkRes.clone();
                         caches.open(CACHE_RUNTIME).then(cache => cache.put(req, copy));
                     }
