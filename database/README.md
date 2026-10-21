@@ -14,7 +14,7 @@
 | `migration_content.sql` | Tạo bảng tin tức và liên hệ nếu chưa có. |
 | `migration_admin_management.sql` | Thêm cột quản lý sân, khung giờ cho DB cũ. Không sửa giá/giờ của sân theo dữ liệu mẫu. |
 | `migration_push_subscriptions.sql` | Tạo bảng thiết bị Web Push cho DB cũ. |
-| `migrate_auth_security.php` | Thêm token xác minh/đặt lại mật khẩu, bộ đếm giới hạn và phiên bản phiên đăng nhập. Chạy CLI, có thể chạy lại. |
+| `migration_customer_accounts.sql` | Import bằng phpMyAdmin để nâng cấp đăng ký/đăng nhập, xác minh email, khôi phục mật khẩu và xóa tài khoản; có thể import lại. |
 
 ## Cài mới
 
@@ -66,8 +66,8 @@ Bản lưu trước khi dọn trên máy Minh: `D:\MinhDangHocCode\Web\Project\d
 
 ## Nâng cấp xác thực email
 
-Sau khi pull, chạy `php database/migrate_auth_security.php` một lần (có thể chạy lại an toàn), rồi `composer install` và cấu hình SMTP trong `.env`. Không import lại schema/seed vào DB đang dùng. Hướng dẫn chi tiết: [AUTH_EMAIL_SETUP.md](../docs/AUTH_EMAIL_SETUP.md). Hai bảng auth không chứa dữ liệu seed.
+Sau khi pull, chọn DB website trong phpMyAdmin → Import/Nhập → chọn `migration_customer_accounts.sql` → Go/Thực hiện. File gộp cả xác thực email và xóa tài khoản, có thể import lại. Sau đó chạy `composer install` và cấu hình SMTP trong `.env`. Không import lại schema/seed vào DB đang dùng. Hướng dẫn chi tiết: [AUTH_EMAIL_SETUP.md](../docs/AUTH_EMAIL_SETUP.md). Hai bảng auth không chứa dữ liệu seed.
 
 ## Xóa tài khoản
 
-Sau khi pull, chạy `php database/migrate_account_deletion.php` sau migration xác thực. Migration thêm `users.deleted_at` và mục đích token `delete`, không xóa dữ liệu. Không import lại seed/schema vào DB đang dùng.
+Phần xóa tài khoản đã được gộp trong `migration_customer_accounts.sql`; không chạy migration PHP riêng. File thêm `users.deleted_at` và mục đích token `delete`, không xóa dữ liệu. Không import lại seed/schema vào DB đang dùng.

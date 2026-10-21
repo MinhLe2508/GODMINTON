@@ -31,10 +31,9 @@ Tại thư mục website, chạy (đổi đường dẫn PHP nếu XAMPP khác):
 
 ```powershell
 & 'D:\xampp\php\php.exe' 'C:\composer\composer.phar' install --no-dev --prefer-dist
-& 'D:\xampp\php\php.exe' database/migrate_auth_security.php
 ```
 
-Migration chạy được nhiều lần; chỉ thêm `users.session_version`, `auth_tokens`, `auth_rate_limits`.
+Trong phpMyAdmin: chọn database website → tab **Import/Nhập** → chọn `database/migration_customer_accounts.sql` → **Go/Thực hiện**. File có thể import lại; thêm `users.session_version`, `users.deleted_at`, `auth_tokens` (verify/reset/delete) và `auth_rate_limits`, không thay đổi tài khoản hiện có. Không cần chạy file PHP migration tài khoản.
 Không import lại `schema.sql`/`seed.sql` vào DB đã có dữ liệu. Với cài đặt hoàn toàn mới: import `schema.sql`, rồi `seed.sql`.
 Mỗi máy tự điền SMTP trong `.env`. Không sao chép `.env` lên Git hoặc dùng chung mật khẩu cá nhân trong nhóm.
 

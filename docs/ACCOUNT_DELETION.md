@@ -1,6 +1,6 @@
 # Xóa tài khoản
 
-Sau khi pull: `composer install`, `php database/migrate_auth_security.php`, `php database/migrate_account_deletion.php`. SMTP phải được cấu hình theo AUTH_EMAIL_SETUP.md. Cài mới vẫn import schema.sql rồi seed.sql.
+Sau khi pull: chạy `composer install`; trong phpMyAdmin, chọn DB website rồi import `database/migration_customer_accounts.sql` (gộp xác thực và xóa tài khoản; có thể import lại). Không chạy migration tài khoản bằng PHP. SMTP phải được cấu hình theo AUTH_EMAIL_SETUP.md. Cài mới vẫn import schema.sql rồi seed.sql.
 
 Trang cá nhân → Mật khẩu & Bảo mật → Xóa tài khoản. Nhập mật khẩu hiện tại, gửi email, mở liên kết trong 15 phút, đánh dấu đồng ý và bấm Xác nhận xóa tài khoản. GET/mở email không tự xóa. Chưa xác nhận thì tài khoản vẫn hoạt động. Liên kết chỉ dùng một lần; gửi lại thay thế liên kết cũ.
 
