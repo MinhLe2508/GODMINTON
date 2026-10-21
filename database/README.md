@@ -25,7 +25,7 @@
 
 Không chạy lại seed trên database nhóm đang có dữ liệu. Schema/seed không có lệnh DROP hoặc tự chuyển sang một database cố định.
 
-Snapshot danh mục hiện tại: 47 phường, 8 tiện ích, 114 bản ghi sân (59 đang hoạt động), 114 ảnh, 576 liên kết sân–tiện ích. Bản sân trùng cũ được giữ `inactive` để tương thích ID lịch sử và cấu hình sân thay thế. TPro giữ địa chỉ/tọa độ đã sửa. DB hiện có **0 bài tin tức** nên seed không tự khôi phục các bài đã xóa.
+Snapshot danh mục hiện tại: 47 phường, 8 tiện ích, 114 bản ghi sân (41 đang hoạt động), 114 ảnh, 576 liên kết sân–tiện ích. Bản sân trùng cũ được giữ `inactive` để tương thích ID lịch sử và cấu hình sân thay thế. TPro giữ địa chỉ/tọa độ đã sửa. DB hiện có **0 bài tin tức** nên seed không tự khôi phục các bài đã xóa.
 
 Các bảng `bookings`, `booking_slots`, `time_slots`, `contacts`, `push_subscriptions` ban đầu trống. Không sao chép tài khoản thật, hash mật khẩu thật hay dữ liệu thiết bị. Tạo khung giờ bằng trang quản lý khung giờ; API hiện tại cũng có cơ chế sinh lịch cho ngày chưa có dữ liệu.
 
@@ -71,3 +71,11 @@ Sau khi pull, chọn DB website trong phpMyAdmin → Import/Nhập → chọn `m
 ## Xóa tài khoản
 
 Phần xóa tài khoản đã được gộp trong `migration_customer_accounts.sql`; không chạy migration PHP riêng. File thêm `users.deleted_at` và mục đích token `delete`, không xóa dữ liệu. Không import lại seed/schema vào DB đang dùng.
+
+## Ảnh sân theo Google Maps và ẩn sân không thuê được
+
+- `migration_hide_unrentable_courts.sql`: chuyển 18 sân (sân trong trường, nhà thi đấu công, sân nghi vấn, sân đã đóng cửa) sang `inactive`. DB đang chạy import file này trong phpMyAdmin; cài mới đã có sẵn trong `seed.sql`.
+- `court_images_google.csv`: danh sách 41 sân đang hoạt động kèm link ảnh Google Maps đã điền sẵn.
+- `update_court_images.php`: đọc CSV và cập nhật `court_images` (`--apply` để ghi thật, `--sql` để xuất `update_court_images.sql` cho thành viên khác).
+- `fetch_google_place_photos.php`: tùy chọn, tự lấy link ảnh bằng Google Places API (cần `GOOGLE_MAPS_API_KEY` trong `.env`).
+- `update_court_images.sql`: cập nhật link ảnh của 41 sân cho DB đang chạy (import trong phpMyAdmin sau file ẩn sân). Cài mới đã có ảnh trong `seed.sql`.
