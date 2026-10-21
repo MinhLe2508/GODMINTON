@@ -39,8 +39,16 @@ window.PushClient = (() => {
 
     async function getSubscription() {
         if (!isSupported()) return null;
-        const reg = await navigator.serviceWorker.ready;
-        return await reg.pushManager.getSubscription();
+        try {
+            const reg = await Promise.race([
+                navigator.serviceWorker.ready,
+                new Promise(resolve => setTimeout(() => resolve(null), 1000))
+            ]) || (await navigator.serviceWorker.getRegistration());
+            if (!reg || !reg.pushManager) return null;
+            return await reg.pushManager.getSubscription();
+        } catch (_) {
+            return null;
+        }
     }
 
     async function subscribe() {
@@ -277,6 +285,324 @@ window.PushClient = (() => {
         });
     }
 
+    function showToast(icon, title) {
+        if (window.Swal) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: icon,
+                title: title,
+                showConfirmButton: false,
+                timer: 2500,
+                timerProgressBar: true
+            });
+        }
+    }
+
+    // Tạo YouTube Notification Dropdown nếu chưa tồn tại
+    function ensureBellDropdown() {
+        let dropdown = document.getElementById('pushBellDropdown');
+        if (dropdown) return dropdown;
+
+        dropdown = document.createElement('div');
+        dropdown.id = 'pushBellDropdown';
+        dropdown.className = 'yt-bell-dropdown';
+        dropdown.setAttribute('role', 'menu');
+        dropdown.setAttribute('aria-label', 'Tùy chọn thông báo');
+        dropdown.innerHTML = `
+            <div class="yt-bell-item" data-action="enable" role="menuitem" tabindex="0">
+                <span class="yt-bell-icon"><i class="fa-solid fa-bell"></i></span>
+                <span class="yt-bell-label">Bật thông báo</span>
+                <span class="yt-bell-check"><i class="fa-solid fa-check"></i></span>
+            </div>
+            <div class="yt-bell-item" data-action="none" role="menuitem" tabindex="0">
+                <span class="yt-bell-icon"><i class="fa-solid fa-bell-slash"></i></span>
+                <span class="yt-bell-label">Không nhận thông báo</span>
+                <span class="yt-bell-check"><i class="fa-solid fa-check"></i></span>
+            </div>
+            <div class="yt-bell-divider"></div>
+            <div class="yt-bell-item yt-bell-test" data-action="test" role="menuitem" tabindex="0">
+                <span class="yt-bell-icon"><i class="fa-solid fa-paper-plane"></i></span>
+                <span class="yt-bell-label">Gửi thông báo</span>
+                <span class="yt-bell-check"></span>
+            </div>
+        `;
+
+        document.body.appendChild(dropdown);
+
+        // Xử lý sự kiện click trên từng item
+        dropdown.querySelectorAll('.yt-bell-item').forEach(item => {
+            item.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const action = item.getAttribute('data-action');
+                await handleDropdownAction(action);
+            });
+        });
+
+        // Lắng nghe click ngoài để đóng dropdown
+        document.addEventListener('click', (e) => {
+            const btn = document.getElementById('pushBellToggle');
+            if (dropdown.classList.contains('show')) {
+                if (!dropdown.contains(e.target) && (!btn || !btn.contains(e.target))) {
+                    closeBellDropdown();
+                }
+            }
+        });
+
+        // Lắng nghe phím ESC để đóng
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && dropdown.classList.contains('show')) {
+                closeBellDropdown();
+            }
+        });
+
+        return dropdown;
+    }
+
+    function positionDropdown() {
+        const btn = document.getElementById('pushBellToggle');
+        const dropdown = document.getElementById('pushBellDropdown');
+        if (!btn || !dropdown) return;
+        const rect = btn.getBoundingClientRect();
+        dropdown.style.setProperty('top', `${Math.round(rect.bottom + 8)}px`, 'important');
+        const rightOffset = Math.max(12, Math.round(window.innerWidth - rect.right));
+        dropdown.style.setProperty('right', `${rightOffset}px`, 'important');
+        dropdown.style.setProperty('left', 'auto', 'important');
+    }
+
+    function openBellDropdown() {
+        const dropdown = ensureBellDropdown();
+        positionDropdown();
+        syncDropdownActiveState();
+        dropdown.classList.add('show');
+    }
+
+    function closeBellDropdown() {
+        const dropdown = document.getElementById('pushBellDropdown');
+        if (dropdown) {
+            dropdown.classList.remove('show');
+        }
+    }
+
+    function toggleBellDropdown() {
+        const dropdown = ensureBellDropdown();
+        if (dropdown.classList.contains('show')) {
+            closeBellDropdown();
+        } else {
+            openBellDropdown();
+        }
+    }
+
+    async function syncDropdownActiveState() {
+        const dropdown = ensureBellDropdown();
+        const isSubscribed = (await getSubscription()) !== null;
+        const permission = getPermissionState();
+        let mode = localStorage.getItem('godminton_push_mode');
+        if (!mode) {
+            mode = (isSubscribed && permission === 'granted') ? 'enabled' : 'none';
+        }
+
+        dropdown.querySelectorAll('.yt-bell-item').forEach(item => {
+            const action = item.getAttribute('data-action');
+            if (action === 'enable' && (mode === 'enabled' || mode === 'all' || mode === 'personalized') && permission === 'granted' && isSubscribed) {
+                item.classList.add('active');
+            } else if (action === 'none' && (mode === 'none' || mode === 'unsubscribed' || !isSubscribed || permission !== 'granted')) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    async function handleDropdownAction(action) {
+        closeBellDropdown();
+
+        if (action === 'test') {
+            if (window.Swal) {
+                Swal.fire({
+                    title: 'Đang gửi thông báo...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+            }
+            try {
+                await sendTestNotification({
+                    title: 'GODMINTON – Nhắc lịch thi đấu',
+                    body: 'Trận cầu của bạn tại Thảm A1 sắp bắt đầu lúc 18:00. Khởi động kỹ và sẵn sàng vào sân!',
+                    url: 'history.php'
+                });
+                showToast('success', 'Đã gửi thông báo thành công!');
+            } catch (err) {
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Chưa thể gửi thông báo',
+                        text: err.message,
+                        confirmButtonColor: '#0d9488'
+                    });
+                } else {
+                    alert(err.message);
+                }
+            }
+            return;
+        }
+
+        if (action === 'none') {
+            localStorage.setItem('godminton_push_mode', 'none');
+            await updateBellUI();
+            showToast('info', 'Đã tắt nhận thông báo.');
+            return;
+        }
+
+        if (action === 'enable') {
+            const permission = getPermissionState();
+            if (permission === 'denied') {
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Thông báo bị chặn',
+                        html: 'Trình duyệt đang chặn thông báo từ GODMINTON.<br><small class="text-muted">Vui lòng nhấp vào biểu tượng ổ khóa 🔒 ở thanh địa chỉ để bật lại quyền "Thông báo".</small>',
+                        confirmButtonColor: '#0d9488'
+                    });
+                } else {
+                    alert('Trình duyệt đang chặn thông báo. Vui lòng cấp lại quyền trong cài đặt trang web.');
+                }
+                return;
+            }
+
+            const isSubscribed = (await getSubscription()) !== null;
+            if (!isSubscribed || permission !== 'granted') {
+                if (window.Swal) {
+                    Swal.fire({
+                        title: 'Đang kích hoạt thông báo...',
+                        text: 'Vui lòng nhấn "Cho phép" (Allow) nếu trình duyệt hiển thị hộp thoại xin quyền.',
+                        allowOutsideClick: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+                }
+                try {
+                    await subscribe();
+                    localStorage.setItem('godminton_push_mode', 'enabled');
+                    await updateBellUI();
+                    showToast('success', 'Đã bật nhận thông báo thành công!');
+                } catch (err) {
+                    await updateBellUI();
+                    if (window.Swal) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Chưa thể bật thông báo',
+                            text: err.message || 'Lỗi khi kích hoạt thông báo.',
+                            confirmButtonColor: '#0d9488'
+                        });
+                    } else {
+                        alert(err.message);
+                    }
+                }
+            } else {
+                localStorage.setItem('godminton_push_mode', 'enabled');
+                await updateBellUI();
+                showToast('success', 'Đã bật nhận thông báo thành công!');
+            }
+            return;
+        }
+    }
+
+    // Cập nhật giao diện nút chuông nổi
+    async function updateBellUI() {
+        const btn = document.getElementById('pushBellToggle');
+        if (!btn) return;
+
+        if (!isSupported()) {
+            btn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+            btn.title = 'Trình duyệt không hỗ trợ Web Push';
+            btn.classList.remove('active');
+            return;
+        }
+
+        const isSubscribed = (await getSubscription()) !== null;
+        const permission = getPermissionState();
+        let mode = localStorage.getItem('godminton_push_mode');
+        if (!mode) {
+            mode = (isSubscribed && permission === 'granted') ? 'enabled' : 'none';
+        }
+
+        if (permission === 'denied') {
+            btn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+            btn.title = 'Thông báo bị chặn trong cài đặt trình duyệt';
+            btn.classList.remove('active');
+        } else if (isSubscribed && permission === 'granted' && (mode === 'enabled' || mode === 'all' || mode === 'personalized')) {
+            btn.innerHTML = '<i class="fa-solid fa-bell"></i><span class="bell-active-dot" aria-hidden="true"></span>';
+            btn.title = 'Thông báo: Đang bật';
+            btn.classList.add('active');
+        } else if (mode === 'none' || mode === 'unsubscribed') {
+            btn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+            btn.title = 'Thông báo: Không nhận thông báo';
+            btn.classList.remove('active');
+        } else {
+            btn.innerHTML = '<i class="fa-regular fa-bell"></i>';
+            btn.title = 'Bật nhận thông báo';
+            btn.classList.remove('active');
+        }
+
+        syncDropdownActiveState();
+    }
+
+    // Xử lý sự kiện khi nhấn nút chuông: mở/đóng dropdown menu kiểu YouTube
+    function handleBellClick() {
+        toggleBellDropdown();
+    }
+
+    // Khởi tạo nút chuông thông báo nổi cạnh nút theme
+    async function initBellButton() {
+        if (typeof document !== 'undefined') {
+            if (document.querySelector('.admin-layout') || document.querySelector('.admin-topbar') || window.location.pathname.includes('admin-')) {
+                const existingBtn = document.getElementById('pushBellToggle');
+                if (existingBtn) existingBtn.remove();
+                return null;
+            }
+        }
+        let btn = document.getElementById('pushBellToggle');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'pushBellToggle';
+            btn.type = 'button';
+            btn.className = 'bnav-theme-float bnav-bell-float';
+            btn.setAttribute('aria-label', 'Thông báo đẩy PWA');
+            btn.title = 'Thông báo đẩy PWA';
+            btn.innerHTML = '<i class="fa-regular fa-bell"></i>';
+
+            const themeBtn = document.getElementById('themeToggle');
+            if (themeBtn && themeBtn.parentNode) {
+                themeBtn.parentNode.insertBefore(btn, themeBtn);
+            } else {
+                document.body.appendChild(btn);
+            }
+        } else {
+            if (!btn.innerHTML.trim()) {
+                btn.innerHTML = '<i class="fa-regular fa-bell"></i>';
+            }
+        }
+
+        if (!btn.dataset.bellBound) {
+            btn.dataset.bellBound = 'true';
+            btn.addEventListener('click', handleBellClick);
+        }
+
+        try {
+            await updateBellUI();
+        } catch (_) {}
+        return btn;
+    }
+
+    // Tự động khởi tạo khi DOM sẵn sàng nếu chưa được gọi
+    if (typeof document !== 'undefined') {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => { initBellButton(); });
+        } else {
+            setTimeout(initBellButton, 50);
+        }
+    }
+
     return {
         isSupported,
         getPermissionState,
@@ -284,6 +610,9 @@ window.PushClient = (() => {
         subscribe,
         unsubscribe,
         sendTestNotification,
-        renderPushControls
+        renderPushControls,
+        initBellButton,
+        updateBellUI,
+        handleBellClick
     };
 })();

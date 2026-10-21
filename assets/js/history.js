@@ -23,7 +23,18 @@ document.addEventListener('DOMContentLoaded', () => {
         catch(e){await BookingAccount.notify(e.message,true);}finally{button.disabled=false;}
     });
     load();
+    document.getElementById('historyLogout')?.addEventListener('click', async () => {
+        try {
+            await BookingAccount.logout();
+        } catch (e) {
+            await BookingAccount.notify(e.message, true);
+        }
+    });
     if (window.PushClient) {
-        PushClient.renderPushControls('pushNotificationContainer');
+        if (typeof PushClient.initBellButton === 'function') {
+            PushClient.initBellButton();
+        } else if (document.getElementById('pushNotificationContainer')) {
+            PushClient.renderPushControls('pushNotificationContainer');
+        }
     }
 });

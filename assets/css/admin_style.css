@@ -145,6 +145,123 @@ body.admin-body {
     color: var(--text-secondary);
 }
 
+/* ---------- Admin Topbar Actions (Notification Bell & Theme Toggle) ---------- */
+.admin-topbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.admin-topbar #pushBellToggle,
+.admin-layout #pushBellToggle,
+.admin-topbar .bnav-bell-float {
+    display: none !important;
+}
+
+.admin-topbar .admin-icon-btn,
+.admin-topbar #themeToggle {
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    z-index: 1 !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    max-width: 40px !important;
+    max-height: 40px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    font-size: 1rem !important;
+    line-height: 1 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    position: relative !important;
+}
+
+/* Light mode styles */
+[data-bs-theme="light"] .admin-topbar .admin-icon-btn,
+[data-bs-theme="light"] .admin-topbar #pushBellToggle,
+[data-bs-theme="light"] .admin-topbar #themeToggle,
+[data-bs-theme="light"] .admin-topbar .bnav-bell-float {
+    background: #ffffff !important;
+    border: 1.5px solid rgba(13, 148, 136, 0.3) !important;
+    color: #0d9488 !important;
+}
+
+[data-bs-theme="light"] .admin-topbar #themeToggle {
+    color: #475569 !important;
+    border-color: rgba(148, 163, 184, 0.4) !important;
+}
+
+[data-bs-theme="light"] .admin-topbar .admin-icon-btn:hover,
+[data-bs-theme="light"] .admin-topbar #pushBellToggle:hover,
+[data-bs-theme="light"] .admin-topbar #themeToggle:hover,
+[data-bs-theme="light"] .admin-topbar .bnav-bell-float:hover {
+    background: #0d9488 !important;
+    border-color: #0d9488 !important;
+    color: #ffffff !important;
+    transform: scale(1.06) !important;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25) !important;
+}
+
+[data-bs-theme="light"] .admin-topbar .admin-icon-btn:hover i,
+[data-bs-theme="light"] .admin-topbar #pushBellToggle:hover i,
+[data-bs-theme="light"] .admin-topbar #themeToggle:hover i,
+[data-bs-theme="light"] .admin-topbar .bnav-bell-float:hover i {
+    color: #ffffff !important;
+}
+
+/* Dark mode styles */
+[data-bs-theme="dark"] .admin-topbar .admin-icon-btn,
+[data-bs-theme="dark"] .admin-topbar #pushBellToggle,
+[data-bs-theme="dark"] .admin-topbar #themeToggle,
+[data-bs-theme="dark"] .admin-topbar .bnav-bell-float {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+    color: #2dd4bf !important;
+}
+
+[data-bs-theme="dark"] .admin-topbar #themeToggle {
+    color: #fbbf24 !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-bs-theme="dark"] .admin-topbar .admin-icon-btn:hover,
+[data-bs-theme="dark"] .admin-topbar #pushBellToggle:hover,
+[data-bs-theme="dark"] .admin-topbar #themeToggle:hover,
+[data-bs-theme="dark"] .admin-topbar .bnav-bell-float:hover {
+    background: #0d9488 !important;
+    border-color: #0d9488 !important;
+    color: #ffffff !important;
+    transform: scale(1.06) !important;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35) !important;
+}
+
+[data-bs-theme="dark"] .admin-topbar .admin-icon-btn:hover i,
+[data-bs-theme="dark"] .admin-topbar #pushBellToggle:hover i,
+[data-bs-theme="dark"] .admin-topbar #themeToggle:hover i,
+[data-bs-theme="dark"] .admin-topbar .bnav-bell-float:hover i {
+    color: #ffffff !important;
+}
+
+.admin-topbar #pushBellToggle .bell-active-dot,
+.admin-topbar .bnav-bell-float .bell-active-dot {
+    position: absolute !important;
+    top: 5px !important;
+    right: 6px !important;
+}
+
 .admin-sidebar-toggle {
     display: none;
 }

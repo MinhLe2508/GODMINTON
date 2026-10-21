@@ -14,7 +14,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const bookings=await BookingAccount.request('api/admin/bookings.php?'+params);if(own!==sequence)return;
             empty.style.display=bookings.length?'none':'block';empty.textContent='Không có đơn phù hợp.';
-            body.innerHTML=bookings.map(b=>`<tr><td>${BookingAccount.escape(b.booking_code)}</td><td>${BookingAccount.escape(b.court_name)}<div class="small">${BookingAccount.escape(b.sub_court_name)}</div></td><td>${BookingAccount.escape(b.user_name)}<div class="small">${BookingAccount.escape(b.user_phone)}</div></td><td>${BookingAccount.escape(b.booking_date)}<div class="small">${BookingAccount.escape(b.time_range)}</div></td><td>${BookingAccount.money(b.total_amount)}</td><td>${BookingAccount.badge(b.booking_status)}</td><td>${b.can_complete?`<button class="btn btn-sm btn-outline-primary" data-id="${b.id}" data-status="completed">Hoàn thành</button>`:''} ${b.can_cancel?`<button class="btn btn-sm btn-outline-danger" data-id="${b.id}" data-status="cancelled">Hủy</button>`:''}</td></tr>`).join('');
+            const isOwner = user.role === 'owner';
+            body.innerHTML=bookings.map(b=>{
+                const vCode = b.voucher_code ? `<strong class="text-teal text-uppercase">${BookingAccount.escape(b.voucher_code)}</strong><div class="small text-muted">Giảm ${BookingAccount.money(b.discount_amount)}</div>` : '<span class="text-muted">—</span>';
+                const ownerCut = (b.discount_funded_by === 'owner') ? BookingAccount.money(b.discount_amount) : '<span class="text-muted">0 đ</span>';
+                const dynamicCols = isOwner
+                    ? `<td>${ownerCut}</td><td><strong class="text-success">${BookingAccount.money(b.owner_amount)}</strong></td>`
+                    : `<td>${BookingAccount.money(b.discount_amount)}</td><td>${BookingAccount.money(b.platform_fee)}</td>`;
+                return `<tr><td>${BookingAccount.escape(b.booking_code)}</td><td>${BookingAccount.escape(b.court_name)}<div class="small">${BookingAccount.escape(b.sub_court_name)}</div></td><td>${BookingAccount.escape(b.user_name)}<div class="small">${BookingAccount.escape(b.user_phone)}</div></td><td>${BookingAccount.escape(b.booking_date)}<div class="small">${BookingAccount.escape(b.time_range)}</div></td><td>${vCode}</td>${dynamicCols}<td>${BookingAccount.money(b.total_amount)}</td><td>${BookingAccount.badge(b.booking_status)}</td><td>${b.can_complete?`<button class="btn btn-sm btn-outline-primary" data-id="${b.id}" data-status="completed">Hoàn thành</button>`:''} ${b.can_cancel?`<button class="btn btn-sm btn-outline-danger" data-id="${b.id}" data-status="cancelled">Hủy</button>`:''}</td></tr>`;
+            }).join('');
         }catch(e){if(own!==sequence)return;body.innerHTML='';empty.textContent=e.message;}
     }
     let timer;document.getElementById('searchBooking').addEventListener('input',()=>{sequence++;clearTimeout(timer);timer=setTimeout(load,250);});document.getElementById('filterStatus').addEventListener('change',load);

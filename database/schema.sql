@@ -1,8 +1,9 @@
--- GODMINTON schema, exported 2026-10-20 23:16:52 +07:00
--- Select an EMPTY database before importing. No DROP/USE/CREATE DATABASE statements.
+-- GODMINTON schema (đã sắp xếp lại thứ tự: bảng cha trước, bảng con sau)
+-- Chọn một database TRỐNG trước khi import. Không có DROP/USE/CREATE DATABASE.
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS=0;
 
+-- 1. Các bảng độc lập
 CREATE TABLE `amenities` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `code` varchar(30) NOT NULL,
@@ -19,47 +20,18 @@ CREATE TABLE `auth_rate_limits` (
   KEY `idx_auth_rate_window` (`window_started_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `auth_tokens` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL,
-  `purpose` enum('verify','reset','delete') NOT NULL,
-  `token_hash` char(64) NOT NULL,
-  `expires_at` datetime NOT NULL,
-  `used_at` datetime DEFAULT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `token_hash` (`token_hash`),
-  KEY `idx_auth_user` (`user_id`,`purpose`),
-  KEY `idx_auth_expiry` (`expires_at`),
-  CONSTRAINT `fk_auth_token_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `booking_slots` (
-  `booking_id` int(10) unsigned NOT NULL,
-  `slot_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`booking_id`,`slot_id`),
-  KEY `fk_bs_slot` (`slot_id`),
-  CONSTRAINT `fk_bs_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_bs_slot` FOREIGN KEY (`slot_id`) REFERENCES `time_slots` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `bookings` (
+CREATE TABLE `news` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL,
-  `court_id` int(10) unsigned NOT NULL,
-  `booking_code` varchar(30) DEFAULT NULL,
-  `total_price` decimal(12,0) NOT NULL,
-  `deposit_amount` decimal(12,0) NOT NULL DEFAULT 0,
-  `payment_method` varchar(30) DEFAULT NULL,
-  `notes` text DEFAULT NULL,
-  `status` enum('pending','confirmed','cancelled','completed') NOT NULL DEFAULT 'pending',
+  `title` varchar(200) NOT NULL,
+  `summary` text NOT NULL,
+  `content` mediumtext NOT NULL,
+  `image_url` varchar(2048) DEFAULT NULL,
+  `category` varchar(30) NOT NULL DEFAULT 'notice',
+  `status` varchar(20) NOT NULL DEFAULT 'draft',
+  `published_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_booking_code` (`booking_code`),
-  KEY `idx_bookings_user` (`user_id`),
-  KEY `idx_bookings_court` (`court_id`),
-  CONSTRAINT `fk_bookings_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`),
-  CONSTRAINT `fk_bookings_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+  KEY `idx_news_publication` (`status`,`published_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `contacts` (
@@ -75,25 +47,45 @@ CREATE TABLE `contacts` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `court_amenities` (
-  `court_id` int(10) unsigned NOT NULL,
-  `amenity_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`court_id`,`amenity_id`),
-  KEY `fk_ca_amenity` (`amenity_id`),
-  CONSTRAINT `fk_ca_amenity` FOREIGN KEY (`amenity_id`) REFERENCES `amenities` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_ca_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `court_images` (
+CREATE TABLE `push_subscriptions` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `court_id` int(10) unsigned NOT NULL,
-  `image_url` varchar(255) NOT NULL,
-  `sort_order` int(10) unsigned NOT NULL DEFAULT 0,
+  `user_id` int(10) unsigned DEFAULT NULL,
+  `endpoint` text NOT NULL,
+  `p256dh` varchar(255) NOT NULL,
+  `auth` varchar(255) NOT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
-  KEY `idx_images_court` (`court_id`),
-  CONSTRAINT `fk_images_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`) ON DELETE CASCADE
+  UNIQUE KEY `uq_endpoint` (`endpoint`(191)),
+  KEY `idx_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `wards` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `old_area_label` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `users` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(150) NOT NULL,
+  `email` varchar(150) NOT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `role` enum('customer','owner','admin') NOT NULL DEFAULT 'customer',
+  `avatar_url` varchar(255) DEFAULT NULL,
+  `is_verified` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `session_version` int(10) unsigned NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 2. Bảng phụ thuộc users / wards
 CREATE TABLE `courts` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `owner_id` int(10) unsigned NOT NULL,
@@ -117,32 +109,39 @@ CREATE TABLE `courts` (
   CONSTRAINT `fk_courts_ward` FOREIGN KEY (`ward_id`) REFERENCES `wards` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `news` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `title` varchar(200) NOT NULL,
-  `summary` text NOT NULL,
-  `content` mediumtext NOT NULL,
-  `image_url` varchar(2048) DEFAULT NULL,
-  `category` varchar(30) NOT NULL DEFAULT 'notice',
-  `status` varchar(20) NOT NULL DEFAULT 'draft',
-  `published_at` datetime DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+CREATE TABLE `auth_tokens` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
+  `purpose` enum('verify','reset','delete') NOT NULL,
+  `token_hash` char(64) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  KEY `idx_news_publication` (`status`,`published_at`)
+  UNIQUE KEY `token_hash` (`token_hash`),
+  KEY `idx_auth_user` (`user_id`,`purpose`),
+  KEY `idx_auth_expiry` (`expires_at`),
+  CONSTRAINT `fk_auth_token_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `push_subscriptions` (
+-- 3. Bảng phụ thuộc courts
+CREATE TABLE `court_amenities` (
+  `court_id` int(10) unsigned NOT NULL,
+  `amenity_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`court_id`,`amenity_id`),
+  KEY `fk_ca_amenity` (`amenity_id`),
+  CONSTRAINT `fk_ca_amenity` FOREIGN KEY (`amenity_id`) REFERENCES `amenities` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ca_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `court_images` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned DEFAULT NULL,
-  `endpoint` text NOT NULL,
-  `p256dh` varchar(255) NOT NULL,
-  `auth` varchar(255) NOT NULL,
-  `user_agent` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `court_id` int(10) unsigned NOT NULL,
+  `image_url` varchar(255) NOT NULL,
+  `sort_order` int(10) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_endpoint` (`endpoint`(191)),
-  KEY `idx_user` (`user_id`)
+  KEY `idx_images_court` (`court_id`),
+  CONSTRAINT `fk_images_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `time_slots` (
@@ -164,28 +163,33 @@ CREATE TABLE `time_slots` (
   CONSTRAINT `fk_slots_held_by` FOREIGN KEY (`held_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `users` (
+CREATE TABLE `bookings` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(150) NOT NULL,
-  `email` varchar(150) NOT NULL,
-  `phone` varchar(20) DEFAULT NULL,
-  `password_hash` varchar(255) NOT NULL,
-  `role` enum('customer','owner','admin') NOT NULL DEFAULT 'customer',
-  `avatar_url` varchar(255) DEFAULT NULL,
-  `is_verified` tinyint(1) NOT NULL DEFAULT 0,
+  `user_id` int(10) unsigned NOT NULL,
+  `court_id` int(10) unsigned NOT NULL,
+  `booking_code` varchar(30) DEFAULT NULL,
+  `total_price` decimal(12,0) NOT NULL,
+  `deposit_amount` decimal(12,0) NOT NULL DEFAULT 0,
+  `payment_method` varchar(30) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `status` enum('pending','confirmed','cancelled','completed') NOT NULL DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `session_version` int(10) unsigned NOT NULL DEFAULT 0,
-  `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
+  UNIQUE KEY `uq_booking_code` (`booking_code`),
+  KEY `idx_bookings_user` (`user_id`),
+  KEY `idx_bookings_court` (`court_id`),
+  CONSTRAINT `fk_bookings_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`),
+  CONSTRAINT `fk_bookings_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `wards` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
-  `old_area_label` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+-- 4. Bảng phụ thuộc bookings + time_slots
+CREATE TABLE `booking_slots` (
+  `booking_id` int(10) unsigned NOT NULL,
+  `slot_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`booking_id`,`slot_id`),
+  KEY `fk_bs_slot` (`slot_id`),
+  CONSTRAINT `fk_bs_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_bs_slot` FOREIGN KEY (`slot_id`) REFERENCES `time_slots` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS=1;

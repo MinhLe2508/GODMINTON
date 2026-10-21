@@ -323,17 +323,37 @@
         cursor: pointer;
         transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+    .bnav-theme-float i, .bnav-theme-float svg {
+        color: inherit !important;
+        transition: color 0.15s ease;
+    }
     .bnav-theme-float:hover {
-        transform: scale(1.1);
-        background: #0d9488;
-        border-color: #0d9488;
-        color: #fff;
+        transform: scale(1.08);
+        background: #0d9488 !important;
+        border-color: #0d9488 !important;
+        color: #fff !important;
+    }
+    .bnav-theme-float:hover i, .bnav-theme-float:hover svg {
+        color: #ffffff !important;
     }
     [data-bs-theme="light"] .bnav-theme-float {
-        background: rgba(255, 255, 255, 0.85);
-        border-color: rgba(0, 0, 0, 0.12);
-        color: #1e293b;
+        background: rgba(255, 255, 255, 0.95);
+        border: 1.5px solid rgba(13, 148, 136, 0.35);
+        color: #0d9488;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    [data-bs-theme="light"] .bnav-theme-float:hover {
+        background: #0d9488 !important;
+        color: #ffffff !important;
+    }
+    [data-bs-theme="light"] .bnav-theme-float:hover i {
+        color: #ffffff !important;
+    }
+    .bnav-bell-float {
+        right: 74px !important;
+    }
+    .bnav-bell-float.active {
+        color: #2dd4bf;
     }
     `;
 
@@ -428,6 +448,61 @@
         });
 
         document.body.appendChild(btn);
+
+        injectPushBellToggle();
+    }
+
+    function injectPushBellToggle() {
+        if (document.querySelector('.admin-layout') || document.querySelector('.admin-topbar') || window.location.pathname.includes('admin-')) {
+            return;
+        }
+        if (document.getElementById('pushBellToggle')) return;
+
+        const bellBtn = document.createElement('button');
+        bellBtn.id = 'pushBellToggle';
+        bellBtn.type = 'button';
+        bellBtn.className = 'bnav-theme-float bnav-bell-float';
+        bellBtn.title = 'Thông báo đẩy PWA (Bấm để bật/tắt hoặc gửi thử)';
+        bellBtn.setAttribute('aria-label', 'Thông báo đẩy PWA');
+        bellBtn.innerHTML = '<i class="fa-regular fa-bell"></i>';
+
+        const openPushModal = () => {
+            if (window.PushClient && typeof window.PushClient.handleBellClick === 'function') {
+                window.PushClient.handleBellClick();
+            } else if (window.PushClient && typeof window.PushClient.initBellButton === 'function') {
+                window.PushClient.initBellButton().then(() => {
+                    if (typeof window.PushClient.handleBellClick === 'function') {
+                        window.PushClient.handleBellClick();
+                    }
+                });
+            } else {
+                const script = document.createElement('script');
+                script.src = 'assets/js/push-client.js?v=' + Date.now();
+                script.onload = () => {
+                    if (window.PushClient) {
+                        window.PushClient.initBellButton().then(() => {
+                            if (typeof window.PushClient.handleBellClick === 'function') {
+                                window.PushClient.handleBellClick();
+                            }
+                        });
+                    }
+                };
+                document.head.appendChild(script);
+            }
+        };
+
+        bellBtn.addEventListener('click', openPushModal);
+
+        const themeBtn = document.getElementById('themeToggle');
+        if (themeBtn && themeBtn.parentNode) {
+            themeBtn.parentNode.insertBefore(bellBtn, themeBtn);
+        } else {
+            document.body.appendChild(bellBtn);
+        }
+
+        if (window.PushClient && typeof window.PushClient.updateBellUI === 'function') {
+            window.PushClient.updateBellUI();
+        }
     }
 
     /* ============================================================
@@ -458,6 +533,7 @@
 
         // Inject Theme Button nếu trang chưa có
         injectThemeToggle();
+        injectPushBellToggle();
 
         // Tránh inject 2 lần
         if (document.getElementById('godmintonBottomNav')) return;

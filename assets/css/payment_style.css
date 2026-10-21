@@ -463,3 +463,86 @@ textarea.pay-input {
     .success-detail-card .sdrow { grid-template-columns: 85px minmax(0,1fr); gap: 10px; padding: 11px 12px; }
     .success-actions { grid-template-columns: 1fr; gap: 8px; }
 }
+
+/* ---- Voucher Box: Modern Gradient & Full-width Fit ---- */
+.voucher-box {
+    width: 100%;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(20, 184, 166, 0.18) 100%);
+    border: 1.5px solid rgba(13, 148, 136, 0.3);
+    border-radius: 1rem;
+    padding: 0.95rem 1rem;
+    margin-bottom: 1.1rem;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.06);
+    transition: all 0.25s ease;
+}
+.voucher-box:hover {
+    border-color: rgba(13, 148, 136, 0.5);
+    box-shadow: 0 6px 18px rgba(13, 148, 136, 0.1);
+}
+.voucher-box-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--text-primary, #0f172a);
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.3px;
+}
+.voucher-box-title i {
+    color: var(--brand-teal, #0d9488);
+}
+.voucher-box .input-group {
+    width: 100%;
+    display: flex;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+.voucher-box .input-group .form-control {
+    height: 44px;
+    background: #ffffff;
+    border: 1.5px solid rgba(13, 148, 136, 0.25);
+    border-right: none;
+    border-radius: 0.75rem 0 0 0.75rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    padding-left: 0.95rem;
+    color: #0f172a;
+    transition: all 0.2s ease;
+}
+.voucher-box .input-group .form-control:focus {
+    border-color: var(--brand-teal, #0d9488);
+    box-shadow: none;
+    background: #ffffff;
+}
+.voucher-box .input-group .btn-teal {
+    height: 44px;
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    border: none;
+    border-radius: 0 0.75rem 0.75rem 0;
+    color: #fff;
+    font-weight: 800;
+    padding: 0 1.25rem;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.voucher-box .input-group .btn-teal:hover {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+}
+.voucher-box .input-group .btn-outline-danger {
+    height: 44px;
+    border-radius: 0 0.75rem 0.75rem 0;
+    border: 1.5px solid #ef4444;
+    border-left: none;
+    background: #fff;
+    color: #ef4444;
+}
+

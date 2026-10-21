@@ -22,6 +22,9 @@
     let markersLayer = null;
     let currentCourts = [];
     let pendingCourts = null;
+    let routeLayer = null;
+    let userMarker = null;
+    let routePanelEl = null;
 
     // Helper: Escape chuỗi HTML chống tấn công XSS trong popup
     function escapeHtml(text) {
@@ -194,9 +197,14 @@
                     </div>
                     <div class="popup-footer">
                         <div class="popup-price">${escapeHtml(priceText)}</div>
-                        <a href="${detailUrl}" class="btn btn-sm btn-teal rounded-pill px-3 py-1" style="font-size:0.75rem; text-decoration:none;">
-                            Xem sân <i class="fa-solid fa-arrow-right ms-1"></i>
-                        </a>
+                        <div class="d-flex align-items-center gap-1">
+                            <button type="button" class="btn-popup-route" onclick="if(window.CourtMap) window.CourtMap.routeToCourt(${lat}, ${lng}, '${escapeHtml(court.name)}', '${escapeHtml(court.address || '')}')" title="Chỉ đường từ vị trí của bạn">
+                                <i class="fa-solid fa-diamond-turn-right me-1"></i> Chỉ đường
+                            </button>
+                            <a href="${detailUrl}" class="btn btn-sm btn-teal rounded-pill px-2 py-1" style="font-size:0.75rem; text-decoration:none;">
+                                Xem sân <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
             `;
@@ -294,9 +302,207 @@
             }
         }
 
+        const floatingTexts = document.querySelectorAll('.court-map-floating-fs-btn .fs-floating-text');
+        floatingTexts.forEach(el => {
+            el.textContent = isFs ? 'Thu nhỏ' : 'Toàn màn hình';
+        });
+
         setTimeout(() => {
             if (map) map.invalidateSize();
         }, 150);
+    }
+
+    // ==========================================
+    // TÍNH NĂNG CHỈ ĐƯỜNG ĐẾN SÂN (DIRECTIONS / ROUTING)
+    // ==========================================
+
+    // Tính khoảng cách Haversine (km)
+    function calcHaversine(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return parseFloat((R * c).toFixed(1));
+    }
+
+    // Hiển thị bảng thông tin lộ trình nổi trên bản đồ
+    function showRoutePanel(destLat, destLng, courtName, distanceKm, durationMin, userLat, userLng) {
+        clearRoutePanel();
+        const container = map ? map.getContainer() : null;
+        if (!container) return;
+
+        routePanelEl = document.createElement('div');
+        routePanelEl.className = 'court-map-route-panel';
+        const gmapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${destLat},${destLng}`;
+
+        routePanelEl.innerHTML = `
+            <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                <div class="d-flex align-items-center gap-2" style="min-width: 200px;">
+                    <div class="route-badge-icon"><i class="fa-solid fa-diamond-turn-right"></i></div>
+                    <div>
+                        <div class="fw-bold small text-truncate" style="max-width: 240px;" title="${escapeHtml(courtName)}">
+                            Đến: ${escapeHtml(courtName)}
+                        </div>
+                        <div class="small text-muted">
+                            Khoảng cách: <strong class="text-teal">${distanceKm} km</strong> ${durationMin ? `· ~${durationMin} phút` : ''}
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-teal rounded-pill px-3 py-1 fw-semibold" style="font-size:0.75rem; text-decoration:none;" title="Mở lộ trình trên Google Maps">
+                        <i class="fa-brands fa-google me-1"></i> Google Maps
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" style="width:30px;height:30px;padding:0;" onclick="if(window.CourtMap) window.CourtMap.clearRoute();" title="Đóng chỉ đường">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(routePanelEl);
+    }
+
+    function clearRoutePanel() {
+        if (routePanelEl && routePanelEl.parentNode) {
+            routePanelEl.parentNode.removeChild(routePanelEl);
+        }
+        routePanelEl = null;
+    }
+
+    // Xóa đường đi và vị trí người dùng
+    function clearRoute() {
+        if (routeLayer && map) {
+            map.removeLayer(routeLayer);
+            routeLayer = null;
+        }
+        if (userMarker && map) {
+            map.removeLayer(userMarker);
+            userMarker = null;
+        }
+        clearRoutePanel();
+    }
+
+    // Chỉ đường từ vị trí của khách đến sân
+    function routeToCourt(destLat, destLng, courtName, courtAddress) {
+        destLat = parseFloat(destLat);
+        destLng = parseFloat(destLng);
+        if (isNaN(destLat) || isNaN(destLng) || !map) {
+            alert('Không tìm thấy tọa độ hợp lệ của sân.');
+            return;
+        }
+
+        if (!navigator.geolocation) {
+            if (confirm('Trình duyệt không hỗ trợ định vị GPS. Bạn có muốn mở chỉ đường trên Google Maps không?')) {
+                window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`, '_blank');
+            }
+            return;
+        }
+
+        // Đóng popup đang mở
+        map.closePopup();
+
+        // Toast thông báo đang định vị
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'Đang xác định vị trí của bạn...',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            const userLat = pos.coords.latitude;
+            const userLng = pos.coords.longitude;
+
+            clearRoute();
+
+            // Tạo icon vị trí người dùng với hiệu ứng sóng lan toả
+            const userIcon = L.divIcon({
+                className: 'court-user-location-wrapper',
+                html: `
+                    <div class="court-user-pulse-marker" title="Vị trí của bạn">
+                        <div class="user-pulse-wave"></div>
+                        <div class="user-pulse-dot"><i class="fa-solid fa-person-walking"></i></div>
+                    </div>
+                `,
+                iconSize: [26, 26],
+                iconAnchor: [13, 13]
+            });
+
+            userMarker = L.marker([userLat, userLng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
+            userMarker.bindPopup(`<b>Vị trí hiện tại của bạn</b><br><small class="text-muted">Điểm xuất phát</small>`);
+
+            // Thử gọi OSRM Routing API công khai
+            let distanceKm = 0;
+            let durationMin = 0;
+            let routeCoords = [];
+
+            try {
+                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson`;
+                const res = await fetch(osrmUrl);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.routes && data.routes.length > 0) {
+                        const r = data.routes[0];
+                        distanceKm = parseFloat((r.distance / 1000).toFixed(1));
+                        durationMin = Math.max(1, Math.round(r.duration / 60));
+                        routeCoords = r.geometry.coordinates.map(c => [c[1], c[0]]);
+                    }
+                }
+            } catch (err) {
+                console.warn('[CourtMap] Không thể kết nối OSRM, dùng fallback đường thẳng:', err);
+            }
+
+            // Nếu OSRM không trả về route hợp lệ, dùng đường thẳng Haversine
+            if (routeCoords.length === 0) {
+                routeCoords = [[userLat, userLng], [destLat, destLng]];
+                distanceKm = calcHaversine(userLat, userLng, destLat, destLng);
+                durationMin = Math.max(1, Math.round((distanceKm / 30) * 60)); // ước tính tốc độ 30km/h
+            }
+
+            // Vẽ lộ trình trên bản đồ với 2 lớp đường (đường viền nền + đường chính xanh ngọc rực rỡ)
+            const bgLine = L.polyline(routeCoords, {
+                color: '#042f2e',
+                weight: 7,
+                opacity: 0.5,
+                lineJoin: 'round'
+            });
+            const mainLine = L.polyline(routeCoords, {
+                color: '#0d9488',
+                weight: 5,
+                opacity: 0.95,
+                lineJoin: 'round'
+            });
+
+            routeLayer = L.featureGroup([bgLine, mainLine]).addTo(map);
+
+            // Fit bounds hiển thị cả người dùng và sân
+            try {
+                map.fitBounds(routeLayer.getBounds(), { padding: [60, 60], maxZoom: 16 });
+            } catch (_) {}
+
+            // Hiển thị bảng lộ trình nổi
+            showRoutePanel(destLat, destLng, courtName || 'Sân cầu lông', distanceKm, durationMin, userLat, userLng);
+
+        }, (err) => {
+            console.warn('[CourtMap] Geolocation error:', err);
+            const msg = err.code === 1 ? 'Bạn chưa cấp quyền truy cập vị trí trên trình duyệt.'
+                      : err.code === 2 ? 'Không thể lấy thông tin vị trí từ thiết bị.'
+                      : 'Hết thời gian chờ lấy vị trí.';
+
+            if (confirm(`${msg}\n\nBạn có muốn mở chỉ đường trực tiếp trên Google Maps không?`)) {
+                window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`, '_blank');
+            }
+        }, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+        });
     }
 
     // Lắng nghe sự kiện thay đổi fullscreen toàn cục
@@ -324,6 +530,8 @@
         updateMarkers: updateMarkers,
         resetView: resetView,
         toggleFullscreen: toggleFullscreen,
+        routeToCourt: routeToCourt,
+        clearRoute: clearRoute,
         getMap: function () { return map; }
     };
 

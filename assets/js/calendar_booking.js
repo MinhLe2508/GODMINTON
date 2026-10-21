@@ -28,6 +28,28 @@ function buildTimeSlots() {
 }
 const TIME_SLOTS = buildTimeSlots(); // 37 slots
 
+function formatTimeHHmm(t) {
+    if (!t) return '';
+    const str = String(t).trim();
+    let h = 0, m = 0;
+    if (str.includes(':')) {
+        const parts = str.split(':');
+        h = parseInt(parts[0], 10) || 0;
+        m = parseInt(parts[1], 10) || 0;
+    } else if (str.toLowerCase().includes('h')) {
+        const parts = str.toLowerCase().split('h');
+        h = parseInt(parts[0], 10) || 0;
+        m = parseInt(parts[1], 10) || 0;
+    } else {
+        h = parseInt(str, 10) || 0;
+    }
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function formatRangeShort(start, end) {
+    return `${formatTimeHHmm(start)}-${formatTimeHHmm(end)}`;
+}
+
 /* -------- State -------- */
 let activeCourtId = null;       // Selected venue ID, validated by booking.php.
 let activeDateStr = null;       // YYYY-MM-DD
@@ -116,7 +138,7 @@ function buildEventMapForCourt(courtIndex) {
         let endIdx   = timeToSlotIdx(s.end_time);
         let mergedSlots = [s];
 
-        // Gộp các slot liền kề cùng loại holding của chính user hoặc cùng booking
+        // Gộp các slot liền kề cùng loại (đã đặt, holding, khóa bảo trì)
         let j = i + 1;
         while (j < slotsForCourt.length) {
             const next = slotsForCourt[j];
@@ -125,10 +147,16 @@ function buildEventMapForCourt(courtIndex) {
 
             let canMerge = false;
             if (nextStart === endIdx) {
-                if (type === 'holding' && next.status === 'holding' && next.is_my_hold) {
+                if (type === 'booked' && next.status === 'booked') {
                     canMerge = true;
-                } else if (type === 'locked' && next.status === 'holding' && !next.is_my_hold && next.held_by === s.held_by) {
+                } else if (type === 'holding' && next.status === 'holding' && next.is_my_hold) {
                     canMerge = true;
+                } else if (type === 'locked') {
+                    if (s.status === 'holding' && next.status === 'holding' && !next.is_my_hold && next.held_by === s.held_by) {
+                        canMerge = true;
+                    } else if (s.status === 'blocked' && next.status === 'blocked') {
+                        canMerge = true;
+                    }
                 }
             }
 
@@ -145,20 +173,23 @@ function buildEventMapForCourt(courtIndex) {
         let label = '';
         let sub = '';
 
+        const evStartTime = mergedSlots[0].start_time;
+        const evEndTime   = mergedSlots[mergedSlots.length - 1].end_time;
+
         if (type === 'booked') {
-            label = 'Đã đặt';
-            sub = `${s.start_time}–${s.end_time}`;
+            const durText = span === 1 ? '30p' : (span === 2 ? '1 tiếng' : (span === 3 ? '1h30p' : `${span * 0.5} tiếng`));
+            label = span > 1 ? `Đã đặt (${durText})` : 'Đã đặt';
+            sub = '';
         } else if (type === 'holding') {
             const totalSecs = Math.max(0, Math.min(300, s.hold_seconds_left || 0));
             const mins = Math.floor(totalSecs / 60);
             const secs = totalSecs % 60;
-            const hours = mergedSlots.length * 0.5;
-            const durLabel = hours === 1 ? '1 tiếng' : (hours === 1.5 ? '1 tiếng 30 phút' : `${hours} tiếng`);
-            label = `Bạn đang giữ (${durLabel})`;
+            label = '';
             sub = `Còn ${mins}p${secs < 10 ? '0' : ''}${secs}s`;
         } else if (type === 'locked') {
-            label = s.status === 'blocked' ? 'Ngừng nhận' : 'Đang giữ';
-            sub = s.status === 'blocked' ? `${s.start_time}–${s.end_time}` : 'Khách đang cọc';
+            const durText = span === 1 ? '30p' : (span === 2 ? '1 tiếng' : (span === 3 ? '1h30p' : `${span * 0.5} tiếng`));
+            label = s.status === 'blocked' ? (span > 1 ? `Ngừng nhận (${durText})` : 'Ngừng nhận') : 'Đang giữ';
+            sub = s.status === 'blocked' ? '' : 'Khách đang cọc';
         }
 
         const ev = {
@@ -167,6 +198,8 @@ function buildEventMapForCourt(courtIndex) {
             type: type,
             startIdx: startIdx,
             span: span,
+            startTime: evStartTime,
+            endTime: evEndTime,
             label: label,
             sub: sub,
             raw: s
@@ -199,8 +232,21 @@ function renderCalendar(visibleCourts) {
         const isHour = slot.m === 0;
         const isCurrentHour = (now.getHours() === slot.h && now.getMinutes() < 30)
                             || (now.getHours() === slot.h && slot.m === 30 && now.getMinutes() >= 30);
-        thead += `<th class="cal-th-time${isHour ? ' hour-mark' : ''}${isCurrentHour ? ' current-hour' : ''}" data-idx="${idx}">
-                    ${slot.label}
+        const nextSlot = TIME_SLOTS[idx + 1];
+        const nextLabel = nextSlot ? nextSlot.label : '24:00';
+        const isFirst = (idx === 0);
+        const isLast = (idx === TIME_SLOTS.length - 1);
+
+        thead += `<th class="cal-th-time${isHour ? ' hour-mark' : ''}${isCurrentHour ? ' current-hour' : ''}" data-idx="${idx}" title="Khung giờ: ${slot.label} – ${nextLabel}">
+                    <div class="cal-ruler-tick${isFirst ? ' first-tick' : ''}">
+                        <span class="ruler-label">${slot.label}</span>
+                        <span class="ruler-notch"></span>
+                    </div>
+                    ${isLast ? `
+                    <div class="cal-ruler-tick last-tick">
+                        <span class="ruler-label">24:00</span>
+                        <span class="ruler-notch"></span>
+                    </div>` : ''}
                   </th>`;
     });
     thead += `</tr></thead>`;
@@ -236,7 +282,7 @@ function renderCalendar(visibleCourts) {
                     if (ev.type === 'holding')  { tdClass += 'cal-td-holding'; blockClass += 'block-holding'; }
                     if (isHourStart) tdClass += ' hour-start';
 
-                    const timeLabel = `${TIME_SLOTS[ev.startIdx].label} – ${TIME_SLOTS[Math.min(ev.startIdx + ev.span, TIME_SLOTS.length - 1)].label}`;
+                    const timeLabel = formatRangeShort(ev.startTime, ev.endTime);
                     const icon = ev.type === 'booked' ? 'fa-ban' : ev.type === 'locked' ? 'fa-lock' : ev.type === 'event' ? 'fa-calendar-star' : 'fa-stopwatch';
 
                     tbody += `<td class="${tdClass}" colspan="${ev.span}"
@@ -271,10 +317,9 @@ function renderCalendar(visibleCourts) {
                 if (i === minIdx) {
                     const span = selectedSlotIndices.length;
                     const startTime = TIME_SLOTS[minIdx].label;
-                    const endTime = TIME_SLOTS[Math.min(minIdx + span, TIME_SLOTS.length - 1)].label;
-                    const timeLabel = `${startTime} – ${endTime}`;
-                    const hours = span * 0.5;
-                    const durLabel = hours === 1 ? '1 tiếng' : (hours === 1.5 ? '1 tiếng 30 phút' : `${hours} tiếng`);
+                    const endTime = (minIdx + span < TIME_SLOTS.length) ? TIME_SLOTS[minIdx + span].label : '24:00';
+                    const timeLabel = formatRangeShort(startTime, endTime);
+                    const durText = span === 1 ? '30 phút' : (span === 2 ? '1 tiếng' : (span === 3 ? '1h30p' : `${span * 0.5} tiếng`));
 
                     tbody += `<td class="cal-td-slot cal-td-holding hour-start" colspan="${span}"
                                   onclick="confirmHoldSelectedSlots()">
@@ -282,10 +327,7 @@ function renderCalendar(visibleCourts) {
                                     <div class="block-time-label">
                                         <i class="fa-solid fa-stopwatch me-1" style="font-size:0.6rem;"></i>${timeLabel}
                                     </div>
-                                    <div class="block-title" style="font-weight:800; font-size:0.75rem;">Đang chọn</div>
-                                    <div class="block-sub" style="font-size:0.65rem; opacity:0.95;">
-                                        <i class="fa-solid fa-lock me-1"></i>Khóa giữ chỗ (${durLabel})
-                                    </div>
+                                    <div class="block-title" style="font-weight:800; font-size:0.75rem;">Đang chọn (${durText})</div>
                                 </div>
                               </td>`;
                     i += span;
@@ -296,8 +338,11 @@ function renderCalendar(visibleCourts) {
                 }
             }
 
+            const nextSlot = TIME_SLOTS[i + 1];
+            const nextLabel = nextSlot ? nextSlot.label : '24:00';
             tbody += `<td class="cal-td-slot s-available${isHourStart ? ' hour-start' : ''}"
                             data-court="${court.id}" data-slot="${i}" data-slotid="${slotDbId}"
+                            title="Khung giờ ${slot.label} – ${nextLabel} (1 ô = 30 phút). Bấm để chọn."
                             onclick="handleSlotClick(${court.id}, ${i}, 'available', ${slotDbId})"
                             onmouseenter="highlightCell(this)"
                             onmouseleave="unhighlightCell(this)">
@@ -352,44 +397,27 @@ async function handleSlotClick(courtIndex, slotIdx, type, slotId) {
         return;
     }
 
-    // TYPE === 'available': Chọn khung giờ từ 1 tiếng (2 ô) / 1.5 tiếng (3 ô) trở lên
+    // TYPE === 'available': Cho phép đặt từ 30 phút (1 ô), 1 tiếng (2 ô), 1.5 tiếng (3 ô) trở lên
     const courtName = COURTS[courtIndex]?.name;
     const slotsForCourt = serverSlots.filter(s => s.sub_court_name === courtName);
 
-    // Trường hợp 1: Nếu chưa chọn ô nào hoặc đang click sang thảm khác -> Khởi tạo vùng chọn TỐI THIỂU 1 TIẾNG (2 ô)
+    // Trường hợp 1: Nếu chưa chọn ô nào hoặc đang click sang thảm khác -> Khởi tạo vùng chọn 30 phút (1 ô)
     if (selectedCourtId !== courtIndex || selectedSlotIndices.length === 0) {
-        // Kiểm tra xem ô hiện tại và ô kế tiếp có trống không
-        const nextIdx = slotIdx + 1;
-        const isNextAvailable = isCellAvailable(slotsForCourt, nextIdx);
-
-        if (!isNextAvailable) {
-            // Nếu ô kế tiếp bị bận, thử kiểm tra ô phía trước
-            const prevIdx = slotIdx - 1;
-            const isPrevAvailable = isCellAvailable(slotsForCourt, prevIdx);
-            if (isPrevAvailable) {
-                selectedCourtId = courtIndex;
-                selectedSlotIndices = [prevIdx, slotIdx];
-            } else {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Thời gian đặt tối thiểu là 1 tiếng',
-                    text: 'Quy định đặt sân tối thiểu là 1 tiếng (2 ô 30 phút liên tiếp). Khung giờ liền kề ô này đã bận, vui lòng chọn vị trí khác!',
-                    confirmButtonColor: '#0d9488'
-                });
-                return;
-            }
-        } else {
-            selectedCourtId = courtIndex;
-            selectedSlotIndices = [slotIdx, nextIdx]; // Mặc định chọn 1 tiếng (2 ô)
-        }
+        selectedCourtId = courtIndex;
+        selectedSlotIndices = [slotIdx];
     } 
-    // Trường hợp 2: Đang chọn trên cùng thảm -> Cho phép mở rộng thành 1.5 tiếng (3 ô), 2 tiếng (4 ô)...
+    // Trường hợp 2: Đang chọn trên cùng thảm -> Cho phép mở rộng / thu hẹp / bỏ chọn
     else {
         const minIdx = Math.min(...selectedSlotIndices);
         const maxIdx = Math.max(...selectedSlotIndices);
 
-        // Nếu click vào ô ngay sau maxIdx: mở rộng thêm 30 phút (thành 1.5 tiếng, 2 tiếng...)
-        if (slotIdx === maxIdx + 1) {
+        // Nếu click vào chính ô duy nhất đang chọn -> Bỏ chọn
+        if (selectedSlotIndices.length === 1 && selectedSlotIndices[0] === slotIdx) {
+            selectedCourtId = null;
+            selectedSlotIndices = [];
+        }
+        // Nếu click vào ô ngay sau maxIdx: mở rộng thêm 30 phút (thành 1 tiếng, 1.5 tiếng, 2 tiếng...)
+        else if (slotIdx === maxIdx + 1) {
             if (isCellAvailable(slotsForCourt, slotIdx)) {
                 selectedSlotIndices.push(slotIdx);
                 selectedSlotIndices.sort((a, b) => a - b);
@@ -403,36 +431,33 @@ async function handleSlotClick(courtIndex, slotIdx, type, slotId) {
                 return;
             }
         }
-        // Nếu click vào ô đuôi (maxIdx): cho phép co ngắn lại bớt 30 phút (nhưng không dưới 2 ô = 1 tiếng)
-        else if (slotIdx === maxIdx) {
-            if (selectedSlotIndices.length > 2) {
-                selectedSlotIndices = selectedSlotIndices.filter(idx => idx !== maxIdx);
+        // Nếu click vào ô ngay trước minIdx: mở rộng thêm 30 phút về phía trước
+        else if (slotIdx === minIdx - 1) {
+            if (isCellAvailable(slotsForCourt, slotIdx)) {
+                selectedSlotIndices.push(slotIdx);
+                selectedSlotIndices.sort((a, b) => a - b);
             } else {
                 Swal.fire({
-                    toast: true,
-                    position: 'top-end',
                     icon: 'info',
-                    title: 'Thời gian tối thiểu là 1 tiếng (2 ô liên tiếp)',
-                    showConfirmButton: false,
-                    timer: 2000
-                });
-            }
-        }
-        // Nếu click vào ô ngoài dải liền kề: reset và bắt đầu chọn vùng 1 tiếng mới từ ô đó
-        else {
-            const nextIdx = slotIdx + 1;
-            if (isCellAvailable(slotsForCourt, nextIdx)) {
-                selectedCourtId = courtIndex;
-                selectedSlotIndices = [slotIdx, nextIdx];
-            } else {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Thời gian đặt tối thiểu là 1 tiếng',
-                    text: 'Quy định đặt sân tối thiểu là 1 tiếng (2 ô 30 phút liên tiếp). Vui lòng chọn vị trí có 2 ô trống liền kề!',
+                    title: 'Khung giờ phía trước không khả dụng',
+                    text: 'Ô bạn vừa chọn đã có khách đặt hoặc đang được giữ chỗ.',
                     confirmButtonColor: '#0d9488'
                 });
                 return;
             }
+        }
+        // Nếu click vào ô đuôi (maxIdx) khi đang chọn từ 2 ô trở lên: co ngắn lại bớt 30 phút
+        else if (slotIdx === maxIdx && selectedSlotIndices.length > 1) {
+            selectedSlotIndices = selectedSlotIndices.filter(idx => idx !== maxIdx);
+        }
+        // Nếu click vào ô đầu (minIdx) khi đang chọn từ 2 ô trở lên: co ngắn lại từ đầu
+        else if (slotIdx === minIdx && selectedSlotIndices.length > 1) {
+            selectedSlotIndices = selectedSlotIndices.filter(idx => idx !== minIdx);
+        }
+        // Nếu click vào ô ngoài dải liền kề: chuyển vùng chọn sang ô mới (30 phút)
+        else {
+            selectedCourtId = courtIndex;
+            selectedSlotIndices = [slotIdx];
         }
     }
 
@@ -471,11 +496,11 @@ function getSelectedDbSlotIds() {
     return ids;
 }
 
-/* -------- Thực hiện Giữ Chỗ (Hold) cho các ô đã chọn (1h, 1.5h, 2h...) -------- */
+/* -------- Thực hiện Giữ Chỗ (Hold) cho các ô đã chọn (30p, 1h, 1.5h, 2h...) -------- */
 async function confirmHoldSelectedSlots() {
     const slotIds = getSelectedDbSlotIds();
     if (slotIds.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Chưa chọn khung giờ', text: 'Vui lòng chọn ít nhất 1 tiếng (2 ô liên tiếp)!', confirmButtonColor: '#0d9488' });
+        Swal.fire({ icon: 'warning', title: 'Chưa chọn khung giờ', text: 'Vui lòng chọn ít nhất 1 khung giờ (30 phút)!', confirmButtonColor: '#0d9488' });
         return;
     }
 
@@ -578,7 +603,7 @@ function updateSummaryBar() {
         const startTime = myHeldSlots[0].start_time;
         const endTime   = myHeldSlots[myHeldSlots.length - 1].end_time;
         const durationHours = myHeldSlots.length * 0.5;
-        const durationLabel = durationHours === 1 ? '1 tiếng' : (durationHours === 1.5 ? '1 tiếng 30 phút' : `${durationHours} tiếng`);
+        const durationLabel = durationHours === 0.5 ? '30 phút' : (durationHours === 1 ? '1 tiếng' : (durationHours === 1.5 ? '1 tiếng 30 phút' : `${durationHours} tiếng`));
 
         let totalPrice = 0;
         myHeldSlots.forEach(s => { totalPrice += (s.price || 50000); });
@@ -591,7 +616,7 @@ function updateSummaryBar() {
         const titleEl = document.getElementById('summaryTitle');
         const detailEl = document.getElementById('summaryDetail');
         if (titleEl) {
-            titleEl.textContent = `${courtName} • ${startTime} – ${endTime} (${durationLabel})`;
+            titleEl.textContent = `${courtName} ${formatRangeShort(startTime, endTime)}`;
         }
         if (detailEl) {
             detailEl.innerHTML = `${formatMoney(totalPrice)} • Đặt cọc ${formatMoney(deposit)} • <span class="badge bg-warning text-dark"><i class="fa-regular fa-clock me-1"></i>Còn ${mins}p${secs < 10 ? '0' : ''}${secs}s</span>`;
@@ -601,7 +626,7 @@ function updateSummaryBar() {
         if (payBtn) {
             const heldIds = myHeldSlots.map(s => s.id).join(',');
             payBtn.href = `confirm.php?court_id=${activeCourtId}&slot_ids=${heldIds}&date=${activeDateStr}`;
-            payBtn.innerHTML = '<i class="fa-solid fa-lock me-2"></i>Đặt Cọc & Thanh Toán';
+            payBtn.innerHTML = '<i class="fa-solid fa-credit-card me-2"></i>Thanh Toán';
             payBtn.onclick = null;
         }
 
@@ -614,30 +639,42 @@ function updateSummaryBar() {
     }
 
     // Trường hợp 2: Đang CHỌN Ô TRỐNG TRÊN LƯỚI (chưa hold)
-    if (selectedCourtId !== null && selectedSlotIndices.length >= 2) {
+    if (selectedCourtId !== null && selectedSlotIndices.length >= 1) {
         bar.classList.remove('d-none');
         bar.style.display = 'flex';
         const court = COURTS[selectedCourtId];
         const minIdx = Math.min(...selectedSlotIndices);
         const maxIdx = Math.max(...selectedSlotIndices);
         const startTime = TIME_SLOTS[minIdx].label;
-        const endTime   = TIME_SLOTS[Math.min(maxIdx + 1, TIME_SLOTS.length - 1)].label;
+        const endTime   = (maxIdx + 1 < TIME_SLOTS.length) ? TIME_SLOTS[maxIdx + 1].label : '24:00';
         const countCells = selectedSlotIndices.length;
         const durationHours = countCells * 0.5;
-        const durationLabel = durationHours === 1 ? '1 tiếng' : (durationHours === 1.5 ? '1 tiếng 30 phút' : `${durationHours} tiếng`);
+        const durationLabel = durationHours === 0.5 ? '30 phút' : (durationHours === 1 ? '1 tiếng' : (durationHours === 1.5 ? '1 tiếng 30 phút' : `${durationHours} tiếng`));
 
-        // Tính tiền ước tính
-        const courtPricePerHour = 100000;
-        const totalPrice = Math.round(durationHours * courtPricePerHour);
+        // Tính tiền ước tính dựa theo serverSlots thật của thảm này
+        const courtSlots = serverSlots.filter(s => s.sub_court_name === court.name);
+        let totalPrice = 0;
+        selectedSlotIndices.forEach(idx => {
+            const matched = courtSlots.find(s => {
+                const sIdx = timeToSlotIdx(s.start_time);
+                const eIdx = timeToSlotIdx(s.end_time);
+                return idx >= sIdx && idx < eIdx;
+            });
+            if (matched && matched.price) {
+                totalPrice += matched.price;
+            } else {
+                totalPrice += 50000;
+            }
+        });
         const deposit = Math.round(totalPrice * 0.5);
 
         const titleEl = document.getElementById('summaryTitle');
         const detailEl = document.getElementById('summaryDetail');
         if (titleEl) {
-            titleEl.textContent = `${court.name} • ${startTime} – ${endTime} (${durationLabel})`;
+            titleEl.textContent = `${court.name} ${formatRangeShort(startTime, endTime)}`;
         }
         if (detailEl) {
-            detailEl.innerHTML = `${formatMoney(totalPrice)} • Đặt cọc ${formatMoney(deposit)} • <span class="badge bg-info text-dark"><i class="fa-solid fa-hand-pointer me-1"></i>Đang chọn ${countCells} ô</span>`;
+            detailEl.innerHTML = `${formatMoney(totalPrice)} • Đặt cọc ${formatMoney(deposit)} • <span class="badge bg-info text-dark"><i class="fa-solid fa-hand-pointer me-1"></i>Đang chọn ${countCells} ô (${durationLabel})</span>`;
         }
 
         const payBtn = document.getElementById('btnGoPayment');

@@ -39,13 +39,18 @@
                     <p class="text-muted small mb-0">Theo dõi trạng thái đơn đặt sân, thông tin khung giờ và thanh toán
                     </p>
                 </div>
-                <a href="courts.php" class="btn btn-teal rounded-pill px-4 mt-2 mt-sm-0">
-                    <i class="fa-solid fa-plus me-1"></i> Đặt Sân Mới
-                </a>
+                <div class="d-flex align-items-center gap-2 flex-wrap mt-2 mt-sm-0">
+                    <a href="courts.php" class="btn btn-teal rounded-pill px-3 fw-bold">
+                        <i class="fa-solid fa-plus me-1"></i> Đặt Sân Mới
+                    </a>
+                    <a href="auth.php" class="btn btn-switch-account rounded-pill px-3 fw-semibold">
+                        <i class="fa-solid fa-arrow-right-arrow-left me-1"></i> Đổi tài khoản
+                    </a>
+                    <button type="button" id="historyLogout" class="btn btn-logout-account rounded-pill px-3 fw-semibold">
+                        <i class="fa-solid fa-right-from-bracket me-1"></i> Đăng xuất
+                    </button>
+                </div>
             </div>
-
-            <!-- Khối cấu hình Web Push Notification -->
-            <div id="pushNotificationContainer" class="mb-4"></div>
 
             <div id="bookingListContainer">
                 <div class="text-center py-5">

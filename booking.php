@@ -59,8 +59,8 @@ function booking_text($value): string {return htmlspecialchars((string)$value,EN
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/booking_style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="assets/css/booking_style.css?v=<?= filemtime(__DIR__ . '/assets/css/booking_style.css') ?>">
     <script>
         window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
@@ -171,10 +171,7 @@ function booking_text($value): string {return htmlspecialchars((string)$value,EN
                 </div>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-teal-subtle text-teal">
-                    <i class="fa-solid fa-sync fa-spin me-1" style="font-size:0.65rem;"></i>Cập nhật mỗi 5s
-                </span>
-                <input type="date" id="bookingDateInput" class="form-control form-control-sm rounded-3" style="width:155px;">
+                <input type="date" id="bookingDateInput" class="form-control form-control-sm rounded-3 booking-date-input" style="width:155px;">
             </div>
         </div>
 
@@ -201,7 +198,7 @@ function booking_text($value): string {return htmlspecialchars((string)$value,EN
             <div class="d-flex align-items-center gap-3">
                 <i class="fa-solid fa-cart-shopping fs-4"></i>
                 <div>
-                    <div class="fw-bold" id="summaryTitle">Thảm A1 • 17:00 – 18:00</div>
+                    <div class="fw-bold" id="summaryTitle">Thảm A1 17h-18h</div>
                     <div class="small opacity-85" id="summaryDetail">90.000 đ • Đặt cọc 50.000 đ</div>
                 </div>
             </div>
@@ -210,16 +207,9 @@ function booking_text($value): string {return htmlspecialchars((string)$value,EN
                     <i class="fa-solid fa-xmark me-1"></i>Huỷ chọn
                 </button>
                 <a id="btnGoPayment" href="payment.php" class="btn btn-light fw-bold rounded-pill px-4" style="color:var(--brand-teal);">
-                    <i class="fa-solid fa-lock me-2"></i>Đặt Cọc & Thanh Toán
+                    <i class="fa-solid fa-credit-card me-2"></i>Thanh Toán
                 </a>
             </div>
-        </div>
-
-        <!-- ===== GUIDE ===== -->
-        <div class="mt-3 p-3 rounded-3 bg-body-tertiary border small text-muted text-center">
-            <i class="fa-solid fa-hand-pointer text-teal me-1"></i>
-            Click vào ô <strong>trắng/xám</strong> để chọn khung giờ trống •
-            Kéo qua nhiều ô để chọn nhiều giờ liên tiếp (tính năng drag sẽ được bổ sung)
         </div>
 
     </div><!-- /container -->

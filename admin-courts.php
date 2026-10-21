@@ -52,12 +52,14 @@ $currentUser = ['id' => (int)$_SESSION['user_id'], 'name' => $_SESSION['name'] ?
                 <div class="admin-breadcrumb" id="adminBreadcrumb">Kênh chủ sân</div>
                 <h1 id="adminPageTitle">Quản lý sân</h1>
             </div>
-            <button id="themeToggle" class="btn btn-outline-secondary rounded-circle" style="width:40px;height:40px;" title="Chuyển giao diện sáng/tối">
-                <i class="fa-solid fa-moon"></i>
-            </button>
-            <button class="btn btn-teal rounded-pill px-3 fw-semibold" id="btnAddCourt">
-                <i class="fa-solid fa-plus me-1"></i> Thêm sân
-            </button>
+            <div class="admin-topbar-actions">
+                <button id="themeToggle" type="button" class="admin-icon-btn" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+                <button class="btn btn-teal rounded-pill px-3 fw-semibold ms-1" id="btnAddCourt">
+                    <i class="fa-solid fa-plus me-1"></i> Thêm sân
+                </button>
+            </div>
         </header>
 
         <main class="admin-content">
@@ -190,7 +192,7 @@ $currentUser = ['id' => (int)$_SESSION['user_id'], 'name' => $_SESSION['name'] ?
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
-<script src="assets/js/app.js"></script>
+<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
 <script src="assets/js/admin.js?v=<?= filemtime(__DIR__ . '/assets/js/admin.js') ?>"></script>
 <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 <script>

@@ -4,14 +4,19 @@
 
 /* ---- Sticky Toolbar ---- */
 .booking-toolbar {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 251, 249, 0.8) 100%);
+    border: 1px solid rgba(13, 148, 136, 0.18);
     border-radius: 1rem;
     padding: 0.85rem 1.25rem;
     box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(10px);
+}
+[data-bs-theme="dark"] .booking-toolbar {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(6, 32, 38, 0.88) 100%);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
-/* ---- Date nav pills ---- */
+/* ---- Date nav pills (Lịch ngày trong tuần gradient) ---- */
 .date-nav-scroll {
     display: flex;
     gap: 0.5rem;
@@ -27,27 +32,86 @@
     flex-direction: column;
     align-items: center;
     padding: 0.45rem 0.85rem;
-    border-radius: 0.65rem;
-    border: 1.5px solid var(--border-color);
-    background: var(--bg-surface);
+    border-radius: 0.75rem;
+    border: 1.5px solid rgba(13, 148, 136, 0.22);
+    background: linear-gradient(135deg, #ffffff 0%, rgba(240, 251, 249, 0.75) 100%);
     cursor: pointer;
-    transition: all 0.18s ease;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     min-width: 58px;
     user-select: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 .date-pill:hover {
     border-color: var(--brand-teal);
     color: var(--brand-teal);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.18);
 }
 .date-pill.active {
-    background: var(--brand-teal);
-    border-color: var(--brand-teal);
+    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+    border-color: #0d9488;
     color: #fff;
-    box-shadow: 0 4px 12px rgba(13,148,136,0.35);
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.38);
+    transform: translateY(-1px);
 }
 .date-pill .day-name { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; opacity: 0.75; }
 .date-pill .day-num  { font-size: 1.05rem; font-weight: 800; line-height: 1.2; }
 .date-pill.active .day-name { opacity: 0.85; }
+
+[data-bs-theme="dark"] .date-pill {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(6, 32, 38, 0.7) 100%);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+[data-bs-theme="dark"] .date-pill:hover {
+    border-color: #2dd4bf;
+    background: linear-gradient(135deg, rgba(13, 148, 136, 0.25) 0%, rgba(20, 184, 166, 0.2) 100%);
+}
+[data-bs-theme="dark"] .date-pill.active {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    border-color: #2dd4bf;
+    box-shadow: 0 4px 14px rgba(45, 212, 191, 0.3);
+}
+
+/* ---- Date Picker Input (Ô chọn lịch gradient) ---- */
+.booking-date-input,
+#bookingDateInput {
+    background: linear-gradient(135deg, rgba(211, 244, 238, 0.65) 0%, rgba(240, 251, 249, 0.95) 100%) !important;
+    border: 1.5px solid rgba(13, 148, 136, 0.38) !important;
+    color: #0f766e !important;
+    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+    border-radius: 0.75rem !important;
+    padding: 0.42rem 0.85rem !important;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.12) !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+.booking-date-input:hover,
+.booking-date-input:focus,
+#bookingDateInput:hover,
+#bookingDateInput:focus {
+    border-color: #0d9488 !important;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25) !important;
+    outline: none !important;
+}
+
+[data-bs-theme="dark"] .booking-date-input,
+[data-bs-theme="dark"] #bookingDateInput {
+    background: linear-gradient(135deg, rgba(9, 44, 52, 0.85) 0%, rgba(6, 32, 38, 0.95) 100%) !important;
+    border: 1.5px solid rgba(45, 212, 191, 0.35) !important;
+    color: #e2e8f0 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+    color-scheme: dark;
+}
+
+[data-bs-theme="dark"] .booking-date-input:hover,
+[data-bs-theme="dark"] .booking-date-input:focus,
+[data-bs-theme="dark"] #bookingDateInput:hover,
+[data-bs-theme="dark"] #bookingDateInput:focus {
+    border-color: #2dd4bf !important;
+    box-shadow: 0 4px 14px rgba(45, 212, 191, 0.3) !important;
+}
 
 /* ---- Legend ---- */
 .legend-bar {
@@ -97,11 +161,16 @@
     CALENDAR GRID SYSTEM (CORE)
     ============================================================ */
 .cal-wrapper {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 251, 249, 0.5) 100%);
+    border: 1px solid rgba(13, 148, 136, 0.18);
     border-radius: 1rem;
     overflow: hidden;
     box-shadow: var(--shadow-sm);
+}
+
+[data-bs-theme="dark"] .cal-wrapper {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(4, 22, 28, 0.95) 100%);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .cal-scroll-container {
@@ -115,14 +184,15 @@
 .cal-scroll-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
 
 .cal-table {
-    /* Each 30-min slot = 72px wide; 37 half-hour slots 5:30→24:00 */
-    --slot-w: 72px;
-    --court-label-w: 100px;
+    /* Each 30-min slot = 76px wide; 37 half-hour slots 5:30→24:00 */
+    --slot-w: 76px;
+    --court-label-w: 104px;
     --row-h: 68px;
-    --header-h: 42px;
+    --header-h: 46px;
 
     table-layout: fixed;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     width: calc(var(--court-label-w) + var(--slot-w) * 37);
     min-width: 100%;
 }
@@ -131,7 +201,7 @@
 .cal-th-court {
     width: var(--court-label-w);
     height: var(--header-h);
-    background: var(--bg-surface);
+    background: linear-gradient(180deg, #f8fafc 0%, #f0fdfa 100%);
     border-right: 2px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
     position: sticky;
@@ -141,23 +211,75 @@
 .cal-th-time {
     width: var(--slot-w);
     height: var(--header-h);
-    text-align: center;
+    padding: 0;
+    text-align: left;
+    background: linear-gradient(180deg, #f8fafc 0%, #f0fdfa 100%);
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    vertical-align: bottom;
+    white-space: nowrap;
+    position: sticky;
+    top: 0; /* if outer is scrollable vertically */
+    overflow: visible;
+}
+.cal-ruler-tick {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    pointer-events: none;
+    z-index: 5;
+    user-select: none;
+}
+.cal-ruler-tick.first-tick {
+    left: 6px;
+    transform: none;
+    align-items: flex-start;
+}
+.cal-ruler-tick.last-tick {
+    left: auto;
+    right: 0;
+    transform: translateX(50%);
+}
+.ruler-label {
     font-size: 0.72rem;
     font-weight: 700;
     color: var(--text-secondary);
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
-    vertical-align: middle;
+    line-height: 1.1;
+    margin-bottom: 4px;
     white-space: nowrap;
-    letter-spacing: 0.3px;
-    position: sticky;
-    top: 0; /* if outer is scrollable vertically */
 }
-.cal-th-time.hour-mark {
-    color: var(--text-primary);
+.ruler-notch {
+    width: 2px;
+    height: 7px;
+    background: var(--border-color);
+}
+.cal-th-time.hour-mark .ruler-label {
+    color: var(--brand-teal);
     font-weight: 800;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
+}
+.cal-th-time.hour-mark .ruler-notch {
+    height: 11px;
+    width: 2px;
+    background: var(--brand-teal);
+}
+.cal-th-time.current-hour .ruler-label {
+    color: #f43f5e;
+}
+[data-bs-theme="dark"] .cal-th-court,
+[data-bs-theme="dark"] .cal-th-time {
+    background: linear-gradient(180deg, #0f172a 0%, #062026 100%);
+}
+[data-bs-theme="dark"] .ruler-label {
+    color: #94a3b8;
+}
+[data-bs-theme="dark"] .cal-th-time.hour-mark .ruler-label {
+    color: #2dd4bf;
 }
 
 /* Body rows: courts */

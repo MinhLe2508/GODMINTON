@@ -101,6 +101,13 @@ try {
         ];
     }
 
+    // Kiểm tra xem bảng bookings đã có các cột voucher chưa
+    $bCols = $pdo->query("SHOW COLUMNS FROM bookings")->fetchAll(PDO::FETCH_COLUMN, 0);
+    $hasVoucherCols = in_array('owner_amount', $bCols, true);
+    $voucherSelect = $hasVoucherCols
+        ? 'b.court_amount, b.discount_amount, b.discount_funded_by, b.platform_fee, b.owner_amount,'
+        : 'b.total_price AS court_amount, 0 AS discount_amount, NULL AS discount_funded_by, 0 AS platform_fee, b.total_price AS owner_amount,';
+
     // 2. Lấy danh sách đơn đặt thuộc phạm vi sân quản lý
     $bookingSql = "
         SELECT
@@ -111,6 +118,7 @@ try {
             u.phone AS user_phone,
             b.total_price,
             b.deposit_amount,
+            {$voucherSelect}
             b.status AS booking_status,
             b.created_at,
             GROUP_CONCAT(DISTINCT s.sub_court_name ORDER BY s.sub_court_name SEPARATOR ', ') AS sub_courts,
@@ -166,7 +174,19 @@ try {
         }
 
         if ($status === 'confirmed' || $status === 'completed') {
-            $revenue += $amount;
+            if ($currentRole === 'admin') {
+                // Doanh thu nền tảng: Phí sàn trừ đi tiền giảm do sàn chịu (nếu có)
+                $platFee = (int)round((float)($rb['platform_fee'] ?? 0));
+                $fundedBy = $rb['discount_funded_by'] ?? null;
+                $discAmt = ($fundedBy === 'platform') ? (int)round((float)($rb['discount_amount'] ?? 0)) : 0;
+                $revenue += ($platFee - $discAmt);
+            } else {
+                // Doanh thu chủ sân: Thực nhận của chủ sân (owner_amount), fallback về total_price nếu đơn cũ
+                $ownerAmt = (isset($rb['owner_amount']) && (float)$rb['owner_amount'] > 0)
+                    ? (int)round((float)$rb['owner_amount'])
+                    : $amount;
+                $revenue += $ownerAmt;
+            }
         }
 
         if ($idx < 6) {

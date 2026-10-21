@@ -62,7 +62,20 @@ async function renderNavbarUser() {
         if (!response.ok || result.status !== 'success') throw new Error('Không tải được tài khoản.');
         const user = result.data.user;
         if (!user) { area.innerHTML = '<a class="btn btn-light rounded-pill" href="auth.php">Đăng nhập / Đăng ký</a>'; return; }
-        area.innerHTML = `<span class="text-white me-2">${esc(user.name)}</span><a class="btn btn-light btn-sm" href="profile.php">Hồ sơ</a> ${['admin', 'owner'].includes(user.role) ? '<a class="btn btn-warning btn-sm" href="admin-bookings.php">Quản lý đơn</a>' : ''} <button class="btn btn-outline-light btn-sm" id="btnLogout">Đăng xuất</button>`;
+        area.innerHTML = `
+            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                <a class="btn btn-sm btn-light rounded-pill px-3 fw-semibold shadow-sm text-truncate" style="max-width: 170px;" href="profile.php">
+                    <i class="fa-regular fa-circle-user me-1 text-teal"></i>${esc(user.name)}
+                </a>
+                ${['admin', 'owner'].includes(user.role) ? '<a class="btn btn-warning btn-sm rounded-pill px-3 fw-semibold" href="admin-bookings.php"><i class="fa-solid fa-gauge-high me-1"></i> Quản lý</a>' : ''}
+                <a href="auth.php" class="btn btn-sm btn-switch-account rounded-pill px-3 fw-semibold" title="Đổi tài khoản khác">
+                    <i class="fa-solid fa-arrow-right-arrow-left me-1"></i> Đổi tài khoản
+                </a>
+                <button class="btn btn-sm btn-logout-account rounded-pill px-3 fw-semibold" id="btnLogout" title="Đăng xuất tài khoản">
+                    <i class="fa-solid fa-right-from-bracket me-1"></i> Đăng xuất
+                </button>
+            </div>
+        `;
         document.getElementById('btnLogout').addEventListener('click', async () => {
             const out = await fetch('api/auth/logout.php', { method: 'POST', credentials: 'same-origin' });
             if (out.ok) {

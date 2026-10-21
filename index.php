@@ -25,9 +25,77 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
     <!-- Index Explore Tabs Style CSS -->
     <link rel="stylesheet" href="assets/css/index_explore_tabs_style.css?v=<?= filemtime(__DIR__ . '/assets/css/index_explore_tabs_style.css') ?>">
+    <style>
+        /* Gradient trắng xanh nhạt tinh tế cho các thanh chọn tìm kiếm tại trang chủ */
+        .search-card-floating .form-select {
+            border: 1px solid rgba(20, 184, 166, 0.45) !important;
+            background-color: #ffffff !important;
+            background-image: var(--bs-form-select-bg-img), linear-gradient(135deg, #ffffff 0%, #f0fdfa 45%, #ddfaf5 100%) !important;
+            background-repeat: no-repeat, no-repeat !important;
+            background-position: right 0.75rem center, 0 0 !important;
+            background-size: 16px 12px, 100% 100% !important;
+            box-shadow: 0 2px 10px rgba(13, 148, 136, 0.08) !important;
+            color: #0f766e !important;
+            font-weight: 600 !important;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        }
+        .search-card-floating .form-select:hover {
+            border-color: #14b8a6 !important;
+            background-image: var(--bs-form-select-bg-img), linear-gradient(135deg, #ffffff 0%, #e6faf6 40%, #d1f7f0 100%) !important;
+            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.16) !important;
+            transform: translateY(-1px);
+        }
+        .search-card-floating .form-select:focus {
+            border-color: #0d9488 !important;
+            background-image: var(--bs-form-select-bg-img), linear-gradient(135deg, #ffffff 0%, #f0fdfa 50%, #e0f8f5 100%) !important;
+            box-shadow: 0 0 0 0.25rem rgba(13, 148, 136, 0.2) !important;
+            color: #0f766e !important;
+            outline: none !important;
+        }
+        .search-card-floating .form-select option {
+            background-color: #ffffff !important;
+            color: #0f766e !important;
+            font-weight: 500 !important;
+            padding: 10px 14px !important;
+        }
+        .search-card-floating .form-select option:checked,
+        .search-card-floating .form-select option:hover {
+            background-color: #0d9488 !important;
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .search-card-floating .form-select {
+            background-color: transparent !important;
+            background-image: var(--bs-form-select-bg-img), linear-gradient(135deg, #0f172a 0%, #0d272c 50%, #0b343a 100%) !important;
+            border: 1px solid rgba(45, 212, 191, 0.35) !important;
+            color: #f1f5f9 !important;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+        }
+        [data-bs-theme="dark"] .search-card-floating .form-select:hover {
+            border-color: #2dd4bf !important;
+            background-image: var(--bs-form-select-bg-img), linear-gradient(135deg, #1e293b 0%, #0f353d 50%, #0d464f 100%) !important;
+            box-shadow: 0 4px 18px rgba(45, 212, 191, 0.25) !important;
+            transform: translateY(-1px);
+        }
+        [data-bs-theme="dark"] .search-card-floating .form-select:focus {
+            border-color: #2dd4bf !important;
+            background-image: var(--bs-form-select-bg-img), linear-gradient(135deg, #0f172a 0%, #11343b 50%, #0b343a 100%) !important;
+            box-shadow: 0 0 0 0.25rem rgba(45, 212, 191, 0.25) !important;
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .search-card-floating .form-select option {
+            background-color: #0f172a !important;
+            color: #e2e8f0 !important;
+            font-weight: 500 !important;
+        }
+        [data-bs-theme="dark"] .search-card-floating .form-select option:checked {
+            background-color: #0d9488 !important;
+            color: #ffffff !important;
+        }
+    </style>
 </head>
 <body>
 

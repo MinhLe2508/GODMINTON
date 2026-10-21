@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const firstSlot = slots[0];
     const lastSlot = slots[slots.length - 1];
     const durationHours = slots.length * 0.5;
-    const durationLabel = durationHours === 1 ? '1 tiếng' : (durationHours === 1.5 ? '1 tiếng 30 phút' : `${durationHours} tiếng`);
+    const durationLabel = durationHours === 0.5 ? '30 phút' : (durationHours === 1 ? '1 tiếng' : (durationHours === 1.5 ? '1 tiếng 30 phút' : `${durationHours} tiếng`));
     const timeRangeStr = `${firstSlot.start_time} – ${lastSlot.end_time}`;
 
     let totalPrice = 0;

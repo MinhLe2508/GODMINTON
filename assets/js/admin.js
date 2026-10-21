@@ -163,6 +163,7 @@ const AdminApp = (() => {
             { key: 'courts', href: 'admin-courts.php', icon: 'fa-building-shield', label: 'Quản lý sân' },
             { key: 'slots', href: 'admin-slots.php', icon: 'fa-clock', label: 'Quản lý khung giờ' },
             { key: 'bookings', href: 'admin-bookings.php', icon: 'fa-clipboard-list', label: 'Quản lý đơn đặt' },
+            { key: 'vouchers', href: 'admin-vouchers.php', icon: 'fa-ticket', label: 'Mã giảm giá' },
         ];
 
         const navHtml = navItems.map(item => `
@@ -188,9 +189,9 @@ const AdminApp = (() => {
                 <ul class="dropdown-menu shadow-lg border-0 rounded-4">
                     <li><a class="dropdown-item py-2" href="profile.php"><i class="fa-solid fa-circle-user me-2 text-teal"></i>Trang cá nhân</a></li>
                     <li><a class="dropdown-item py-2" href="index.php"><i class="fa-solid fa-house me-2 text-muted"></i>Về trang khách</a></li>
-                    <li><a class="dropdown-item py-2" href="auth.php"><i class="fa-solid fa-right-to-bracket me-2 text-primary"></i>Đổi tài khoản</a></li>
+                    <li><a class="dropdown-item py-2 text-primary fw-semibold" href="auth.php"><i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Đổi tài khoản khác</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item py-2 text-danger" href="#" id="adminLogoutBtn"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất</a></li>
+                    <li><a class="dropdown-item py-2 text-danger fw-semibold" href="#" id="adminLogoutBtn"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất tài khoản</a></li>
                 </ul>
             </div>`;
         }
@@ -252,12 +253,52 @@ const AdminApp = (() => {
         renderShell,
         toast,
         confirmAction,
-        minutesToTime
+        minutesToTime,
+        initAdminTheme
     };
 })();
 
-document.addEventListener('DOMContentLoaded', () => {
-    if (typeof initTheme === 'function') {
-        initTheme();
+// Quản lý Dark/Light Theme trên các trang Admin
+function initAdminTheme() {
+    const saved = localStorage.getItem('godminton_theme') || localStorage.getItem('bm_theme') || 'light';
+    document.documentElement.setAttribute('data-bs-theme', saved);
+    updateAdminThemeIcon(saved);
+
+    const themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) {
+        // Nếu app.js đã quản lý toggleTheme, không gắn thêm listener để tránh bị toggle 2 lần (double-toggle)
+        if (typeof toggleTheme === 'function') {
+            return;
+        }
+        if (!themeBtn.dataset.adminThemeBound) {
+            themeBtn.dataset.adminThemeBound = 'true';
+            themeBtn.addEventListener('click', function (e) {
+                if (e && e.preventDefault) e.preventDefault();
+                const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-bs-theme', next);
+                localStorage.setItem('godminton_theme', next);
+                localStorage.setItem('bm_theme', next);
+                updateAdminThemeIcon(next);
+            });
+        }
     }
-});
+}
+
+function updateAdminThemeIcon(theme) {
+    const themeBtn = document.getElementById('themeToggle');
+    if (!themeBtn) return;
+    if (theme === 'dark') {
+        themeBtn.innerHTML = '<i class="fa-solid fa-sun text-warning"></i>';
+        themeBtn.setAttribute('title', 'Chuyển sang chế độ Sáng');
+    } else {
+        themeBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+        themeBtn.setAttribute('title', 'Chuyển sang chế độ Tối');
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdminTheme);
+} else {
+    initAdminTheme();
+}

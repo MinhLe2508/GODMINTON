@@ -185,9 +185,9 @@ if ($currentUser !== null) {
             <div class="bank-panel" id="bankPanel">
                 <div class="d-flex gap-3 flex-wrap align-items-start">
                     <div class="qr-box" onclick="openQrModal()" title="Nhấn để phóng to mã QR">
-                        <img src="assets/img/vietqr-payment.png"
+                        <img src="assets/img/vietqr-payment.png?v=<?= filemtime(__DIR__ . '/assets/img/vietqr-payment.png') ?>"
                              alt="VietQR MB Bank - TRUONG MINH TRIET"
-                             onerror="this.src='assets/img/vietqr-card.png';">
+                             onerror="this.src='assets/img/vietqr-card.png?v=<?= filemtime(__DIR__ . '/assets/img/vietqr-card.png') ?>';">
                         <div class="qr-zoom-hint">
                             <i class="fa-solid fa-magnifying-glass-plus"></i> Phóng to
                         </div>
@@ -291,15 +291,9 @@ if ($currentUser !== null) {
 
         <!-- Mobile: CTA button (bên dưới form trên mobile) -->
         <div class="d-lg-none">
-            <button class="btn-pay-cta mb-3" id="btnPayMobile" onclick="handlePayment()">
-                <i class="fa-solid fa-shield-halved"></i>
+            <button class="btn-pay-cta mb-4" id="btnPayMobile" onclick="handlePayment()">
                 <span id="btnPayMobileText">Xác Nhận & Đặt Cọc</span>
             </button>
-            <div class="trust-badges mb-4">
-                <span class="trust-badge"><i class="fa-solid fa-lock"></i> SSL 256-bit</span>
-                <span class="trust-badge"><i class="fa-solid fa-shield-check"></i> PCI DSS</span>
-                <span class="trust-badge"><i class="fa-solid fa-rotate-left"></i> Hoàn tiền 24h</span>
-            </div>
         </div>
 
     </div><!-- /col-lg-7 -->
@@ -359,14 +353,46 @@ if ($currentUser !== null) {
                         </div>
                     </div>
 
+                    <!-- Voucher input box -->
+                    <div class="voucher-box">
+                        <label for="voucherCodeInput" class="voucher-box-title">
+                            <i class="fa-solid fa-ticket"></i>
+                            <span>Mã giảm giá & Ưu đãi</span>
+                        </label>
+                        <div class="input-group">
+                            <input type="text"
+                                   class="form-control text-uppercase"
+                                   id="voucherCodeInput"
+                                   placeholder="VD: WELCOME15"
+                                   maxlength="50"
+                                   autocomplete="off"
+                                   aria-describedby="voucherError">
+                            <button class="btn btn-teal px-3" type="button" id="btnApplyVoucher">
+                                <span id="btnApplyVoucherText">Áp dụng</span>
+                                <span id="btnApplyVoucherSpinner" class="spinner-border spinner-border-sm ms-1" role="status" aria-hidden="true" style="display:none;"></span>
+                            </button>
+                            <button class="btn btn-outline-danger" type="button" id="btnRemoveVoucher" style="display:none;" title="Bỏ mã giảm giá">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <div id="voucherError" role="alert" class="text-danger small mt-1 fw-medium" style="display:none; font-size:0.78rem;"></div>
+                        <div id="voucherSuccess" class="text-success small mt-1 fw-semibold" style="display:none; font-size:0.78rem;">
+                            <i class="fa-solid fa-circle-check me-1"></i><span id="voucherSuccessText"></span>
+                        </div>
+                    </div>
+
                     <!-- Price breakdown -->
                     <div class="price-section">
                         <div class="prow subtotal">
                             <span>Giá thuê sân</span>
                             <span id="prBase">--</span>
                         </div>
+                        <div class="prow subtotal text-success" id="prowDiscount" style="display:none;">
+                            <span><i class="fa-solid fa-tag me-1"></i>Mã giảm giá (<span id="prDiscountPercent">0%</span>)</span>
+                            <span id="prDiscount" class="fw-bold">-0 đ</span>
+                        </div>
                         <div class="prow subtotal">
-                            <span>Phí dịch vụ (5%)</span>
+                            <span id="prFeeLabel">Phí dịch vụ</span>
                             <span id="prFee">--</span>
                         </div>
                         <div class="prow total-row">
@@ -378,7 +404,6 @@ if ($currentUser !== null) {
                                 <div class="fw-extrabold" style="font-size:0.85rem;">Đặt cọc ngay
                                     <span class="badge ms-1" style="background:rgba(245,158,11,0.15); color:#f59e0b; font-size:0.62rem;">50%</span>
                                 </div>
-                                <div style="font-size:0.7rem; color:var(--text-secondary);">Còn lại thanh toán tại sân</div>
                             </div>
                             <span class="prow-val" id="prDeposit">--</span>
                         </div>
@@ -389,14 +414,8 @@ if ($currentUser !== null) {
             <!-- Desktop CTA -->
             <div class="d-none d-lg-block">
                 <button class="btn-pay-cta mb-3" id="btnPayDesktop" onclick="handlePayment()">
-                    <i class="fa-solid fa-shield-halved"></i>
                     <span id="btnPayDesktopText">Xác Nhận & Đặt Cọc</span>
                 </button>
-                <div class="trust-badges mb-3">
-                    <span class="trust-badge"><i class="fa-solid fa-lock"></i> SSL 256-bit</span>
-                    <span class="trust-badge"><i class="fa-solid fa-shield-check"></i> PCI DSS</span>
-                    <span class="trust-badge"><i class="fa-solid fa-rotate-left"></i> Hoàn tiền 24h</span>
-                </div>
             </div>
 
             <!-- Back link -->
@@ -457,7 +476,7 @@ if ($currentUser !== null) {
             </div>
             <div class="modal-body text-center p-3">
                 <div class="qr-modal-img-wrap rounded-3 overflow-hidden shadow-sm bg-white p-2 mb-3">
-                    <img src="assets/img/vietqr-payment.png" alt="Mã VietQR" class="img-fluid rounded-3" style="max-height: 520px; width: auto; object-fit: contain;">
+                    <img src="assets/img/vietqr-payment.png?v=<?= filemtime(__DIR__ . '/assets/img/vietqr-payment.png') ?>" alt="Mã VietQR" class="img-fluid rounded-3" style="max-height: 520px; width: auto; object-fit: contain;">
                 </div>
                 <div class="bg-light rounded-3 p-3 text-start small mb-3">
                     <div class="d-flex justify-content-between mb-1">

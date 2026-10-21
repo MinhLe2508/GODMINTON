@@ -133,7 +133,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>
 
                         <h2 class="fw-extrabold mb-3">${court.name}</h2>
-                        <p class="text-muted mb-4"><i class="fa-solid fa-map-location-dot me-2 text-teal"></i>${court.address}</p>
+                        <p class="text-muted mb-2"><i class="fa-solid fa-map-location-dot me-2 text-teal"></i>${court.address}</p>
+                        <div class="mb-4">
+                            <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3 py-1 fw-semibold" onclick="if(window.CourtMap) { window.CourtMap.routeToCourt(${court.latitude}, ${court.longitude}, '${escapeText(court.name)}', '${escapeText(court.address || '')}'); document.getElementById('courtDetailMapWrapper')?.scrollIntoView({behavior:'smooth', block:'center'}); }">
+                                <i class="fa-solid fa-diamond-turn-right me-1"></i> Chỉ đường đến sân
+                            </button>
+                        </div>
 
                         ${overviewHtml}
                     </div>
@@ -151,7 +156,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 <small class="text-muted">Khu vực: ${escapeText(area || 'TP. Hồ Chí Minh')} (OpenStreetMap)</small>
                             </div>
                         </div>
-                        <div class="d-flex gap-2 align-items-center">
+                        <div class="d-flex gap-2 align-items-center flex-wrap">
+                            <button type="button" class="btn btn-sm btn-teal rounded-pill px-3 fw-semibold" onclick="if(window.CourtMap) window.CourtMap.routeToCourt(${court.latitude}, ${court.longitude}, '${escapeText(court.name)}', '${escapeText(court.address || '')}');" title="Chỉ đường từ vị trí của bạn">
+                                <i class="fa-solid fa-diamond-turn-right me-1"></i> Chỉ đường
+                            </button>
                             <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3" onclick="if(window.CourtMap && window.CourtMap.resetView) window.CourtMap.resetView();" title="Quay về góc nhìn trung tâm">
                                 <i class="fa-solid fa-crosshairs me-1"></i> Định vị
                             </button>
@@ -161,20 +169,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>
                     </div>
                     <div id="courtDetailMapContainer" class="court-map-container" style="height:350px;">
-                        <button type="button" class="court-map-floating-fs-btn" onclick="if(window.CourtMap && window.CourtMap.toggleFullscreen) window.CourtMap.toggleFullscreen();" title="Phóng to / Thu nhỏ toàn màn hình" aria-label="Toàn màn hình">
-                            <svg class="fs-icon-expand" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="15 3 21 3 21 9"></polyline>
-                                <polyline points="9 21 3 21 3 15"></polyline>
-                                <line x1="21" y1="3" x2="14" y2="10"></line>
-                                <line x1="3" y1="21" x2="10" y2="14"></line>
-                            </svg>
-                            <svg class="fs-icon-compress d-none" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="4 14 10 14 10 20"></polyline>
-                                <polyline points="20 10 14 10 14 4"></polyline>
-                                <line x1="14" y1="10" x2="21" y2="3"></line>
-                                <line x1="10" y1="14" x2="3" y2="21"></line>
-                            </svg>
-                        </button>
                         <div class="court-map-error-state">
                             <div class="spinner-border text-teal spinner-border-sm mb-2" role="status"></div>
                             <div class="small text-muted">Đang khởi tạo bản đồ OpenStreetMap...</div>
@@ -221,11 +215,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <a href="courts.php" class="btn btn-outline-secondary rounded-pill">
                             <i class="fa-solid fa-arrow-left me-1"></i> Quay lại tìm sân khác
                         </a>
-                    </div>
-
-                    <div class="mt-4 pt-3 border-top text-center small text-muted">
-                        <i class="fa-solid fa-shield-halved text-success me-1"></i>
-                        Chọn ngày và khung giờ để xem lịch trống trên hệ thống.
                     </div>
                 </div>
             </div>

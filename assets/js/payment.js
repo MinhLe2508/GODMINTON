@@ -22,7 +22,9 @@ let booking = {
     pricePerHour: 100000,
     duration: 1.5, 
     method: 'vnpay',
-    _base: 0, _fee: 0, _total: 0, _deposit: 0
+    voucherCode: '',
+    appliedVoucher: null,
+    _base: 0, _discount: 0, _fee: 0, _total: 0, _deposit: 0
 };
 
 /* ---- Init ---- */
@@ -43,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     setPaymentButtons(true);
+    initVoucherHandlers();
     // 1. Nạp chi tiết các slots từ MySQL qua API
     try {
         const slotsRes = await fetch(`api/slots.php?court_id=${booking.courtId}&date=${booking.date}`);
@@ -101,8 +104,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Pre-fill thông tin user
-    const user = (typeof window.__GODMINTON_USER__ !== 'undefined' && window.__GODMINTON_USER__) 
-;
+    const user = (typeof window.__GODMINTON_USER__ !== 'undefined' && window.__GODMINTON_USER__);
     if (user) {
         if (document.getElementById('billingName'))  document.getElementById('billingName').value  = user.name  || '';
         if (document.getElementById('billingEmail')) document.getElementById('billingEmail').value = user.email || '';
@@ -114,7 +116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const days = ['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
     const dd = d => String(d).padStart(2, '0');
     const dateStr = `${days[dateObj.getDay()]}, ${dd(dateObj.getDate())}/${dd(dateObj.getMonth()+1)}/${dateObj.getFullYear()}`;
-    const durationLabel = booking.duration === 1 ? '1 giờ' : (booking.duration === 1.5 ? '1.5 giờ (1 tiếng 30 phút)' : `${booking.duration} giờ`);
+    const durationLabel = booking.duration === 0.5 ? '30 phút' : (booking.duration === 1 ? '1 giờ' : (booking.duration === 1.5 ? '1.5 giờ (1 tiếng 30 phút)' : `${booking.duration} giờ`));
 
     document.getElementById('bdrDate').textContent     = dateStr;
     document.getElementById('bdrTime').textContent     = `${booking.start} – ${booking.end}`;
@@ -130,27 +132,198 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 /* ---- Price calculation ---- */
 function calcPrices() {
-    const base    = Math.round(booking.pricePerHour * booking.duration);
-    const fee     = 0;
-    const total   = base + fee;
-    const deposit = Math.round(total * 0.5);
+    const rawBase = Math.round(booking.pricePerHour * booking.duration);
+    let base = rawBase;
+    let discount = 0;
+    let fee = 0;
+    let total = base;
+    let deposit = Math.round(total * 0.5);
+
+    const prowDiscount = document.getElementById('prowDiscount');
+    const prDiscount = document.getElementById('prDiscount');
+    const prDiscountPercent = document.getElementById('prDiscountPercent');
+    const prFeeLabel = document.getElementById('prFeeLabel');
+
+    if (booking.appliedVoucher && booking.appliedVoucher.pricing) {
+        const pr = booking.appliedVoucher.pricing;
+        base = pr.court_amount;
+        discount = pr.discount_amount;
+        fee = pr.platform_fee;
+        total = pr.total_amount;
+        deposit = pr.deposit_amount;
+
+        if (prowDiscount) prowDiscount.style.display = 'flex';
+        if (prDiscount) prDiscount.textContent = `- ${fmt(discount)}`;
+        if (prDiscountPercent) prDiscountPercent.textContent = `${booking.appliedVoucher.voucher.discount_percent}%`;
+        if (prFeeLabel) prFeeLabel.textContent = 'Phí dịch vụ (5%)';
+        document.getElementById('prFee').textContent = fmt(fee);
+    } else {
+        if (prowDiscount) prowDiscount.style.display = 'none';
+        if (prFeeLabel) prFeeLabel.textContent = 'Phí dịch vụ';
+        document.getElementById('prFee').textContent = '0 đ (Miễn phí)';
+    }
 
     booking._base    = base;
+    booking._discount= discount;
     booking._fee     = fee;
     booking._total   = total;
     booking._deposit = deposit;
 
     document.getElementById('prBase').textContent    = fmt(base);
-    document.getElementById('prFee').textContent     = '0 đ (Miễn phí)';
     document.getElementById('prTotal').textContent   = fmt(total);
     document.getElementById('prDeposit').textContent = fmt(deposit);
     document.getElementById('bankAmountText').textContent = fmt(deposit);
 
-    const ctaText = `Xác Nhận & Đặt Cọc — ${fmt(deposit)}`;
+    const ctaText = 'Xác Nhận & Đặt Cọc';
     ['btnPayMobileText','btnPayDesktopText'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = ctaText;
     });
+}
+
+/* ---- Voucher Handling ---- */
+function showVoucherError(msg) {
+    const input = document.getElementById('voucherCodeInput');
+    const errEl = document.getElementById('voucherError');
+    const succEl = document.getElementById('voucherSuccess');
+    if (input) {
+        input.classList.add('is-invalid');
+        input.setAttribute('aria-invalid', 'true');
+    }
+    if (errEl) {
+        errEl.textContent = msg;
+        errEl.style.display = 'block';
+    }
+    if (succEl) succEl.style.display = 'none';
+}
+
+function clearVoucherError() {
+    const input = document.getElementById('voucherCodeInput');
+    const errEl = document.getElementById('voucherError');
+    if (input) {
+        input.classList.remove('is-invalid');
+        input.setAttribute('aria-invalid', 'false');
+    }
+    if (errEl) {
+        errEl.textContent = '';
+        errEl.style.display = 'none';
+    }
+}
+
+function showVoucherSuccess(msg) {
+    const succEl = document.getElementById('voucherSuccess');
+    const succText = document.getElementById('voucherSuccessText');
+    const errEl = document.getElementById('voucherError');
+    if (errEl) errEl.style.display = 'none';
+    if (succText) succText.textContent = msg;
+    if (succEl) succEl.style.display = 'block';
+}
+
+async function applyVoucher() {
+    const input = document.getElementById('voucherCodeInput');
+    const btnApply = document.getElementById('btnApplyVoucher');
+    const spinner = document.getElementById('btnApplyVoucherSpinner');
+    const btnText = document.getElementById('btnApplyVoucherText');
+    const btnRemove = document.getElementById('btnRemoveVoucher');
+
+    if (!input) return;
+    const code = input.value.trim().toUpperCase();
+    if (!code) {
+        showVoucherError('Vui lòng nhập mã giảm giá.');
+        return;
+    }
+
+    if (btnApply) btnApply.disabled = true;
+    if (spinner) spinner.style.display = 'inline-block';
+    if (btnText) btnText.textContent = 'Đang kiểm tra...';
+    clearVoucherError();
+
+    try {
+        const response = await fetch('api/vouchers/preview.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                code: code,
+                court_id: booking.courtId,
+                slot_ids: booking.slotIds
+            })
+        });
+
+        const json = await response.json();
+
+        if (response.ok && json.ok && json.data) {
+            booking.voucherCode = code;
+            booking.appliedVoucher = json.data;
+            input.value = code;
+            input.disabled = true;
+            if (btnApply) btnApply.style.display = 'none';
+            if (btnRemove) btnRemove.style.display = 'inline-block';
+            showVoucherSuccess(`Đã áp dụng mã ${code} (giảm ${json.data.voucher.discount_percent}%)`);
+            calcPrices();
+        } else {
+            removeVoucher(false);
+            showVoucherError(json.message || 'Mã giảm giá không hợp lệ.');
+        }
+    } catch (e) {
+        console.error('Lỗi kiểm tra voucher:', e);
+        showVoucherError('Lỗi kết nối khi kiểm tra mã. Vui lòng thử lại.');
+    } finally {
+        if (btnApply) btnApply.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+        if (btnText) btnText.textContent = 'Áp dụng';
+    }
+}
+
+function removeVoucher(resetInput = true) {
+    booking.voucherCode = '';
+    booking.appliedVoucher = null;
+
+    const input = document.getElementById('voucherCodeInput');
+    const btnApply = document.getElementById('btnApplyVoucher');
+    const btnRemove = document.getElementById('btnRemoveVoucher');
+    const succEl = document.getElementById('voucherSuccess');
+
+    if (input) {
+        input.disabled = false;
+        if (resetInput) input.value = '';
+    }
+    if (btnApply) btnApply.style.display = 'inline-block';
+    if (btnRemove) btnRemove.style.display = 'none';
+    if (succEl) succEl.style.display = 'none';
+    clearVoucherError();
+    calcPrices();
+}
+
+function initVoucherHandlers() {
+    const input = document.getElementById('voucherCodeInput');
+    const btnApply = document.getElementById('btnApplyVoucher');
+    const btnRemove = document.getElementById('btnRemoveVoucher');
+
+    if (input) {
+        input.addEventListener('input', () => {
+            clearVoucherError();
+        });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applyVoucher();
+            }
+        });
+    }
+
+    if (btnApply) {
+        btnApply.addEventListener('click', (e) => {
+            e.preventDefault();
+            applyVoucher();
+        });
+    }
+
+    if (btnRemove) {
+        btnRemove.addEventListener('click', (e) => {
+            e.preventDefault();
+            removeVoucher(true);
+        });
+    }
 }
 
 /* ---- Payment method select ---- */
@@ -279,18 +452,23 @@ async function handlePayment() {
     const paymentMethodLabel = methodNames[booking.method] || booking.method;
 
     try {
+        const payload = {
+            court_id: booking.courtId,
+            slot_ids: booking.slotIds,
+            payment_method: paymentMethodLabel,
+            notes: note,
+            billing_name: name,
+            billing_phone: phone,
+            billing_email: email
+        };
+        if (booking.voucherCode) {
+            payload.voucher_code = booking.voucherCode;
+        }
+
         const response = await fetch('api/bookings.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                court_id: booking.courtId,
-                slot_ids: booking.slotIds,
-                payment_method: paymentMethodLabel,
-                notes: note,
-                billing_name: name,
-                billing_phone: phone,
-                billing_email: email
-            })
+            body: JSON.stringify(payload)
         });
 
         const result = await response.json();
@@ -329,7 +507,21 @@ async function handlePayment() {
             });
             btns.forEach(id => {
                 const b = document.getElementById(id);
-                if (b) { b.disabled = false; b.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Xác Nhận & Đặt Cọc'; }
+                if (b) { b.disabled = false; b.innerHTML = `<span id="${id}Text">Xác Nhận & Đặt Cọc</span>`; }
+            });
+        } else if (result.code && typeof result.code === 'string' && result.code.startsWith('VOUCHER_')) {
+            // Lỗi mã giảm giá (ví dụ hết hạn giữa lúc xem trước và xác nhận)
+            removeVoucher(true);
+            showVoucherError(result.message);
+            Swal.fire({
+                icon: 'warning',
+                title: 'Mã giảm giá không còn hiệu lực',
+                text: (result.message || 'Mã đã hết hạn hoặc hết lượt.') + ' Hệ thống đã chuyển về mức giá gốc, vui lòng kiểm tra và xác nhận lại.',
+                confirmButtonColor: '#0d9488'
+            });
+            btns.forEach(id => {
+                const b = document.getElementById(id);
+                if (b) { b.disabled = false; b.innerHTML = `<span id="${id}Text">Xác Nhận & Đặt Cọc</span>`; }
             });
         } else {
             Swal.fire({
@@ -340,14 +532,14 @@ async function handlePayment() {
             });
             btns.forEach(id => {
                 const b = document.getElementById(id);
-                if (b) { b.disabled = false; b.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Xác Nhận & Đặt Cọc'; }
+                if (b) { b.disabled = false; b.innerHTML = `<span id="${id}Text">Xác Nhận & Đặt Cọc</span>`; }
             });
         }
     } catch (err) {
         Swal.fire({ icon: 'error', title: 'Lỗi kết nối', text: 'Không thể kết nối máy chủ.', confirmButtonColor: '#0d9488' });
         btns.forEach(id => {
             const b = document.getElementById(id);
-            if (b) { b.disabled = false; b.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Xác Nhận & Đặt Cọc'; }
+            if (b) { b.disabled = false; b.innerHTML = `<span id="${id}Text">Xác Nhận & Đặt Cọc</span>`; }
         });
     } finally {
         paymentSubmitting = false;

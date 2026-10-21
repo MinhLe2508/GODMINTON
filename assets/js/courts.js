@@ -304,8 +304,8 @@ async function renderCourts() {
                             <span class="text-muted small">/giờ</span>
                         </div>
                         <div class="d-flex gap-1">
-                            <a href="court-detail.php?id=${court.id}" class="btn btn-outline-secondary btn-sm rounded-pill px-2">
-                                <i class="fa-solid fa-circle-info"></i>
+                            <a href="court-detail.php?id=${court.id}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                                Chi tiết
                             </a>
                             <a href="booking.php?court_id=${court.id}" class="btn btn-teal btn-sm rounded-pill px-3 fw-bold">
                                 Đặt sân

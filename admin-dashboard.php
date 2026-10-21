@@ -60,12 +60,14 @@ $currentUser = [
                 <div class="admin-breadcrumb" id="adminBreadcrumb">Kênh chủ sân</div>
                 <h1 id="adminPageTitle">Tổng quan</h1>
             </div>
-            <button id="themeToggle" class="btn btn-outline-secondary rounded-circle" style="width:40px;height:40px;" title="Chuyển giao diện sáng/tối">
-                <i class="fa-solid fa-moon"></i>
-            </button>
-            <a href="admin-bookings.php" class="btn btn-teal rounded-pill px-3 fw-semibold d-none d-md-inline-flex">
-                <i class="fa-solid fa-clipboard-list me-1"></i> Xem đơn đặt
-            </a>
+            <div class="admin-topbar-actions">
+                <button id="themeToggle" type="button" class="admin-icon-btn" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+                <a href="admin-bookings.php" class="btn btn-teal rounded-pill px-3 fw-semibold ms-1 d-none d-md-inline-flex">
+                    <i class="fa-solid fa-clipboard-list me-1"></i> Xem đơn đặt
+                </a>
+            </div>
         </header>
 
         <main class="admin-content">

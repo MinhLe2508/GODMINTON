@@ -45,22 +45,6 @@ $encodedData = json_encode($initialMapData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
 
     <!-- Container bản đồ có chiều cao cố định, responsive -->
     <div id="<?= htmlspecialchars($mapContainerId, ENT_QUOTES, 'UTF-8') ?>" class="court-map-container">
-        <!-- Nút Fullscreen nổi trên góc bản đồ (khớp thiết kế Ảnh 2) -->
-        <button type="button" class="court-map-floating-fs-btn" onclick="if(window.CourtMap && window.CourtMap.toggleFullscreen) window.CourtMap.toggleFullscreen();" title="Phóng to / Thu nhỏ toàn màn hình" aria-label="Toàn màn hình">
-            <svg class="fs-icon-expand" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <polyline points="9 21 3 21 3 15"></polyline>
-                <line x1="21" y1="3" x2="14" y2="10"></line>
-                <line x1="3" y1="21" x2="10" y2="14"></line>
-            </svg>
-            <svg class="fs-icon-compress d-none" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="4 14 10 14 10 20"></polyline>
-                <polyline points="20 10 14 10 14 4"></polyline>
-                <line x1="14" y1="10" x2="21" y2="3"></line>
-                <line x1="10" y1="14" x2="3" y2="21"></line>
-            </svg>
-        </button>
-
         <div class="court-map-error-state">
             <div class="spinner-border text-teal spinner-border-sm mb-2" role="status"></div>
             <div class="small text-muted">Đang khởi tạo bản đồ OpenStreetMap...</div>

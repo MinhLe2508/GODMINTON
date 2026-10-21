@@ -75,9 +75,11 @@ $currentUser = [
                 <div class="admin-breadcrumb" id="adminBreadcrumb">Kênh chủ sân</div>
                 <h1 id="adminPageTitle">Quản lý khung giờ</h1>
             </div>
-            <button id="themeToggle" class="btn btn-outline-secondary rounded-circle" style="width:40px;height:40px;" title="Chuyển giao diện sáng/tối">
-                <i class="fa-solid fa-moon"></i>
-            </button>
+            <div class="admin-topbar-actions">
+                <button id="themeToggle" type="button" class="admin-icon-btn" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+            </div>
         </header>
 
         <main class="admin-content">

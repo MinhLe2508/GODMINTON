@@ -58,9 +58,11 @@ $currentUser = [
                 <div class="admin-breadcrumb" id="adminBreadcrumb">Kênh chủ sân</div>
                 <h1 id="adminPageTitle">Quản lý đơn đặt</h1>
             </div>
-            <button id="themeToggle" class="btn btn-outline-secondary rounded-circle" style="width:40px;height:40px;" title="Chuyển giao diện sáng/tối">
-                <i class="fa-solid fa-moon"></i>
-            </button>
+            <div class="admin-topbar-actions">
+                <button id="themeToggle" type="button" class="admin-icon-btn" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+            </div>
         </header>
 
         <main class="admin-content">
@@ -86,7 +88,15 @@ $currentUser = [
                                     <th>Sân</th>
                                     <th>Khách hàng</th>
                                     <th>Ngày / giờ</th>
-                                    <th>Tổng tiền</th>
+                                    <th>Mã giảm giá</th>
+                                    <?php if ($currentUser['role'] === 'owner'): ?>
+                                    <th>Giảm bạn chịu</th>
+                                    <th>Thực nhận</th>
+                                    <?php else: ?>
+                                    <th>Giảm giá</th>
+                                    <th>Phí sàn</th>
+                                    <?php endif; ?>
+                                    <th>Tổng khách trả</th>
                                     <th>Trạng thái</th>
                                     <th class="text-end">Thao tác</th>
                                 </tr>
