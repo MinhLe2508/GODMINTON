@@ -392,6 +392,7 @@ $v = time();
             }
         }
     </style>
+<link rel="stylesheet" href="assets/css/password-requirements.css?v=<?= filemtime(__DIR__.'/assets/css/password-requirements.css') ?>">
 </head>
 <body>
 
@@ -512,12 +513,12 @@ $v = time();
                         <label for="regPassword">Mật Khẩu *</label>
                         <div class="field-wrap">
                             <i class="fa-solid fa-lock field-icon"></i>
-                            <input type="password" id="regPassword" pattern="(?=[\s\S]*\p{Lu})(?=[\s\S]*\p{Ll})(?=[\s\S]*\p{Nd})(?=[\s\S]*[\p{P}\p{S}])[\s\S]*" title="Mật khẩu phải có chữ hoa, chữ thường, chữ số và ký tự đặc biệt." placeholder="Nhập mật khẩu" required autocomplete="new-password">
+                            <input type="password" id="regPassword" minlength="8" aria-describedby="regPasswordRules" pattern="(?=[\s\S]*\p{Lu})(?=[\s\S]*\p{Ll})(?=[\s\S]*\p{Nd})(?=[\s\S]*[\p{P}\p{S}])[\s\S]{8,}" title="Mật khẩu cần ít nhất 8 ký tự, có chữ hoa, chữ thường, chữ số và ký tự đặc biệt." placeholder="Nhập mật khẩu" required autocomplete="new-password">
                             <button type="button" class="btn-eye" onclick="toggleEye('regPassword', this)" aria-label="Ẩn / hiện mật khẩu">
                                 <i class="fa-regular fa-eye"></i>
                             </button>
                         </div>
-<small class="d-block mt-2 text-white">Mật khẩu phải có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.</small>
+<ul id="regPasswordRules" class="password-requirements password-requirements--on-dark" data-password-for="regPassword" aria-label="Điều kiện mật khẩu"><li data-password-rule="length"><span class="password-rule-icon" aria-hidden="true">○</span><span>Tối thiểu 8 ký tự</span></li><li data-password-rule="upper"><span class="password-rule-icon" aria-hidden="true">○</span><span>Chữ hoa (A–Z)</span></li><li data-password-rule="lower"><span class="password-rule-icon" aria-hidden="true">○</span><span>Chữ thường (a–z)</span></li><li data-password-rule="number"><span class="password-rule-icon" aria-hidden="true">○</span><span>Chữ số (0–9)</span></li><li data-password-rule="special"><span class="password-rule-icon" aria-hidden="true">○</span><span>Ký tự đặc biệt (!, @, #…)</span></li></ul><span class="password-rules-status" aria-live="polite" data-password-status="regPassword"></span>
                     </div>
                     <div class="auth-field">
                         <label for="regConfirmPassword">Xác Nhận Mật Khẩu *</label>
@@ -567,5 +568,6 @@ $v = time();
 <script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
 <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
 <script src="assets/js/auth.js?v=<?= filemtime(__DIR__ . '/assets/js/auth.js') ?>"></script>
+<script src="assets/js/password-requirements.js?v=<?= filemtime(__DIR__.'/assets/js/password-requirements.js') ?>"></script>
 </body>
 </html>

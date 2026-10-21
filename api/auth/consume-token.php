@@ -6,7 +6,7 @@ try {
     if (!in_array($mode,['reset','verify','delete'],true) || !preg_match('/^[a-f0-9]{64}$/D',$raw)) god_auth_out(422,'Liên kết không hợp lệ.');
     if (!god_auth_limit($pdo,'token-ip',god_auth_ip(),30,900)) god_auth_out(429,'Quá nhiều yêu cầu. Vui lòng thử lại sau.');
     $password=$mode==='reset'?god_auth_text($in,'password'):'';
-    if ($mode==='reset' && !god_auth_password_valid($password)) god_auth_out(422,'Mật khẩu phải có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.');
+    if ($mode==='reset' && !god_auth_password_valid($password)) god_auth_out(422,'Mật khẩu cần ít nhất 8 ký tự, có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.');
     $hash=$mode==='reset'?god_auth_password_hash($password):null;
     $pdo->beginTransaction();
     // Same lock order as issuing tokens prevents reset/resend races.

@@ -115,6 +115,7 @@ header('Cache-Control: no-store');
             position: relative;
         }
     </style>
+<link rel="stylesheet" href="assets/css/password-requirements.css?v=<?= filemtime(__DIR__.'/assets/css/password-requirements.css') ?>">
 </head>
 
 <body>
@@ -340,8 +341,8 @@ header('Cache-Control: no-store');
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label fw-bold small">Mật khẩu mới</label>
-                                        <input type="password" class="form-control" id="newPass" pattern="(?=[\s\S]*\p{Lu})(?=[\s\S]*\p{Ll})(?=[\s\S]*\p{Nd})(?=[\s\S]*[\p{P}\p{S}])[\s\S]*" title="Mật khẩu phải có chữ hoa, chữ thường, chữ số và ký tự đặc biệt." autocomplete="new-password" placeholder="Chữ hoa, chữ thường, số và ký tự đặc biệt" required>
-<small class="text-muted">Mật khẩu phải có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.</small>
+                                        <input type="password" class="form-control" id="newPass" minlength="8" aria-describedby="newPassRules" pattern="(?=[\s\S]*\p{Lu})(?=[\s\S]*\p{Ll})(?=[\s\S]*\p{Nd})(?=[\s\S]*[\p{P}\p{S}])[\s\S]{8,}" title="Mật khẩu cần ít nhất 8 ký tự, có chữ hoa, chữ thường, chữ số và ký tự đặc biệt." autocomplete="new-password" placeholder="Chữ hoa, chữ thường, số và ký tự đặc biệt" required>
+<ul id="newPassRules" class="password-requirements" data-password-for="newPass" aria-label="Điều kiện mật khẩu"><li data-password-rule="length"><span class="password-rule-icon" aria-hidden="true">○</span><span>Tối thiểu 8 ký tự</span></li><li data-password-rule="upper"><span class="password-rule-icon" aria-hidden="true">○</span><span>Chữ hoa (A–Z)</span></li><li data-password-rule="lower"><span class="password-rule-icon" aria-hidden="true">○</span><span>Chữ thường (a–z)</span></li><li data-password-rule="number"><span class="password-rule-icon" aria-hidden="true">○</span><span>Chữ số (0–9)</span></li><li data-password-rule="special"><span class="password-rule-icon" aria-hidden="true">○</span><span>Ký tự đặc biệt (!, @, #…)</span></li></ul><span class="password-rules-status" aria-live="polite" data-password-status="newPass"></span>
                                     </div>
                                     <div class="mb-4">
                                         <label class="form-label fw-bold small">Xác nhận mật khẩu mới</label>
@@ -389,5 +390,6 @@ header('Cache-Control: no-store');
     <script src="assets/js/profile.js?v=<?= filemtime(__DIR__ . '/assets/js/profile.js') ?>"></script>
     <!-- Bottom Nav -->
     <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
+<script src="assets/js/password-requirements.js?v=<?= filemtime(__DIR__.'/assets/js/password-requirements.js') ?>"></script>
 </body>
 </html>

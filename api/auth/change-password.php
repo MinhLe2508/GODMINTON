@@ -3,7 +3,7 @@ require_once __DIR__.'/../../includes/auth-security.php';
 try {
     $user=god_auth_user($pdo);if(!$user)god_auth_out(401,'Vui lòng đăng nhập.');
     $in=god_auth_input();$old=god_auth_text($in,'old_password');$next=god_auth_text($in,'new_password');
-    if (!god_auth_password_valid($next) || $old===$next) god_auth_out(422,'Mật khẩu phải có chữ hoa, chữ thường, chữ số và ký tự đặc biệt. Mật khẩu mới phải khác mật khẩu cũ.');
+    if (!god_auth_password_valid($next) || $old===$next) god_auth_out(422,'Mật khẩu cần ít nhất 8 ký tự, có chữ hoa, chữ thường, chữ số và ký tự đặc biệt. Mật khẩu mới phải khác mật khẩu cũ.');
     if(!god_auth_limit($pdo,'change-password',(string)$user['id'],10,900))god_auth_out(429,'Vui lòng thử lại sau 15 phút.');
     $pdo->beginTransaction();
     $s=$pdo->prepare('SELECT password_hash,session_version FROM users WHERE id=? FOR UPDATE');$s->execute([$user['id']]);$stored=$s->fetch();

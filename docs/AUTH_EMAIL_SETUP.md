@@ -77,3 +77,5 @@ DELETE FROM auth_rate_limits WHERE window_started_at < NOW() - INTERVAL 2 DAY;
 Tài liệu: [PHPMailer](https://github.com/PHPMailer/PHPMailer), [Google App Passwords](https://support.google.com/accounts/answer/185833), [OWASP Forgot Password](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html).
 
 Quy tắc áp dụng cho đăng ký, đặt lại và đổi mật khẩu: đủ bốn nhóm chữ hoa/chữ thường/số/ký tự đặc biệt, hỗ trợ chữ có dấu. Khoảng trắng không được coi là ký tự đặc biệt. Hash mới dùng Argon2id để không bị cắt ở 72 byte; tài khoản cũ vẫn đăng nhập bình thường. Giới hạn kích thước request API vẫn áp dụng để bảo vệ máy chủ.
+
+Cập nhật ngày 21/10/2026: mật khẩu mới phải có ít nhất 8 ký tự và đủ chữ hoa, chữ thường, số, ký tự đặc biệt. Đăng ký, đặt lại và đổi mật khẩu đều có danh sách 5 điều kiện, tích xanh theo nội dung đang nhập. API kiểm tra cùng quy tắc; không áp dụng giới hạn 72 byte.

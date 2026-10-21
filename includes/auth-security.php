@@ -29,7 +29,7 @@ function god_auth_email(array $in): string {
     return $email;
 }
 function god_auth_password_valid(string $password): bool {
-    return !str_contains($password,"\0")
+    return mb_strlen($password,'UTF-8')>=8 && !str_contains($password,"\0")
         && preg_match('/\p{Lu}/u',$password)===1
         && preg_match('/\p{Ll}/u',$password)===1
         && preg_match('/\p{Nd}/u',$password)===1
