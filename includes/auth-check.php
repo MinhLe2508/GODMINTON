@@ -27,3 +27,7 @@ if (strpos(basename($_SERVER['SCRIPT_NAME']), 'admin-') === 0
     http_response_code(403);
     exit('403 — Bạn không có quyền truy cập trang này.');
 }
+
+if(in_array(basename($_SERVER['SCRIPT_NAME']),['admin-users.php','admin-owner-requests.php'],true) && ($_SESSION['role']??'')!=='admin'){
+    http_response_code(403);exit('403 — Chỉ quản trị viên được truy cập trang này.');
+}

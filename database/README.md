@@ -1,12 +1,12 @@
 # Database GODMINTON
 
-Đã đối chiếu cấu trúc MySQL đang chạy ngày 20/10/2026. Bộ cài gồm **14 bảng**, không dùng seed/dump cũ theo tuần.
+Đã đối chiếu cấu trúc MySQL đang chạy ngày 22/10/2026. Bộ cài gồm **20 bảng**, không dùng seed/dump cũ theo tuần.
 
 ## File được giữ
 
 | File | Mục đích |
 |---|---|
-| `schema.sql` | Cấu trúc 14 bảng, khóa và chỉ mục hiện tại. Chỉ import vào DB trống. |
+| `schema.sql` | Cấu trúc 20 bảng, khóa và chỉ mục hiện tại. Chỉ import vào DB trống. |
 | `seed.sql` | Danh mục phường, tiện ích, sân, ảnh, liên kết tiện ích và tin tức hiện có; tài khoản phát triển được tạo riêng. |
 | `export_installation.php` | Đọc DB hiện tại, tạo lại schema/seed cài mới mà không xuất dữ liệu cá nhân/giao dịch. |
 | `migrate_booking_metadata.php` | Nâng cấp metadata đơn đặt trên DB cũ, giữ lịch sử. |
@@ -79,3 +79,11 @@ Phần xóa tài khoản đã được gộp trong `migration_customer_accounts.
 - `update_court_images.php`: đọc CSV và cập nhật `court_images` (`--apply` để ghi thật, `--sql` để xuất `update_court_images.sql` cho thành viên khác).
 - `fetch_google_place_photos.php`: tùy chọn, tự lấy link ảnh bằng Google Places API (cần `GOOGLE_MAPS_API_KEY` trong `.env`).
 - `update_court_images.sql`: cập nhật link ảnh của 41 sân cho DB đang chạy (import trong phpMyAdmin sau file ẩn sân). Cài mới đã có ảnh trong `seed.sql`.
+
+## Xét duyệt chủ sân và quản lý tài khoản Admin
+
+DB đã có dữ liệu: chọn DB website trong phpMyAdmin, import `migration_customer_accounts.sql` trước nếu chưa cập nhật xác thực, sau đó import **`migration_owner_account_management.sql`**. Có thể import lại; không chạy file PHP import/migration cho hai luồng này. Không import lại seed/schema vào DB đang sử dụng.
+
+Migration mới thêm trạng thái khóa/ý định đăng ký chủ sân/email chờ xác minh, tách xét duyệt sân và mở nhận đặt; tạo bảng hồ sơ, lịch sử xét duyệt, nhật ký quản trị và thông báo. Giữ nguyên vai trò, sân và trạng thái hoạt động hiện có. Hồ sơ, chứng minh và nhật ký không có trong seed cài mới.
+
+Chi tiết và bài kiểm thử: [OWNER_ACCOUNT_WORKFLOW.md](../docs/OWNER_ACCOUNT_WORKFLOW.md).

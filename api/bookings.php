@@ -18,8 +18,8 @@ try {
  if(!is_string($method)||mb_strlen($method)>30||!is_string($notes)||mb_strlen($notes)>2000)booking_account_out(422,null,'Phương thức thanh toán hoặc ghi chú quá dài.');
  session_write_close();
  $data=booking_account_transaction(function()use($pdo,$user,$ids,$courtId,$method,$notes,$voucherCode){
-  $accountLock=$pdo->prepare('SELECT is_verified,deleted_at FROM users WHERE id=? FOR UPDATE');$accountLock->execute([$user['id']]);$accountState=$accountLock->fetch();if(!$accountState||!$accountState['is_verified']||$accountState['deleted_at']!==null)throw new BookingError(401,'Tài khoản không còn hoạt động.');
-  $s=$pdo->prepare("SELECT s.*,c.name AS court_name,c.price_per_hour,c.status AS court_status,(s.hold_expires_at>NOW()) AS hold_valid,(TIMESTAMP(s.slot_date,s.start_time)>NOW()) AS future_start FROM time_slots s JOIN courts c ON c.id=s.court_id WHERE s.id IN (".implode(',',array_fill(0,count($ids),'?')).') ORDER BY s.id FOR UPDATE');$s->execute($ids);$slots=$s->fetchAll();
+  $accountLock=$pdo->prepare('SELECT is_verified,deleted_at,account_status FROM users WHERE id=? FOR UPDATE');$accountLock->execute([$user['id']]);$accountState=$accountLock->fetch();if(!$accountState||!$accountState['is_verified']||$accountState['deleted_at']!==null||$accountState['account_status']!=='active')throw new BookingError(401,'Tài khoản không còn hoạt động.');
+  $s=$pdo->prepare("SELECT s.*,c.name AS court_name,c.price_per_hour,c.status AS court_status,(s.hold_expires_at>NOW()) AS hold_valid,(TIMESTAMP(s.slot_date,s.start_time)>NOW()) AS future_start FROM time_slots s JOIN courts c ON c.id=s.court_id WHERE s.id IN (".implode(',',array_fill(0,count($ids),'?')).") AND c.approval_status='approved' AND c.booking_open=1 AND EXISTS(SELECT 1 FROM users venue_owner WHERE venue_owner.id=c.owner_id AND venue_owner.account_status='active' AND venue_owner.deleted_at IS NULL AND venue_owner.is_verified=1) ORDER BY s.id FOR UPDATE");$s->execute($ids);$slots=$s->fetchAll();
   if(count($slots)!==count($ids))throw new BookingError(404,'Không tìm thấy đầy đủ khung giờ.');
   usort($slots,fn($a,$b)=>strcmp($a['start_time'],$b['start_time']));$first=$slots[0];$last=end($slots);$courtAmount=0;$previous=null;
   foreach($slots as $slot){
@@ -111,4 +111,3 @@ try {
 }catch(Throwable $e){
  booking_account_error($e);
 }
-

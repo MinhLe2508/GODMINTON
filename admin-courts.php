@@ -89,7 +89,7 @@ $currentUser = ['id' => (int)$_SESSION['user_id'], 'name' => $_SESSION['name'] ?
                     </div>
                     <div id="courtsEmpty" class="text-center text-muted py-5" style="display:none;">
                         <i class="fa-regular fa-folder-open fs-2 d-block mb-2"></i>
-                        Bạn chưa có sân nào. Nhấn "Thêm sân" để bắt đầu.
+                        Bạn chưa có sân nào. Gửi hồ sơ đăng ký sân để bắt đầu.
                     </div>
                 </div>
             </div>
@@ -214,11 +214,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     modalInstance = new bootstrap.Modal(document.getElementById('courtModal'));
 
-    document.getElementById('btnAddCourt').addEventListener('click', () => openCourtModal(null));
+    document.getElementById('btnAddCourt').addEventListener('click', () => {location.href=currentUser.role==='admin'?'admin-owner-requests.php':'owner-application.php';});
     document.getElementById('searchCourt').addEventListener('input', () => renderCourtsTable());
     document.getElementById('courtForm').addEventListener('submit', handleSaveCourt);
 
     await loadCourtsFromServer();
+    const editId=Number(new URLSearchParams(location.search).get('edit'));if(editId && myCourts.some(c=>Number(c.id)===editId))openCourtModal(editId);
 });
 
 async function loadCourtsFromServer() {
@@ -242,7 +243,7 @@ function populateWardSelect() {
     }
     sel.innerHTML = wardsList.map(w => {
         const label = w.old_area_label ? `${w.name} — ${w.old_area_label}` : w.name;
-        return `<option value="${w.id}">${label}</option>`;
+        return `<option value="${w.id}">${AdminApp.escapeHTML(label)}</option>`;
     }).join('');
 }
 
@@ -264,21 +265,21 @@ function renderCourtsTable() {
     body.innerHTML = list.map(c => {
         const areaText = c.old_area_label ? `${c.ward_name} (${c.old_area_label})` : (c.district || c.ward_name || '');
         const ownerSub = (currentUser.role === 'admin' && c.owner_name)
-            ? `<div class="small text-teal"><i class="fa-regular fa-user me-1"></i>Chủ sân: ${c.owner_name}</div>`
+            ? `<div class="small text-teal"><i class="fa-regular fa-user me-1"></i>Chủ sân: ${AdminApp.escapeHTML(c.owner_name)}</div>`
             : '';
         return `
         <tr>
             <td>
                 <div class="d-flex align-items-center gap-2">
-                    <img src="${c.image_url || 'assets/img/logo.jpg'}" class="admin-court-thumb" alt="">
+                    <img src="${AdminApp.escapeHTML(c.image_url || 'assets/img/logo.jpg')}" class="admin-court-thumb" alt="">
                     <div class="min-w-0">
-                        <div class="admin-table-court-name text-truncate" style="max-width:240px;">${c.name}</div>
-                        <div class="small text-muted text-truncate" style="max-width:240px;">${c.address}</div>
+                        <div class="admin-table-court-name text-truncate" style="max-width:240px;">${AdminApp.escapeHTML(c.name)}</div>
+                        <div class="small text-muted text-truncate" style="max-width:240px;">${AdminApp.escapeHTML(c.address)}</div>
                         ${ownerSub}
                     </div>
                 </div>
             </td>
-            <td>${areaText}</td>
+            <td>${AdminApp.escapeHTML(areaText)}</td>
             <td>${AdminApp.formatVND(c.price_per_hour)}</td>
             <td>${c.total_sub_courts || 6}</td>
             <td>${c.opening_time || '06:00'} - ${c.closing_time || '22:00'}</td>
@@ -286,7 +287,7 @@ function renderCourtsTable() {
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-teal rounded-pill me-1" onclick="openCourtModal(${c.id})" title="Chỉnh sửa sân"><i class="fa-solid fa-pen"></i></button>
                 <a class="btn btn-sm btn-outline-secondary rounded-pill me-1" href="admin-slots.php?court=${c.id}" title="Quản lý khung giờ"><i class="fa-solid fa-clock"></i></a>
-                <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="deleteCourt(${c.id})" title="Xóa sân"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="deleteCourt(${c.id})" title="Tạm ngừng nhận đặt"><i class="fa-solid fa-power-off"></i></button>
             </td>
         </tr>`;
     }).join('');
@@ -371,8 +372,8 @@ async function handleSaveCourt(e) {
     btn.disabled = true;
     btn.textContent = 'Đang lưu...';
     try {
-        if (id) await AdminApp.updateCourt(Number(id), payload);
-        else await AdminApp.createCourt(payload);
+        const savedCourt = id ? await AdminApp.updateCourt(Number(id), payload) : await AdminApp.createCourt(payload);
+
         // Reload from MySQL so reopening the editor reflects exactly what was saved.
         const {courts, wards} = await AdminApp.fetchCourts();
         myCourts = courts;
@@ -380,7 +381,7 @@ async function handleSaveCourt(e) {
         populateWardSelect();
         renderCourtsTable();
         modalInstance.hide();
-        AdminApp.toast('success', id ? 'Đã cập nhật thông tin và tiện ích sân.' : 'Đã thêm sân mới.');
+        AdminApp.toast('success', savedCourt?.review_pending?'Đã gửi thay đổi nhận diện sân cho Admin duyệt. Thông tin hiện tại được giữ nguyên.':'Đã cập nhật thông tin và tiện ích sân.');
     } catch (err) {
         AdminApp.toast('error', err.message || 'Không thể lưu thông tin sân. Vui lòng thử lại.');
     } finally {
@@ -393,27 +394,17 @@ async function deleteCourt(courtId) {
     const court = myCourts.find(c => Number(c.id) === Number(courtId));
     if (!court) return;
     const ok = await AdminApp.confirmAction(
-        'Xóa sân này?',
-        `"${court.name}" sẽ bị xóa khỏi hệ thống. Khung giờ đã tạo cho sân này sẽ không còn hiển thị cho khách.`
+        'Tạm ngừng sân này?',
+        `"${court.name}" sẽ tạm ngừng nhận đơn mới. Lịch sử giao dịch và các đơn hiện có vẫn được giữ nguyên.`
     );
     if (!ok) return;
 
     try {
-        await fetch('admin-courts.php?action=delete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: courtId })
-        });
-    } catch (err) {
-        console.warn('Lỗi gọi API xóa sân phía server:', err);
-    }
-
-    try {
         await AdminApp.deleteCourtApi(courtId);
-        AdminApp.toast('success', 'Đã xóa sân');
+        AdminApp.toast('success', 'Đã tạm ngừng sân');
         await loadCourtsFromServer();
     } catch (err) {
-        AdminApp.toast('error', err.message || 'Không thể xóa sân.');
+        AdminApp.toast('error', err.message || 'Không thể tạm ngừng sân.');
     }
 }
 </script>

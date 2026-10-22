@@ -171,6 +171,14 @@ if ($method === 'POST' && !empty($input['action'])) {
 }
 
 try {
+    require_once __DIR__.'/../../includes/owner-workflow.php';$workflowActor=wf_user();
+    if($method!=='GET'){
+        booking_account_csrf();$pdo->beginTransaction();wf_lock_actor($workflowActor);
+        $workflowCourtId=(int)($input['court_id']??$_GET['court_id']??0);
+        if(!$workflowCourtId){$workflowSlotId=(int)($input['slot_id']??$input['id']??$_GET['slot_id']??$_GET['id']??0);$q=$pdo->prepare('SELECT court_id FROM time_slots WHERE id=?');$q->execute([$workflowSlotId]);$workflowCourtId=(int)$q->fetchColumn();}
+        $q=$pdo->prepare('SELECT owner_id FROM courts WHERE id=? FOR UPDATE');$q->execute([$workflowCourtId]);$workflowOwner=$q->fetchColumn();
+        if($workflowOwner===false || ($workflowActor['role']!=='admin' && (int)$workflowOwner!==$workflowActor['id']))wf_fail(403,'Bạn không còn quyền quản lý khung giờ của sân này.');
+    }
     // =====================================================================
     // 1. GET — Danh sách khung giờ theo sân & ngày
     // =====================================================================
@@ -241,7 +249,7 @@ try {
             ? $customPrice
             : (int)round((float)$court['price_per_hour'] * ($durationMin / 60));
 
-        $pdo->beginTransaction();
+        if(!$pdo->inTransaction())$pdo->beginTransaction();
 
         // Lấy các khung giờ đã tồn tại trong ngày của sân để tránh tạo trùng hoặc chồng lấn giờ
         $existStmt = $pdo->prepare("
@@ -351,6 +359,7 @@ try {
              WHERE id = ?
         ");
         $upd->execute([$newStatus, $slotId]);
+        $pdo->commit();
 
         jsonOut(200, [
             'status'  => 'success',
@@ -380,7 +389,7 @@ try {
             }
             assertCourtAccess($pdo, $courtId, $currentUserId, $currentRole);
 
-            $pdo->beginTransaction();
+            if(!$pdo->inTransaction())$pdo->beginTransaction();
             $pdo->prepare("
                 DELETE bs FROM booking_slots bs
                 JOIN time_slots ts ON ts.id = bs.slot_id
@@ -428,7 +437,7 @@ try {
             jsonOut(409, ['status' => 'error', 'message' => 'Khung giờ đang được khách giữ chỗ tạm thời, không thể xóa lúc này.']);
         }
 
-        $pdo->beginTransaction();
+        if(!$pdo->inTransaction())$pdo->beginTransaction();
         $pdo->prepare("DELETE FROM booking_slots WHERE slot_id = ?")->execute([$slotId]);
         $pdo->prepare("DELETE FROM time_slots WHERE id = ?")->execute([$slotId]);
         $pdo->commit();
@@ -443,6 +452,7 @@ try {
     jsonOut(405, ['status' => 'error', 'message' => 'Phương thức HTTP không được hỗ trợ.']);
 
 } catch (Throwable $e) {
+ if($e instanceof BookingError){if($pdo->inTransaction())$pdo->rollBack();jsonOut($e->httpCode,['status'=>'error','message'=>$e->getMessage()]);}
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }

@@ -4,7 +4,7 @@
  * Hỗ trợ: Pre-cache, Offline Fallback, Dynamic Network-First, Web Push Notification
  */
 
-const CACHE_VERSION = 'godminton-v1.1.0-auth-security';
+const CACHE_VERSION = 'godminton-v1.2.0-owner-workflow';
 const CACHE_STATIC  = `godminton-static-${CACHE_VERSION}`;
 const CACHE_RUNTIME = `godminton-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL   = 'offline.php';
@@ -73,7 +73,7 @@ self.addEventListener('fetch', event => {
     if (!url.protocol.startsWith('http')) return;
 
     // Never cache authentication or account pages, even when offline.
-    if (req.method !== 'GET' || /\/(?:auth(?:-action)?|profile|history|payment|confirm|booking|admin-[^/]+)\.php$/i.test(url.pathname)) return;
+    if (req.method !== 'GET' || /\/(?:owner-application|auth(?:-action)?|profile|history|payment|confirm|booking|admin-[^/]+)\.php$/i.test(url.pathname)) return;
 
     // QUY TẮC SỐ 1: API GIAO DỊCH → NETWORK-ONLY TUYỆT ĐỐI
     // Không bao giờ cache api/hold, api/bookings, api/slots, api/auth, v.v.

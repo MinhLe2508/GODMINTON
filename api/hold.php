@@ -88,6 +88,7 @@ function slotPrice(array $slot): int {
 function doHold(PDO $pdo, int $userId, array $slotIds): array {
     $pdo->beginTransaction();
     try {
+        $account=$pdo->prepare("SELECT id FROM users WHERE id=? AND account_status='active' AND deleted_at IS NULL AND is_verified=1 FOR UPDATE");$account->execute([$userId]);if(!$account->fetchColumn())throw new HoldError(401,'Tài khoản không còn hoạt động.');
         $in = implode(',', array_fill(0, count($slotIds), '?'));
 
         // Khoá toàn bộ slot theo thứ tự id. hold_expired do MySQL tính (NOW()) — một nguồn thời gian duy nhất.
@@ -96,7 +97,7 @@ function doHold(PDO $pdo, int $userId, array $slotIds): array {
                    (s.status = 'holding' AND s.hold_expires_at IS NOT NULL AND s.hold_expires_at < NOW()) AS hold_expired
             FROM time_slots s
             JOIN courts c ON c.id = s.court_id
-            WHERE s.id IN ($in)
+            WHERE s.id IN ($in) AND c.approval_status='approved' AND c.booking_open=1 AND EXISTS(SELECT 1 FROM users venue_owner WHERE venue_owner.id=c.owner_id AND venue_owner.account_status='active' AND venue_owner.deleted_at IS NULL AND venue_owner.is_verified=1)
             ORDER BY s.id
             FOR UPDATE
         ");

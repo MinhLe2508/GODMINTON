@@ -54,7 +54,7 @@ try {
         FROM courts c
         JOIN wards w ON w.id = c.ward_id
         JOIN users u ON u.id = c.owner_id
-        WHERE c.id = :id
+        WHERE c.id = :id AND c.approval_status='approved' AND EXISTS(SELECT 1 FROM users venue_owner WHERE venue_owner.id=c.owner_id AND venue_owner.account_status='active' AND venue_owner.deleted_at IS NULL)
         LIMIT 1
     ");
     $stmt->execute([':id' => $id]);

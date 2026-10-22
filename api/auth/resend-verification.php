@@ -8,9 +8,9 @@ try {
     if (!$ipAllowed || !$emailAllowed) god_auth_out(200,$message);
     $mail=god_auth_mailer();
     $pdo->beginTransaction();
-    $s=$pdo->prepare('SELECT id,name,email,is_verified FROM users WHERE email=? FOR UPDATE');$s->execute([$email]);$user=$s->fetch();
+    $s=$pdo->prepare('SELECT id,name,email,is_verified,account_status,deleted_at FROM users WHERE email=? FOR UPDATE');$s->execute([$email]);$user=$s->fetch();
     $purpose='verify';
-    if ($user && ($purpose==='reset' || !$user['is_verified'])) {
+    if ($user && $user['account_status']==='active' && $user['deleted_at']===null && ($purpose==='reset' || !$user['is_verified'])) {
         $token=god_auth_token($pdo,(int)$user['id'],$purpose);god_auth_send($mail,$user,$purpose,$token);
     }
     $pdo->commit();god_auth_out(200,$message);

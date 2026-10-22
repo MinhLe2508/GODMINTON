@@ -4,7 +4,16 @@
     "type": "project",
     "require": {
         "php": ">=8.0",
-        "minishlink/web-push": "^9.0",
-        "phpmailer/phpmailer": "^6.10"
+        "ext-ctype": "*",
+        "ext-filter": "*",
+        "ext-hash": "*"
+    },
+    "config": {
+        "optimize-autoloader": true
+    },
+    "autoload": {
+        "psr-4": {
+            "PHPMailer\\PHPMailer\\": "vendor/PHPMailer/src/"
+        }
     }
 }

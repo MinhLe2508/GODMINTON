@@ -16,6 +16,8 @@ const AdminApp = (() => {
         return new Intl.NumberFormat('vi-VN').format(Number(amount) || 0) + ' đ';
     }
 
+    const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
     /* ================= AUTH GUARD (SERVER SESSION) ================= */
     function requireAuth() {
         const user = window.__GODMINTON_USER__ || null;
@@ -30,7 +32,18 @@ const AdminApp = (() => {
 
     /* ================= API HELPER ================= */
     async function apiRequest(url, options = {}) {
+        const method=(options.method||'GET').toUpperCase();
         const defaultHeaders = { 'Content-Type': 'application/json' };
+        if(method!=='GET' && method!=='HEAD'){
+            const context=await fetch('api/auth/context.php',{credentials:'same-origin',cache:'no-store'});
+            const identity=await context.json();if(!context.ok)throw new Error('Không thể tạo phiên thao tác.');
+            defaultHeaders['X-GODMINTON-CSRF']=identity.data.csrf_token;
+            if(url.startsWith('api/admin/courts.php') && ['PUT','PATCH'].includes(method) && window.__GODMINTON_USER__?.role==='admin'){
+                const body=JSON.parse(options.body||'{}');
+                const auth=await Swal.fire({titleText:'Xác nhận thay đổi sân',html:'<label class="d-block text-start">Lý do quản trị<textarea id="courtAdminReason" class="form-control mt-2" rows="3" maxlength="1000"></textarea></label><label class="d-block text-start mt-3">Mật khẩu Admin<input id="courtAdminPassword" class="form-control mt-2" type="password" autocomplete="current-password"></label>',showCancelButton:true,confirmButtonText:'Lưu thay đổi',cancelButtonText:'Hủy',preConfirm:()=>{const reason=document.getElementById('courtAdminReason').value.trim(),password=document.getElementById('courtAdminPassword').value;if(reason.length<5||!password){Swal.showValidationMessage('Nhập lý do ít nhất 5 ký tự và mật khẩu Admin.');return false;}return {admin_reason:reason,admin_password:password};}});
+                if(!auth.isConfirmed)throw new Error('Đã hủy thay đổi.');options={...options,body:JSON.stringify({...body,...auth.value})};
+            }
+        }
         const config = {
             credentials: 'same-origin',
             cache: 'no-store',
@@ -81,8 +94,8 @@ const AdminApp = (() => {
     }
 
     async function deleteCourtApi(id) {
-        const res = await apiRequest(`api/admin/courts.php?id=${encodeURIComponent(id)}`, {
-            method: 'DELETE'
+        const res = await apiRequest('api/admin/courts.php', {
+            method: 'PATCH', body:JSON.stringify({id:Number(id),status:'inactive'})
         });
         return res;
     }
@@ -155,7 +168,8 @@ const AdminApp = (() => {
         const user = requireAuth();
         if (!user) return null;
 
-        const initial = user.name ? user.name.charAt(0).toUpperCase() : 'C';
+        const escapeShell=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const initial = escapeShell(user.name ? user.name.charAt(0).toUpperCase() : 'C');
         const roleLabel = user.role === 'admin' ? 'Quản trị viên' : 'Chủ sân';
 
         const navItems = [
@@ -166,6 +180,12 @@ const AdminApp = (() => {
             { key: 'vouchers', href: 'admin-vouchers.php', icon: 'fa-ticket', label: 'Mã giảm giá' },
         ];
 
+        if(user.role==='admin')navItems.push(
+            {key:'users',href:'admin-users.php',icon:'fa-users-gear',label:'Quản lý tài khoản'},
+            {key:'owner-requests',href:'admin-owner-requests.php',icon:'fa-file-circle-check',label:'Yêu cầu chủ sân'}
+        );
+        else navItems.push({key:'application',href:'owner-application.php',icon:'fa-file-circle-plus',label:'Đăng ký sân mới'});
+        document.querySelectorAll('.brand-sub').forEach(el=>el.textContent=user.role==='admin'?'Kênh quản trị':'Kênh chủ sân');
         const navHtml = navItems.map(item => `
             <a class="admin-nav-link ${item.key === activePage ? 'active' : ''}" href="${item.href}">
                 <i class="fa-solid ${item.icon}"></i> ${item.label}
@@ -181,7 +201,7 @@ const AdminApp = (() => {
                 <button class="btn w-100 d-flex align-items-center gap-2 border-0 text-start px-2" type="button" data-bs-toggle="dropdown" style="background:rgba(255,255,255,.04); border-radius:.75rem; color:#e2e8f0;">
                     <div class="avatar-sm rounded-circle bg-teal text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0">${initial}</div>
                     <div class="flex-grow-1 min-w-0">
-                        <div class="fw-semibold small text-truncate" style="color:#f1f5f9;">${user.name}</div>
+                        <div class="fw-semibold small text-truncate" style="color:#f1f5f9;">${escapeShell(user.name)}</div>
                         <div class="text-truncate" style="font-size:.72rem; color:#94a3b8;">${roleLabel}</div>
                     </div>
                     <i class="fa-solid fa-chevron-up small" style="color:#64748b;"></i>
@@ -238,6 +258,7 @@ const AdminApp = (() => {
     }
 
     return {
+        escapeHTML,
         formatVND,
         requireAuth,
         fetchCourts,

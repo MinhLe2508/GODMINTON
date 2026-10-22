@@ -1,5 +1,7 @@
 # Dependencies (cài lại bằng composer install, KHÔNG commit)
-/vendor/
+/vendor/*
+!/vendor/PHPMailer/
+!/vendor/PHPMailer/**
 
 # Thông tin nhạy cảm — không commit mật khẩu DB / VAPID key thật
 .env

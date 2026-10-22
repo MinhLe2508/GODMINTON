@@ -43,7 +43,7 @@ $currentUser = [
         .slot-del-btn:hover { opacity: 1; background: rgba(0,0,0,.1); }
     </style>
     <script>
-        window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE); ?>;
+        window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
     </script>
 </head>
 <body class="admin-body">
@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         select.innerHTML = '<option value="">Bạn chưa có sân nào</option>';
         select.disabled = true;
     } else {
-        select.innerHTML = myCourts.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        select.innerHTML = myCourts.map(c => `<option value="${c.id}">${AdminApp.escapeHTML(c.name)}</option>`).join('');
         const preselect = new URLSearchParams(location.search).get('court');
         if (preselect && myCourts.some(c => Number(c.id) === Number(preselect))) {
             select.value = preselect;

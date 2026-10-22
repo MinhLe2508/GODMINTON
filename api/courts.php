@@ -58,7 +58,7 @@ try {
              WHERE ca.court_id = c.id) AS amenity_labels
         FROM courts c
         JOIN wards w ON w.id = c.ward_id
-        WHERE c.status = 'active'
+        WHERE c.status = 'active' AND c.approval_status='approved' AND c.booking_open=1 AND EXISTS(SELECT 1 FROM users venue_owner WHERE venue_owner.id=c.owner_id AND venue_owner.account_status='active' AND venue_owner.deleted_at IS NULL AND venue_owner.is_verified=1)
     ";
     $params = [];
 

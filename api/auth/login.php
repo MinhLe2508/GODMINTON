@@ -8,6 +8,7 @@ try {
     $s=$pdo->prepare('SELECT * FROM users WHERE email=?'); $s->execute([$email]);$user=$s->fetch();
     $dummy='$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi';
     if (!password_verify($password,$user['password_hash']??$dummy) || !$user) god_auth_out(401,'Email hoặc mật khẩu không đúng.');
+    if($user['deleted_at']!==null || $user['account_status']!=='active')god_auth_out(403,'Tài khoản không khả dụng. Vui lòng liên hệ quản trị viên.');
     if (!$user['is_verified']) god_auth_out(403,'Vui lòng xác minh email trước khi đăng nhập. Bạn có thể yêu cầu gửi lại email xác minh.',['email'=>$email],'EMAIL_NOT_VERIFIED');
     god_auth_login($user);
     $pdo->prepare('DELETE FROM auth_rate_limits WHERE key_hash=?')->execute([hash('sha256','login-email|'.$email)]);

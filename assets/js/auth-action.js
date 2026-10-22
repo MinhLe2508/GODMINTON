@@ -14,6 +14,7 @@ if(mode==='reset'){
     document.getElementById('confirmPassword').required=true;
     button.textContent='Lưu mật khẩu mới';
 }
+if(mode==='email_change'){document.getElementById('actionTitle').textContent='Xác nhận email mới';document.getElementById('actionDescription').textContent='Chỉ xác nhận nếu bạn đồng ý thay đổi email đăng nhập. Các phiên cũ sẽ bị thu hồi sau khi xác nhận.';button.textContent='Xác nhận email mới';}
 if(mode==='delete'){
     document.getElementById('actionTitle').textContent='Xóa tài khoản';
     document.getElementById('actionDescription').textContent='Tài khoản sẽ bị vô hiệu vĩnh viễn, thông tin hồ sơ được ẩn danh. Lịch sử giao dịch vẫn được giữ để đối soát. Thao tác không thể hoàn tác.';
@@ -21,7 +22,7 @@ if(mode==='delete'){
     document.getElementById('confirmDeleteAccount').required=true;
     button.textContent='Xác nhận xóa tài khoản';button.classList.add('danger');
 }
-if(!['reset','verify','delete'].includes(mode)||!/^[a-f0-9]{64}$/.test(token)){
+if(!['reset','verify','delete','email_change'].includes(mode)||!/^[a-f0-9]{64}$/.test(token)){
     form.hidden=true;message.className='error';message.textContent='Liên kết không hợp lệ. Vui lòng yêu cầu gửi lại email tại trang đăng nhập.';
 }
 form.addEventListener('submit',async event=>{
@@ -36,7 +37,7 @@ form.addEventListener('submit',async event=>{
             headers:{'Content-Type':'application/json','X-GODMINTON-CSRF':data.data.csrf_token},body:JSON.stringify({token,mode,password,confirm_delete:document.getElementById('confirmDeleteAccount').checked})});
         const result=await response.json();message.textContent=result.message;
         message.className=response.ok?'success':'error';
-        if(response.ok){token='';form.reset();form.hidden=true;}
+        if(response.ok){token='';form.reset();form.hidden=true;if(result.data?.next_url==='owner-application.php'){const link=document.createElement('a');link.href='owner-application.php';link.className='back';link.textContent='Đăng nhập và gửi hồ sơ chủ sân';message.after(link);}}
         else if(response.status===410)form.hidden=true;
     }catch(error){message.className='error';message.textContent=error.message||'Không kết nối được máy chủ.';}
     finally{button.disabled=false;button.textContent=label;}

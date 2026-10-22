@@ -530,14 +530,15 @@ $v = time();
                 </div>
 
                 <div class="auth-field">
-                    <label for="regRole">Vai trò tài khoản</label>
+                    <label for="regRole">Mục đích sử dụng</label>
                     <div class="field-wrap">
                         <i class="fa-solid fa-id-badge field-icon"></i>
-                        <select id="regRole">
+                        <select id="regRole" aria-describedby="ownerRegistrationNote">
                             <option value="customer">Khách hàng — Đặt sân thể thao</option>
-                            <option value="owner">Chủ sân — Đăng ký quản lý sân</option>
+                            <option value="owner">Đăng ký trở thành chủ sân (cần xét duyệt)</option>
                         </select>
                     </div>
+<small id="ownerRegistrationNote" class="d-block mt-2 text-white">Bạn chỉ được cấp quyền chủ sân sau khi xác minh email và hồ sơ sân được Admin duyệt.</small>
                 </div>
 
                 <div class="d-flex align-items-start gap-2 mb-2">

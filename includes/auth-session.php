@@ -19,9 +19,9 @@ function god_auth_user(PDO $pdo): ?array {
     god_auth_start();
     $id=(int)($_SESSION['user_id']??0);
     if (!$id) return null;
-    $s=$pdo->prepare('SELECT id,name,email,phone,role,avatar_url,created_at,is_verified,session_version FROM users WHERE id=?');
+    $s=$pdo->prepare('SELECT id,name,email,phone,role,avatar_url,created_at,is_verified,session_version,account_status,deleted_at,owner_intent FROM users WHERE id=?');
     $s->execute([$id]); $u=$s->fetch(); $now=time();
-    if (!$u || !$u['is_verified'] || (int)$u['session_version']!==(int)($_SESSION['auth_version']??0)
+    if (!$u || !$u['is_verified'] || $u['account_status']!=='active' || $u['deleted_at']!==null || (int)$u['session_version']!==(int)($_SESSION['auth_version']??0)
         || $now-(int)($_SESSION['last_activity']??$now)>1800
         || $now-(int)($_SESSION['authenticated_at']??$now)>43200) {
         god_auth_clear(); return null;
@@ -30,7 +30,7 @@ function god_auth_user(PDO $pdo): ?array {
     $_SESSION['last_activity']=$now;
     $_SESSION['authenticated_at']??=$now;
     foreach (['name','email','phone','role'] as $key) $_SESSION[$key]=$u[$key];
-    unset($u['session_version'],$u['is_verified']); $u['id']=(int)$u['id'];
+    unset($u['session_version'],$u['is_verified'],$u['deleted_at']); $u['id']=(int)$u['id'];
     return $u;
 }
 function god_auth_login(array $user): void {

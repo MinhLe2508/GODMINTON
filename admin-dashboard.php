@@ -26,7 +26,7 @@ $currentUser = [
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/admin_style.css?v=<?= filemtime(__DIR__ . '/assets/css/admin_style.css') ?>">
     <script>
-        window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE); ?>;
+        window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
     </script>
 </head>
 <body class="admin-body">
@@ -201,10 +201,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             body.innerHTML = bookings.map(b => {
                 const s = statusMap[b.booking_status] || statusMap.confirmed;
                 return `<tr>
-                    <td class="fw-semibold">${b.booking_code}</td>
-                    <td>${b.court_name}<div class="small text-muted">${b.sub_court_name || ''}</div></td>
-                    <td>${b.user_name}</td>
-                    <td>${b.booking_date}<div class="small text-muted">${b.time_range}</div></td>
+                    <td class="fw-semibold">${AdminApp.escapeHTML(b.booking_code)}</td>
+                    <td>${AdminApp.escapeHTML(b.court_name)}<div class="small text-muted">${AdminApp.escapeHTML(b.sub_court_name || '')}</div></td>
+                    <td>${AdminApp.escapeHTML(b.user_name)}</td>
+                    <td>${AdminApp.escapeHTML(b.booking_date)}<div class="small text-muted">${AdminApp.escapeHTML(b.time_range)}</div></td>
                     <td><span class="badge ${s.badge}">${s.text}</span></td>
                 </tr>`;
             }).join('');
@@ -218,10 +218,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('myCourtsEmpty').style.display = 'none';
             list.innerHTML = courts.slice(0, 5).map(c => `
                 <div class="d-flex align-items-center gap-3">
-                    <img src="${c.image_url}" class="admin-court-thumb" alt="">
+                    <img src="${AdminApp.escapeHTML(c.image_url)}" class="admin-court-thumb" alt="">
                     <div class="flex-grow-1 min-w-0">
-                        <div class="fw-semibold text-truncate">${c.name}</div>
-                        <div class="small text-muted">${c.district} · ${c.total_sub_courts || 6} sân con</div>
+                        <div class="fw-semibold text-truncate">${AdminApp.escapeHTML(c.name)}</div>
+                        <div class="small text-muted">${AdminApp.escapeHTML(c.district)} · ${c.total_sub_courts || 6} sân con</div>
                     </div>
                     <span class="badge ${c.status === 'active' ? 'bg-success' : 'bg-secondary'}">${c.status === 'active' ? 'Hoạt động' : 'Tạm ngưng'}</span>
                 </div>`).join('');

@@ -82,8 +82,8 @@ async function callAuthApi(url, payload) {
         return {status:'error', message:'Không kết nối được máy chủ. Vui lòng thử lại.'};
     }
 }
-function goAfterAuth(role) {
-    const fallback = (role==='owner'||role==='admin') ? 'admin-dashboard.php' : 'index.php';
+function goAfterAuth(role, ownerIntent=false) {
+    const fallback = (role==='owner'||role==='admin') ? 'admin-dashboard.php' : (ownerIntent?'owner-application.php':'index.php');
     const value = new URLSearchParams(location.search).get('redirect');
     let target = new URL(fallback, location.href);
     if (value) {
@@ -104,7 +104,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async event => 
         if(result.status==='success') {
             authCsrf=result.data.csrf_token;
             await Swal.fire({icon:'success',titleText:'Đăng nhập thành công',timer:1000,showConfirmButton:false});
-            goAfterAuth(result.data.user.role);
+            goAfterAuth(result.data.user.role,Boolean(Number(result.data.user.owner_intent)));
         } else {
             const reply=await Swal.fire({icon:'warning',titleText:'Chưa thể đăng nhập',text:result.message,
                 showCancelButton:result.code==='EMAIL_NOT_VERIFIED',confirmButtonText:result.code==='EMAIL_NOT_VERIFIED'?'Gửi lại xác minh':'Đóng',cancelButtonText:'Đóng'});

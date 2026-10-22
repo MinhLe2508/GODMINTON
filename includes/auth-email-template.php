@@ -11,6 +11,9 @@ function god_auth_email_content(array $user,string $purpose,string $link): array
         'delete'=>['title'=>'Xác nhận xóa tài khoản GODMINTON','heading'=>'Xác nhận yêu cầu xóa tài khoản',
             'intro'=>'Bạn đã yêu cầu xóa tài khoản GODMINTON. Sau khi xác nhận, tài khoản sẽ bị vô hiệu và hồ sơ được ẩn danh. Lịch sử giao dịch được giữ để đối soát. Thao tác không thể hoàn tác.',
             'action'=>'Xác nhận xóa tài khoản','minutes'=>15],
+        'email_change'=>['title'=>'Xác nhận email mới GODMINTON','heading'=>'Xác minh địa chỉ email mới',
+            'intro'=>'Có yêu cầu thay đổi email đăng nhập cho tài khoản của bạn. Chỉ bấm xác nhận nếu đây là thay đổi bạn mong muốn. Sau xác nhận, các phiên đăng nhập cũ sẽ kết thúc.',
+            'action'=>'Xác nhận email mới','minutes'=>30],
     ];
     if(!isset($types[$purpose]))throw new InvalidArgumentException('Unsupported email purpose');
     $type=$types[$purpose];

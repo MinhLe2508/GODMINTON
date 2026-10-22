@@ -11,8 +11,8 @@ try {
     $pdo->beginTransaction();
     $s=$pdo->prepare('SELECT id FROM users WHERE email=? FOR UPDATE');$s->execute([$email]);
     if (!$s->fetch()) {
-        $role=($in['role']??'')==='owner'?'owner':'customer';
-        $pdo->prepare('INSERT INTO users (name,email,phone,password_hash,role,is_verified) VALUES (?,?,?,?,?,0)')->execute([$name,$email,$phone,god_auth_password_hash($password),$role]);
+        $role='customer';$ownerIntent=($in['role']??'')==='owner'?1:0;
+        $pdo->prepare('INSERT INTO users (name,email,phone,password_hash,role,is_verified,owner_intent) VALUES (?,?,?,?,?,0,?)')->execute([$name,$email,$phone,god_auth_password_hash($password),$role,$ownerIntent]);
         $id=(int)$pdo->lastInsertId();$token=god_auth_token($pdo,$id,'verify');
         god_auth_send($mail,['name'=>$name,'email'=>$email],'verify',$token);
     }

@@ -50,7 +50,7 @@ function god_auth_limit(PDO $pdo,string $scope,string $key,int $max,int $seconds
 function god_auth_ip(): string { return $_SERVER['REMOTE_ADDR']??'unknown'; }
 function god_auth_token(PDO $pdo,int $id,string $purpose): string {
     $pdo->prepare('UPDATE auth_tokens SET used_at=NOW() WHERE user_id=? AND purpose=? AND used_at IS NULL')->execute([$id,$purpose]);
-    $raw=bin2hex(random_bytes(32)); $expires=date('Y-m-d H:i:s',time()+(in_array($purpose,['reset','delete'],true)?900:3600));
+    $raw=bin2hex(random_bytes(32)); $expires=date('Y-m-d H:i:s',time()+($purpose==='email_change'?1800:(in_array($purpose,['reset','delete'],true)?900:3600)));
     $pdo->prepare('INSERT INTO auth_tokens (user_id,purpose,token_hash,expires_at) VALUES (?,?,?,?)')->execute([$id,$purpose,hash('sha256',$raw),$expires]);
     return $raw;
 }

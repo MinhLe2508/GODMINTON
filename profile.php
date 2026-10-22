@@ -323,7 +323,8 @@ header('Cache-Control: no-store');
 
                 <!-- Right Content Area -->
                 <div class="col-lg-9">
-                    <div class="tab-content" id="profileTabContent">
+                    <div class="mb-3"><a href="owner-application.php" class="btn btn-outline-success rounded-pill"><i class="fa-solid fa-building-shield me-2"></i>Đăng ký / Theo dõi hồ sơ sân</a></div>
+<div class="tab-content" id="profileTabContent">
 
                         <!-- TAB 1: THÔNG TIN CÁ NHÂN -->
                         <div class="tab-pane fade show active" id="tabProfileInfo" role="tabpanel">
@@ -455,6 +456,10 @@ header('Cache-Control: no-store');
                                         <i class="fa-solid fa-key me-1"></i> Cập nhật mật khẩu
                                     </button>
                                 </form>
+<section class="mt-4 pt-4 border-top" aria-labelledby="ownerApplicationTitle">
+<h6 id="ownerApplicationTitle" class="fw-bold">Đăng ký sân trên GODMINTON</h6>
+<p class="text-muted small">Gửi hồ sơ sân mới hoặc yêu cầu nhận quản lý sân có sẵn. Quyền chủ sân được cấp sau khi Admin xét duyệt.</p>
+<a href="owner-application.php" class="btn btn-outline-success rounded-pill px-4">Đăng ký / Theo dõi hồ sơ chủ sân</a></section>
 <section class="mt-4 pt-4 border-top" aria-labelledby="deleteAccountTitle">
     <h6 id="deleteAccountTitle" class="text-danger fw-bold">Xóa tài khoản</h6>
     <p class="text-muted small">Nếu không còn sử dụng GODMINTON, bạn có thể yêu cầu xóa tài khoản. Thông tin hồ sơ sẽ được ẩn danh; lịch sử giao dịch được giữ để đối soát.</p>

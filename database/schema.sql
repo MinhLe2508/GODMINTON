@@ -1,9 +1,36 @@
--- GODMINTON schema (đã sắp xếp lại thứ tự: bảng cha trước, bảng con sau)
--- Chọn một database TRỐNG trước khi import. Không có DROP/USE/CREATE DATABASE.
+-- GODMINTON schema, exported 2026-10-22 10:37:08 +07:00
+-- Select an EMPTY database before importing. No DROP/USE/CREATE DATABASE statements.
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS=0;
 
--- 1. Các bảng độc lập
+CREATE TABLE `account_audit` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `actor_id` int(10) unsigned NOT NULL,
+  `target_user_id` int(10) unsigned DEFAULT NULL,
+  `request_id` bigint(20) unsigned DEFAULT NULL,
+  `court_id` int(10) unsigned DEFAULT NULL,
+  `action` varchar(60) NOT NULL,
+  `reason` varchar(1000) NOT NULL,
+  `details` text DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_audit_target` (`target_user_id`,`id`),
+  KEY `idx_audit_actor` (`actor_id`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `account_notifications` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
+  `title` varchar(200) NOT NULL,
+  `message` text NOT NULL,
+  `request_id` bigint(20) unsigned DEFAULT NULL,
+  `email_sent_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_account_notices` (`user_id`,`id`),
+  CONSTRAINT `fk_account_notice_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `amenities` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `code` varchar(30) NOT NULL,
@@ -20,18 +47,55 @@ CREATE TABLE `auth_rate_limits` (
   KEY `idx_auth_rate_window` (`window_started_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `news` (
+CREATE TABLE `auth_tokens` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
+  `purpose` enum('verify','reset','delete','email_change') NOT NULL,
+  `token_hash` char(64) NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `used_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token_hash` (`token_hash`),
+  KEY `idx_auth_user` (`user_id`,`purpose`),
+  KEY `idx_auth_expiry` (`expires_at`),
+  CONSTRAINT `fk_auth_token_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `booking_slots` (
+  `booking_id` int(10) unsigned NOT NULL,
+  `slot_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`booking_id`,`slot_id`),
+  KEY `fk_bs_slot` (`slot_id`),
+  CONSTRAINT `fk_bs_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_bs_slot` FOREIGN KEY (`slot_id`) REFERENCES `time_slots` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `bookings` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `title` varchar(200) NOT NULL,
-  `summary` text NOT NULL,
-  `content` mediumtext NOT NULL,
-  `image_url` varchar(2048) DEFAULT NULL,
-  `category` varchar(30) NOT NULL DEFAULT 'notice',
-  `status` varchar(20) NOT NULL DEFAULT 'draft',
-  `published_at` datetime DEFAULT NULL,
+  `user_id` int(10) unsigned NOT NULL,
+  `court_id` int(10) unsigned NOT NULL,
+  `voucher_id` int(10) unsigned DEFAULT NULL,
+  `booking_code` varchar(30) DEFAULT NULL,
+  `court_amount` decimal(12,0) NOT NULL DEFAULT 0,
+  `discount_amount` decimal(12,0) NOT NULL DEFAULT 0,
+  `discount_funded_by` enum('platform','owner') DEFAULT NULL,
+  `platform_fee` decimal(12,0) NOT NULL DEFAULT 0,
+  `owner_amount` decimal(12,0) NOT NULL DEFAULT 0,
+  `total_price` decimal(12,0) NOT NULL,
+  `deposit_amount` decimal(12,0) NOT NULL DEFAULT 0,
+  `payment_method` varchar(30) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `status` enum('pending','confirmed','cancelled','completed') NOT NULL DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  KEY `idx_news_publication` (`status`,`published_at`)
+  UNIQUE KEY `uq_booking_code` (`booking_code`),
+  KEY `idx_bookings_user` (`user_id`),
+  KEY `idx_bookings_court` (`court_id`),
+  KEY `fk_bookings_voucher` (`voucher_id`),
+  CONSTRAINT `fk_bookings_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`),
+  CONSTRAINT `fk_bookings_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_bookings_voucher` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `contacts` (
@@ -47,84 +111,6 @@ CREATE TABLE `contacts` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `push_subscriptions` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned DEFAULT NULL,
-  `endpoint` text NOT NULL,
-  `p256dh` varchar(255) NOT NULL,
-  `auth` varchar(255) NOT NULL,
-  `user_agent` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_endpoint` (`endpoint`(191)),
-  KEY `idx_user` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `wards` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
-  `old_area_label` varchar(100) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `users` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(150) NOT NULL,
-  `email` varchar(150) NOT NULL,
-  `phone` varchar(20) DEFAULT NULL,
-  `password_hash` varchar(255) NOT NULL,
-  `role` enum('customer','owner','admin') NOT NULL DEFAULT 'customer',
-  `avatar_url` varchar(255) DEFAULT NULL,
-  `is_verified` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `session_version` int(10) unsigned NOT NULL DEFAULT 0,
-  `deleted_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 2. Bảng phụ thuộc users / wards
-CREATE TABLE `courts` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `owner_id` int(10) unsigned NOT NULL,
-  `ward_id` int(10) unsigned NOT NULL,
-  `name` varchar(150) NOT NULL,
-  `address` varchar(255) NOT NULL,
-  `latitude` decimal(10,7) NOT NULL,
-  `longitude` decimal(10,7) NOT NULL,
-  `price_per_hour` decimal(10,0) NOT NULL,
-  `total_sub_courts` int(10) unsigned NOT NULL DEFAULT 6,
-  `opening_time` time NOT NULL DEFAULT '06:00:00',
-  `closing_time` time NOT NULL DEFAULT '22:00:00',
-  `description` text DEFAULT NULL,
-  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `fk_courts_owner` (`owner_id`),
-  KEY `idx_courts_ward` (`ward_id`),
-  KEY `idx_courts_location` (`latitude`,`longitude`),
-  CONSTRAINT `fk_courts_owner` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`),
-  CONSTRAINT `fk_courts_ward` FOREIGN KEY (`ward_id`) REFERENCES `wards` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `auth_tokens` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL,
-  `purpose` enum('verify','reset','delete') NOT NULL,
-  `token_hash` char(64) NOT NULL,
-  `expires_at` datetime NOT NULL,
-  `used_at` datetime DEFAULT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `token_hash` (`token_hash`),
-  KEY `idx_auth_user` (`user_id`,`purpose`),
-  KEY `idx_auth_expiry` (`expires_at`),
-  CONSTRAINT `fk_auth_token_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 3. Bảng phụ thuộc courts
 CREATE TABLE `court_amenities` (
   `court_id` int(10) unsigned NOT NULL,
   `amenity_id` int(10) unsigned NOT NULL,
@@ -142,6 +128,97 @@ CREATE TABLE `court_images` (
   PRIMARY KEY (`id`),
   KEY `idx_images_court` (`court_id`),
   CONSTRAINT `fk_images_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `courts` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `owner_id` int(10) unsigned NOT NULL,
+  `ward_id` int(10) unsigned NOT NULL,
+  `name` varchar(150) NOT NULL,
+  `address` varchar(255) NOT NULL,
+  `latitude` decimal(10,7) NOT NULL,
+  `longitude` decimal(10,7) NOT NULL,
+  `price_per_hour` decimal(10,0) NOT NULL,
+  `total_sub_courts` int(10) unsigned NOT NULL DEFAULT 6,
+  `opening_time` time NOT NULL DEFAULT '06:00:00',
+  `closing_time` time NOT NULL DEFAULT '22:00:00',
+  `description` text DEFAULT NULL,
+  `status` enum('active','inactive') NOT NULL DEFAULT 'active',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `approval_status` enum('approved','suspended') NOT NULL DEFAULT 'approved',
+  `booking_open` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `fk_courts_owner` (`owner_id`),
+  KEY `idx_courts_ward` (`ward_id`),
+  KEY `idx_courts_location` (`latitude`,`longitude`),
+  CONSTRAINT `fk_courts_owner` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_courts_ward` FOREIGN KEY (`ward_id`) REFERENCES `wards` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `news` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL,
+  `summary` text NOT NULL,
+  `content` mediumtext NOT NULL,
+  `image_url` varchar(2048) DEFAULT NULL,
+  `category` varchar(30) NOT NULL DEFAULT 'notice',
+  `status` varchar(20) NOT NULL DEFAULT 'draft',
+  `published_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_news_publication` (`status`,`published_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `owner_request_events` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `request_id` bigint(20) unsigned NOT NULL,
+  `actor_id` int(10) unsigned NOT NULL,
+  `action` varchar(40) NOT NULL,
+  `note` text DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_owner_events` (`request_id`,`id`),
+  CONSTRAINT `fk_owner_event_request` FOREIGN KEY (`request_id`) REFERENCES `owner_requests` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `owner_requests` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
+  `kind` enum('new','claim','update') NOT NULL,
+  `court_id` int(10) unsigned DEFAULT NULL,
+  `status` enum('draft','pending','needs_info','approved','rejected','withdrawn') NOT NULL DEFAULT 'draft',
+  `representative_name` varchar(150) NOT NULL DEFAULT '',
+  `representative_phone` varchar(30) NOT NULL DEFAULT '',
+  `evidence_note` text DEFAULT NULL,
+  `evidence_url` varchar(2000) DEFAULT NULL,
+  `payload` longtext NOT NULL,
+  `review_note` text DEFAULT NULL,
+  `reviewed_by` int(10) unsigned DEFAULT NULL,
+  `reviewed_at` datetime DEFAULT NULL,
+  `revision` int(10) unsigned NOT NULL DEFAULT 1,
+  `submitted_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_owner_queue` (`status`,`updated_at`),
+  KEY `idx_owner_applicant` (`user_id`,`status`),
+  KEY `idx_owner_court` (`court_id`),
+  CONSTRAINT `fk_owner_request_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`),
+  CONSTRAINT `fk_owner_request_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `push_subscriptions` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned DEFAULT NULL,
+  `endpoint` text NOT NULL,
+  `p256dh` varchar(255) NOT NULL,
+  `auth` varchar(255) NOT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_endpoint` (`endpoint`(191)),
+  KEY `idx_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `time_slots` (
@@ -163,33 +240,81 @@ CREATE TABLE `time_slots` (
   CONSTRAINT `fk_slots_held_by` FOREIGN KEY (`held_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `bookings` (
+CREATE TABLE `users` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL,
-  `court_id` int(10) unsigned NOT NULL,
-  `booking_code` varchar(30) DEFAULT NULL,
-  `total_price` decimal(12,0) NOT NULL,
-  `deposit_amount` decimal(12,0) NOT NULL DEFAULT 0,
-  `payment_method` varchar(30) DEFAULT NULL,
-  `notes` text DEFAULT NULL,
-  `status` enum('pending','confirmed','cancelled','completed') NOT NULL DEFAULT 'pending',
+  `name` varchar(150) NOT NULL,
+  `email` varchar(150) NOT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `role` enum('customer','owner','admin') NOT NULL DEFAULT 'customer',
+  `avatar_url` varchar(255) DEFAULT NULL,
+  `is_verified` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `session_version` int(10) unsigned NOT NULL DEFAULT 0,
+  `deleted_at` datetime DEFAULT NULL,
+  `account_status` enum('active','locked') NOT NULL DEFAULT 'active',
+  `owner_intent` tinyint(1) NOT NULL DEFAULT 0,
+  `locked_reason` varchar(1000) DEFAULT NULL,
+  `locked_at` datetime DEFAULT NULL,
+  `locked_by` int(10) unsigned DEFAULT NULL,
+  `pending_email` varchar(150) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_booking_code` (`booking_code`),
-  KEY `idx_bookings_user` (`user_id`),
-  KEY `idx_bookings_court` (`court_id`),
-  CONSTRAINT `fk_bookings_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`),
-  CONSTRAINT `fk_bookings_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+  UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 4. Bảng phụ thuộc bookings + time_slots
-CREATE TABLE `booking_slots` (
+CREATE TABLE `voucher_usages` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `voucher_id` int(10) unsigned NOT NULL,
+  `user_id` int(10) unsigned NOT NULL,
   `booking_id` int(10) unsigned NOT NULL,
-  `slot_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`booking_id`,`slot_id`),
-  KEY `fk_bs_slot` (`slot_id`),
-  CONSTRAINT `fk_bs_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_bs_slot` FOREIGN KEY (`slot_id`) REFERENCES `time_slots` (`id`)
+  `discount_amount` decimal(12,0) NOT NULL,
+  `used_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `released_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_voucher_usage_booking` (`booking_id`),
+  KEY `idx_vu_voucher_user` (`voucher_id`,`user_id`),
+  KEY `idx_vu_user` (`user_id`),
+  CONSTRAINT `fk_vu_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`),
+  CONSTRAINT `fk_vu_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_vu_voucher` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `vouchers` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `code` varchar(50) NOT NULL,
+  `created_by` int(10) unsigned NOT NULL,
+  `owner_id` int(10) unsigned DEFAULT NULL,
+  `court_id` int(10) unsigned DEFAULT NULL,
+  `discount_percent` tinyint(3) unsigned NOT NULL,
+  `max_discount` decimal(12,0) DEFAULT NULL,
+  `min_order` decimal(12,0) NOT NULL DEFAULT 0,
+  `start_at` datetime NOT NULL,
+  `end_at` datetime NOT NULL,
+  `usage_limit` int(10) unsigned DEFAULT NULL,
+  `used_count` int(10) unsigned NOT NULL DEFAULT 0,
+  `per_user_limit` int(10) unsigned NOT NULL DEFAULT 1,
+  `first_booking_only` tinyint(1) NOT NULL DEFAULT 0,
+  `funded_by` enum('platform','owner') NOT NULL,
+  `status` enum('active','disabled') NOT NULL DEFAULT 'active',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_voucher_code` (`code`),
+  KEY `idx_vouchers_owner` (`owner_id`),
+  KEY `idx_vouchers_court` (`court_id`),
+  KEY `idx_vouchers_status_dates` (`status`,`start_at`,`end_at`),
+  KEY `fk_vouchers_created_by` (`created_by`),
+  CONSTRAINT `fk_vouchers_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`),
+  CONSTRAINT `fk_vouchers_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_vouchers_owner` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `wards` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `old_area_label` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS=1;
