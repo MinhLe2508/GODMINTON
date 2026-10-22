@@ -2,7 +2,7 @@
 
 Sau khi pull: chạy `composer install`; trong phpMyAdmin, chọn DB website rồi import `database/migration_customer_accounts.sql` (gộp xác thực và xóa tài khoản; có thể import lại). Không chạy migration tài khoản bằng PHP. SMTP phải được cấu hình theo AUTH_EMAIL_SETUP.md. Cài mới vẫn import schema.sql rồi seed.sql.
 
-Trang cá nhân → Mật khẩu & Bảo mật → Xóa tài khoản. Nhập mật khẩu hiện tại, gửi email, mở liên kết trong 15 phút, đánh dấu đồng ý và bấm Xác nhận xóa tài khoản. GET/mở email không tự xóa. Chưa xác nhận thì tài khoản vẫn hoạt động. Liên kết chỉ dùng một lần; gửi lại thay thế liên kết cũ.
+Trang cá nhân → Mật khẩu & Bảo mật → Xóa tài khoản. Nhập mật khẩu hiện tại, gửi email, mở liên kết trong 5 phút, đánh dấu đồng ý và bấm Xác nhận xóa tài khoản. GET/mở email không tự xóa. Chưa xác nhận thì tài khoản vẫn hoạt động. Liên kết chỉ dùng một lần; gửi lại thay thế liên kết cũ.
 
 Hệ thống chặn tài khoản quản trị, tài khoản còn sở hữu bất kỳ sân nào, đơn pending/confirmed và đơn cancelled còn deposit_amount > 0. DB hiện chưa có trạng thái hoàn tiền riêng, nên đơn hủy có cọc được chặn thận trọng và cần quản trị xử lý; không tự coi tiền cọc đã hoàn.
 

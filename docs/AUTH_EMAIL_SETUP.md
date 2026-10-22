@@ -40,7 +40,7 @@ Mỗi máy tự điền SMTP trong `.env`. Không sao chép `.env` lên Git ho�
 ## Kiểm tra từng luồng
 
 1. Mở `auth.php`, đăng ký bằng email bạn kiểm soát; mật khẩu mới phải có chữ hoa, chữ thường, chữ số và ký tự đặc biệt; không yêu cầu tối thiểu 12 ký tự hoặc giới hạn 72 byte.
-2. Trước xác minh, đăng nhập phải bị từ chối. Email có tên đăng nhập là email và liên kết xác minh 60 phút; mở liên kết rồi bấm **Xác minh email**.
+2. Trước xác minh, đăng nhập phải bị từ chối. Email có tên đăng nhập là email và liên kết xác minh 5 phút; mở liên kết rồi bấm **Xác minh email**.
 3. Đăng nhập thành công sau xác minh. Đăng ký không tự đăng nhập; không tự cấp vai trò admin.
 4. Bấm **Quên mật khẩu**, nhập email; mở email và đặt mật khẩu mới trong 15 phút. Email không chứa mật khẩu.
 5. Liên kết đã dùng không dùng lại được; mật khẩu cũ và các phiên trên thiết bị khác đều bị vô hiệu sau đặt lại.
