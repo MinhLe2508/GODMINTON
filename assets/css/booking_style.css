@@ -584,6 +584,63 @@
 /* current-time column highlight */
 .cal-th-time.current-hour { color: #f43f5e; }
 
-@media (max-width:640px) {
+@media (max-width: 768px) {
+    main {
+        padding-bottom: 120px !important;
+    }
+    .booking-summary-bar {
+        position: fixed !important;
+        bottom: calc(66px + env(safe-area-inset-bottom, 0px) + 8px) !important;
+        left: 10px !important;
+        right: 10px !important;
+        z-index: 1025 !important;
+        padding: 0.85rem 1.15rem !important;
+        border-radius: 1.15rem !important;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 24px rgba(13, 148, 136, 0.35) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        animation: slideUpBar 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    @keyframes slideUpBar {
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .cal-scroll-container {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+    }
+}
+
+@media (max-width: 640px) {
     :root { --slot-w: 58px !important; --court-label-w: 82px !important; }
+}
+
+@media (max-width: 420px) {
+    :root { --slot-w: 52px !important; --court-label-w: 74px !important; }
+    .booking-summary-bar {
+        padding: 0.75rem 0.85rem !important;
+        left: 6px !important;
+        right: 6px !important;
+        gap: 0.65rem !important;
+    }
+    .booking-summary-bar .fs-4 {
+        font-size: 1.25rem !important;
+    }
+    #summaryTitle {
+        font-size: 0.88rem !important;
+    }
+    #summaryDetail {
+        font-size: 0.75rem !important;
+    }
+    #btnGoPayment {
+        padding: 0.42rem 0.85rem !important;
+        font-size: 0.84rem !important;
+    }
+    #btnCancelSel {
+        padding: 0.38rem 0.65rem !important;
+        font-size: 0.78rem !important;
+    }
+    #courtNameTitle {
+        font-size: 1.1rem !important;
+    }
 }
