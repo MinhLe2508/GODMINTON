@@ -303,9 +303,6 @@ if ($post && $post['type'] === 'membership') {
                             <a href="profile.php?tab=membership" class="btn btn-warning text-dark rounded-pill px-4 fw-bold shadow-sm">
                                 <i class="fa-solid fa-clock-rotate-left me-1"></i> Theo dõi tại Trang cá nhân
                             </a>
-                            <a href="courts.php" class="btn btn-outline-secondary rounded-pill px-3">
-                                <i class="fa-solid fa-table-tennis-paddle-ball me-1"></i> Xem sân
-                            </a>
                         </div>
                     <?php else: ?>
                         <div class="small text-muted" style="max-width: 520px;">
@@ -320,9 +317,6 @@ if ($post && $post['type'] === 'membership') {
                             <button type="button" class="btn btn-teal rounded-pill px-4 py-2 fw-bold shadow-sm" onclick="openSubscribeModal()">
                                 <i class="fa-solid fa-crown me-1"></i> Đăng ký gói ngay (<?= post_format_vnd($post['price']) ?>)
                             </button>
-                            <a href="courts.php" class="btn btn-outline-secondary rounded-pill px-3">
-                                <i class="fa-solid fa-table-tennis-paddle-ball me-1"></i> Xem sân
-                            </a>
                         </div>
                     <?php endif; ?>
                 </div>
