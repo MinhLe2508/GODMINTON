@@ -565,6 +565,23 @@ body {
         width: 6px;
         height: 6px;
     }
+    .yt-bell-dropdown {
+        width: min(260px, calc(100vw - 24px)) !important;
+        max-width: calc(100vw - 24px) !important;
+        border-radius: 12px !important;
+        padding: 6px 0 !important;
+    }
+    .yt-bell-item {
+        padding: 8px 12px !important;
+        font-size: 0.86rem !important;
+    }
+    .yt-bell-item .yt-bell-icon {
+        width: 28px !important;
+        font-size: 0.92rem !important;
+    }
+    .yt-bell-item .yt-bell-label {
+        font-size: 0.84rem !important;
+    }
 }
 
 

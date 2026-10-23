@@ -449,15 +449,21 @@
     }
 
     function injectPushBellToggle() {
-        if (document.querySelector('.admin-layout') || document.querySelector('.admin-topbar') || window.location.pathname.includes('admin-')) {
-            return;
-        }
         if (document.getElementById('pushBellToggle')) return;
+
+        const isAdmin = !!(document.querySelector('.admin-layout') || document.querySelector('.admin-topbar') || window.location.pathname.includes('admin-'));
+        const themeBtn = document.getElementById('themeToggle');
 
         const bellBtn = document.createElement('button');
         bellBtn.id = 'pushBellToggle';
         bellBtn.type = 'button';
-        bellBtn.className = 'bnav-theme-float bnav-bell-float';
+        if (isAdmin) {
+            bellBtn.className = (themeBtn && themeBtn.classList.contains('admin-icon-btn'))
+                ? 'admin-icon-btn bnav-bell-float'
+                : 'btn btn-outline-secondary rounded-circle bnav-bell-float';
+        } else {
+            bellBtn.className = 'bnav-theme-float bnav-bell-float';
+        }
         bellBtn.title = 'Thông báo đẩy PWA (Bấm để bật/tắt hoặc gửi thử)';
         bellBtn.setAttribute('aria-label', 'Thông báo đẩy PWA');
         bellBtn.innerHTML = '<i class="fa-regular fa-bell"></i>';
@@ -491,9 +497,10 @@
         bellBtn.dataset.bellBound = 'bottom-nav';
         bellBtn.addEventListener('click', openPushModal);
 
-        const themeBtn = document.getElementById('themeToggle');
         if (themeBtn && themeBtn.parentNode) {
             themeBtn.parentNode.insertBefore(bellBtn, themeBtn);
+        } else if (isAdmin && document.querySelector('.admin-topbar-actions')) {
+            document.querySelector('.admin-topbar-actions').prepend(bellBtn);
         } else {
             document.body.appendChild(bellBtn);
         }
@@ -526,12 +533,13 @@
     }
 
     function inject() {
-        // Không inject thanh điều hướng trên trang Đăng nhập / Đăng ký hoặc các trang quản trị admin
-        if (currentPage === 'auth.php' || currentPage === 'auth.html' || currentPage === 'admin-vouchers.php' || currentPage === 'admin-memberships.php' || currentPage === 'admin-posts.php') return;
-
-        // Inject Theme Button nếu trang chưa có
+        // Luôn đảm bảo Theme Toggle và Chuông thông báo Push PWA có mặt trên tất cả các trang
         injectThemeToggle();
         injectPushBellToggle();
+
+        // Không inject thanh điều hướng dưới (Bottom Nav) trên trang Đăng nhập / Đăng ký hoặc các trang quản trị admin
+        const isAdminPage = !!(document.querySelector('.admin-layout') || document.querySelector('.admin-topbar') || document.querySelector('.admin-body') || currentPage.startsWith('admin-'));
+        if (currentPage === 'auth.php' || currentPage === 'auth.html' || isAdminPage) return;
 
         // Tránh inject 2 lần
         if (document.getElementById('godmintonBottomNav')) return;

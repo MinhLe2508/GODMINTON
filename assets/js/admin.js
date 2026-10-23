@@ -277,7 +277,8 @@ const AdminApp = (() => {
         toast,
         confirmAction,
         minutesToTime,
-        initAdminTheme
+        initAdminTheme,
+        initAdminPushBell
     };
 })();
 
@@ -320,8 +321,52 @@ function updateAdminThemeIcon(theme) {
     }
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAdminTheme);
-} else {
-    initAdminTheme();
+// Khởi tạo nút chuông thông báo trên Topbar Admin & nạp push-client.js
+function initAdminPushBell() {
+    let bellBtn = document.getElementById('pushBellToggle');
+    const themeBtn = document.getElementById('themeToggle');
+    const actionsContainer = document.querySelector('.admin-topbar-actions') || document.querySelector('.admin-topbar');
+
+    if (!bellBtn && actionsContainer) {
+        bellBtn = document.createElement('button');
+        bellBtn.id = 'pushBellToggle';
+        bellBtn.type = 'button';
+        bellBtn.className = (themeBtn && themeBtn.classList.contains('admin-icon-btn'))
+            ? 'admin-icon-btn bnav-bell-float'
+            : 'btn btn-outline-secondary rounded-circle bnav-bell-float';
+        bellBtn.title = 'Thông báo hệ thống & PWA';
+        bellBtn.setAttribute('aria-label', 'Thông báo hệ thống');
+        bellBtn.innerHTML = '<i class="fa-regular fa-bell"></i>';
+
+        if (themeBtn && themeBtn.parentNode) {
+            themeBtn.parentNode.insertBefore(bellBtn, themeBtn);
+        } else {
+            actionsContainer.prepend(bellBtn);
+        }
+    }
+
+    if (!window.PushClient) {
+        const script = document.createElement('script');
+        script.src = 'assets/js/push-client.js?v=' + Date.now();
+        script.onload = () => {
+            if (window.PushClient && typeof window.PushClient.initBellButton === 'function') {
+                window.PushClient.initBellButton();
+            }
+        };
+        document.head.appendChild(script);
+    } else if (typeof window.PushClient.initBellButton === 'function') {
+        window.PushClient.initBellButton();
+    }
 }
+
+function initAdminComponents() {
+    initAdminTheme();
+    initAdminPushBell();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdminComponents);
+} else {
+    initAdminComponents();
+}
+

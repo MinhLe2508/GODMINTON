@@ -502,14 +502,47 @@ body:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show {
     .swal2-popup .swal2-styled.swal2-deny {
         font-size: 0.87rem;
         padding: 0.55rem 1.25rem;
+        flex: 1 1 auto;
+        min-width: 110px;
     }
     .swal2-popup .swal2-actions {
         flex-wrap: wrap;
+        width: 100%;
+        gap: 0.45rem;
     }
     .swal2-popup .swal2-icon {
         width: 60px;
         height: 60px;
         font-size: 2.5rem;
+    }
+
+    /* Toasts responsive trên điện thoại: căn đều ở cạnh trên, không bị tràn viền */
+    body.swal2-toast-shown .swal2-container.swal2-top-end,
+    body.swal2-toast-shown .swal2-container.swal2-top-right,
+    body.swal2-toast-shown .swal2-container.swal2-top {
+        top: 10px !important;
+        right: 12px !important;
+        left: 12px !important;
+        width: auto !important;
+        max-width: calc(100vw - 24px) !important;
+        justify-content: center !important;
+    }
+    .swal2-popup.swal2-toast {
+        width: 100% !important;
+        max-width: calc(100vw - 24px) !important;
+        box-sizing: border-box !important;
+        padding: 0.6rem 0.85rem !important;
+        font-size: 0.84rem !important;
+        border-radius: 0.75rem !important;
+    }
+    .swal2-popup.swal2-toast .swal2-title {
+        font-size: 0.84rem !important;
+        line-height: 1.35 !important;
+    }
+    .swal2-popup.swal2-toast .swal2-icon {
+        width: 1.4rem !important;
+        height: 1.4rem !important;
+        margin-right: 0.45rem !important;
     }
 }
 
@@ -519,6 +552,14 @@ body:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show {
     }
     .swal2-popup .swal2-title {
         font-size: 1.05rem;
+    }
+    .swal2-popup .swal2-actions {
+        flex-direction: column;
+    }
+    .swal2-popup .swal2-styled.swal2-confirm,
+    .swal2-popup .swal2-styled.swal2-cancel,
+    .swal2-popup .swal2-styled.swal2-deny {
+        width: 100%;
     }
 }
 

@@ -92,6 +92,21 @@
 .feed-category-promo { --tag-color: #2dd4bf; --tag-light: #0f766e; --tag-bg: rgba(20,184,166,.13); }
 .feed-category-general { --tag-color: #94a3b8; --tag-light: #475569; --tag-bg: rgba(148,163,184,.13); }
 [data-bs-theme="light"] .feed-author-row .feed-tag { color: var(--tag-light, #0369a1); }
+
+/* Distinct styling for Announcement chips and badges */
+.chip-announcement,
+.feed-category-announcement {
+    background: rgba(244, 63, 94, 0.12) !important;
+    color: #e11d48 !important;
+    border: 1px solid rgba(244, 63, 94, 0.28) !important;
+}
+[data-bs-theme="dark"] .chip-announcement,
+[data-bs-theme="dark"] .feed-category-announcement {
+    background: rgba(244, 63, 94, 0.18) !important;
+    color: #fda4af !important;
+    border-color: rgba(244, 63, 94, 0.38) !important;
+}
+
 .feed-title {
     font-size: 1rem; font-weight: 800; line-height: 1.45; margin: 0 0 .5rem;
     color: var(--text-primary); display: -webkit-box; -webkit-box-orient: vertical;
@@ -106,4 +121,33 @@
 .feed-card-footer .btn { white-space: nowrap; font-size: .78rem; }
 .explore-empty { padding: 2.5rem 1rem; border: 1px dashed var(--border-color); border-radius: 1rem; text-align: center; }
 .explore-empty > i { font-size: 1.8rem; color: var(--brand-teal); margin-bottom: .75rem; }
-@media (max-width: 575.98px) { .feed-media { height: 190px; } }
+
+@media (max-width: 575.98px) {
+    .explore-tabs-wrap {
+        padding-bottom: 6px;
+        -webkit-overflow-scrolling: touch;
+    }
+    .explore-tabs {
+        gap: 0.35rem;
+    }
+    .explore-tab {
+        padding: 0.36rem 0.82rem;
+        font-size: 0.78rem;
+    }
+    .feed-media {
+        height: 165px;
+    }
+    .feed-card-body {
+        padding: 0.85rem 0.95rem;
+    }
+    .feed-title {
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+    .feed-summary {
+        font-size: 0.82rem;
+        line-height: 1.5;
+        -webkit-line-clamp: 2;
+    }
+}
+

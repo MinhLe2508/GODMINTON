@@ -367,15 +367,42 @@ window.PushClient = (() => {
         return dropdown;
     }
 
+    let isDropdownEventsBound = false;
     function positionDropdown() {
         const btn = document.getElementById('pushBellToggle');
         const dropdown = document.getElementById('pushBellDropdown');
         if (!btn || !dropdown) return;
         const rect = btn.getBoundingClientRect();
-        dropdown.style.setProperty('top', `${Math.round(rect.bottom + 8)}px`, 'important');
-        const rightOffset = Math.max(12, Math.round(window.innerWidth - rect.right));
+        const dropHeight = dropdown.offsetHeight || 160;
+        const dropWidth = dropdown.offsetWidth || 250;
+        const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+        const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+
+        // Vertical positioning: If button is near the bottom, flip above
+        if (rect.bottom + dropHeight + 12 > vh && rect.top > dropHeight + 12) {
+            dropdown.style.setProperty('top', `${Math.max(8, Math.round(rect.top - dropHeight - 8))}px`, 'important');
+        } else {
+            dropdown.style.setProperty('top', `${Math.max(8, Math.round(rect.bottom + 8))}px`, 'important');
+        }
+
+        // Horizontal positioning: Ensure it stays well within viewport boundaries
+        let rightOffset = Math.round(vw - rect.right);
+        if (rightOffset < 10) rightOffset = 10;
+        if (rightOffset + dropWidth > vw - 10) {
+            rightOffset = Math.max(10, vw - dropWidth - 10);
+        }
         dropdown.style.setProperty('right', `${rightOffset}px`, 'important');
         dropdown.style.setProperty('left', 'auto', 'important');
+
+        if (!isDropdownEventsBound) {
+            isDropdownEventsBound = true;
+            window.addEventListener('resize', () => {
+                if (dropdown.classList.contains('show')) positionDropdown();
+            }, { passive: true });
+            window.addEventListener('scroll', () => {
+                if (dropdown.classList.contains('show')) positionDropdown();
+            }, { passive: true });
+        }
     }
 
     function openBellDropdown() {
@@ -570,34 +597,41 @@ window.PushClient = (() => {
         toggleBellDropdown();
     }
 
-    // Khởi tạo nút chuông thông báo nổi cạnh nút theme
+    // Khởi tạo nút chuông thông báo nổi hoặc tích hợp trên thanh topbar admin
     async function initBellButton() {
-        if (typeof document !== 'undefined') {
-            if (document.querySelector('.admin-layout') || document.querySelector('.admin-topbar') || window.location.pathname.includes('admin-')) {
-                const existingBtn = document.getElementById('pushBellToggle');
-                if (existingBtn) existingBtn.remove();
-                return null;
-            }
-        }
         let btn = document.getElementById('pushBellToggle');
+        const themeBtn = document.getElementById('themeToggle');
+        const isAdmin = !!(document.querySelector('.admin-layout') || document.querySelector('.admin-topbar') || window.location.pathname.includes('admin-'));
+
         if (!btn) {
             btn = document.createElement('button');
             btn.id = 'pushBellToggle';
             btn.type = 'button';
-            btn.className = 'bnav-theme-float bnav-bell-float';
+            if (isAdmin) {
+                btn.className = (themeBtn && themeBtn.classList.contains('admin-icon-btn'))
+                    ? 'admin-icon-btn bnav-bell-float'
+                    : 'btn btn-outline-secondary rounded-circle bnav-bell-float';
+            } else {
+                btn.className = 'bnav-theme-float bnav-bell-float';
+            }
             btn.setAttribute('aria-label', 'Thông báo đẩy PWA');
             btn.title = 'Thông báo đẩy PWA';
             btn.innerHTML = '<i class="fa-regular fa-bell"></i>';
 
-            const themeBtn = document.getElementById('themeToggle');
             if (themeBtn && themeBtn.parentNode) {
                 themeBtn.parentNode.insertBefore(btn, themeBtn);
+            } else if (isAdmin && document.querySelector('.admin-topbar-actions')) {
+                document.querySelector('.admin-topbar-actions').prepend(btn);
             } else {
                 document.body.appendChild(btn);
             }
         } else {
             if (!btn.innerHTML.trim()) {
                 btn.innerHTML = '<i class="fa-regular fa-bell"></i>';
+            }
+            if (isAdmin && !btn.classList.contains('admin-icon-btn') && !btn.classList.contains('rounded-circle')) {
+                btn.classList.remove('bnav-theme-float');
+                btn.classList.add('admin-icon-btn');
             }
         }
 

@@ -155,6 +155,34 @@ header('Cache-Control: no-store, max-age=0');
             border-color: var(--brand-teal);
             color: #fff;
         }
+
+        @media (max-width: 575.98px) {
+            .explore-hero {
+                padding: 1.5rem 0 1rem;
+            }
+            .explore-hero h1 {
+                font-size: 1.35rem !important;
+            }
+            .post-card-img-wrap {
+                height: 165px;
+            }
+            .post-card-body {
+                padding: 1rem;
+            }
+            .post-card-title {
+                font-size: 0.96rem;
+                margin-bottom: 0.35rem;
+            }
+            .post-card-summary {
+                font-size: 0.82rem;
+                margin-bottom: 0.75rem;
+                -webkit-line-clamp: 2;
+            }
+            .post-card-footer .btn {
+                padding: 0.3rem 0.75rem;
+                font-size: 0.76rem;
+            }
+        }
     </style>
 </head>
 <body>
