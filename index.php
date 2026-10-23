@@ -290,7 +290,7 @@
                     <span class="text-teal fw-bold text-uppercase small">Cộng Đồng GODMINTON</span>
                     <h2 class="fw-extrabold mb-0">Khám Phá</h2>
                 </div>
-                <a href="news.php" class="btn btn-outline-teal rounded-pill px-3 mt-2 mt-sm-0">
+                <a href="explore.php" class="btn btn-outline-teal rounded-pill px-3 mt-2 mt-sm-0">
                     Xem tất cả <i class="fa-solid fa-arrow-right ms-1"></i>
                 </a>
             </div>
@@ -347,7 +347,7 @@
                     <nav aria-label="Liên kết hỗ trợ">
                         <ul class="list-unstyled footer-links small mb-0 d-grid gap-1">
                             <li><a href="contact.php">Liên hệ hỗ trợ</a></li>
-                            <li><a href="news.php">Tin tức cầu lông</a></li>
+                            <li><a href="explore.php">Khám phá</a></li>
                         </ul>
                     </nav>
                 </div>
