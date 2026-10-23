@@ -42,6 +42,16 @@ $typeLabels = [
 ];
 
 $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type']] : ['label' => 'Bài viết', 'icon' => 'fa-newspaper', 'chip_class' => 'chip-announcement'];
+
+$cleanPackageTitle = '';
+if ($post && $post['type'] === 'membership') {
+    $cleanPackageTitle = match(true) {
+        str_contains(strtolower(($post['slug'] ?? '') . ' ' . ($post['title'] ?? '')), 'platinum') || (int)($post['discount_percent'] ?? 0) >= 15 => 'Gói Hội Viên Bạch Kim',
+        str_contains(strtolower(($post['slug'] ?? '') . ' ' . ($post['title'] ?? '')), 'gold') || (int)($post['discount_percent'] ?? 0) >= 10 => 'Gói Hội Viên Vàng',
+        str_contains(strtolower(($post['slug'] ?? '') . ' ' . ($post['title'] ?? '')), 'silver') || (int)($post['discount_percent'] ?? 0) >= 5 => 'Gói Hội Viên Bạc',
+        default => 'Gói Hội Viên'
+    };
+}
 ?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
@@ -225,7 +235,7 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
                             </span>
                             <?php endif; ?>
                         </div>
-                        <h4 class="fw-extrabold mb-0"><?= htmlspecialchars($post['title']) ?></h4>
+                        <h4 class="fw-extrabold mb-0"><?= htmlspecialchars($cleanPackageTitle ?: $post['title']) ?></h4>
                     </div>
                     <?php if ($post['price'] !== null): ?>
                     <div class="text-sm-end">
@@ -393,8 +403,8 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
                 <div class="modal-body pt-3">
                     <!-- Tóm tắt gói -->
                     <div class="p-3 rounded-3 mb-3 bg-light border border-secondary border-opacity-10">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-teal text-white fw-bold px-3 py-1 rounded-pill"><?= htmlspecialchars($post['title']) ?></span>
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
+                            <span class="badge bg-teal text-white fw-bold px-3 py-1 rounded-pill"><?= htmlspecialchars($cleanPackageTitle ?: $post['title']) ?></span>
                             <span class="badge bg-danger text-white fw-bold px-2 py-1 rounded-pill">-<?= (int)$post['discount_percent'] ?>% Tiền Sân</span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-1">
@@ -436,16 +446,16 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
                         </label>
                     </div>
 
-                    <!-- Ghi chú tự động kích hoạt -->
+                    <!-- Ghi chú duyệt kích hoạt -->
                     <div class="p-2 rounded-3 border bg-light text-center small text-muted">
-                        <i class="fa-solid fa-shield-halved text-success me-1"></i>
-                        Hệ thống sẽ tự động kích hoạt quyền lợi giảm giá <strong><?= (int)$post['discount_percent'] ?>%</strong> ngay sau khi xác nhận.
+                        <i class="fa-solid fa-clock-rotate-left text-warning me-1"></i>
+                        Yêu cầu đăng ký sẽ được gửi tới Ban Quản Trị và tự động kích hoạt sau khi Admin duyệt xác nhận.
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
                     <button type="button" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm" id="btnConfirmSubscribe" onclick="submitSubscribe(<?= (int)$post['id'] ?>)">
-                        <span id="btnSubText"><i class="fa-solid fa-check me-1"></i> Xác nhận & Kích hoạt</span>
+                        <span id="btnSubText"><i class="fa-solid fa-paper-plane me-1"></i> Gửi yêu cầu đăng ký</span>
                         <span id="btnSubSpinner" class="spinner-border spinner-border-sm ms-1" style="display:none;" role="status"></span>
                     </button>
                 </div>

@@ -251,14 +251,14 @@ async function loadMyMembership() {
 
             if (active && Number(active.discount_percent) > 0) {
                 let cardGradient = 'linear-gradient(135deg, #475569 0%, #334155 100%)';
-                let shortName = 'Hội Viên Bạc (Silver)';
+                let shortName = 'Gói Hội Viên Bạc';
 
                 if (active.tier === 'gold') {
                     cardGradient = 'linear-gradient(135deg, #d97706 0%, #b45309 100%)';
-                    shortName = 'Hội Viên Vàng (Gold)';
+                    shortName = 'Gói Hội Viên Vàng';
                 } else if (active.tier === 'platinum') {
                     cardGradient = 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)';
-                    shortName = 'Hội Viên Bạch Kim (Platinum)';
+                    shortName = 'Gói Hội Viên Bạch Kim';
                 }
 
                 // Lấy danh sách quyền lợi chi tiết của gói
