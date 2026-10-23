@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const res = await BookingAccount.request('api/admin/memberships.php', {
                         method: 'POST',
-                        body: { action: 'approve', id: Number(id) }
+                        body: JSON.stringify({ action: 'approve', id: Number(id) })
                     });
                     AdminApp.toast('success', res.message || 'Đã duyệt gói thành công!');
                     loadMemberships(currentPage);
@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const res = await BookingAccount.request('api/admin/memberships.php', {
                         method: 'POST',
-                        body: { action: 'reject', id: Number(id) }
+                        body: JSON.stringify({ action: 'reject', id: Number(id) })
                     });
                     AdminApp.toast('success', res.message || 'Đã từ chối yêu cầu.');
                     loadMemberships(currentPage);
@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     await BookingAccount.request('api/admin/memberships.php', {
                         method: 'POST',
-                        body: { action: 'update_status', id: Number(id), status: newStatus }
+                        body: JSON.stringify({ action: 'update_status', id: Number(id), status: newStatus })
                     });
                     AdminApp.toast('success', 'Đã cập nhật trạng thái gói thành công!');
                     loadMemberships(currentPage);
@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     await BookingAccount.request('api/admin/memberships.php', {
                         method: 'POST',
-                        body: { action: 'delete', id: Number(id) }
+                        body: JSON.stringify({ action: 'delete', id: Number(id) })
                     });
                     AdminApp.toast('success', 'Đã xóa bản ghi thành công!');
                     loadMemberships(currentPage);
@@ -577,14 +577,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await BookingAccount.request('api/admin/memberships.php', {
                 method: 'POST',
-                body: {
+                body: JSON.stringify({
                     action: 'grant',
                     user_id: userId,
                     post_id: postId,
                     duration_days: durationDays,
                     price_paid: pricePaid,
                     payment_method: paymentMethod
-                }
+                })
             });
 
             if (grantModal) grantModal.hide();
@@ -642,11 +642,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await BookingAccount.request('api/admin/memberships.php', {
                 method: 'POST',
-                body: {
+                body: JSON.stringify({
                     action: 'extend',
                     id: membershipId,
                     days: days
-                }
+                })
             });
 
             if (extendModal) extendModal.hide();

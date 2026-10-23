@@ -229,9 +229,15 @@ try {
     if ($method === 'POST') {
         $raw = file_get_contents('php://input');
         $input = json_decode($raw, true);
-        if (!is_array($input)) $input = $_POST;
+        if (!is_array($input)) {
+            $input = !empty($_POST) ? $_POST : [];
+            if (empty($input) && !empty($raw)) {
+                parse_str($raw, $parsedRaw);
+                if (is_array($parsedRaw)) $input = $parsedRaw;
+            }
+        }
 
-        $action = trim((string)($input['action'] ?? ''));
+        $action = trim((string)($input['action'] ?? $_POST['action'] ?? $_GET['action'] ?? ''));
 
         // ==========================================
         // 1. ACTION: GRANT (Cấp / Tặng gói cho user)
