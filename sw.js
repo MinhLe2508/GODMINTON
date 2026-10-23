@@ -4,7 +4,7 @@
  * Hỗ trợ: Pre-cache, Offline Fallback, Dynamic Network-First, Web Push Notification
  */
 
-const CACHE_VERSION = 'godminton-v1.2.0-owner-workflow';
+const CACHE_VERSION = 'godminton-v1.3.0-real-web-push';
 const CACHE_STATIC  = `godminton-static-${CACHE_VERSION}`;
 const CACHE_RUNTIME = `godminton-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL   = 'offline.php';

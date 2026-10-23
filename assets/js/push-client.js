@@ -15,6 +15,39 @@ window.PushClient = (() => {
         return Notification.permission; // 'default' | 'granted' | 'denied'
     }
 
+    let csrfToken = '';
+    async function getCsrfToken() {
+        if (csrfToken) return csrfToken;
+        const response = await fetch('api/push/subscribe.php', { credentials: 'same-origin', cache: 'no-store' });
+        const result = await response.json();
+        if (!response.ok || result.status !== 'success' || !result.data?.csrf_token) {
+            throw new Error(result.message || 'Không thể xác thực phiên thông báo.');
+        }
+        csrfToken = result.data.csrf_token;
+        return csrfToken;
+    }
+
+    async function postSubscription(action, endpoint, keys = null) {
+        const headers = { 'Content-Type': 'application/json', 'X-GODMINTON-CSRF': await getCsrfToken() };
+        const response = await fetch('api/push/subscribe.php', {
+            method: 'POST', credentials: 'same-origin', headers,
+            body: JSON.stringify({ action, endpoint, ...(keys ? { keys } : {}) })
+        });
+        const result = await response.json();
+        if (!response.ok || result.status !== 'success') {
+            if (response.status === 403) csrfToken = '';
+            throw new Error(result.message || 'Không thể cập nhật thiết lập thông báo.');
+        }
+        return result;
+    }
+
+    function sameKey(left, right) {
+        if (!left || !right || left.byteLength !== right.byteLength) return false;
+        const a = new Uint8Array(left);
+        const b = new Uint8Array(right);
+        return a.every((value, index) => value === b[index]);
+    }
+
     function urlBase64ToUint8Array(base64String) {
         const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
         const base64 = (base64String + padding)
@@ -70,6 +103,12 @@ window.PushClient = (() => {
         const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
 
         let subscription = await reg.pushManager.getSubscription();
+        if (subscription && subscription.options?.applicationServerKey &&
+            !sameKey(subscription.options.applicationServerKey, convertedKey)) {
+            await postSubscription('unsubscribe', subscription.endpoint);
+            await subscription.unsubscribe();
+            subscription = null;
+        }
         if (!subscription) {
             subscription = await reg.pushManager.subscribe({
                 userVisibleOnly: true,
@@ -79,20 +118,7 @@ window.PushClient = (() => {
 
         // 4. Gửi subscription lên máy chủ MySQL
         const subJson = subscription.toJSON();
-        const res = await fetch('api/push/subscribe.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'subscribe',
-                endpoint: subscription.endpoint,
-                keys: subJson.keys || {}
-            })
-        });
-
-        const result = await res.json();
-        if (!res.ok || result.status !== 'success') {
-            throw new Error(result.message || 'Lưu subscription lên máy chủ thất bại.');
-        }
+        await postSubscription('subscribe', subscription.endpoint, subJson.keys || {});
 
         return { success: true, subscription };
     }
@@ -103,16 +129,8 @@ window.PushClient = (() => {
         const sub = await reg.pushManager.getSubscription();
         if (sub) {
             const endpoint = sub.endpoint;
+            await postSubscription('unsubscribe', endpoint);
             await sub.unsubscribe();
-            try {
-                await fetch('api/push/subscribe.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'unsubscribe', endpoint })
-                });
-            } catch (e) {
-                console.warn('Lỗi báo hủy máy chủ:', e);
-            }
         }
         return true;
     }
@@ -123,38 +141,28 @@ window.PushClient = (() => {
         }
 
         // 1. Gọi API gửi thông báo
+        let subscription = await getSubscription();
+        if (!subscription) throw new Error('Thiết bị chưa bật thông báo. Hãy bật nhận thông báo trước.');
+        const currentKey = urlBase64ToUint8Array(await getVapidPublicKey());
+        if (subscription.options?.applicationServerKey &&
+            !sameKey(subscription.options.applicationServerKey, currentKey)) {
+            await subscribe();
+            subscription = await getSubscription();
+            if (!subscription) throw new Error('Không thể cập nhật đăng ký thông báo của thiết bị.');
+        }
         const res = await fetch('api/push/send.php', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-GODMINTON-CSRF': await getCsrfToken() },
             body: JSON.stringify({
                 action: 'test',
-                ...customPayload
+                endpoint: subscription.endpoint
             })
         });
 
         const result = await res.json();
         if (!res.ok || result.status !== 'success') {
             throw new Error(result.message || 'Không thể gửi thông báo thử nghiệm.');
-        }
-
-        // 2. Tầng Fallback: Gọi trực tiếp Service Worker hiển thị notification ngay trên màn hình
-        if (Notification.permission === 'granted') {
-            const reg = await navigator.serviceWorker.ready;
-            const payload = result.data?.payload || {
-                title: 'GODMINTON – Thông báo thử nghiệm',
-                body: 'Hệ thống thông báo đẩy PWA hoạt động hoàn hảo!',
-                icon: 'assets/img/icons/icon-192.png',
-                badge: 'assets/img/icons/badge-72.png',
-                data: { url: 'history.php' }
-            };
-
-            await reg.showNotification(payload.title, {
-                body: payload.body,
-                icon: payload.icon,
-                badge: payload.badge,
-                vibrate: [100, 50, 100],
-                data: payload.data
-            });
         }
 
         return result.data;
@@ -201,7 +209,7 @@ window.PushClient = (() => {
 
                 <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between pt-2 border-top">
                     <span class="small text-muted">
-                        <i class="fa-solid fa-shield-halved me-1 text-teal" style="color:var(--brand-teal,#0d9488);"></i> Hoạt động ngay cả khi đã đóng trình duyệt (PWA Background).
+                        <i class="fa-solid fa-shield-halved me-1 text-teal" style="color:var(--brand-teal,#0d9488);"></i> Có thể nhận khi đóng trang nếu thiết bị đang có Internet và cho phép thông báo.
                     </span>
                     <button type="button" class="btn btn-outline-teal btn-sm rounded-pill px-3 fw-bold" id="btnPushTest">
                         <i class="fa-solid fa-paper-plane me-1"></i> Gửi thử thông báo
@@ -251,7 +259,7 @@ window.PushClient = (() => {
             testBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang gửi...';
 
             try {
-                if (Notification.permission !== 'granted') {
+                if (Notification.permission !== 'granted' || !(await getSubscription())) {
                     await subscribe();
                     toggle.checked = true;
                     statusText.innerHTML = '<span class="text-success fw-bold"><i class="fa-solid fa-check-circle me-1"></i>Đang bật nhận thông báo</span>';
@@ -448,6 +456,16 @@ window.PushClient = (() => {
         }
 
         if (action === 'none') {
+            try {
+                await unsubscribe();
+            } catch (err) {
+                if (window.Swal) {
+                    Swal.fire({ icon: 'error', title: 'Chưa thể tắt thông báo', text: err.message, confirmButtonColor: '#0d9488' });
+                } else {
+                    alert(err.message);
+                }
+                return;
+            }
             localStorage.setItem('godminton_push_mode', 'none');
             await updateBellUI();
             showToast('info', 'Đã tắt nhận thông báo.');

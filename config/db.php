@@ -6,17 +6,7 @@
  * Người phụ trách: Huy (Tuần 1, công việc #1-2 trong timeline).
  */
 
-// Đọc file .env (nếu có) ở thư mục gốc dự án. XAMPP không tự đọc .env,
-// nên mình tự nạp các dòng KEY=VALUE vào biến môi trường.
-$envFile = __DIR__ . '/../.env';
-if (is_readable($envFile)) {
-    foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-        $line = trim($line);
-        if ($line === '' || $line[0] === '#' || strpos($line, '=') === false) continue;
-        [$k, $v] = explode('=', $line, 2);
-        putenv(trim($k) . '=' . trim($v));
-    }
-}
+require_once __DIR__ . '/load-env.php';
 
 date_default_timezone_set('Asia/Ho_Chi_Minh');
 

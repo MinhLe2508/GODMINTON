@@ -1,104 +1,68 @@
 <?php
-require_once __DIR__.'/../../includes/auth-session.php';
-/**
- * api/push/subscribe.php
- * Lưu hoặc hủy push subscription của trình duyệt vào MySQL.
- * Hỗ trợ POST (lưu/hủy), GET (kiểm tra trạng thái)
- */
 require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../../includes/auth-session.php';
+require_once __DIR__ . '/../../includes/web-push.php';
+god_auth_start();
+$user = god_auth_user($pdo);
+$userId = $user ? (int)$user['id'] : null;
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
-if (session_status() === PHP_SESSION_NONE) {
-    god_auth_start();
-    god_auth_user($pdo);
-}
-
-$userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
-$method = $_SERVER['REQUEST_METHOD'];
-
-function push_out(int $code, array $body): void {
+function push_subscribe_out(int $code, array $body): void {
     http_response_code($code);
     echo json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
 try {
-    // 1. GET: Kiểm tra xem user hiện tại đã có subscription chưa
-    if ($method === 'GET') {
-        if (!$userId) {
-            push_out(200, ['status' => 'success', 'data' => ['subscribed' => false, 'count' => 0]]);
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $count = 0;
+        if ($userId !== null) {
+            $stmt = $pdo->prepare('SELECT COUNT(*) FROM push_subscriptions WHERE user_id = ?');
+            $stmt->execute([$userId]);
+            $count = (int)$stmt->fetchColumn();
         }
-        $stmt = $pdo->prepare('SELECT COUNT(*) FROM push_subscriptions WHERE user_id = ?');
-        $stmt->execute([$userId]);
-        $count = (int)$stmt->fetchColumn();
-        push_out(200, ['status' => 'success', 'data' => ['subscribed' => $count > 0, 'count' => $count]]);
+        push_subscribe_out(200, ['status' => 'success', 'data' => [
+            'subscribed' => $count > 0, 'count' => $count, 'csrf_token' => $_SESSION['csrf_token'],
+        ]]);
     }
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') push_subscribe_out(405, ['status' => 'error', 'message' => 'Chỉ hỗ trợ GET/POST.']);
 
-    // 2. POST: Đăng ký (hoặc Hủy đăng ký) subscription
-    if ($method === 'POST') {
-        $raw = file_get_contents('php://input');
-        $in = json_decode($raw, true) ?: $_POST;
+    $csrf = $_SERVER['HTTP_X_GODMINTON_CSRF'] ?? '';
+    if (!is_string($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf)) {
+        push_subscribe_out(403, ['status' => 'error', 'message' => 'Phiên thao tác đã hết hạn. Hãy tải lại trang.']);
+    }
+    $in = json_decode(file_get_contents('php://input'), true);
+    if (!is_array($in)) push_subscribe_out(400, ['status' => 'error', 'message' => 'Dữ liệu gửi lên không hợp lệ.']);
+    $action = (string)($in['action'] ?? 'subscribe');
+    $endpoint = trim((string)($in['endpoint'] ?? ''));
+    if (!god_push_endpoint_is_allowed($endpoint)) push_subscribe_out(422, ['status' => 'error', 'message' => 'Địa chỉ Push Service không hợp lệ.']);
 
-        $action = $in['action'] ?? 'subscribe';
-        $endpoint = trim($in['endpoint'] ?? '');
-
-        if ($endpoint === '') {
-            push_out(422, ['status' => 'error', 'message' => 'Thiếu thông tin endpoint.']);
-        }
-
-        // HỦY ĐĂNG KÝ
-        if ($action === 'unsubscribe') {
-            $stmt = $pdo->prepare('DELETE FROM push_subscriptions WHERE endpoint = ?');
+    if ($action === 'unsubscribe') {
+        if ($userId === null) {
+            $stmt = $pdo->prepare('DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id IS NULL');
             $stmt->execute([$endpoint]);
-            push_out(200, [
-                'status'  => 'success',
-                'message' => 'Đã hủy nhận thông báo đẩy thành công.',
-                'data'    => ['unsubscribed' => true]
-            ]);
+        } else {
+            $stmt = $pdo->prepare('DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?');
+            $stmt->execute([$endpoint, $userId]);
         }
-
-        // ĐĂNG KÝ MỚI / CẬP NHẬT
-        $keys = $in['keys'] ?? [];
-        $p256dh = trim($keys['p256dh'] ?? ($in['p256dh'] ?? ''));
-        $auth   = trim($keys['auth']   ?? ($in['auth']   ?? ''));
-
-        if ($p256dh === '' || $auth === '') {
-            push_out(422, ['status' => 'error', 'message' => 'Thiếu khóa mã hóa p256dh hoặc auth secret.']);
-        }
-
-        $userAgent = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255);
-
-        // Lưu vào MySQL bằng prepared statement chống SQL Injection
-        $stmt = $pdo->prepare("
-            INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, user_agent)
-            VALUES (?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                user_id    = VALUES(user_id),
-                p256dh     = VALUES(p256dh),
-                auth       = VALUES(auth),
-                user_agent = VALUES(user_agent),
-                updated_at = NOW()
-        ");
-        $stmt->execute([$userId, $endpoint, $p256dh, $auth, $userAgent]);
-
-        push_out(200, [
-            'status'  => 'success',
-            'message' => 'Đăng ký thông báo đẩy thành công!',
-            'data'    => [
-                'id'       => (int)$pdo->lastInsertId(),
-                'user_id'  => $userId,
-                'endpoint' => $endpoint
-            ]
-        ]);
+        push_subscribe_out(200, ['status' => 'success', 'data' => ['unsubscribed' => true]]);
     }
+    if ($action !== 'subscribe') push_subscribe_out(422, ['status' => 'error', 'message' => 'Hành động không hợp lệ.']);
 
-    push_out(405, ['status' => 'error', 'message' => 'Phương thức không được hỗ trợ.']);
-
-} catch (PDOException $e) {
-    error_log('[push/subscribe.php] DB Error: ' . $e->getMessage());
-    push_out(500, ['status' => 'error', 'message' => 'Lỗi lưu trữ subscription vào CSDL.']);
+    $keys = is_array($in['keys'] ?? null) ? $in['keys'] : [];
+    $p256dh = trim((string)($keys['p256dh'] ?? ''));
+    $auth = trim((string)($keys['auth'] ?? ''));
+    if (!preg_match('/^[A-Za-z0-9_-]{80,100}$/', $p256dh) || !preg_match('/^[A-Za-z0-9_-]{20,60}$/', $auth)) {
+        push_subscribe_out(422, ['status' => 'error', 'message' => 'Khóa mã hóa subscription không hợp lệ.']);
+    }
+    $userAgent = substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255);
+    $stmt = $pdo->prepare('INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, user_agent)
+        VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id), p256dh=VALUES(p256dh),
+        auth=VALUES(auth), user_agent=VALUES(user_agent), updated_at=NOW()');
+    $stmt->execute([$userId, $endpoint, $p256dh, $auth, $userAgent]);
+    push_subscribe_out(200, ['status' => 'success', 'message' => 'Đã bật nhận thông báo trên thiết bị này.']);
 } catch (Throwable $e) {
-    error_log('[push/subscribe.php] Error: ' . $e->getMessage());
-    push_out(500, ['status' => 'error', 'message' => 'Lỗi máy chủ khi xử lý thông báo đẩy.']);
+    error_log('[GODMINTON Push] Subscription error: ' . $e->getMessage());
+    push_subscribe_out(500, ['status' => 'error', 'message' => 'Không thể cập nhật thiết lập thông báo.']);
 }

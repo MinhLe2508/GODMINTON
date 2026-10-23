@@ -1,10 +1,18 @@
 <?php
-/**
- * config/vapid.php — Cấu hình VAPID Keys cho Web Push Notification
- * Tự động sinh bởi OpenSSL cho GODMINTON
- */
-return [
-    'subject'    => 'mailto:contact@godminton.vn',
-    'publicKey'  => 'BAHFMmO_l7hF40jFiuOn-AYN7hPh6fn96y84W8GTM5ESdpWzHbTw4h8vMyGKYZmAWaMhfBCY0s-6i7O_QA4Y-Rs',
-    'privateKey' => 'GjwFxiSMENum1PMKgpqKoAzq1oYnEps7Y-cyCTwSbnk',
-];
+require_once __DIR__ . '/load-env.php';
+
+$subject = trim((string)(getenv('VAPID_SUBJECT') ?: ''));
+$publicKey = trim((string)(getenv('VAPID_PUBLIC_KEY') ?: ''));
+$privateKey = trim((string)(getenv('VAPID_PRIVATE_KEY') ?: ''));
+
+if ($subject === '' || $publicKey === '' || $privateKey === '') {
+    throw new RuntimeException('Web Push chưa được cấu hình đầy đủ trong .env.');
+}
+if (!preg_match('/^(mailto:[^\s@]+@[^\s@]+|https:\/\/[^\s]+)$/i', $subject)) {
+    throw new RuntimeException('VAPID_SUBJECT phải là mailto: hoặc URL HTTPS.');
+}
+if (!preg_match('/^[A-Za-z0-9_-]{80,100}$/', $publicKey) || !preg_match('/^[A-Za-z0-9_-]{40,60}$/', $privateKey)) {
+    throw new RuntimeException('Cặp VAPID key không hợp lệ.');
+}
+
+return ['subject' => $subject, 'publicKey' => $publicKey, 'privateKey' => $privateKey];

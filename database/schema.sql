@@ -221,6 +221,21 @@ CREATE TABLE `push_subscriptions` (
   KEY `idx_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `push_reminder_dispatches` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `booking_id` int(10) unsigned NOT NULL,
+  `reminder_type` varchar(40) NOT NULL DEFAULT 'start_30_minutes',
+  `status` enum('pending','sent','failed') NOT NULL DEFAULT 'pending',
+  `attempts` tinyint(3) unsigned NOT NULL DEFAULT 0,
+  `last_error` varchar(500) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `sent_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_push_reminder_booking_type` (`booking_id`,`reminder_type`),
+  KEY `idx_push_reminder_status` (`status`,`created_at`),
+  CONSTRAINT `fk_push_reminder_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `reviews` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `court_id` int(10) unsigned NOT NULL,

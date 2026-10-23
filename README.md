@@ -61,7 +61,8 @@ muốn giữ 2 trang riêng, chỉ cần copy lại `login.html`/`register.html`
 4. Copy `.env.example` thành `.env`, điền lại thông tin nếu MySQL XAMPP của bạn có đặt mật khẩu
    (mặc định XAMPP user `root` không có mật khẩu nên có thể để trống `DB_PASS`).
 5. Mở `http://localhost/godminton/index.php` để kiểm tra.
-6. Chạy `composer install --no-dev --prefer-dist --optimize-autoloader` để tạo Composer autoload. PHPMailer được đóng gói tại `vendor/PHPMailer`; TCPDF và thư viện gửi Web Push PHP hiện không nằm trong bộ cài.
+6. Chạy `composer install --no-dev --prefer-dist --optimize-autoloader` để cài thư viện Web Push và tạo Composer autoload. PHPMailer được đóng gói tại `vendor/PHPMailer`; không cần TCPDF.
+7. Điền `VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` trong `.env`. Trên XAMPP PowerShell, tạo cặp khóa bằng `$env:OPENSSL_CONF='D:\xampp\apache\conf\openssl.cnf'; php tools/generate-vapid-keys.php`; lưu hai dòng key vào `.env`, không commit private key.
 
 ## 3. Thứ tự code gợi ý
 
@@ -123,13 +124,13 @@ Tuần 4 → `manifest.json`, `sw.js`, `api/push/*`.
    - Bảng `push_subscriptions` (`database/migration_push_subscriptions.sql`) lưu trữ endpoint, p256dh, auth của từng thiết bị.
 2. **Cấu hình VAPID (`config/vapid.php`)**:
    - Cặp khóa mật mã đường cong elliptic NIST P-256 tiêu chuẩn, cấp phát VAPID Public Key qua `api/push/vapid-public-key.php`.
-3. **Luồng gửi hiện tại**: `api/push/send.php` trả payload để Service Worker phía trình duyệt hiển thị thông báo khi người dùng đang sử dụng trang. Thư viện gửi Web Push phía PHP chưa nằm trong bộ cài; thông báo nền khi trình duyệt đóng cần được bổ sung và cấu hình riêng.
+3. **Luồng gửi thật**: `api/push/send.php` gửi qua Push Service tới đúng subscription của thiết bị đang đăng nhập; Service Worker hiển thị thông báo kể cả khi trang đã đóng. Worker `tools/send-push-reminders.php` nhắc đơn đã xác nhận trước giờ chơi 25–35 phút, chống gửi trùng và thử lại tối đa 3 lần.
 4. **Giao diện quản lý thông báo**:
    - Tích hợp nút bật/tắt và nút "Gửi thử thông báo" trực quan trên trang [Hồ sơ cá nhân](file:///c:/xampp/htdocs/GODMINTON/profile.php) và [Lịch sử đặt sân](file:///c:/xampp/htdocs/GODMINTON/history.php) thông qua [assets/js/push-client.js](file:///c:/xampp/htdocs/GODMINTON/assets/js/push-client.js).
 
 ### C. CSDL cài mới và nâng cấp
 
-Thực hiện theo [database/README.md](database/README.md). Trên database trống, import `schema.sql` trước rồi `seed.sql`. Không import seed lên DB nhóm đang chạy. Bộ cài đã bao gồm đầy đủ cấu trúc 12 bảng; migration chỉ dành cho DB cũ.
+Thực hiện theo [database/README.md](database/README.md). Trên database trống, import `schema.sql` trước rồi `seed.sql`. Không import seed lên DB nhóm đang chạy. Bộ cài bao gồm 22 bảng; database hiện có cần import `migration_push_reminders.sql` một lần.
 
 Seed giữ danh mục sân/tiện ích/ảnh, địa chỉ TPro và trạng thái ngừng hoạt động của các bản trùng. Không chứa đơn đặt, khung giờ, liên hệ, tài khoản thật hoặc thiết bị nhận thông báo. Ba tài khoản phát triển và mật khẩu được ghi trong hướng dẫn database.
 

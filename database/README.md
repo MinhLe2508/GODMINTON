@@ -1,12 +1,12 @@
 # Database GODMINTON
 
-Đã đối chiếu cấu trúc MySQL đang chạy ngày 22/10/2026. Bộ cài gồm **21 bảng**, không dùng seed/dump cũ theo tuần.
+Đã đối chiếu cấu trúc MySQL đang chạy ngày 22/10/2026. Bộ cài gồm **22 bảng**, không dùng seed/dump cũ theo tuần.
 
 ## File được giữ
 
 | File | Mục đích |
 |---|---|
-| `schema.sql` | Cấu trúc 21 bảng, khóa và chỉ mục hiện tại. Chỉ import vào DB trống. |
+| `schema.sql` | Cấu trúc 20 bảng, khóa và chỉ mục hiện tại. Chỉ import vào DB trống. |
 | `seed.sql` | Danh mục phường, tiện ích, sân, ảnh, liên kết tiện ích và tin tức hiện có; tài khoản phát triển được tạo riêng. |
 | `export_installation.php` | Đọc DB hiện tại, tạo lại schema/seed cài mới mà không xuất dữ liệu cá nhân/giao dịch. |
 | `migrate_booking_metadata.php` | Nâng cấp metadata đơn đặt trên DB cũ, giữ lịch sử. |
@@ -14,9 +14,7 @@
 | `migration_content.sql` | Tạo bảng tin tức và liên hệ nếu chưa có. |
 | `migration_admin_management.sql` | Thêm cột quản lý sân, khung giờ cho DB cũ. Không sửa giá/giờ của sân theo dữ liệu mẫu. |
 | `migration_push_subscriptions.sql` | Tạo bảng thiết bị Web Push cho DB cũ. |
-| `migration_reviews.sql` | Tạo bảng `reviews` (đánh giá sân) cho DB cũ; có thể import lại. |
-| `seed_reviews_demo.sql` | (Tùy chọn) 125 đánh giá mẫu trên 41 sân, tạo bằng 118 tài khoản demo bị khóa `demo.*@demo.godminton.local`. Tự tạo bảng `reviews` nếu thiếu, nên import một mình là đủ; chạy lại không trùng. Xóa: `DELETE FROM users WHERE email LIKE 'demo.%@demo.godminton.local';` |
-| `reset_reviews.sql` | Dọn sạch để làm lại: xóa bảng `court_reviews` cũ, bảng `reviews` và tài khoản demo. Import trước `seed_reviews_demo.sql` khi cần làm lại từ đầu. |
+| `migration_push_reminders.sql` | Thêm nhật ký chống gửi lặp và retry cho nhắc lịch Web Push. |
 | `migration_customer_accounts.sql` | Import bằng phpMyAdmin để nâng cấp đăng ký/đăng nhập, xác minh email, khôi phục mật khẩu và xóa tài khoản; có thể import lại. |
 
 ## Cài mới
@@ -90,3 +88,12 @@ DB đã có dữ liệu: chọn DB website trong phpMyAdmin, import `migration_c
 Migration mới thêm trạng thái khóa/ý định đăng ký chủ sân/email chờ xác minh, tách xét duyệt sân và mở nhận đặt; tạo bảng hồ sơ, lịch sử xét duyệt, nhật ký quản trị và thông báo. Giữ nguyên vai trò, sân và trạng thái hoạt động hiện có. Hồ sơ, chứng minh và nhật ký không có trong seed cài mới.
 
 Chi tiết và bài kiểm thử: [OWNER_ACCOUNT_WORKFLOW.md](../docs/OWNER_ACCOUNT_WORKFLOW.md).
+
+## Web Push thông báo và nhắc lịch
+
+- Cài các thư viện đã khóa phiên bản: `composer install --no-dev` (yêu cầu PHP 8.1+, ext-curl, ext-json, ext-mbstring, ext-openssl).
+- Cấu hình `VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` trong `.env`. Tạo cặp riêng cho từng môi trường bằng `php tools/generate-vapid-keys.php`; trên PowerShell XAMPP đặt `$env:OPENSSL_CONF='D:\xampp\apache\conf\openssl.cnf'` trước khi chạy. Không commit private key. Khi đổi cặp khóa, từng trình duyệt cần tắt rồi bật lại thông báo.
+- DB cài mới có bảng nhắc lịch trong `schema.sql`. DB đang chạy import `migration_push_reminders.sql` một lần trong phpMyAdmin sau khi chọn `badminton_booking`.
+- Thành viên bật thông báo khi đã đăng nhập, cấp quyền trong trình duyệt và dùng “Gửi thử thông báo” để kiểm tra push thật.
+- Nhắc lịch cần Task Scheduler chạy `D:\xampp\php\php.exe` với tham số `D:\xampp\htdocs\GODMINTON\tools\send-push-reminders.php`, lặp mỗi 5 phút. Worker chỉ gửi cho đơn `confirmed`, trước giờ bắt đầu 25–35 phút, tối đa 3 lần thử và khóa mỗi booking để không gửi lặp. Có thể kiểm tra an toàn bằng `php tools/send-push-reminders.php --dry-run`.
+- Localhost trên máy phát triển hỗ trợ Web Push. Website thật cần HTTPS, PHP 8.1+ và chạy worker bằng cron/Task Scheduler. Máy người nhận cần kết nối Internet và bật quyền thông báo; không thể nhận khi thiết bị mất mạng.
