@@ -252,16 +252,44 @@ async function loadMyMembership() {
             if (active && Number(active.discount_percent) > 0) {
                 let cardGradient = 'linear-gradient(135deg, #475569 0%, #334155 100%)';
                 let shortName = 'Hội Viên Bạc (Silver)';
-                let perkText = 'Tự động giảm 5% toàn bộ tiền sân cho mọi lượt đặt lịch';
 
                 if (active.tier === 'gold') {
                     cardGradient = 'linear-gradient(135deg, #d97706 0%, #b45309 100%)';
                     shortName = 'Hội Viên Vàng (Gold)';
-                    perkText = 'Tự động giảm 10% tiền sân & ưu tiên đặt sân giờ vàng';
                 } else if (active.tier === 'platinum') {
                     cardGradient = 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)';
                     shortName = 'Hội Viên Bạch Kim (Platinum)';
-                    perkText = 'Tự động giảm 15% tiền sân cao nhất toàn hệ thống';
+                }
+
+                // Lấy danh sách quyền lợi chi tiết của gói
+                let benefitsList = [];
+                if (active.benefits && typeof active.benefits === 'string') {
+                    benefitsList = active.benefits.split(/\r\n|\r|\n/).map(s => s.trim()).filter(Boolean);
+                }
+                if (!benefitsList.length) {
+                    if (active.tier === 'gold') {
+                        benefitsList = [
+                            'Giảm 10% trực tiếp trên tổng tiền sân cho mọi lượt đặt lịch',
+                            'Ưu tiên giữ khung giờ vàng trước 7 ngày',
+                            'Tặng 01 ống cầu lông thi đấu chuẩn khi kích hoạt',
+                            'Miễn phí đổi lịch hoặc hủy trước 6 tiếng'
+                        ];
+                    } else if (active.tier === 'platinum') {
+                        benefitsList = [
+                            'Giảm 15% tối đa trên tổng hóa đơn đặt sân toàn hệ thống',
+                            'Ưu tiên giữ lịch cố định tháng và đặt trước 14 ngày',
+                            'Miễn phí hủy đơn trước 4 tiếng',
+                            'Vé VIP tham dự các giải đấu mở rộng do GODMINTON tổ chức',
+                            'Được tặng áo đấu độc quyền và quà tri ân sinh nhật'
+                        ];
+                    } else {
+                        benefitsList = [
+                            'Giảm 5% trực tiếp trên tổng tiền sân cho mọi lượt đặt lịch',
+                            'Ưu tiên giữ slot trước 3 ngày so với khách thông thường',
+                            'Miễn phí đổi lịch trước 12 tiếng không tính phí',
+                            'Hỗ trợ tư vấn đặt sân và kiểm tra lịch nhanh qua hotline'
+                        ];
+                    }
                 }
 
                 const endFormatted = active.end_date ? active.end_date.substring(0, 10).split('-').reverse().join('/') : '--';
@@ -270,12 +298,15 @@ async function loadMyMembership() {
                 activeBox.innerHTML = `
                     ${pendingBannerHtml}
                     <div class="card border-0 rounded-4 p-4 text-white shadow-sm" style="background: ${cardGradient};">
-                        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2">
-                                <span class="badge bg-white bg-opacity-20 px-3 py-1 rounded-pill fw-bold text-white" style="font-size:0.75rem;">
-                                    <i class="fa-solid fa-crown text-warning me-1"></i>GODMINTON VIP
+                                <span class="badge px-3 py-1 rounded-pill fw-bold d-inline-flex align-items-center gap-2 shadow-sm"
+                                      style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.3); font-size: 0.78rem;">
+                                    <img src="assets/img/logo.svg" alt="GODMINTON Logo" style="height: 18px; width: auto; max-width: 60px; object-fit: contain; vertical-align: middle;">
+                                    <span style="color: #5eead4; font-weight: 800; letter-spacing: 0.6px; font-size: 0.8rem;">GODMINTON</span>
+                                    <span class="badge bg-warning text-dark px-1 py-0 rounded-pill fw-extrabold" style="font-size: 0.65rem;">VIP</span>
                                 </span>
-                                <span class="badge bg-success text-white px-2 py-1 rounded-pill fw-semibold" style="font-size:0.7rem;">
+                                <span class="badge bg-success text-white px-2 py-1 rounded-pill fw-semibold shadow-sm" style="font-size:0.72rem;">
                                     <i class="fa-solid fa-circle-check me-1"></i>Đang kích hoạt
                                 </span>
                             </div>
@@ -284,10 +315,27 @@ async function loadMyMembership() {
                             </div>
                         </div>
 
-                        <h3 class="fw-bold mb-2">${shortName}</h3>
-                        <p class="small opacity-90 mb-4">
-                            <i class="fa-solid fa-circle-check text-warning me-1"></i> ${perkText}
-                        </p>
+                        <h3 class="fw-bold mb-3">${shortName}</h3>
+
+                        <!-- Danh sách quyền lợi chi tiết -->
+                        <div class="membership-benefits-box mb-4 p-3 rounded-4" style="background: rgba(15, 23, 42, 0.32); border: 1px solid rgba(255, 255, 255, 0.15);">
+                            <div class="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom border-white border-opacity-15">
+                                <i class="fa-solid fa-gift text-warning"></i>
+                                <span class="small fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.76rem; color: #f1f5f9;">
+                                    Danh sách đặc quyền hội viên của bạn:
+                                </span>
+                            </div>
+                            <div class="row g-2">
+                                ${benefitsList.map(item => `
+                                    <div class="col-md-6 col-12">
+                                        <div class="d-flex align-items-start gap-2" style="color: #f8fafc; font-size: 0.84rem; line-height: 1.45;">
+                                            <i class="fa-solid fa-circle-check text-warning mt-1 flex-shrink-0" style="font-size: 0.85rem;"></i>
+                                            <span>${BookingAccount.escape(item)}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
 
                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-3 border-top border-white border-opacity-20">
                             <div>
@@ -390,7 +438,7 @@ async function loadMyMembership() {
                         <div class="p-3 rounded-3 border bg-surface d-flex align-items-center justify-content-between flex-wrap gap-2 ${isCurrent ? 'border-teal shadow-sm' : ''} ${item.status === 'pending' ? 'border-warning' : ''}">
                             <div>
                                 <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                                    <strong class="fs-6 text-dark">${cleanTitle}</strong>
+                                    <strong class="fs-6 fw-bold">${cleanTitle}</strong>
                                     ${discountBadge}
                                     ${statusBadge}
                                 </div>
