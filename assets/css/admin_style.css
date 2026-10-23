@@ -626,6 +626,26 @@ body.admin-body {
     border-color: rgba(245, 158, 11, 0.25) !important;
 }
 
+/* Custom Purple Subtle Badge cho loại bài Sự kiện (Light + Dark mode) */
+.bg-purple-subtle {
+    background-color: rgba(139, 92, 246, 0.12) !important;
+}
+.text-purple {
+    color: #7c3aed !important;
+}
+.border-purple-subtle {
+    border-color: rgba(139, 92, 246, 0.28) !important;
+}
+[data-bs-theme="dark"] .bg-purple-subtle {
+    background-color: rgba(139, 92, 246, 0.2) !important;
+}
+[data-bs-theme="dark"] .text-purple {
+    color: #c4b5fd !important;
+}
+[data-bs-theme="dark"] .border-purple-subtle {
+    border-color: rgba(139, 92, 246, 0.4) !important;
+}
+
 /* Modals trong Dark Mode */
 [data-bs-theme="dark"] .modal-content {
     background-color: #0d2730 !important;

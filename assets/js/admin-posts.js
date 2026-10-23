@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 6. Render bảng bài viết
     function renderTable(posts) {
         const typeBadges = {
-            event: '<span class="badge bg-purple-subtle text-purple border border-purple-subtle"><i class="fa-solid fa-trophy me-1"></i>Sự kiện</span>',
+            event: '<span class="badge bg-purple-subtle text-purple border border-purple-subtle" style="background-color: rgba(139, 92, 246, 0.12); color: #7c3aed; border-color: rgba(139, 92, 246, 0.28);"><i class="fa-solid fa-trophy me-1"></i>Sự kiện</span>',
             membership: '<span class="badge bg-warning-subtle text-warning border border-warning-subtle"><i class="fa-solid fa-id-card me-1"></i>Hội viên</span>',
             announcement: '<span class="badge bg-danger-subtle text-danger border border-danger-subtle"><i class="fa-solid fa-bell me-1"></i>Thông báo</span>'
         };

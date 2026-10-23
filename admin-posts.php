@@ -73,6 +73,24 @@ $currentUser = [
             width: 100%;
             object-fit: cover;
         }
+        .bg-purple-subtle {
+            background-color: rgba(139, 92, 246, 0.12) !important;
+        }
+        .text-purple {
+            color: #7c3aed !important;
+        }
+        .border-purple-subtle {
+            border-color: rgba(139, 92, 246, 0.28) !important;
+        }
+        [data-bs-theme="dark"] .bg-purple-subtle {
+            background-color: rgba(139, 92, 246, 0.2) !important;
+        }
+        [data-bs-theme="dark"] .text-purple {
+            color: #c4b5fd !important;
+        }
+        [data-bs-theme="dark"] .border-purple-subtle {
+            border-color: rgba(139, 92, 246, 0.4) !important;
+        }
     </style>
 
     <script>
