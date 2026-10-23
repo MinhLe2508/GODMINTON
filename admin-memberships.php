@@ -186,8 +186,8 @@ $currentUser = [
                 <button id="themeToggle" type="button" class="admin-icon-btn" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
                     <i class="fa-solid fa-moon"></i>
                 </button>
-                <button class="btn btn-teal rounded-pill px-3 fw-semibold" id="btnOpenGrantModal">
-                    <i class="fa-solid fa-crown me-1 text-warning"></i> Cấp gói hội viên
+                <button class="btn btn-teal rounded-pill px-3 fw-semibold" id="btnOpenGrantModal" title="Cấp gói hội viên">
+                    <i class="fa-solid fa-crown me-1 text-warning"></i><span class="btn-label-text">Cấp gói hội viên</span>
                 </button>
             </div>
         </header>

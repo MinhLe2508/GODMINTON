@@ -62,8 +62,8 @@ $currentUser = [
                 <button id="themeToggle" type="button" class="admin-icon-btn" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
                     <i class="fa-solid fa-moon"></i>
                 </button>
-                <button class="btn btn-teal rounded-pill px-3 fw-semibold ms-1" id="btnAddVoucher">
-                    <i class="fa-solid fa-plus me-1"></i> Tạo mã giảm giá
+                <button class="btn btn-teal rounded-pill px-3 fw-semibold ms-1" id="btnAddVoucher" title="Tạo mã giảm giá">
+                    <i class="fa-solid fa-plus me-1"></i><span class="btn-label-text">Tạo mã giảm giá</span>
                 </button>
             </div>
         </header>

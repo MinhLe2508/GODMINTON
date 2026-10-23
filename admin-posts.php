@@ -132,8 +132,8 @@ $currentUser = [
                 <button id="themeToggle" type="button" class="admin-icon-btn" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
                     <i class="fa-solid fa-moon"></i>
                 </button>
-                <button class="btn btn-teal rounded-pill px-3 fw-semibold ms-1" id="btnAddPost">
-                    <i class="fa-solid fa-plus me-1"></i> Viết bài mới
+                <button class="btn btn-teal rounded-pill px-3 fw-semibold ms-1" id="btnAddPost" title="Viết bài mới">
+                    <i class="fa-solid fa-plus me-1"></i><span class="btn-label-text">Viết bài mới</span>
                 </button>
             </div>
         </header>

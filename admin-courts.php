@@ -56,8 +56,8 @@ $currentUser = ['id' => (int)$_SESSION['user_id'], 'name' => $_SESSION['name'] ?
                 <button id="themeToggle" type="button" class="admin-icon-btn" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
                     <i class="fa-solid fa-moon"></i>
                 </button>
-                <button class="btn btn-teal rounded-pill px-3 fw-semibold ms-1" id="btnAddCourt">
-                    <i class="fa-solid fa-plus me-1"></i> Thêm sân
+                <button class="btn btn-teal rounded-pill px-3 fw-semibold ms-1" id="btnAddCourt" title="Thêm sân">
+                    <i class="fa-solid fa-plus me-1"></i><span class="btn-label-text">Thêm sân</span>
                 </button>
             </div>
         </header>
@@ -194,7 +194,6 @@ $currentUser = ['id' => (int)$_SESSION['user_id'], 'name' => $_SESSION['name'] ?
 <script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
 <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
 <script src="assets/js/admin.js?v=<?= filemtime(__DIR__ . '/assets/js/admin.js') ?>"></script>
-<script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 <script>
 let currentUser = null;
 let modalInstance = null;

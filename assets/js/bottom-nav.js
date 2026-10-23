@@ -56,14 +56,6 @@
        ============================================================ */
     const currentPage = (window.location.pathname.split('/').pop() || 'index.php').split('?')[0];
 
-    const isOwnerPage = /^admin-(dashboard|courts|slots|bookings)\.(php|html)$/.test(currentPage);
-    const ownerTabs = [
-        {id:'overview', label:'Tổng quan', icon:'fa-gauge-high', href:'admin-dashboard.php', match:['admin-dashboard.php', 'admin-dashboard.html']},
-        {id:'manage-courts', label:'Sân', icon:'fa-building', href:'admin-courts.php', match:['admin-courts.php', 'admin-courts.html']},
-        {id:'manage-slots', label:'Khung giờ', icon:'fa-clock', href:'admin-slots.php', match:['admin-slots.php', 'admin-slots.html']},
-        {id:'manage-bookings', label:'Đơn đặt', icon:'fa-clipboard-list', href:'admin-bookings.php', match:['admin-bookings.php', 'admin-bookings.html']}
-    ];
-
     function isActive(tab) {
         if (!tab.match) return false;
         return tab.match.includes(currentPage);
@@ -362,7 +354,7 @@
        4. BUILD HTML
        ============================================================ */
     function buildNavHTML() {
-        return (isOwnerPage ? ownerTabs : TABS).map(tab => {
+        return TABS.map(tab => {
             const active = isActive(tab) ? ' active' : '';
             const logoutAttr = tab.isLogout ? ' data-is-logout="true"' : '';
 
@@ -538,22 +530,26 @@
         injectPushBellToggle();
 
         // Không inject thanh điều hướng dưới (Bottom Nav) trên trang Đăng nhập / Đăng ký hoặc các trang quản trị admin
-        const isAdminPage = !!(document.querySelector('.admin-layout') || document.querySelector('.admin-topbar') || document.querySelector('.admin-body') || currentPage.startsWith('admin-'));
-        if (currentPage === 'auth.php' || currentPage === 'auth.html' || isAdminPage) return;
+        const isAdminPage = !!(document.querySelector('.admin-layout') || document.querySelector('.admin-topbar') || document.querySelector('.admin-body') || document.querySelector('.admin-shell') || currentPage.startsWith('admin-'));
+        if (currentPage === 'auth.php' || currentPage === 'auth.html' || isAdminPage) {
+            const existingNav = document.getElementById('godmintonBottomNav');
+            if (existingNav) existingNav.remove();
+            document.body.classList.remove('has-bottom-nav', 'has-owner-nav');
+            return;
+        }
 
         // Tránh inject 2 lần
         if (document.getElementById('godmintonBottomNav')) return;
 
         const nav = document.createElement('nav');
         nav.id = 'godmintonBottomNav';
-        nav.setAttribute('aria-label', isOwnerPage ? 'Điều hướng quản lý sân' : 'Điều hướng chính');
+        nav.setAttribute('aria-label', 'Điều hướng chính');
         nav.innerHTML = buildNavHTML();
         document.body.appendChild(nav);
 
         // Thêm class để body có padding-bottom đúng
         document.body.classList.add('has-bottom-nav');
-        if (isOwnerPage) document.body.classList.add('has-owner-nav');
-        else injectOwnerReturnLink();
+        injectOwnerReturnLink();
 
         /* ---- Ripple effect khi tap ---- */
         nav.querySelectorAll('.bnav-item').forEach(item => {

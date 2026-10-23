@@ -168,7 +168,6 @@ $currentUser = [
 <script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
 <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
 <script src="assets/js/admin.js?v=<?= filemtime(__DIR__ . '/assets/js/admin.js') ?>"></script>
-<script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
     const user = AdminApp.renderShell('dashboard', 'Tổng quan', 'Kênh chủ sân / Thống kê tổng quan');
@@ -217,13 +216,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             document.getElementById('myCourtsEmpty').style.display = 'none';
             list.innerHTML = courts.slice(0, 5).map(c => `
-                <div class="d-flex align-items-center gap-3">
-                    <img src="${AdminApp.escapeHTML(c.image_url)}" class="admin-court-thumb" alt="">
-                    <div class="flex-grow-1 min-w-0">
-                        <div class="fw-semibold text-truncate">${AdminApp.escapeHTML(c.name)}</div>
-                        <div class="small text-muted">${AdminApp.escapeHTML(c.district)} · ${c.total_sub_courts || 6} sân con</div>
+                <div class="d-flex align-items-center gap-2 gap-sm-3 w-100" style="min-width: 0;">
+                    <img src="${AdminApp.escapeHTML(c.image_url)}" class="admin-court-thumb flex-shrink-0" alt="">
+                    <div class="flex-grow-1 min-w-0" style="min-width: 0; overflow: hidden;">
+                        <div class="fw-semibold text-truncate small">${AdminApp.escapeHTML(c.name)}</div>
+                        <div class="text-muted text-truncate" style="font-size: 0.72rem;">${AdminApp.escapeHTML(c.district)} · ${c.total_sub_courts || 6} sân con</div>
                     </div>
-                    <span class="badge ${c.status === 'active' ? 'bg-success' : 'bg-secondary'}">${c.status === 'active' ? 'Hoạt động' : 'Tạm ngưng'}</span>
+                    <span class="badge flex-shrink-0 ms-auto ${c.status === 'active' ? 'bg-success' : 'bg-secondary'}" style="font-size: 0.72rem;">${c.status === 'active' ? 'Hoạt động' : 'Tạm ngưng'}</span>
                 </div>`).join('');
         }
     } catch (err) {
