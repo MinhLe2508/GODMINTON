@@ -142,6 +142,7 @@ $v = time();
         /* ---- Left-Aligned Viewport Container ---- */
         .auth-viewport {
             min-height: 100vh !important;
+            min-height: 100dvh !important;
             display: flex !important;
             align-items: center !important;
             justify-content: flex-start !important;
@@ -360,13 +361,19 @@ $v = time();
             }
             .auth-viewport {
                 justify-content: center !important;
-                padding: 4.25rem 1.25rem 2.5rem !important;
+                padding: calc(4.25rem + env(safe-area-inset-top, 0px)) 1.25rem calc(2.5rem + env(safe-area-inset-bottom, 0px)) !important;
             }
             .auth-card {
                 width: 100% !important;
                 max-width: 540px !important;
                 min-width: 0 !important;
                 margin: 0 auto !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .auth-field input, .auth-field select {
+                font-size: 16px !important; /* Tránh tự động phóng to trên iOS Safari */
             }
         }
 
@@ -379,17 +386,38 @@ $v = time();
                     linear-gradient(180deg, rgba(4, 20, 17, 0.48) 0%, rgba(2, 12, 10, 0.72) 100%),
                     url('assets/img/auth-bg.jpg?v=<?= $v ?>') !important;
             }
-            .auth-viewport { padding: 3.85rem 0.85rem 2rem !important; }
-            .auth-card { padding: 1.5rem 1.15rem 1.35rem !important; border-radius: 1.25rem !important; width: 100% !important; min-width: 0 !important; }
+            .auth-viewport {
+                padding: calc(3.5rem + env(safe-area-inset-top, 0px)) 0.85rem calc(2rem + env(safe-area-inset-bottom, 0px)) !important;
+            }
+            .auth-card {
+                padding: 1.5rem 1.15rem 1.35rem !important;
+                border-radius: 1.25rem !important;
+                width: 100% !important;
+                min-width: 0 !important;
+            }
             .auth-grid-2 { grid-template-columns: 1fr !important; gap: 0 !important; }
 
             .auth-theme-corner-btn {
-                top: 0.85rem !important;
-                right: 0.85rem !important;
+                top: calc(0.85rem + env(safe-area-inset-top, 0px)) !important;
+                right: calc(0.85rem + env(safe-area-inset-right, 0px)) !important;
                 width: 38px !important;
                 height: 38px !important;
                 font-size: 0.95rem !important;
             }
+        }
+
+        @media (max-width: 380px) {
+            .auth-viewport {
+                padding: calc(3rem + env(safe-area-inset-top, 0px)) 0.5rem calc(1.5rem + env(safe-area-inset-bottom, 0px)) !important;
+            }
+            .auth-card {
+                padding: 1.25rem 0.75rem 1.15rem !important;
+                border-radius: 1rem !important;
+            }
+            .auth-card-title { font-size: 1.22rem !important; }
+            .auth-tab-btn { font-size: 0.85rem !important; padding: 0.55rem 0.25rem !important; gap: 0.25rem !important; }
+            .btn-auth-submit { height: 46px !important; font-size: 0.95rem !important; }
+            .auth-field { margin-bottom: 0.95rem; }
         }
     </style>
 <link rel="stylesheet" href="assets/css/password-requirements.css?v=<?= filemtime(__DIR__.'/assets/css/password-requirements.css') ?>">
