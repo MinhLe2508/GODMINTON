@@ -172,27 +172,27 @@ $currentUser = [
 
             <!-- Bảng danh sách & Bộ lọc -->
             <div class="admin-panel">
-                <div class="admin-panel-head flex-wrap gap-2">
-                    <h2><i class="fa-solid fa-users text-teal me-2"></i>Danh sách đăng ký & Hội viên</h2>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <input type="search" id="searchKeyword" class="form-control form-control-sm rounded-pill" placeholder="Tìm theo tên, email, SĐT..." style="min-width: 220px;">
+                <div class="admin-panel-head d-flex flex-column flex-xl-row align-items-xl-center justify-content-between gap-3">
+                    <h2 class="mb-0 text-nowrap"><i class="fa-solid fa-users text-teal me-2"></i>Danh sách đăng ký & Hội viên</h2>
+                    <div class="d-flex align-items-center gap-2 flex-nowrap overflow-x-auto pb-1 pb-xl-0" style="scrollbar-width: thin;">
+                        <input type="search" id="searchKeyword" class="form-control form-control-sm rounded-pill" placeholder="Tìm theo tên, email, SĐT..." style="width: 220px; flex-shrink: 0;">
                         
-                        <select id="filterTier" class="form-select form-select-sm rounded-pill" style="min-width: 150px;">
+                        <select id="filterTier" class="form-select form-select-sm rounded-pill" style="width: 150px; flex-shrink: 0;">
                             <option value="">Tất cả hạng gói</option>
                             <option value="silver">Bạc (Giảm 5%)</option>
                             <option value="gold">Vàng (Giảm 10%)</option>
                             <option value="platinum">Bạch Kim (Giảm 15%)</option>
                         </select>
 
-                        <select id="filterStatus" class="form-select form-select-sm rounded-pill" style="min-width: 170px;">
+                        <select id="filterStatus" class="form-select form-select-sm rounded-pill" style="width: 170px; flex-shrink: 0;">
                             <option value="">Tất cả trạng thái</option>
-                            <option value="pending">⏳ Chờ admin xác nhận</option>
-                            <option value="active">✓ Đang kích hoạt</option>
+                            <option value="pending">Chờ admin xác nhận</option>
+                            <option value="active">Đang kích hoạt</option>
                             <option value="expired">Đã hết hạn</option>
                             <option value="cancelled">Đã hủy / Từ chối</option>
                         </select>
 
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="btnResetFilters" title="Đặt lại bộ lọc">
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 flex-shrink-0" id="btnResetFilters" title="Đặt lại bộ lọc">
                             <i class="fa-solid fa-rotate-left"></i>
                         </button>
                     </div>
