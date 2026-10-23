@@ -358,9 +358,9 @@ if ($currentUser !== null) {
                     </div>
 
                     <!-- Membership VIP Banner -->
-                    <div id="memberVipBanner" class="alert d-flex align-items-center gap-2 mb-3 py-2 px-3 border-0 rounded-3 shadow-sm" style="display:none; background:linear-gradient(135deg, rgba(245,158,11,0.12), rgba(217,119,6,0.18)); border-left:4px solid #f59e0b !important;">
-                        <i class="fa-solid fa-crown text-warning fs-5"></i>
-                        <div style="font-size:0.82rem; line-height:1.35; color:#92400e;">
+                    <div id="memberVipBanner" class="alert d-flex align-items-center gap-2 mb-3 py-2 px-3 border-0 rounded-3 shadow-sm" style="display:none;">
+                        <i id="memberBannerIcon" class="fa-solid fa-crown fs-5"></i>
+                        <div id="memberBannerText" style="font-size:0.82rem; line-height:1.35;">
                             <strong>Đặc quyền Hội viên <span id="memberBannerTier" class="text-uppercase fw-bold"></span></strong>: Tự động giảm <strong id="memberBannerPercent" class="text-danger">0%</strong> toàn bộ tiền sân!
                         </div>
                     </div>
@@ -400,8 +400,8 @@ if ($currentUser !== null) {
                             <span id="prBase">--</span>
                         </div>
                         <!-- Membership discount row -->
-                        <div class="prow subtotal" id="prowMembership" style="display:none; color:#d97706;">
-                            <span><i class="fa-solid fa-crown me-1 text-warning"></i>Ưu đãi hội viên (<span id="prMemberPercent">0%</span>)</span>
+                        <div class="prow subtotal" id="prowMembership" style="display:none;">
+                            <span id="prMemberLabel"><i class="fa-solid fa-crown me-1 text-warning"></i>Ưu đãi hội viên (<span id="prMemberPercent">0%</span>)</span>
                             <span id="prMemberDiscount" class="fw-bold">-0 đ</span>
                         </div>
                         <div class="prow subtotal text-success" id="prowDiscount" style="display:none;">

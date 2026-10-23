@@ -248,6 +248,9 @@ header('Cache-Control: no-store');
                                         <span id="profileRoleLabel">Đang tải</span>
                                     </span>
                                 </div>
+                                <div id="profileMembershipBadge" class="mb-1">
+                                    <!-- Rendered by profile.js: Hội viên Bạc / Vàng / Bạch Kim -->
+                                </div>
                                 <div class="opacity-90 small mb-1" id="profileHeaderEmail">
                                     Đang tải email
                                 </div>
@@ -275,8 +278,8 @@ header('Cache-Control: no-store');
                             </div>
                             <div class="col-4">
                                 <div class="profile-stat-box">
-                                    <div class="fs-4 fw-extrabold text-success">—</div>
-                                    <div class="small opacity-80" style="font-size: 0.75rem;">Chưa hỗ trợ</div>
+                                    <div class="fs-5 fw-extrabold text-warning text-truncate" id="statMembershipTier">—</div>
+                                    <div class="small opacity-80" style="font-size: 0.75rem;">Gói hội viên</div>
                                 </div>
                             </div>
                         </div>
@@ -298,6 +301,9 @@ header('Cache-Control: no-store');
                             </button>
                             <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#tabProfileVouchers" type="button" role="tab">
                                 <i class="fa-solid fa-ticket"></i> Mã giảm giá & Ưu đãi
+                            </button>
+                            <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#tabProfileMembership" type="button" role="tab" id="tabBtnMembership">
+                                <i class="fa-solid fa-crown text-warning"></i> Gói Hội Viên
                             </button>
                             <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#tabProfileSecurity" type="button" role="tab">
                                 <i class="fa-solid fa-shield-halved"></i> Mật khẩu & Bảo mật
@@ -466,6 +472,35 @@ header('Cache-Control: no-store');
     <button type="button" id="btnDeleteAccount" class="btn btn-outline-danger rounded-pill px-4"><i class="fa-solid fa-user-xmark me-2"></i>Xóa tài khoản</button>
 </section>
 
+                            </div>
+                        </div>
+
+                        <!-- TAB 5: GÓI HỘI VIÊN -->
+                        <div class="tab-pane fade" id="tabProfileMembership" role="tabpanel">
+                            <div class="profile-card">
+                                <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom flex-wrap gap-2">
+                                    <div>
+                                        <h5 class="fw-bold mb-1"><i class="fa-solid fa-crown text-warning me-2"></i>Gói Hội Viên Của Tôi</h5>
+                                        <p class="text-muted small mb-0">Theo dõi đặc quyền chiết khấu và thời hạn gói hội viên</p>
+                                    </div>
+                                    <a href="explore.php?tab=membership" class="btn btn-sm btn-teal rounded-pill px-3 fw-semibold">
+                                        <i class="fa-solid fa-compass me-1"></i> Khám phá tất cả các gói
+                                    </a>
+                                </div>
+
+                                <!-- Box chi tiết gói hiện tại (Render bởi profile.js) -->
+                                <div id="profileMembershipActiveBox" class="mb-4">
+                                    <div class="text-center py-4 text-muted">
+                                        <div class="spinner-border spinner-border-sm text-teal mb-2" role="status"></div>
+                                        <p class="small mb-0">Đang tải thông tin gói hội viên...</p>
+                                    </div>
+                                </div>
+
+                                <!-- Lịch sử đăng ký gói -->
+                                <h6 class="fw-bold mb-3"><i class="fa-solid fa-clock-rotate-left text-muted me-2"></i>Lịch sử đăng ký & gia hạn gói</h6>
+                                <div id="profileMembershipHistoryList" class="d-flex flex-column gap-2">
+                                    <!-- Rendered by profile.js -->
+                                </div>
                             </div>
                         </div>
 
