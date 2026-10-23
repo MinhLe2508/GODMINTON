@@ -1,12 +1,12 @@
 # Database GODMINTON
 
-Đã đối chiếu cấu trúc MySQL đang chạy ngày 22/10/2026. Bộ cài gồm **20 bảng**, không dùng seed/dump cũ theo tuần.
+Đã đối chiếu cấu trúc MySQL đang chạy ngày 22/10/2026. Bộ cài gồm **21 bảng**, không dùng seed/dump cũ theo tuần.
 
 ## File được giữ
 
 | File | Mục đích |
 |---|---|
-| `schema.sql` | Cấu trúc 20 bảng, khóa và chỉ mục hiện tại. Chỉ import vào DB trống. |
+| `schema.sql` | Cấu trúc 21 bảng, khóa và chỉ mục hiện tại. Chỉ import vào DB trống. |
 | `seed.sql` | Danh mục phường, tiện ích, sân, ảnh, liên kết tiện ích và tin tức hiện có; tài khoản phát triển được tạo riêng. |
 | `export_installation.php` | Đọc DB hiện tại, tạo lại schema/seed cài mới mà không xuất dữ liệu cá nhân/giao dịch. |
 | `migrate_booking_metadata.php` | Nâng cấp metadata đơn đặt trên DB cũ, giữ lịch sử. |
@@ -14,6 +14,8 @@
 | `migration_content.sql` | Tạo bảng tin tức và liên hệ nếu chưa có. |
 | `migration_admin_management.sql` | Thêm cột quản lý sân, khung giờ cho DB cũ. Không sửa giá/giờ của sân theo dữ liệu mẫu. |
 | `migration_push_subscriptions.sql` | Tạo bảng thiết bị Web Push cho DB cũ. |
+| `migration_reviews.sql` | Tạo bảng `reviews` (đánh giá sân) cho DB cũ; có thể import lại. |
+| `seed_reviews_demo.sql` | (Tùy chọn) 125 đánh giá mẫu trên 41 sân, tạo bằng 118 tài khoản demo bị khóa `demo.*@demo.godminton.local`. Import sau `migration_reviews.sql`; chạy lại không trùng. Xóa: `DELETE FROM users WHERE email LIKE 'demo.%@demo.godminton.local';` |
 | `migration_customer_accounts.sql` | Import bằng phpMyAdmin để nâng cấp đăng ký/đăng nhập, xác minh email, khôi phục mật khẩu và xóa tài khoản; có thể import lại. |
 
 ## Cài mới
