@@ -446,6 +446,7 @@
     }
 
     function injectPushBellToggle() {
+        if (window.location.pathname.includes('courts.php')) return;
         if (document.getElementById('pushBellToggle')) return;
 
         const isAdmin = !!(document.querySelector('.admin-layout') || document.querySelector('.admin-topbar') || window.location.pathname.includes('admin-'));

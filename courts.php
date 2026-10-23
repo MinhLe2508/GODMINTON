@@ -70,12 +70,6 @@
                     <span class="sb-lbl">Yêu thích</span>
                 </button>
 
-                <!-- Thông báo đẩy PWA -->
-                <button class="sb-btn" id="pushBellToggle" type="button" title="Thông báo đẩy PWA (Bấm để bật/tắt hoặc gửi thử)" aria-label="Thông báo đẩy PWA">
-                    <i class="fa-regular fa-bell"></i>
-                    <span class="sb-lbl">Thông báo</span>
-                </button>
-
                 <!-- Giao diện Sáng / Tối -->
                 <button class="sb-btn" id="themeToggle" type="button" title="Chuyển chế độ Sáng / Tối" aria-label="Chuyển chế độ Sáng / Tối">
                     <i class="fa-solid fa-moon"></i>

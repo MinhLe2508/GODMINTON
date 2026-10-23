@@ -655,6 +655,10 @@ window.PushClient = (() => {
     // Khởi tạo nút chuông thông báo nổi hoặc tích hợp trên thanh topbar/searchbar
     async function initBellButton() {
         let btn = document.getElementById('pushBellToggle');
+        if (window.location.pathname.includes('courts.php')) {
+            if (btn) btn.remove();
+            return;
+        }
         const themeBtn = document.getElementById('themeToggle');
         const isAdmin = !!(document.querySelector('.admin-layout') || document.querySelector('.admin-topbar') || window.location.pathname.includes('admin-'));
         const isSb = !!(themeBtn && (themeBtn.classList.contains('sb-btn') || themeBtn.closest('.sb-actions')));
