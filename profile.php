@@ -511,6 +511,82 @@ header('Cache-Control: no-store');
         </div>
     </main>
 
+    <!-- Modal Gia Hạn Gói Hội Viên (Dành riêng cho Trang Cá Nhân) -->
+    <div class="modal fade" id="modalRenewMembership" tabindex="-1" aria-labelledby="modalRenewLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modalRenewLabel">
+                        <i class="fa-solid fa-arrows-rotate text-warning me-2"></i>Gia Hạn Gói Hội Viên
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <div class="p-3 rounded-3 mb-3 bg-light border border-secondary border-opacity-10">
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-1">
+                            <span class="badge bg-teal text-white fw-bold px-3 py-1 rounded-pill" id="renewPackageTitle">Gói Hội Viên</span>
+                            <span class="badge bg-danger text-white fw-bold px-2 py-1 rounded-pill" id="renewDiscountBadge">-5% Tiền Sân</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 small">
+                            <span class="text-muted">Hạn sử dụng hiện tại:</span>
+                            <strong id="renewCurrentEnd">--/--/----</strong>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 small">
+                            <span class="text-muted">Thời hạn cộng dồn thêm:</span>
+                            <strong class="text-success" id="renewAddDays">+30 ngày</strong>
+                        </div>
+                        <hr class="my-2 border-secondary opacity-15">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Phí gia hạn:</span>
+                            <span class="fs-4 fw-extrabold text-teal" id="renewPriceText">-- đ</span>
+                        </div>
+                    </div>
+
+                    <!-- Phương thức thanh toán -->
+                    <label class="form-label fw-bold small text-muted text-uppercase mb-2">Chọn phương thức thanh toán</label>
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <label class="p-2 border rounded-3 d-flex align-items-center gap-3 cursor-pointer bg-surface">
+                            <input type="radio" name="renewPaymentMethod" value="VietQR" checked class="form-check-input mt-0">
+                            <i class="fa-solid fa-qrcode text-teal fs-4"></i>
+                            <div>
+                                <div class="fw-bold small">Chuyển khoản VietQR (Mô phỏng tức thì)</div>
+                                <div class="text-muted" style="font-size:0.75rem;">Quét qua mọi App ngân hàng tại Việt Nam</div>
+                            </div>
+                        </label>
+                        <label class="p-2 border rounded-3 d-flex align-items-center gap-3 cursor-pointer bg-surface">
+                            <input type="radio" name="renewPaymentMethod" value="MoMo" class="form-check-input mt-0">
+                            <i class="fa-solid fa-wallet text-danger fs-4"></i>
+                            <div>
+                                <div class="fw-bold small">Ví điện tử MoMo</div>
+                                <div class="text-muted" style="font-size:0.75rem;">Thanh toán siêu tốc</div>
+                            </div>
+                        </label>
+                        <label class="p-2 border rounded-3 d-flex align-items-center gap-3 cursor-pointer bg-surface">
+                            <input type="radio" name="renewPaymentMethod" value="Card" class="form-check-input mt-0">
+                            <i class="fa-solid fa-credit-card text-primary fs-4"></i>
+                            <div>
+                                <div class="fw-bold small">Thẻ Visa / Mastercard</div>
+                                <div class="text-muted" style="font-size:0.75rem;">Thẻ ATM nội địa hoặc quốc tế</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="p-2 rounded-3 border bg-light text-center small text-muted">
+                        <i class="fa-solid fa-shield-halved text-success me-1"></i>
+                        Thời hạn gói sẽ được <strong>cộng dồn tự động</strong> tiếp nối từ ngày hết hạn hiện tại của bạn.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm text-dark" id="btnConfirmRenew">
+                        <span id="btnRenewText"><i class="fa-solid fa-arrows-rotate me-1"></i> Xác nhận & Gia hạn</span>
+                        <span id="btnRenewSpinner" class="spinner-border spinner-border-sm ms-1" style="display:none;" role="status"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer-custom mt-5 pt-5 pb-4 border-top">
         <div class="container text-center small text-light">

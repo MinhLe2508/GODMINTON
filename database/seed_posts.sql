@@ -126,7 +126,7 @@ INSERT INTO `posts` (
   499000,
   90,
   10,
-  'Giảm 10% trực tiếp trên tổng tiền sân cho mọi lượt đặt sân\nƯu tiên giữ khung giờ vàng trước 7 ngày\nTặng 01 ống cầu lông thi đấu chuẩn khi kích hoạt\nMiễn phí đổi lịch hoặc hủy trước 6 tiếng\nHỗ trợ hotline riêng và ưu tiên phản hồi 24/7',
+  'Giảm 10% trực tiếp trên tổng tiền sân cho mọi lượt đặt sân\nƯu tiên giữ khung giờ vàng trước 7 ngày\nTặng 01 ống cầu lông thi đấu chuẩn khi kích hoạt\nMiễn phí đổi lịch hoặc hủy trước 6 tiếng',
   NOW() - INTERVAL 2 DAY,
   NOW() - INTERVAL 2 DAY
 ),

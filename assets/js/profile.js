@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         area.innerHTML=bookings.length?bookings.slice(0,6).map(b=>`<div class="card p-3">${BookingAccount.badge(b.booking_status)}<h6 class="mt-2">${BookingAccount.escape(b.court_name)}</h6><p>${BookingAccount.escape(b.booking_code)} · ${BookingAccount.escape(b.booking_date)} · ${BookingAccount.escape(b.time_range)}</p><strong>${BookingAccount.money(b.total_amount)}</strong><a href="history.php">Xem lịch sử đầy đủ</a></div>`).join(''):'<p>Bạn chưa có đơn đặt sân.</p>';
         await loadMyVouchers();
         await loadMyMembership();
+        initRenewMembershipModal();
         if (window.PushClient && typeof PushClient.initBellButton === 'function') {
             PushClient.initBellButton();
         }
@@ -288,18 +289,39 @@ async function loadMyMembership() {
                                         <span class="badge bg-warning text-dark ms-2 fw-bold">Còn ${active.days_left || 0} ngày</span>
                                     </div>
                                 </div>
-                                <div class="d-flex gap-2">
-                                    <a href="courts.php" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm" style="color: #0f172a;">
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm text-dark btn-open-renew-membership">
+                                        <i class="fa-solid fa-arrows-rotate me-1"></i> Gia hạn gói
+                                    </button>
+                                    <a href="courts.php" class="btn btn-light rounded-pill px-3 fw-bold shadow-sm" style="color: #0f172a;">
                                         <i class="fa-solid fa-table-tennis-paddle-ball me-1 text-teal"></i> Đặt sân ngay
                                     </a>
-                                    <a href="explore.php?tab=membership" class="btn btn-outline-light rounded-pill px-3 fw-bold">
-                                        <i class="fa-solid fa-arrows-rotate me-1"></i> Gia hạn / Nâng cấp
+                                    <a href="explore.php?tab=membership" class="btn btn-outline-light rounded-pill px-3 fw-semibold">
+                                        <i class="fa-solid fa-compass me-1"></i> Xem các gói khác
                                     </a>
                                 </div>
                             </div>
                         </div>
                     </div>
                 `;
+
+                // Gắn sự kiện mở modal gia hạn
+                const renewBtn = activeBox.querySelector('.btn-open-renew-membership');
+                if (renewBtn) {
+                    renewBtn.addEventListener('click', () => {
+                        const modalEl = document.getElementById('modalRenewMembership');
+                        if (!modalEl) return;
+                        document.getElementById('renewPackageTitle').textContent = active.package_title || tierTitle;
+                        document.getElementById('renewDiscountBadge').textContent = `-${active.discount_percent}% Tiền Sân`;
+                        document.getElementById('renewCurrentEnd').textContent = endFormatted;
+                        document.getElementById('renewAddDays').textContent = `+${active.duration_days || 30} ngày (cộng dồn)`;
+                        document.getElementById('renewPriceText').textContent = BookingAccount.money(active.price_paid || 0);
+
+                        window.__CURRENT_ACTIVE_POST_ID__ = active.post_id;
+                        const instance = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        instance.show();
+                    });
+                }
             } else {
                 activeBox.innerHTML = `
                     <div class="p-4 rounded-4 text-center border-2 border-dashed position-relative" style="background: rgba(13, 148, 136, 0.03); border-color: rgba(13, 148, 136, 0.25);">
@@ -392,4 +414,84 @@ async function loadMyMembership() {
         }
     }
 }
+
+function initRenewMembershipModal() {
+    const btn = document.getElementById('btnConfirmRenew');
+    if (!btn || btn.dataset.bound === 'true') return;
+    btn.dataset.bound = 'true';
+
+    btn.addEventListener('click', async () => {
+        const postId = window.__CURRENT_ACTIVE_POST_ID__;
+        if (!postId) return;
+
+        const methodEl = document.querySelector('input[name="renewPaymentMethod"]:checked');
+        const method = methodEl ? methodEl.value : 'VietQR';
+
+        const text = document.getElementById('btnRenewText');
+        const spinner = document.getElementById('btnRenewSpinner');
+
+        btn.disabled = true;
+        if (text) text.style.display = 'none';
+        if (spinner) spinner.style.display = 'inline-block';
+
+        try {
+            const res = await fetch('api/memberships/subscribe.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ post_id: postId, payment_method: method })
+            });
+            const json = await res.json();
+
+            if (res.ok && json.status === 'success') {
+                const modalEl = document.getElementById('modalRenewMembership');
+                if (modalEl && typeof bootstrap !== 'undefined') {
+                    const instance = bootstrap.Modal.getInstance(modalEl);
+                    if (instance) instance.hide();
+                }
+
+                if (window.Swal) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Gia Hạn Thành Công!',
+                        html: `Gói hội viên <strong>${json.data.package_title}</strong> đã được gia hạn thành công.<br>Thời hạn mới đến ngày: <strong>${json.data.end_date.substring(0, 10).split('-').reverse().join('/')}</strong> (Cộng thêm ${json.data.duration_days} ngày).`,
+                        confirmButtonText: 'Đồng ý',
+                        confirmButtonColor: '#0d9488'
+                    });
+                } else {
+                    alert('Gia hạn gói hội viên thành công!');
+                }
+
+                await loadMyMembership();
+            } else {
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gia hạn thất bại',
+                        text: json.message || 'Không thể gia hạn lúc này. Vui lòng thử lại sau.',
+                        confirmButtonColor: '#0d9488'
+                    });
+                } else {
+                    alert(json.message || 'Gia hạn thất bại.');
+                }
+            }
+        } catch (e) {
+            console.error('Lỗi gia hạn:', e);
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi kết nối',
+                    text: 'Không thể kết nối máy chủ để gia hạn.',
+                    confirmButtonColor: '#0d9488'
+                });
+            } else {
+                alert('Không thể kết nối máy chủ để gia hạn.');
+            }
+        } finally {
+            btn.disabled = false;
+            if (text) text.style.display = 'inline-block';
+            if (spinner) spinner.style.display = 'none';
+        }
+    });
+}
+
 

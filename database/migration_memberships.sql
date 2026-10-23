@@ -50,7 +50,7 @@ UPDATE `posts` SET
   `price` = 499000,
   `duration_days` = 90,
   `discount_percent` = 10,
-  `benefits` = 'Giảm 10% trực tiếp trên tổng tiền sân cho mọi lượt đặt sân\nƯu tiên giữ khung giờ vàng trước 7 ngày\nTặng 01 ống cầu lông thi đấu chuẩn khi kích hoạt\nMiễn phí đổi lịch hoặc hủy trước 6 tiếng\nHỗ trợ hotline riêng và ưu tiên phản hồi 24/7'
+  `benefits` = 'Giảm 10% trực tiếp trên tổng tiền sân cho mọi lượt đặt sân\nƯu tiên giữ khung giờ vàng trước 7 ngày\nTặng 01 ống cầu lông thi đấu chuẩn khi kích hoạt\nMiễn phí đổi lịch hoặc hủy trước 6 tiếng'
 WHERE `id` = 5 OR `slug` LIKE '%golden%';
 
 UPDATE `posts` SET

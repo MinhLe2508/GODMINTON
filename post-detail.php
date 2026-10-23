@@ -270,11 +270,11 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <button type="button" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm" onclick="openSubscribeModal()">
-                                <i class="fa-solid fa-arrows-rotate me-1"></i> Gia hạn thêm <?= (int)$post['duration_days'] ?> ngày
-                            </button>
-                            <a href="courts.php" class="btn btn-outline-teal rounded-pill px-3 fw-bold">
-                                <i class="fa-solid fa-table-tennis-paddle-ball me-1"></i> Đặt sân ngay
+                            <a href="courts.php" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm">
+                                <i class="fa-solid fa-table-tennis-paddle-ball me-1"></i> Đặt sân ngay (Giảm <?= (int)$post['discount_percent'] ?>%)
+                            </a>
+                            <a href="profile.php?tab=membership" class="btn btn-outline-teal rounded-pill px-3 fw-bold">
+                                <i class="fa-solid fa-crown text-warning me-1"></i> Quản lý & Gia hạn tại Trang cá nhân
                             </a>
                         </div>
                     <?php else: ?>
