@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS `user_memberships` (
   `duration_days` int(10) unsigned NOT NULL DEFAULT 30 COMMENT 'Thời hạn của gói (ngày)',
   `start_date` datetime NOT NULL COMMENT 'Ngày bắt đầu kích hoạt',
   `end_date` datetime NOT NULL COMMENT 'Ngày hết hạn gói',
-  `status` enum('active','expired','cancelled') NOT NULL DEFAULT 'active' COMMENT 'Trạng thái gói',
+  `status` enum('pending','active','expired','cancelled','rejected') NOT NULL DEFAULT 'pending' COMMENT 'Trạng thái gói: pending (chờ admin duyệt), active, expired, cancelled, rejected',
   `payment_method` varchar(50) NOT NULL DEFAULT 'VietQR' COMMENT 'Phương thức thanh toán',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

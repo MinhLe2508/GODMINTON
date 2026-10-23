@@ -163,6 +163,7 @@ async function loadMyMembership() {
     try {
         const res = await BookingAccount.request('api/memberships/my-membership.php');
         const active = res.active_membership;
+        const pending = res.pending_membership;
         const history = res.history || [];
 
         // 1. Badge hiển thị ngay dưới họ tên
@@ -185,11 +186,26 @@ async function loadMyMembership() {
                     tierBoxShadow = 'rgba(15, 23, 42, 0.55)';
                 }
 
+                let pendingNote = '';
+                if (pending) {
+                    pendingNote = `<span class="badge bg-warning text-dark ms-2 px-2 py-1 rounded-pill fw-bold" style="font-size:0.75rem;"><i class="fa-solid fa-clock-rotate-left me-1"></i>Có yêu cầu gia hạn chờ duyệt</span>`;
+                }
+
                 badgeEl.innerHTML = `
-                    <span class="badge px-3 py-1 rounded-pill fw-bold d-inline-flex align-items-center gap-2 shadow-sm"
-                          style="background: ${tierGradient}; color: #ffffff; font-size: 0.82rem; border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 3px 10px ${tierBoxShadow};">
-                        <i class="${tierIcon}"></i>
-                        <span>${tierLabel} (Giảm ${active.discount_percent}% tiền sân)</span>
+                    <div class="d-inline-flex align-items-center flex-wrap gap-1">
+                        <span class="badge px-3 py-1 rounded-pill fw-bold d-inline-flex align-items-center gap-2 shadow-sm"
+                              style="background: ${tierGradient}; color: #ffffff; font-size: 0.82rem; border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 3px 10px ${tierBoxShadow};">
+                            <i class="${tierIcon}"></i>
+                            <span>${tierLabel} (Giảm ${active.discount_percent}% tiền sân)</span>
+                        </span>
+                        ${pendingNote}
+                    </div>
+                `;
+            } else if (pending) {
+                badgeEl.innerHTML = `
+                    <span class="badge bg-warning text-dark px-3 py-1 rounded-pill fw-bold d-inline-flex align-items-center gap-2 shadow-sm" style="font-size: 0.82rem;">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Đang chờ Admin duyệt gói ${BookingAccount.escape(pending.package_title || 'Hội Viên')}</span>
                     </span>
                 `;
             } else {
@@ -213,6 +229,26 @@ async function loadMyMembership() {
 
         // 3. Tab Gói Hội Viên - Khối thẻ thành viên đang hoạt động
         if (activeBox) {
+            let pendingBannerHtml = '';
+            if (pending) {
+                pendingBannerHtml = `
+                    <div class="p-3 rounded-4 mb-3 border border-warning bg-warning bg-opacity-10 d-flex align-items-center justify-content-between flex-wrap gap-2 shadow-sm">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="icon-circle bg-warning text-dark flex-shrink-0" style="width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </div>
+                            <div>
+                                <strong class="text-dark d-block">Yêu cầu đăng ký / gia hạn đang chờ Admin xác nhận:</strong>
+                                <span class="small text-muted">${BookingAccount.escape(pending.package_title)} · ${BookingAccount.money(pending.price_paid || 0)} · Phương thức: ${BookingAccount.escape(pending.payment_method || 'VietQR')}</span>
+                            </div>
+                        </div>
+                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold" style="font-size:0.8rem;">
+                            <i class="fa-solid fa-hourglass-half me-1"></i>Chờ Admin duyệt
+                        </span>
+                    </div>
+                `;
+            }
+
             if (active && Number(active.discount_percent) > 0) {
                 let cardGradient = 'linear-gradient(135deg, #475569 0%, #334155 100%)';
                 let shortName = 'Hội Viên Bạc (Silver)';
@@ -232,6 +268,7 @@ async function loadMyMembership() {
                 const startFormatted = active.start_date ? active.start_date.substring(0, 10).split('-').reverse().join('/') : '--';
 
                 activeBox.innerHTML = `
+                    ${pendingBannerHtml}
                     <div class="card border-0 rounded-4 p-4 text-white shadow-sm" style="background: ${cardGradient};">
                         <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2">
@@ -291,11 +328,12 @@ async function loadMyMembership() {
                 }
             } else {
                 activeBox.innerHTML = `
+                    ${pendingBannerHtml}
                     <div class="p-4 rounded-4 text-center border-2 border-dashed position-relative" style="background: rgba(13, 148, 136, 0.03); border-color: rgba(13, 148, 136, 0.25);">
                         <div class="icon-circle bg-teal-subtle text-teal mx-auto mb-3" style="width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">
                             <i class="fa-solid fa-crown text-warning"></i>
                         </div>
-                        <h5 class="fw-bold mb-2">Bạn chưa kích hoạt Gói Hội Viên nào</h5>
+                        <h5 class="fw-bold mb-2">Bạn chưa có Gói Hội Viên nào đang hoạt động</h5>
                         <p class="text-muted small mx-auto mb-4" style="max-width: 520px;">
                             Đăng ký gói hội viên GODMINTON để nhận đặc quyền <strong>giảm trực tiếp 5% – 15%</strong> toàn bộ tiền sân cho mọi lượt đặt lịch, ưu tiên giữ sân giờ vàng và nhiều quà tặng hấp dẫn!
                         </p>
@@ -334,7 +372,11 @@ async function loadMyMembership() {
                     const isCurrent = item.status === 'active';
 
                     let statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">Đã hết hạn</span>';
-                    if (isCurrent) {
+                    if (item.status === 'pending') {
+                        statusBadge = '<span class="badge bg-warning text-dark border border-warning rounded-pill fw-bold"><i class="fa-solid fa-clock-rotate-left me-1"></i>Chờ admin xác nhận</span>';
+                    } else if (item.status === 'rejected') {
+                        statusBadge = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Đã từ chối</span>';
+                    } else if (isCurrent) {
                         statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-bold"><i class="fa-solid fa-circle-check me-1"></i>Đang kích hoạt</span>';
                     } else if (item.status === 'cancelled') {
                         statusBadge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Đã chuyển gói</span>';
@@ -345,7 +387,7 @@ async function loadMyMembership() {
                     const cleanTitle = tierTitles[item.tier] || item.package_title || 'Gói Hội Viên';
 
                     return `
-                        <div class="p-3 rounded-3 border bg-surface d-flex align-items-center justify-content-between flex-wrap gap-2 ${isCurrent ? 'border-teal shadow-sm' : ''}">
+                        <div class="p-3 rounded-3 border bg-surface d-flex align-items-center justify-content-between flex-wrap gap-2 ${isCurrent ? 'border-teal shadow-sm' : ''} ${item.status === 'pending' ? 'border-warning' : ''}">
                             <div>
                                 <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                                     <strong class="fs-6 text-dark">${cleanTitle}</strong>
@@ -421,14 +463,14 @@ function initRenewMembershipModal() {
 
                 if (window.Swal) {
                     await Swal.fire({
-                        icon: 'success',
-                        title: 'Gia Hạn Thành Công!',
-                        html: `Gói hội viên <strong>${json.data.package_title}</strong> đã được gia hạn thành công.<br>Thời hạn mới đến ngày: <strong>${json.data.end_date.substring(0, 10).split('-').reverse().join('/')}</strong> (Cộng thêm ${json.data.duration_days} ngày).`,
-                        confirmButtonText: 'Đồng ý',
+                        icon: 'info',
+                        title: 'Đã Gửi Yêu Cầu Gia Hạn!',
+                        html: `Yêu cầu gia hạn gói <strong>${json.data.package_title}</strong> của bạn đã được gửi thành công và <strong>đang chờ Quản trị viên (Admin) duyệt xác nhận</strong>.<br>Hệ thống sẽ cộng dồn hạn sử dụng ngay sau khi Admin xác nhận.`,
+                        confirmButtonText: 'Đã hiểu',
                         confirmButtonColor: '#0d9488'
                     });
                 } else {
-                    alert('Gia hạn gói hội viên thành công!');
+                    alert('Yêu cầu gia hạn đã gửi, đang chờ Admin xác nhận!');
                 }
 
                 await loadMyMembership();

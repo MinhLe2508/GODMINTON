@@ -25,12 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const paginationUl = document.getElementById('paginationUl');
 
     // Stat Elements
+    const statPending = document.getElementById('statPendingApproval');
     const statActive = document.getElementById('statActiveMembers');
     const statSilver = document.getElementById('statCountSilver');
     const statGold = document.getElementById('statCountGold');
     const statPlatinum = document.getElementById('statCountPlatinum');
     const statRevenue = document.getElementById('statTotalRevenue');
-    const statExpiring = document.getElementById('statExpiringSoon');
 
     // Modals
     const grantModalEl = document.getElementById('modalGrantMembership');
@@ -79,12 +79,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 1. Cập nhật Thống kê KPIs
             if (data.stats) {
+                if (statPending) statPending.textContent = data.stats.total_pending || 0;
                 if (statActive) statActive.textContent = data.stats.total_active || 0;
                 if (statSilver) statSilver.textContent = `Bạc: ${data.stats.silver_count || 0}`;
                 if (statGold) statGold.textContent = `Vàng: ${data.stats.gold_count || 0}`;
                 if (statPlatinum) statPlatinum.textContent = `B.Kim: ${data.stats.platinum_count || 0}`;
                 if (statRevenue) statRevenue.textContent = AdminApp.formatVND(data.stats.total_revenue || 0);
-                if (statExpiring) statExpiring.textContent = data.stats.expiring_soon || 0;
             }
 
             // Lưu danh sách packages và customers cho modal cấp gói
@@ -116,8 +116,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Trạng thái badge
                 let statusBadgeHtml = '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">Đã hết hạn</span>';
-                if (item.status === 'active' && !item.is_expired) {
+                const isPending = item.status === 'pending';
+
+                if (isPending) {
+                    statusBadgeHtml = '<span class="badge bg-warning text-dark border border-warning rounded-pill fw-bold"><i class="fa-solid fa-clock-rotate-left me-1"></i>Chờ xác nhận</span>';
+                } else if (item.status === 'active' && !item.is_expired) {
                     statusBadgeHtml = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-bold"><i class="fa-solid fa-circle-check me-1"></i>Đang kích hoạt</span>';
+                } else if (item.status === 'rejected') {
+                    statusBadgeHtml = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Đã từ chối</span>';
                 } else if (item.status === 'cancelled') {
                     statusBadgeHtml = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Đã hủy / đổi gói</span>';
                 }
@@ -135,8 +141,54 @@ document.addEventListener('DOMContentLoaded', () => {
                     ? `<img src="${AdminApp.escapeHTML(item.user_avatar)}" class="user-avatar-sm" alt="Avatar">`
                     : `<div class="user-avatar-sm">${initial}</div>`;
 
+                // Cột hành động
+                let actionHtml = '';
+                if (isPending) {
+                    actionHtml = `
+                        <div class="d-flex align-items-center justify-content-end gap-1">
+                            <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold btn-approve-row"
+                                    data-id="${item.id}"
+                                    data-name="${AdminApp.escapeHTML(item.user_name)}"
+                                    data-pkg="${AdminApp.escapeHTML(item.package_title)}">
+                                <i class="fa-solid fa-circle-check me-1"></i> Duyệt gói
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 fw-semibold btn-reject-row"
+                                    data-id="${item.id}"
+                                    data-name="${AdminApp.escapeHTML(item.user_name)}"
+                                    title="Từ chối yêu cầu">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    actionHtml = `
+                        <div class="dropdown d-inline-block">
+                            <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3 fw-semibold btn-open-extend" 
+                                    data-id="${item.id}" 
+                                    data-name="${AdminApp.escapeHTML(item.user_name)}" 
+                                    data-pkg="${AdminApp.escapeHTML(item.package_title)}" 
+                                    data-end="${endDate}">
+                                <i class="fa-solid fa-arrows-rotate me-1"></i> Gia hạn
+                            </button>
+                            <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Tùy chọn khác">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                ${item.status !== 'active' ? `
+                                    <li><a class="dropdown-item py-2 text-success btn-update-status" href="#" data-id="${item.id}" data-status="active"><i class="fa-solid fa-circle-check me-2"></i>Kích hoạt lại gói</a></li>
+                                ` : `
+                                    <li><a class="dropdown-item py-2 text-secondary btn-update-status" href="#" data-id="${item.id}" data-status="expired"><i class="fa-solid fa-clock-rotate-left me-2"></i>Đánh dấu hết hạn</a></li>
+                                    <li><a class="dropdown-item py-2 text-warning btn-update-status" href="#" data-id="${item.id}" data-status="cancelled"><i class="fa-solid fa-ban me-2"></i>Hủy gói hội viên</a></li>
+                                `}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item py-2 text-danger btn-delete-membership" href="#" data-id="${item.id}"><i class="fa-solid fa-trash me-2"></i>Xóa bản ghi này</a></li>
+                            </ul>
+                        </div>
+                    `;
+                }
+
                 return `
-                    <tr>
+                    <tr class="${isPending ? 'table-warning bg-warning bg-opacity-10' : ''}">
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 ${avatarHtml}
@@ -158,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </td>
                         <td>
                             <div class="small fw-semibold text-dark">
-                                ${startDate} – ${endDate}
+                                ${isPending ? `Yêu cầu ngày: ${startDate}` : `${startDate} – ${endDate}`}
                             </div>
                             <div class="small text-muted mt-1" style="font-size:0.75rem;">
                                 ${daysLeftHtml}
@@ -173,28 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${statusBadgeHtml}
                         </td>
                         <td class="text-end">
-                            <div class="dropdown d-inline-block">
-                                <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3 fw-semibold btn-open-extend" 
-                                        data-id="${item.id}" 
-                                        data-name="${AdminApp.escapeHTML(item.user_name)}" 
-                                        data-pkg="${AdminApp.escapeHTML(item.package_title)}" 
-                                        data-end="${endDate}">
-                                    <i class="fa-solid fa-arrows-rotate me-1"></i> Gia hạn
-                                </button>
-                                <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Tùy chọn khác">
-                                    <i class="fa-solid fa-ellipsis-vertical"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
-                                    ${item.status !== 'active' ? `
-                                        <li><a class="dropdown-item py-2 text-success btn-update-status" href="#" data-id="${item.id}" data-status="active"><i class="fa-solid fa-circle-check me-2"></i>Kích hoạt lại gói</a></li>
-                                    ` : `
-                                        <li><a class="dropdown-item py-2 text-secondary btn-update-status" href="#" data-id="${item.id}" data-status="expired"><i class="fa-solid fa-clock-rotate-left me-2"></i>Đánh dấu hết hạn</a></li>
-                                        <li><a class="dropdown-item py-2 text-warning btn-update-status" href="#" data-id="${item.id}" data-status="cancelled"><i class="fa-solid fa-ban me-2"></i>Hủy gói hội viên</a></li>
-                                    `}
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item py-2 text-danger btn-delete-membership" href="#" data-id="${item.id}"><i class="fa-solid fa-trash me-2"></i>Xóa bản ghi này</a></li>
-                                </ul>
-                            </div>
+                            ${actionHtml}
                         </td>
                     </tr>
                 `;
@@ -228,6 +259,57 @@ document.addEventListener('DOMContentLoaded', () => {
     // Gắn sự kiện các nút trong dòng bảng
     // ========================================================
     function attachRowActionListeners() {
+        // Nút Duyệt gói
+        document.querySelectorAll('.btn-approve-row').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.getAttribute('data-id');
+                const name = btn.getAttribute('data-name');
+                const pkg = btn.getAttribute('data-pkg');
+
+                const ok = await AdminApp.confirmAction(
+                    'Duyệt & kích hoạt gói hội viên?',
+                    `Bạn có chắc chắn muốn duyệt và kích hoạt gói "${pkg}" cho thành viên "${name}"?`
+                );
+                if (!ok) return;
+
+                try {
+                    const res = await BookingAccount.request('api/admin/memberships.php', {
+                        method: 'POST',
+                        body: { action: 'approve', id: Number(id) }
+                    });
+                    AdminApp.toast('success', res.message || 'Đã duyệt gói thành công!');
+                    loadMemberships(currentPage);
+                } catch (err) {
+                    AdminApp.toast('error', err.message || 'Lỗi khi duyệt gói.');
+                }
+            });
+        });
+
+        // Nút Từ chối gói
+        document.querySelectorAll('.btn-reject-row').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.getAttribute('data-id');
+                const name = btn.getAttribute('data-name');
+
+                const ok = await AdminApp.confirmAction(
+                    'Từ chối yêu cầu đăng ký?',
+                    `Bạn có chắc chắn muốn từ chối yêu cầu đăng ký gói của "${name}"?`
+                );
+                if (!ok) return;
+
+                try {
+                    const res = await BookingAccount.request('api/admin/memberships.php', {
+                        method: 'POST',
+                        body: { action: 'reject', id: Number(id) }
+                    });
+                    AdminApp.toast('success', res.message || 'Đã từ chối yêu cầu.');
+                    loadMemberships(currentPage);
+                } catch (err) {
+                    AdminApp.toast('error', err.message || 'Lỗi khi từ chối yêu cầu.');
+                }
+            });
+        });
+
         // Nút mở modal Gia Hạn
         document.querySelectorAll('.btn-open-extend').forEach(btn => {
             btn.addEventListener('click', () => {

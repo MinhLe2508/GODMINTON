@@ -30,6 +30,11 @@ $userActiveMembership = ($currentUserId > 0 && $post && $post['type'] === 'membe
     : null;
 $isCurrentPackageActive = ($post && $userActiveMembership && (int)$userActiveMembership['post_id'] === (int)$post['id']);
 
+$userPendingMembership = ($currentUserId > 0 && $post && $post['type'] === 'membership') 
+    ? membership_get_pending_for_user($pdo, $currentUserId) 
+    : null;
+$isCurrentPackagePending = ($post && $userPendingMembership && (int)$userPendingMembership['post_id'] === (int)$post['id']);
+
 $typeLabels = [
     'event'        => ['label' => 'Sự kiện', 'icon' => 'fa-trophy', 'chip_class' => 'chip-event'],
     'membership'   => ['label' => 'Hội viên ưu đãi', 'icon' => 'fa-id-card', 'chip_class' => 'chip-membership'],
@@ -277,6 +282,21 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
                                 <i class="fa-solid fa-crown text-warning me-1"></i> Quản lý & Gia hạn tại Trang cá nhân
                             </a>
                         </div>
+                    <?php elseif ($isCurrentPackagePending): ?>
+                        <div class="small text-muted" style="max-width: 520px;">
+                            <span class="badge bg-warning text-dark px-2 py-1 rounded-pill fw-bold mb-1">
+                                <i class="fa-solid fa-clock-rotate-left me-1"></i>Đang chờ admin xác nhận
+                            </span>
+                            <div>Bạn đã gửi yêu cầu đăng ký gói này. Ban Quản Trị đang duyệt và sẽ kích hoạt ngay cho bạn.</div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <a href="profile.php?tab=membership" class="btn btn-warning text-dark rounded-pill px-4 fw-bold shadow-sm">
+                                <i class="fa-solid fa-clock-rotate-left me-1"></i> Theo dõi tại Trang cá nhân
+                            </a>
+                            <a href="courts.php" class="btn btn-outline-secondary rounded-pill px-3">
+                                <i class="fa-solid fa-table-tennis-paddle-ball me-1"></i> Xem sân
+                            </a>
+                        </div>
                     <?php else: ?>
                         <div class="small text-muted" style="max-width: 520px;">
                             <i class="fa-solid fa-bolt me-1 text-warning"></i>
@@ -464,10 +484,10 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
             if (res.ok && json.status === 'success') {
                 if (subModalInstance) subModalInstance.hide();
                 await Swal.fire({
-                    icon: 'success',
-                    title: 'Đăng Ký Thành Công!',
-                    html: `Chúc mừng bạn đã kích hoạt thành công <strong>${json.data.package_title}</strong>.<br>Hạng: <span class="badge bg-warning text-dark text-uppercase">${json.data.tier}</span> (Giảm <strong>${json.data.discount_percent}%</strong> tiền sân khi đặt lịch).`,
-                    confirmButtonText: 'Đồng ý',
+                    icon: 'info',
+                    title: 'Đã Gửi Yêu Cầu Đăng Ký!',
+                    html: `Yêu cầu đăng ký <strong>${json.data.package_title}</strong> của bạn đã được gửi thành công và <strong>đang chờ Quản trị viên (Admin) xác nhận</strong>.<br>Hệ thống sẽ kích hoạt tự động ngay sau khi Admin duyệt. Bạn có thể theo dõi trong Trang cá nhân.`,
+                    confirmButtonText: 'Đã hiểu',
                     confirmButtonColor: '#0d9488'
                 });
                 window.location.reload();

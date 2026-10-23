@@ -121,19 +121,30 @@ $currentUser = [
             <!-- Thống kê KPIs -->
             <div class="row g-3 mb-4">
                 <div class="col-6 col-lg-3">
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-icon bg-warning bg-opacity-10 text-warning">
-                            <i class="fa-solid fa-crown"></i>
+                    <div class="admin-stat-card border-warning border-opacity-25">
+                        <div class="admin-stat-icon bg-warning bg-opacity-15 text-warning">
+                            <i class="fa-solid fa-user-clock"></i>
                         </div>
                         <div>
-                            <div class="admin-stat-value" id="statActiveMembers">0</div>
-                            <div class="admin-stat-label">Hội viên đang hoạt động</div>
+                            <div class="admin-stat-value text-warning fw-extrabold" id="statPendingApproval">0</div>
+                            <div class="admin-stat-label">Chờ admin duyệt xác nhận</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-6 col-lg-3">
                     <div class="admin-stat-card">
                         <div class="admin-stat-icon bg-teal-subtle text-teal">
+                            <i class="fa-solid fa-crown text-warning"></i>
+                        </div>
+                        <div>
+                            <div class="admin-stat-value text-teal" id="statActiveMembers">0</div>
+                            <div class="admin-stat-label">Hội viên đang hoạt động</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-icon bg-secondary bg-opacity-10 text-secondary">
                             <i class="fa-solid fa-layer-group"></i>
                         </div>
                         <div>
@@ -142,7 +153,7 @@ $currentUser = [
                                 <span class="badge tier-badge-gold rounded-pill px-2 py-0" style="font-size:0.7rem;" id="statCountGold">Vàng: 0</span>
                                 <span class="badge tier-badge-platinum rounded-pill px-2 py-0" style="font-size:0.7rem;" id="statCountPlatinum">B.Kim: 0</span>
                             </div>
-                            <div class="admin-stat-label">Phân bố hạng hội viên</div>
+                            <div class="admin-stat-label">Phân bố hạng thành viên</div>
                         </div>
                     </div>
                 </div>
@@ -154,17 +165,6 @@ $currentUser = [
                         <div>
                             <div class="admin-stat-value text-success" id="statTotalRevenue">0 đ</div>
                             <div class="admin-stat-label">Doanh thu bán gói hội viên</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-lg-3">
-                    <div class="admin-stat-card">
-                        <div class="admin-stat-icon bg-danger bg-opacity-10 text-danger">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
-                        </div>
-                        <div>
-                            <div class="admin-stat-value text-danger" id="statExpiringSoon">0</div>
-                            <div class="admin-stat-label">Sắp hết hạn (≤ 7 ngày)</div>
                         </div>
                     </div>
                 </div>
@@ -184,11 +184,12 @@ $currentUser = [
                             <option value="platinum">Bạch Kim (Giảm 15%)</option>
                         </select>
 
-                        <select id="filterStatus" class="form-select form-select-sm rounded-pill" style="min-width: 150px;">
+                        <select id="filterStatus" class="form-select form-select-sm rounded-pill" style="min-width: 170px;">
                             <option value="">Tất cả trạng thái</option>
-                            <option value="active">Đang kích hoạt</option>
+                            <option value="pending">⏳ Chờ admin xác nhận</option>
+                            <option value="active">✓ Đang kích hoạt</option>
                             <option value="expired">Đã hết hạn</option>
-                            <option value="cancelled">Đã hủy / chuyển gói</option>
+                            <option value="cancelled">Đã hủy / Từ chối</option>
                         </select>
 
                         <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="btnResetFilters" title="Đặt lại bộ lọc">

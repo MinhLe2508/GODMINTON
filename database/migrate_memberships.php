@@ -32,7 +32,7 @@ try {
           `duration_days` int(10) unsigned NOT NULL DEFAULT 30 COMMENT 'Thời hạn của gói (ngày)',
           `start_date` datetime NOT NULL COMMENT 'Ngày bắt đầu kích hoạt',
           `end_date` datetime NOT NULL COMMENT 'Ngày hết hạn gói',
-          `status` enum('active','expired','cancelled') NOT NULL DEFAULT 'active' COMMENT 'Trạng thái gói',
+          `status` enum('pending','active','expired','cancelled','rejected') NOT NULL DEFAULT 'pending' COMMENT 'Trạng thái gói: pending (chờ admin duyệt), active, expired, cancelled, rejected',
           `payment_method` varchar(50) NOT NULL DEFAULT 'VietQR' COMMENT 'Phương thức thanh toán',
           `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
           `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -43,7 +43,9 @@ try {
           CONSTRAINT `fk_um_post` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
-    echo "✓ Đã kiểm tra / tạo bảng `user_memberships` thành công.\n";
+    // Cập nhật enum status nếu bảng đã tạo từ trước
+    $pdo->exec("ALTER TABLE `user_memberships` MODIFY COLUMN `status` ENUM('pending','active','expired','cancelled','rejected') NOT NULL DEFAULT 'pending' COMMENT 'Trạng thái gói: pending (chờ admin duyệt), active, expired, cancelled, rejected'");
+    echo "✓ Đã kiểm tra / cập nhật cột `status` trong `user_memberships` (hỗ trợ trạng thái pending).\n";
 
     // 3. Bổ sung cột vào bookings
     $bkCol1 = $pdo->query("SHOW COLUMNS FROM `bookings` LIKE 'user_membership_id'")->fetch();

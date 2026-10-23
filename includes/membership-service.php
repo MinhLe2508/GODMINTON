@@ -50,6 +50,35 @@ function membership_get_active_for_user(PDO $pdo, int $userId): ?array {
 }
 
 /**
+ * Lấy gói hội viên đang chờ admin xác nhận (pending) của người dùng
+ */
+function membership_get_pending_for_user(PDO $pdo, int $userId): ?array {
+    if ($userId <= 0) return null;
+
+    $stmt = $pdo->prepare("
+        SELECT um.*, p.title AS package_title, p.slug AS package_slug, p.cover_image
+        FROM user_memberships um
+        JOIN posts p ON p.id = um.post_id
+        WHERE um.user_id = ?
+          AND um.status = 'pending'
+        ORDER BY um.id DESC
+        LIMIT 1
+    ");
+    $stmt->execute([$userId]);
+    $row = $stmt->fetch();
+    if (!$row) return null;
+
+    $row['tier_label'] = match($row['tier']) {
+        'platinum' => 'Bạch Kim (15%)',
+        'gold'     => 'Vàng (10%)',
+        'silver'   => 'Bạc (5%)',
+        default    => 'Hội Viên'
+    };
+
+    return $row;
+}
+
+/**
  * Lấy lịch sử các gói hội viên đã đăng ký của người dùng
  */
 function membership_get_history(PDO $pdo, int $userId): array {
@@ -127,36 +156,34 @@ function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymen
         $tier = 'silver';
     }
 
+    // Kiểm tra xem user đã có yêu cầu nào đang chờ admin duyệt chưa
+    $pending = membership_get_pending_for_user($pdo, $userId);
+    if ($pending) {
+        throw new MembershipError(409, 'PENDING_EXISTS', 'Bạn đang có một yêu cầu đăng ký gói ' . ($pending['package_title'] ?? 'hội viên') . ' đang chờ Admin xác nhận. Vui lòng chờ phê duyệt trước khi gửi yêu cầu mới.');
+    }
+
     // Kiểm tra gói đang kích hoạt của user
     $active = membership_get_active_for_user($pdo, $userId);
 
     $now = date('Y-m-d H:i:s');
     $startDate = $now;
-    $isExtend = false;
+    $isExtend = ($active && $active['tier'] === $tier);
 
-    if ($active) {
-        if ($active['tier'] === $tier) {
-            // Gia hạn gói cùng hạng: cộng dồn thời hạn
-            $isExtend = true;
-            $currentEnd = strtotime($active['end_date']);
-            $baseTime = ($currentEnd > time()) ? $currentEnd : time();
-            $endDate = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", $baseTime));
-        } else {
-            // Đổi hạng gói: tính từ thời điểm hiện tại
-            $endDate = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", time()));
-            // Hủy gói cũ thấp hơn hoặc gói trước đó
-            $pdo->prepare("UPDATE user_memberships SET status = 'cancelled' WHERE id = ?")->execute([$active['id']]);
-        }
+    // Tính hạn dự kiến (sẽ được chốt chính xác khi Admin duyệt)
+    if ($isExtend) {
+        $currentEnd = strtotime($active['end_date']);
+        $baseTime = ($currentEnd > time()) ? $currentEnd : time();
+        $endDate = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", $baseTime));
     } else {
         $endDate = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", time()));
     }
 
-    // Tạo bản ghi user_memberships
+    // Tạo bản ghi user_memberships với status = 'pending'
     $stmt = $pdo->prepare("
         INSERT INTO user_memberships (
             user_id, post_id, tier, discount_percent, price_paid, duration_days,
             start_date, end_date, status, payment_method, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, NOW(), NOW())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, NOW(), NOW())
     ");
 
     $stmt->execute([
@@ -183,9 +210,105 @@ function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymen
         'price_paid'       => $price,
         'start_date'       => $startDate,
         'end_date'         => $endDate,
-        'status'           => 'active',
+        'status'           => 'pending',
         'is_extend'        => $isExtend,
-        'message'          => $isExtend ? "Đã gia hạn thành công thêm {$durationDays} ngày!" : "Đã kích hoạt thành công Gói {$tier} ({$discountPercent}%)!"
+        'message'          => "Đăng ký thành công! Yêu cầu của bạn đã được gửi tới Ban Quản Trị và đang chờ Admin duyệt xác nhận."
+    ];
+}
+
+/**
+ * Quản trị viên phê duyệt (kích hoạt) gói hội viên
+ */
+function membership_approve(PDO $pdo, int $membershipId): array {
+    $stmt = $pdo->prepare("
+        SELECT um.*, p.title AS package_title, u.name AS user_name, u.email AS user_email
+        FROM user_memberships um
+        JOIN posts p ON p.id = um.post_id
+        JOIN users u ON u.id = um.user_id
+        WHERE um.id = ?
+    ");
+    $stmt->execute([$membershipId]);
+    $mem = $stmt->fetch();
+    if (!$mem) {
+        throw new MembershipError(404, 'NOT_FOUND', 'Không tìm thấy yêu cầu đăng ký gói hội viên.');
+    }
+    if ($mem['status'] !== 'pending') {
+        throw new MembershipError(400, 'INVALID_STATUS', 'Yêu cầu này không ở trạng thái chờ duyệt (Trạng thái hiện tại: ' . $mem['status'] . ').');
+    }
+
+    $userId = (int)$mem['user_id'];
+    $tier = $mem['tier'];
+    $durationDays = (int)$mem['duration_days'];
+    $now = date('Y-m-d H:i:s');
+
+    // Kiểm tra gói active hiện tại của user
+    $active = membership_get_active_for_user($pdo, $userId);
+
+    if ($active) {
+        if ($active['tier'] === $tier) {
+            // Gia hạn cùng hạng: cộng dồn thời hạn
+            $curEnd = strtotime($active['end_date']);
+            $baseTime = ($curEnd > time()) ? $curEnd : time();
+            $newEnd = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", $baseTime));
+            $newStart = $active['start_date'];
+        } else {
+            // Đổi hạng: hủy gói cũ, tính mới từ NOW()
+            $pdo->prepare("UPDATE user_memberships SET status = 'cancelled' WHERE id = ?")->execute([$active['id']]);
+            $newStart = $now;
+            $newEnd = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", time()));
+        }
+    } else {
+        $newStart = $now;
+        $newEnd = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", time()));
+    }
+
+    $upd = $pdo->prepare("
+        UPDATE user_memberships 
+        SET start_date = ?, end_date = ?, status = 'active', updated_at = NOW() 
+        WHERE id = ?
+    ");
+    $upd->execute([$newStart, $newEnd, $membershipId]);
+
+    return [
+        'id'            => $membershipId,
+        'user_name'     => $mem['user_name'],
+        'package_title' => $mem['package_title'],
+        'tier'          => $mem['tier'],
+        'start_date'    => $newStart,
+        'end_date'      => $newEnd,
+        'status'        => 'active',
+        'message'       => "Đã duyệt và kích hoạt thành công Gói {$mem['package_title']} cho thành viên {$mem['user_name']}!"
+    ];
+}
+
+/**
+ * Quản trị viên từ chối yêu cầu gói hội viên
+ */
+function membership_reject(PDO $pdo, int $membershipId, string $reason = ''): array {
+    $stmt = $pdo->prepare("
+        SELECT um.*, p.title AS package_title, u.name AS user_name
+        FROM user_memberships um
+        JOIN posts p ON p.id = um.post_id
+        JOIN users u ON u.id = um.user_id
+        WHERE um.id = ?
+    ");
+    $stmt->execute([$membershipId]);
+    $mem = $stmt->fetch();
+    if (!$mem) {
+        throw new MembershipError(404, 'NOT_FOUND', 'Không tìm thấy yêu cầu đăng ký gói hội viên.');
+    }
+    if ($mem['status'] !== 'pending') {
+        throw new MembershipError(400, 'INVALID_STATUS', 'Yêu cầu này không ở trạng thái chờ duyệt.');
+    }
+
+    $pdo->prepare("UPDATE user_memberships SET status = 'rejected', updated_at = NOW() WHERE id = ?")->execute([$membershipId]);
+
+    return [
+        'id'            => $membershipId,
+        'user_name'     => $mem['user_name'],
+        'package_title' => $mem['package_title'],
+        'status'        => 'rejected',
+        'message'       => "Đã từ chối yêu cầu đăng ký của thành viên {$mem['user_name']}."
     ];
 }
 

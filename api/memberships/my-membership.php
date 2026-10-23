@@ -26,6 +26,7 @@ try {
     }
 
     $active = membership_get_active_for_user($pdo, (int)$user['id']);
+    $pending = membership_get_pending_for_user($pdo, (int)$user['id']);
     $history = membership_get_history($pdo, (int)$user['id']);
 
     booking_account_out(200, [
@@ -36,6 +37,7 @@ try {
             'email' => $user['email']
         ],
         'active_membership' => $active,
+        'pending_membership' => $pending,
         'history' => $history
     ], 'Lấy thông tin gói hội viên thành công.');
 

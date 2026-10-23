@@ -33,6 +33,9 @@ try {
         $offset = ($page - 1) * $limit;
 
         // 1. Thống kê tổng quan (KPIs)
+        $statPendingStmt = $pdo->query("SELECT COUNT(*) FROM user_memberships WHERE status = 'pending'");
+        $totalPending = (int)$statPendingStmt->fetchColumn();
+
         $statActiveStmt = $pdo->query("SELECT COUNT(*) FROM user_memberships WHERE status = 'active' AND end_date >= NOW()");
         $totalActive = (int)$statActiveStmt->fetchColumn();
 
@@ -49,7 +52,7 @@ try {
             }
         }
 
-        $revenueStmt = $pdo->query("SELECT COALESCE(SUM(price_paid), 0) FROM user_memberships");
+        $revenueStmt = $pdo->query("SELECT COALESCE(SUM(price_paid), 0) FROM user_memberships WHERE status = 'active'");
         $totalRevenue = (float)$revenueStmt->fetchColumn();
 
         $expiringStmt = $pdo->query("
@@ -70,14 +73,15 @@ try {
             $params[] = $tier;
         }
 
-        if ($status !== '' && in_array($status, ['active', 'expired', 'cancelled'], true)) {
-            if ($status === 'active') {
+        if ($status !== '' && in_array($status, ['pending', 'active', 'expired', 'cancelled'], true)) {
+            if ($status === 'pending') {
+                $where[] = "um.status = 'pending'";
+            } elseif ($status === 'active') {
                 $where[] = "(um.status = 'active' AND um.end_date >= NOW())";
             } elseif ($status === 'expired') {
                 $where[] = "(um.status = 'expired' OR (um.status = 'active' AND um.end_date < NOW()))";
             } else {
-                $where[] = 'um.status = ?';
-                $params[] = $status;
+                $where[] = "um.status IN ('cancelled', 'rejected')";
             }
         }
 
@@ -199,6 +203,7 @@ try {
 
         booking_account_out(200, [
             'stats' => [
+                'total_pending'  => $totalPending,
                 'total_active'   => $totalActive,
                 'silver_count'   => $tierCounts['silver'],
                 'gold_count'     => $tierCounts['gold'],
@@ -394,6 +399,41 @@ try {
             $del->execute([$membershipId]);
 
             booking_account_out(200, null, 'Đã xóa bản ghi gói hội viên thành công.');
+        }
+
+        // ==========================================
+        // 5. ACTION: APPROVE (Duyệt & Kích hoạt gói)
+        // ==========================================
+        if ($action === 'approve') {
+            $membershipId = (int)($input['id'] ?? 0);
+            if ($membershipId <= 0) {
+                booking_account_out(422, null, 'ID bản ghi không hợp lệ.');
+            }
+
+            try {
+                $res = membership_approve($pdo, $membershipId);
+                booking_account_out(200, $res, $res['message']);
+            } catch (MembershipError $me) {
+                booking_account_out($me->httpCode, null, $me->getMessage());
+            }
+        }
+
+        // ==========================================
+        // 6. ACTION: REJECT (Từ chối yêu cầu đăng ký)
+        // ==========================================
+        if ($action === 'reject') {
+            $membershipId = (int)($input['id'] ?? 0);
+            $reason = trim((string)($input['reason'] ?? ''));
+            if ($membershipId <= 0) {
+                booking_account_out(422, null, 'ID bản ghi không hợp lệ.');
+            }
+
+            try {
+                $res = membership_reject($pdo, $membershipId, $reason);
+                booking_account_out(200, $res, $res['message']);
+            } catch (MembershipError $me) {
+                booking_account_out($me->httpCode, null, $me->getMessage());
+            }
         }
 
         booking_account_out(422, null, 'Thao tác không được hỗ trợ.');
