@@ -1311,3 +1311,15 @@ img, svg, video, canvas {
 
 
 
+
+
+/* ===== Đánh giá sân ===== */
+.review-star-static { color: #f59e0b; font-size: .85rem; }
+.review-star-static.fa-regular { color: #cbd5e1; }
+.review-star-input { display: flex; align-items: center; }
+.review-star-btn { border: 0; background: none; padding: 2px 3px; font-size: 1.6rem; line-height: 1; color: #cbd5e1; cursor: pointer; transition: transform .1s, color .1s; }
+.review-star-btn:hover, .review-star-btn.active { color: #f59e0b; }
+.review-star-btn:hover { transform: scale(1.12); }
+.review-star-btn:focus-visible { outline: 2px solid var(--brand-teal); outline-offset: 2px; border-radius: 6px; }
+.review-avatar { width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; color: var(--brand-teal); background: rgba(13, 148, 136, 0.12); }
+.review-mine { background: rgba(13, 148, 136, 0.05); border-radius: .75rem; padding: .5rem; margin: -.5rem; }

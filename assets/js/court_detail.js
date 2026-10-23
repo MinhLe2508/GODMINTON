@@ -106,8 +106,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Format giá VND
         const formatVND = (amt) => new Intl.NumberFormat('vi-VN').format(amt) + ' đ';
 
-        // Reviews placeholder (chưa có bảng reviews trong DB, sẽ bổ sung tuần 2+)
-        const reviewsHtml = '<p class="text-muted mb-0">Tính năng đánh giá sẽ sớm được cập nhật. Hãy là người đầu tiên trải nghiệm!</p>';
+        // Khung đánh giá — nội dung được nạp bởi initReviews() sau khi render
+        const reviewsHtml = '<div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm text-teal me-2" role="status"></div>Đang tải đánh giá...</div>';
 
         // Render nội dung chính
         document.getElementById('pageContent').innerHTML = `
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <!-- Đánh Giá -->
                 <div class="card border rounded-4 p-4 shadow-sm mb-4">
                     <h5 class="fw-bold mb-4"><i class="fa-solid fa-comments text-teal me-2"></i>Đánh Giá Từ Vợt Thủ</h5>
-                    <div class="d-flex flex-column gap-3">${reviewsHtml}</div>
+                    <div id="courtReviews" class="d-flex flex-column gap-3">${reviewsHtml}</div>
                 </div>
             </div>
 
@@ -220,6 +220,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
         </div>`;
 
+        initReviews(court.id);
+
         // Khởi tạo bản đồ Leaflet vị trí sân
         if (window.CourtMap && typeof window.CourtMap.init === 'function') {
             const lat = parseFloat(court.latitude);
@@ -251,3 +253,153 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>`;
     }
 });
+
+/* ------------------------------------------------------------------
+ * Đánh Giá Từ Vợt Thủ
+ *  - Ai cũng xem được; chưa đăng nhập thấy nút "Đăng nhập để đánh giá".
+ *  - Chỉ khách đã từng đặt sân mới có form (chọn 1-5 sao + bình luận).
+ *  - Mỗi người 1 đánh giá / sân và có thể sửa lại.
+ * ------------------------------------------------------------------ */
+function initReviews(courtId) {
+    const box = document.getElementById('courtReviews');
+    if (!box) return;
+    const esc = v => String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const api = window.BookingAccount;
+    const loginUrl = 'auth.php?redirect=' + encodeURIComponent(location.pathname + location.search);
+    let state = null;
+    let draftRating = 0;
+    let editing = false;
+
+    const stars = (n, cls = '') => [1,2,3,4,5].map(i =>
+        `<i class="fa-${i <= Math.round(n) ? 'solid' : 'regular'} fa-star review-star-static ${cls}" aria-hidden="true"></i>`).join('');
+    const fmtDate = iso => { const d = new Date(String(iso).replace(' ', 'T')); return isNaN(d) ? '' : d.toLocaleDateString('vi-VN'); };
+    const initial = name => esc((String(name || '?').trim().split(/\s+/).pop() || '?').charAt(0).toUpperCase());
+
+    function summaryHtml() {
+        const {average, total, distribution} = state.summary;
+        if (!total) return '<p class="text-muted mb-0">Chưa có đánh giá nào cho sân này.</p>';
+        const rows = [5,4,3,2,1].map(n => `
+            <div class="d-flex align-items-center gap-2 small">
+                <span style="width:14px">${n}</span><i class="fa-solid fa-star text-warning" aria-hidden="true" style="font-size:.7rem"></i>
+                <div class="progress flex-grow-1" style="height:6px"><div class="progress-bar bg-warning" style="width:${total ? distribution[n] / total * 100 : 0}%"></div></div>
+                <span class="text-muted" style="width:24px;text-align:right">${distribution[n]}</span>
+            </div>`).join('');
+        return `
+            <div class="row g-3 align-items-center">
+                <div class="col-sm-4 text-center">
+                    <div class="display-5 fw-extrabold text-teal" id="reviewAverage">${average.toFixed(1)}</div>
+                    <div class="mb-1" aria-label="${average.toFixed(1)} trên 5 sao">${stars(average)}</div>
+                    <div class="small text-muted">${total} đánh giá</div>
+                </div>
+                <div class="col-sm-8 d-flex flex-column gap-1">${rows}</div>
+            </div>`;
+    }
+
+    function formHtml() {
+        const mine = state.viewer.my_review;
+        if (mine && !editing) {
+            return `<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 border rounded-3 p-3 bg-body-tertiary">
+                <span class="small"><i class="fa-solid fa-circle-check text-teal me-2" aria-hidden="true"></i>Bạn đã đánh giá sân này. Bạn có thể sửa lại bất cứ lúc nào.</span>
+                <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3" data-review-edit><i class="fa-solid fa-pen me-1"></i>Sửa đánh giá</button>
+            </div>`;
+        }
+        const text = mine ? mine.comment : '';
+        return `<form id="reviewForm" class="border rounded-3 p-3 bg-body-tertiary" novalidate>
+            <div class="fw-semibold mb-2">${mine ? 'Sửa đánh giá của bạn' : 'Chia sẻ trải nghiệm của bạn'}</div>
+            <div class="review-star-input mb-2" role="radiogroup" aria-label="Chọn số sao">
+                ${[1,2,3,4,5].map(i => `<button type="button" class="review-star-btn" role="radio" data-star="${i}" aria-checked="${i === draftRating}" aria-label="${i} sao"><i class="fa-solid fa-star" aria-hidden="true"></i></button>`).join('')}
+                <span class="small text-muted ms-2" id="reviewStarHint"></span>
+            </div>
+            <textarea class="form-control mb-1" id="reviewComment" rows="3" maxlength="1000" placeholder="Mặt sân, ánh sáng, dịch vụ, giá cả... (tối thiểu 5 ký tự)">${esc(text)}</textarea>
+            <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                <span class="small text-muted"><span id="reviewCount">${text.length}</span>/1000</span>
+                <div class="d-flex gap-2">
+                    ${mine ? '<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-review-cancel>Hủy</button>' : ''}
+                    <button type="submit" class="btn btn-sm btn-teal rounded-pill px-4 fw-semibold" id="reviewSubmit">${mine ? 'Cập nhật đánh giá' : 'Gửi đánh giá'}</button>
+                </div>
+            </div>
+        </form>`;
+    }
+
+    function actionHtml() {
+        const v = state.viewer;
+        if (!v.logged_in) {
+            return `<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 border rounded-3 p-3 bg-body-tertiary">
+                <span class="small text-muted">Đăng nhập để chia sẻ trải nghiệm của bạn tại sân này.</span>
+                <a href="${loginUrl}" class="btn btn-sm btn-teal rounded-pill px-3 fw-semibold"><i class="fa-solid fa-right-to-bracket me-1"></i>Đăng nhập để đánh giá</a>
+            </div>`;
+        }
+        if (!v.can_review) {
+            return `<div class="d-flex align-items-start gap-2 border rounded-3 p-3 bg-body-tertiary small text-muted">
+                <i class="fa-solid fa-circle-info text-teal mt-1" aria-hidden="true"></i>
+                <span>Chỉ khách đã từng đặt sân này mới có thể đánh giá. <a class="text-teal fw-semibold" href="booking.php?court_id=${courtId}">Đặt sân ngay</a></span>
+            </div>`;
+        }
+        return formHtml();
+    }
+
+    function listHtml() {
+        if (!state.reviews.length) return '';
+        return `<div class="d-flex flex-column gap-3">${state.reviews.map(r => `
+            <article class="d-flex gap-3 ${r.is_mine ? 'review-mine' : ''}">
+                <span class="review-avatar flex-shrink-0">${initial(r.name)}</span>
+                <div class="flex-grow-1" style="min-width:0">
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <strong>${esc(r.name)}</strong>
+                        ${r.is_mine ? '<span class="badge bg-teal-subtle text-teal rounded-pill">Của bạn</span>' : ''}
+                        <span>${stars(r.rating)}</span>
+                        <span class="small text-muted">${fmtDate(r.created_at)}${r.edited ? ' · đã chỉnh sửa' : ''}</span>
+                    </div>
+                    <p class="mb-0 mt-1 text-body-secondary" style="white-space:pre-line;overflow-wrap:anywhere">${esc(r.comment)}</p>
+                </div>
+            </article>`).join('')}</div>`;
+    }
+
+    function paintStars() {
+        box.querySelectorAll('[data-star]').forEach(b => {
+            const n = +b.dataset.star;
+            b.classList.toggle('active', n <= draftRating);
+            b.setAttribute('aria-checked', String(n === draftRating));
+        });
+        const hint = box.querySelector('#reviewStarHint');
+        if (hint) hint.textContent = draftRating ? ['', 'Rất tệ', 'Tệ', 'Bình thường', 'Tốt', 'Tuyệt vời'][draftRating] : 'Chọn số sao';
+    }
+
+    function render() {
+        box.innerHTML = summaryHtml() + '<div id="reviewAction">' + actionHtml() + '</div>' + listHtml();
+        paintStars();
+    }
+
+    async function submit() {
+        const comment = box.querySelector('#reviewComment').value.trim();
+        if (!draftRating) return api.notify('Vui lòng chọn số sao từ 1 đến 5.', true);
+        if (comment.length < 5) return api.notify('Bình luận cần ít nhất 5 ký tự.', true);
+        const btn = box.querySelector('#reviewSubmit');
+        btn.disabled = true;
+        try {
+            const data = await api.request('api/reviews.php', {method: 'POST', body: JSON.stringify({court_id: courtId, rating: draftRating, comment})});
+            state = data; editing = false;
+            render();   // bình luận mới và điểm trung bình cập nhật ngay, không cần tải lại trang
+        } catch (e) {
+            btn.disabled = false;
+            api.notify(e.message, true);
+        }
+    }
+
+    box.addEventListener('click', e => {
+        const star = e.target.closest('[data-star]');
+        if (star) { draftRating = +star.dataset.star; paintStars(); return; }
+        if (e.target.closest('[data-review-edit]')) { editing = true; draftRating = state.viewer.my_review.rating; render(); box.querySelector('#reviewComment')?.focus(); return; }
+        if (e.target.closest('[data-review-cancel]')) { editing = false; render(); }
+    });
+    box.addEventListener('input', e => { if (e.target.id === 'reviewCount' || e.target.id === 'reviewComment') box.querySelector('#reviewCount').textContent = e.target.value.length; });
+    box.addEventListener('submit', e => { e.preventDefault(); submit(); });
+
+    api.request('api/reviews.php?court_id=' + courtId).then(data => {
+        state = data;
+        draftRating = data.viewer.my_review ? data.viewer.my_review.rating : 0;
+        render();
+    }).catch(err => {
+        box.innerHTML = `<p class="text-muted mb-0"><i class="fa-solid fa-triangle-exclamation me-2"></i>${esc(err.message)}</p>`;
+    });
+}

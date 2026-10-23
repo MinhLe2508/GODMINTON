@@ -1,10 +1,26 @@
 -- database/seed_reviews_demo.sql
 -- Dữ liệu MẪU cho "Đánh Giá Từ Vợt Thủ": 125 đánh giá của 118 tài khoản demo trên 41 sân.
--- Yêu cầu: đã import database/migration_reviews.sql. Chọn database badminton_booking trước khi import.
+-- Tự tạo bảng `reviews` nếu chưa có nên import một mình file này là đủ. Chọn database badminton_booking trước khi import.
 -- Chạy lại nhiều lần an toàn (không tạo trùng). Không động tới tài khoản/đánh giá thật.
 -- Tài khoản demo có email dạng demo.*@demo.godminton.local, trạng thái 'locked' nên KHÔNG đăng nhập được.
 -- Muốn xóa toàn bộ dữ liệu demo (đánh giá tự xóa theo):
 --   DELETE FROM users WHERE email LIKE 'demo.%@demo.godminton.local';
+
+-- 0. Bảng đánh giá (bỏ qua nếu đã có)
+CREATE TABLE IF NOT EXISTS `reviews` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `court_id` int(10) unsigned NOT NULL,
+  `user_id` int(10) unsigned NOT NULL,
+  `rating` tinyint(3) unsigned NOT NULL,
+  `comment` varchar(1000) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_review_court_user` (`court_id`,`user_id`),
+  KEY `idx_reviews_user` (`user_id`),
+  CONSTRAINT `fk_godm_review_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_godm_review_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 1. Tài khoản demo (bị khóa, mật khẩu không hợp lệ)
 INSERT IGNORE INTO `users` (`name`,`email`,`password_hash`,`role`,`is_verified`,`account_status`,`locked_reason`) VALUES

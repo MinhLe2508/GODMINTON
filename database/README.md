@@ -15,7 +15,8 @@
 | `migration_admin_management.sql` | Thêm cột quản lý sân, khung giờ cho DB cũ. Không sửa giá/giờ của sân theo dữ liệu mẫu. |
 | `migration_push_subscriptions.sql` | Tạo bảng thiết bị Web Push cho DB cũ. |
 | `migration_reviews.sql` | Tạo bảng `reviews` (đánh giá sân) cho DB cũ; có thể import lại. |
-| `seed_reviews_demo.sql` | (Tùy chọn) 125 đánh giá mẫu trên 41 sân, tạo bằng 118 tài khoản demo bị khóa `demo.*@demo.godminton.local`. Import sau `migration_reviews.sql`; chạy lại không trùng. Xóa: `DELETE FROM users WHERE email LIKE 'demo.%@demo.godminton.local';` |
+| `seed_reviews_demo.sql` | (Tùy chọn) 125 đánh giá mẫu trên 41 sân, tạo bằng 118 tài khoản demo bị khóa `demo.*@demo.godminton.local`. Tự tạo bảng `reviews` nếu thiếu, nên import một mình là đủ; chạy lại không trùng. Xóa: `DELETE FROM users WHERE email LIKE 'demo.%@demo.godminton.local';` |
+| `reset_reviews.sql` | Dọn sạch để làm lại: xóa bảng `court_reviews` cũ, bảng `reviews` và tài khoản demo. Import trước `seed_reviews_demo.sql` khi cần làm lại từ đầu. |
 | `migration_customer_accounts.sql` | Import bằng phpMyAdmin để nâng cấp đăng ký/đăng nhập, xác minh email, khôi phục mật khẩu và xóa tài khoản; có thể import lại. |
 
 ## Cài mới
