@@ -84,6 +84,55 @@ $currentUser = [
             font-size: 1rem;
             flex-shrink: 0;
         }
+        .membership-filter-toolbar {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            flex-wrap: nowrap !important;
+            gap: 0.5rem !important;
+        }
+        .membership-filter-toolbar .form-control,
+        .membership-filter-toolbar .form-select,
+        .membership-filter-toolbar .btn {
+            display: inline-block !important;
+            margin-bottom: 0 !important;
+            height: 34px !important;
+            font-size: 0.8125rem !important;
+        }
+        .membership-filter-toolbar #searchKeyword {
+            width: 220px !important;
+            min-width: 180px !important;
+            max-width: 220px !important;
+            flex: 0 0 220px !important;
+        }
+        .membership-filter-toolbar #filterTier {
+            width: 135px !important;
+            min-width: 120px !important;
+            max-width: 135px !important;
+            flex: 0 0 135px !important;
+        }
+        .membership-filter-toolbar #filterStatus {
+            width: 165px !important;
+            min-width: 150px !important;
+            max-width: 165px !important;
+            flex: 0 0 165px !important;
+        }
+        .membership-filter-toolbar #btnResetFilters {
+            flex: 0 0 auto !important;
+            width: 36px !important;
+            padding: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        @media (max-width: 991.98px) {
+            .membership-filter-toolbar {
+                overflow-x: auto !important;
+                max-width: 100% !important;
+                padding-bottom: 0.35rem !important;
+            }
+        }
     </style>
 
     <script>
@@ -187,19 +236,19 @@ $currentUser = [
 
             <!-- Bảng danh sách & Bộ lọc -->
             <div class="admin-panel">
-                <div class="admin-panel-head d-flex flex-column flex-xl-row align-items-xl-center justify-content-between gap-3">
+                <div class="admin-panel-head d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <h2 class="mb-0 text-nowrap"><i class="fa-solid fa-users text-teal me-2"></i>Danh sách đăng ký & Hội viên</h2>
-                    <div class="d-flex align-items-center gap-2 flex-nowrap overflow-x-auto pb-1 pb-xl-0" style="scrollbar-width: thin;">
-                        <input type="search" id="searchKeyword" class="form-control form-control-sm rounded-pill" placeholder="Tìm theo tên, email, SĐT..." style="width: 220px; flex-shrink: 0;">
+                    <div class="membership-filter-toolbar">
+                        <input type="search" id="searchKeyword" class="form-control form-control-sm rounded-pill" placeholder="Tìm theo tên, email, SĐT...">
                         
-                        <select id="filterTier" class="form-select form-select-sm rounded-pill" style="width: 140px; flex-shrink: 0;">
+                        <select id="filterTier" class="form-select form-select-sm rounded-pill">
                             <option value="">Tất cả hạng gói</option>
                             <option value="silver">Bạc</option>
                             <option value="gold">Vàng</option>
                             <option value="platinum">Bạch Kim</option>
                         </select>
 
-                        <select id="filterStatus" class="form-select form-select-sm rounded-pill" style="width: 170px; flex-shrink: 0;">
+                        <select id="filterStatus" class="form-select form-select-sm rounded-pill">
                             <option value="">Tất cả trạng thái</option>
                             <option value="pending">Chờ admin xác nhận</option>
                             <option value="active">Đang kích hoạt</option>
@@ -207,7 +256,7 @@ $currentUser = [
                             <option value="cancelled">Đã hủy / Từ chối</option>
                         </select>
 
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 flex-shrink-0" id="btnResetFilters" title="Đặt lại bộ lọc">
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill" id="btnResetFilters" title="Đặt lại bộ lọc">
                             <i class="fa-solid fa-rotate-left"></i>
                         </button>
                     </div>
