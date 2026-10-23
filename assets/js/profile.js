@@ -348,9 +348,6 @@ async function loadMyMembership() {
                                 <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm text-dark btn-open-renew-membership">
                                     <i class="fa-solid fa-arrows-rotate me-1"></i> Gia hạn gói
                                 </button>
-                                <a href="courts.php" class="btn btn-light rounded-pill px-3 fw-bold shadow-sm" style="color: #0f172a;">
-                                    <i class="fa-solid fa-table-tennis-paddle-ball me-1 text-teal"></i> Đặt sân ngay
-                                </a>
                             </div>
                         </div>
                     </div>
