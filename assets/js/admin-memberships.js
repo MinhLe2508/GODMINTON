@@ -36,7 +36,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const grantModalEl = document.getElementById('modalGrantMembership');
     const grantModal = grantModalEl ? bootstrap.Modal.getOrCreateInstance(grantModalEl) : null;
     const formGrant = document.getElementById('formGrantMembership');
-    const selectUser = document.getElementById('grantUserId');
+    const grantSearchInput = document.getElementById('grantUserSearchInput');
+    const grantSearchInputWrap = document.getElementById('grantUserSearchInputWrap');
+    const grantHiddenUserId = document.getElementById('grantUserId');
+    const grantResultsList = document.getElementById('grantUserResultsList');
+    const grantSelectedCard = document.getElementById('grantSelectedUserCard');
+    const grantSelectedName = document.getElementById('grantSelectedUserName');
+    const grantSelectedDetails = document.getElementById('grantSelectedUserDetails');
+    const btnClearSearch = document.getElementById('btnClearUserSearch');
+    const btnRemoveUser = document.getElementById('btnRemoveSelectedUser');
     const selectPackage = document.getElementById('grantPostId');
     const inputDuration = document.getElementById('grantDurationDays');
     const inputPrice = document.getElementById('grantPricePaid');
@@ -387,17 +395,137 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ========================================================
-    // Đổ dữ liệu vào Modal Cấp Gói
+    // Tìm kiếm & Đổ dữ liệu vào Modal Cấp Gói
     // ========================================================
     function populateUserSelect(customers) {
-        if (!selectUser) return;
-        const currentVal = selectUser.value;
-        selectUser.innerHTML = '<option value="">-- Chọn khách hàng --</option>' + 
-            customers.map(c => `
-                <option value="${c.id}">${AdminApp.escapeHTML(c.name)} (${AdminApp.escapeHTML(c.email)}${c.phone ? ` - ${AdminApp.escapeHTML(c.phone)}` : ''})</option>
-            `).join('');
-        if (currentVal) selectUser.value = currentVal;
+        if (Array.isArray(customers)) {
+            cachedCustomers = customers;
+        }
     }
+
+    function selectCustomer(customer) {
+        if (!customer) return;
+        if (grantHiddenUserId) grantHiddenUserId.value = customer.id;
+        if (grantSelectedName) grantSelectedName.textContent = customer.name || 'Khách hàng';
+        if (grantSelectedDetails) {
+            grantSelectedDetails.textContent = `${customer.email || ''}${customer.phone ? ' · ' + customer.phone : ''}`;
+        }
+        if (grantSelectedCard) grantSelectedCard.style.setProperty('display', 'flex', 'important');
+        if (grantSearchInputWrap) grantSearchInputWrap.style.setProperty('display', 'none', 'important');
+        if (grantResultsList) grantResultsList.style.display = 'none';
+        if (selectPackage) selectPackage.focus();
+    }
+
+    function resetCustomerSelection() {
+        if (grantHiddenUserId) grantHiddenUserId.value = '';
+        if (grantSearchInput) grantSearchInput.value = '';
+        if (grantSelectedCard) grantSelectedCard.style.setProperty('display', 'none', 'important');
+        if (grantSearchInputWrap) grantSearchInputWrap.style.setProperty('display', 'flex', 'important');
+        if (btnClearSearch) btnClearSearch.style.display = 'none';
+        if (grantResultsList) grantResultsList.style.display = 'none';
+        if (grantSearchInput) grantSearchInput.focus();
+    }
+
+    function renderCustomerSearchResults(list) {
+        if (!grantResultsList) return;
+        if (!list || !list.length) {
+            grantResultsList.innerHTML = `
+                <div class="p-3 text-center text-muted small">
+                    <i class="fa-solid fa-magnifying-glass me-1"></i> Không tìm thấy khách hàng phù hợp
+                </div>
+            `;
+            grantResultsList.style.display = 'block';
+            return;
+        }
+
+        grantResultsList.innerHTML = list.map(c => `
+            <a href="#" class="list-group-item list-group-item-action py-2 px-3 border-0 border-bottom d-flex align-items-center gap-2 user-search-item" data-id="${c.id}">
+                <div class="user-avatar-sm flex-shrink-0" style="width: 30px; height: 30px; font-size: 0.75rem; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #0d9488;">
+                    ${(c.name || 'K').charAt(0).toUpperCase()}
+                </div>
+                <div class="overflow-hidden flex-grow-1">
+                    <div class="fw-bold text-dark small text-truncate">${AdminApp.escapeHTML(c.name)}</div>
+                    <div class="text-muted text-truncate" style="font-size: 0.72rem;">
+                        ${AdminApp.escapeHTML(c.email)} ${c.phone ? '· ' + AdminApp.escapeHTML(c.phone) : ''}
+                    </div>
+                </div>
+            </a>
+        `).join('');
+
+        grantResultsList.querySelectorAll('.user-search-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const id = Number(item.getAttribute('data-id'));
+                const found = list.find(c => Number(c.id) === id) || cachedCustomers.find(c => Number(c.id) === id);
+                if (found) {
+                    selectCustomer(found);
+                }
+            });
+        });
+
+        grantResultsList.style.display = 'block';
+    }
+
+    let searchDebounceTimer = null;
+    async function handleCustomerSearch(query) {
+        const q = (query || '').trim().toLowerCase();
+        if (btnClearSearch) btnClearSearch.style.display = q ? 'inline-block' : 'none';
+
+        if (!q) {
+            renderCustomerSearchResults(cachedCustomers.slice(0, 20));
+            return;
+        }
+
+        const localMatches = cachedCustomers.filter(c => 
+            (c.name || '').toLowerCase().includes(q) || 
+            (c.email || '').toLowerCase().includes(q) || 
+            (c.phone || '').includes(q)
+        );
+
+        renderCustomerSearchResults(localMatches);
+
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(async () => {
+            try {
+                const res = await BookingAccount.request(`api/admin/memberships.php?user_search=${encodeURIComponent(q)}`);
+                const data = res.data || res;
+                if (Array.isArray(data.customers)) {
+                    data.customers.forEach(newItem => {
+                        if (!cachedCustomers.some(c => c.id === newItem.id)) {
+                            cachedCustomers.push(newItem);
+                        }
+                    });
+                    renderCustomerSearchResults(data.customers);
+                }
+            } catch (err) {
+                console.error('Lỗi tìm kiếm khách hàng:', err);
+            }
+        }, 250);
+    }
+
+    grantSearchInput?.addEventListener('input', (e) => {
+        handleCustomerSearch(e.target.value);
+    });
+
+    grantSearchInput?.addEventListener('focus', () => {
+        handleCustomerSearch(grantSearchInput.value);
+    });
+
+    btnClearSearch?.addEventListener('click', () => {
+        if (grantSearchInput) grantSearchInput.value = '';
+        handleCustomerSearch('');
+        grantSearchInput?.focus();
+    });
+
+    btnRemoveUser?.addEventListener('click', () => {
+        resetCustomerSelection();
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!document.getElementById('grantUserSearchGroup')?.contains(e.target)) {
+            if (grantResultsList) grantResultsList.style.display = 'none';
+        }
+    });
 
     function populatePackageSelect(packages) {
         if (!selectPackage) return;
@@ -427,14 +555,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========================================================
     formGrant?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const userId = Number(selectUser?.value || 0);
+        const userId = Number(grantHiddenUserId?.value || 0);
         const postId = Number(selectPackage?.value || 0);
         const durationDays = Number(inputDuration?.value || 30);
         const pricePaid = Number(inputPrice?.value || 0);
         const paymentMethod = document.getElementById('grantPaymentMethod')?.value || 'Admin cấp / Tiền mặt quầy';
 
         if (!userId) {
-            AdminApp.toast('error', 'Vui lòng chọn khách hàng.');
+            AdminApp.toast('error', 'Vui lòng tìm và chọn khách hàng.');
+            resetCustomerSelection();
             return;
         }
         if (!postId) {
@@ -460,6 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (grantModal) grantModal.hide();
             formGrant.reset();
+            resetCustomerSelection();
             AdminApp.toast('success', res.message || 'Đã cấp gói hội viên thành công!');
             loadMemberships(1);
         } catch (err) {
@@ -473,6 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnOpenGrantModal')?.addEventListener('click', () => {
         if (grantModal) {
             formGrant?.reset();
+            resetCustomerSelection();
             grantModal.show();
         }
     });

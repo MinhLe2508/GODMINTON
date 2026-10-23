@@ -277,12 +277,37 @@ $currentUser = [
                         Quản trị viên có thể cấp hoặc tặng gói hội viên cho khách hàng đã đăng ký tài khoản (khi khách đóng tiền mặt tại quầy hoặc chương trình tri ân).
                     </p>
 
-                    <!-- Chọn thành viên -->
-                    <div class="mb-3">
-                        <label for="grantUserId" class="form-label fw-semibold small">Chọn khách hàng <span class="text-danger">*</span></label>
-                        <select class="form-select" id="grantUserId" required>
-                            <option value="">-- Chọn khách hàng --</option>
-                        </select>
+                    <!-- Tìm khách hàng -->
+                    <div class="mb-3 position-relative" id="grantUserSearchGroup">
+                        <label for="grantUserSearchInput" class="form-label fw-semibold small">Tìm khách hàng <span class="text-danger">*</span></label>
+                        <div class="input-group" id="grantUserSearchInputWrap">
+                            <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input type="text" class="form-control border-start-0 ps-0" id="grantUserSearchInput" placeholder="Nhập tên, email hoặc số điện thoại để tìm..." autocomplete="off">
+                            <button type="button" class="btn btn-outline-secondary" id="btnClearUserSearch" style="display:none;" title="Xóa từ khóa">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <input type="hidden" id="grantUserId" name="user_id">
+                        
+                        <!-- Dropdown danh sách gợi ý khi tìm kiếm -->
+                        <div id="grantUserResultsList" class="list-group position-absolute w-100 shadow border rounded-3 mt-1 overflow-y-auto" style="max-height: 220px; z-index: 1060; display: none; background: var(--bg-card, #ffffff);">
+                        </div>
+
+                        <!-- Khách hàng đã chọn -->
+                        <div id="grantSelectedUserCard" class="mt-2 p-2 px-3 rounded-3 border d-flex align-items-center justify-content-between" style="display:none; background: rgba(13, 148, 136, 0.08); border-color: rgba(13, 148, 136, 0.25) !important;">
+                            <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                <div class="bg-teal text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px; font-size: 0.8rem; font-weight: 700;">
+                                    <i class="fa-solid fa-user-check"></i>
+                                </div>
+                                <div class="text-truncate">
+                                    <div class="fw-bold text-dark small text-truncate" id="grantSelectedUserName">--</div>
+                                    <div class="text-muted text-truncate" style="font-size: 0.74rem;" id="grantSelectedUserDetails">--</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none fw-semibold flex-shrink-0 ms-2" id="btnRemoveSelectedUser">
+                                <i class="fa-solid fa-xmark me-1"></i>Đổi
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Chọn gói -->
