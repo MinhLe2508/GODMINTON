@@ -203,6 +203,83 @@ header('Cache-Control: no-store');
         [data-bs-theme="dark"] .btn-logout-account:hover i {
             color: #ffffff !important;
         }
+
+        /* Responsive */
+        @media (max-width: 991.98px) {
+            .profile-nav-pills {
+                flex-direction: row !important;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                gap: 0.5rem !important;
+                padding-bottom: 0.5rem;
+                -webkit-overflow-scrolling: touch;
+            }
+            .profile-nav-pills .nav-link {
+                white-space: nowrap;
+                flex-shrink: 0;
+                padding: 0.6rem 1rem;
+                font-size: 0.88rem;
+            }
+            .profile-card-actions {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            .profile-card-actions > * {
+                flex: 1 1 calc(50% - 0.25rem);
+            }
+            .profile-card-actions > .btn-teal {
+                flex: 1 1 100%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .profile-hero {
+                padding: 1.5rem 1rem !important;
+                border-radius: 1.15rem;
+                margin-bottom: 1.25rem;
+            }
+            .profile-avatar-wrapper {
+                width: 68px !important;
+                height: 68px !important;
+                font-size: 1.75rem !important;
+            }
+            .profile-stat-box {
+                padding: 0.75rem 0.45rem !important;
+                border-radius: 0.75rem;
+            }
+            .profile-stat-box .fs-4 {
+                font-size: 1.2rem !important;
+            }
+            .profile-card {
+                padding: 1.15rem 1rem !important;
+                border-radius: 1rem;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .profile-hero {
+                padding: 1.15rem 0.75rem !important;
+            }
+            .profile-avatar-wrapper {
+                width: 54px !important;
+                height: 54px !important;
+                font-size: 1.4rem !important;
+            }
+            #profileHeaderName {
+                font-size: 1.15rem !important;
+            }
+            .profile-stat-box {
+                padding: 0.5rem 0.2rem !important;
+            }
+            .profile-stat-box .small {
+                font-size: 0.68rem !important;
+            }
+            .profile-card-actions > * {
+                flex: 1 1 100% !important;
+            }
+        }
     </style>
 <link rel="stylesheet" href="assets/css/password-requirements.css?v=<?= filemtime(__DIR__.'/assets/css/password-requirements.css') ?>">
 </head>
@@ -313,7 +390,7 @@ header('Cache-Control: no-store');
                         <hr class="my-3 border-secondary opacity-25">
 
                         <!-- Quick actions -->
-                        <div class="d-flex flex-column gap-2">
+                        <div class="profile-card-actions d-flex flex-column gap-2">
                             <a href="courts.php" class="btn btn-teal rounded-pill w-100 fw-bold py-2">
                                 <i class="fa-solid fa-plus me-1"></i> Đặt sân mới
                             </a>
