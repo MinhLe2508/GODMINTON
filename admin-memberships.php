@@ -335,7 +335,7 @@ $currentUser = [
             <form id="formGrantMembership">
                 <div class="modal-body pt-3">
                     <p class="small text-muted mb-3">
-                        Quản trị viên có thể cấp hoặc tặng gói hội viên cho khách hàng đã đăng ký tài khoản (khi khách đóng tiền mặt tại quầy hoặc chương trình tri ân).
+                        Quản trị viên có thể cấp gói hội viên cho khách hàng đã đăng ký tài khoản sau khi xác nhận chuyển khoản thành công.
                     </p>
 
                     <!-- Tìm khách hàng -->
@@ -396,13 +396,9 @@ $currentUser = [
 
                     <!-- Phương thức thanh toán -->
                     <div class="mb-3">
-                        <label for="grantPaymentMethod" class="form-label fw-semibold small">Phương thức thanh toán / Ghi chú</label>
+                        <label for="grantPaymentMethod" class="form-label fw-semibold small">Phương thức thanh toán</label>
                         <select class="form-select" id="grantPaymentMethod">
-                            <option value="Admin cấp / Tiền mặt quầy">Tiền mặt tại quầy</option>
-                            <option value="Chuyển khoản trực tiếp">Chuyển khoản trực tiếp</option>
-                            <option value="Tặng VIP / Tri ân khách hàng">Tặng VIP / Tri ân khách hàng</option>
-                            <option value="VietQR">VietQR</option>
-                            <option value="MoMo">MoMo</option>
+                            <option value="Chuyển khoản" selected>Chuyển khoản</option>
                         </select>
                     </div>
                 </div>

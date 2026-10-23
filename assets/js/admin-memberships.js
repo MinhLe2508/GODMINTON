@@ -559,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const postId = Number(selectPackage?.value || 0);
         const durationDays = Number(inputDuration?.value || 30);
         const pricePaid = Number(inputPrice?.value || 0);
-        const paymentMethod = document.getElementById('grantPaymentMethod')?.value || 'Admin cấp / Tiền mặt quầy';
+        const paymentMethod = document.getElementById('grantPaymentMethod')?.value || 'Chuyển khoản';
 
         if (!userId) {
             AdminApp.toast('error', 'Vui lòng tìm và chọn khách hàng.');
