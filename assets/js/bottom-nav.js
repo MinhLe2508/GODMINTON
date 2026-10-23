@@ -96,6 +96,13 @@
         align-items: stretch;
     }
 
+    /* Desktop admin layout: không đè sidebar */
+    @media (min-width: 992px) {
+        body.admin-body #godmintonBottomNav {
+            left: 260px;
+        }
+    }
+
     .owner-return-link {
         position: fixed;
         right: 16px;
@@ -118,19 +125,9 @@
         background: var(--brand-teal, #0d9488);
         color: #fff;
     }
-
-    /* Ẩn Bottom Navigation trên Desktop (màn hình >= 992px) */
     @media (min-width: 992px) {
-        #godmintonBottomNav {
-            display: none !important;
-        }
-        body.has-bottom-nav,
-        body.has-owner-nav {
-            padding-bottom: 0 !important;
-        }
-        .owner-return-link {
-            bottom: 24px !important;
-        }
+        body.has-owner-nav #godmintonBottomNav { display: none; }
+        body.has-owner-nav { padding-bottom: 0 !important; }
     }
 
     /* Dark mode adjustment */
@@ -531,8 +528,8 @@
     }
 
     function inject() {
-        // Không inject thanh điều hướng trên trang Đăng nhập / Đăng ký và trang Thanh toán
-        if (currentPage === 'auth.php' || currentPage === 'auth.html' || currentPage === 'payment.php' || currentPage === 'payment.html') return;
+        // Không inject thanh điều hướng trên trang Đăng nhập / Đăng ký
+        if (currentPage === 'auth.php' || currentPage === 'auth.html') return;
 
         // Inject Theme Button nếu trang chưa có
         injectThemeToggle();
