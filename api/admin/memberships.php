@@ -148,9 +148,9 @@ try {
                 'package_slug'     => $item['package_slug'] ?? '',
                 'tier'             => $item['tier'],
                 'tier_label'       => match($item['tier']) {
-                    'platinum' => 'Bạch Kim (15%)',
-                    'gold'     => 'Vàng (10%)',
-                    'silver'   => 'Bạc (5%)',
+                    'platinum' => 'Bạch Kim',
+                    'gold'     => 'Vàng',
+                    'silver'   => 'Bạc',
                     default    => 'Hội Viên'
                 },
                 'discount_percent' => (int)$item['discount_percent'],

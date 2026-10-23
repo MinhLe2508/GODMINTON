@@ -195,11 +195,11 @@ $currentUser = [
                     <div class="d-flex align-items-center gap-2 flex-nowrap overflow-x-auto pb-1 pb-xl-0" style="scrollbar-width: thin;">
                         <input type="search" id="searchKeyword" class="form-control form-control-sm rounded-pill" placeholder="Tìm theo tên, email, SĐT..." style="width: 220px; flex-shrink: 0;">
                         
-                        <select id="filterTier" class="form-select form-select-sm rounded-pill" style="width: 150px; flex-shrink: 0;">
+                        <select id="filterTier" class="form-select form-select-sm rounded-pill" style="width: 140px; flex-shrink: 0;">
                             <option value="">Tất cả hạng gói</option>
-                            <option value="silver">Bạc (Giảm 5%)</option>
-                            <option value="gold">Vàng (Giảm 10%)</option>
-                            <option value="platinum">Bạch Kim (Giảm 15%)</option>
+                            <option value="silver">Bạc</option>
+                            <option value="gold">Vàng</option>
+                            <option value="platinum">Bạch Kim</option>
                         </select>
 
                         <select id="filterStatus" class="form-select form-select-sm rounded-pill" style="width: 170px; flex-shrink: 0;">
