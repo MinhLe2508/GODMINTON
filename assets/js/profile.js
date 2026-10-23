@@ -168,6 +168,22 @@ async function loadMyMembership() {
 
         // 1. Badge hiển thị ngay dưới họ tên
         if (badgeEl) {
+            let pendingPkgName = 'Gói Hội Viên';
+            if (pending) {
+                if (pending.tier === 'silver') {
+                    pendingPkgName = 'Gói Hội Viên Bạc';
+                } else if (pending.tier === 'gold') {
+                    pendingPkgName = 'Gói Hội Viên Vàng';
+                } else if (pending.tier === 'platinum') {
+                    pendingPkgName = 'Gói Hội Viên Bạch Kim';
+                } else if (pending.package_title) {
+                    pendingPkgName = pending.package_title.split('(')[0].split('–')[0].split('-')[0].trim();
+                    if (!pendingPkgName.toLowerCase().startsWith('gói')) {
+                        pendingPkgName = 'Gói ' + pendingPkgName;
+                    }
+                }
+            }
+
             if (active && Number(active.discount_percent) > 0) {
                 let tierLabel = 'Hội viên Bạc';
                 let tierGradient = 'linear-gradient(135deg, #475569 0%, #64748b 50%, #94a3b8 100%)';
@@ -188,7 +204,7 @@ async function loadMyMembership() {
 
                 let pendingNote = '';
                 if (pending) {
-                    pendingNote = `<span class="badge bg-warning text-dark ms-2 px-2 py-1 rounded-pill fw-bold" style="font-size:0.75rem;"><i class="fa-solid fa-clock-rotate-left me-1"></i>Có yêu cầu gia hạn chờ duyệt</span>`;
+                    pendingNote = `<span class="badge bg-warning text-dark ms-2 px-2 py-1 rounded-pill fw-bold" style="font-size:0.75rem;"><i class="fa-solid fa-clock-rotate-left me-1"></i>Đang duyệt: ${BookingAccount.escape(pendingPkgName)}</span>`;
                 }
 
                 badgeEl.innerHTML = `
@@ -205,7 +221,7 @@ async function loadMyMembership() {
                 badgeEl.innerHTML = `
                     <span class="badge bg-warning text-dark px-3 py-1 rounded-pill fw-bold d-inline-flex align-items-center gap-2 shadow-sm" style="font-size: 0.82rem;">
                         <i class="fa-solid fa-clock-rotate-left"></i>
-                        <span>Đang chờ Admin duyệt gói ${BookingAccount.escape(pending.package_title || 'Hội Viên')}</span>
+                        <span>Đang duyệt: ${BookingAccount.escape(pendingPkgName)}</span>
                     </span>
                 `;
             } else {
