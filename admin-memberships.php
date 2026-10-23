@@ -133,6 +133,17 @@ $currentUser = [
                 padding-bottom: 0.35rem !important;
             }
         }
+        #grantUserResultsList {
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15) !important;
+            border-color: #cbd5e1 !important;
+        }
+        #grantUserResultsList .user-search-item {
+            transition: background-color 0.15s ease;
+            cursor: pointer;
+        }
+        #grantUserResultsList .user-search-item:hover {
+            background-color: rgba(13, 148, 136, 0.08) !important;
+        }
     </style>
 
     <script>
@@ -328,10 +339,10 @@ $currentUser = [
 
                     <!-- Tìm khách hàng -->
                     <div class="mb-3 position-relative" id="grantUserSearchGroup">
-                        <label for="grantUserSearchInput" class="form-label fw-semibold small">Tìm khách hàng <span class="text-danger">*</span></label>
+                        <label for="grantUserSearchInput" class="form-label fw-semibold small">Tìm & Chọn tài khoản khách hàng <span class="text-danger">*</span></label>
                         <div class="input-group" id="grantUserSearchInputWrap">
                             <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
-                            <input type="text" class="form-control border-start-0 ps-0" id="grantUserSearchInput" placeholder="Nhập tên, email hoặc số điện thoại để tìm..." autocomplete="off">
+                            <input type="text" class="form-control border-start-0 ps-0" id="grantUserSearchInput" placeholder="Nhập tên, email hoặc số điện thoại để tìm tài khoản..." autocomplete="off">
                             <button type="button" class="btn btn-outline-secondary" id="btnClearUserSearch" style="display:none;" title="Xóa từ khóa">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>

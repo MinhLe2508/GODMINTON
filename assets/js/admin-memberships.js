@@ -608,6 +608,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    grantModalEl?.addEventListener('shown.bs.modal', () => {
+        if (grantSearchInputWrap && grantSearchInputWrap.style.display !== 'none') {
+            grantSearchInput?.focus();
+            handleCustomerSearch('');
+        }
+    });
+
     // ========================================================
     // Xử lý Form Gia Hạn
     // ========================================================
