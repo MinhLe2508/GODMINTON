@@ -373,7 +373,21 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
     <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
     <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 
-    <?php if ($post && $post['type'] === 'membership'): ?>
+    <?php if ($post && $post['type'] === 'membership'): 
+        $pkgShortTitle = 'Gói Hội Viên';
+        $disc = (int)($post['discount_percent'] ?? 0);
+        $slug = (string)($post['slug'] ?? '');
+        if ($disc >= 15 || str_contains($slug, 'platinum')) {
+            $pkgShortTitle = 'Gói Hội Viên Bạch Kim';
+        } elseif ($disc >= 10 || str_contains($slug, 'gold') || str_contains($slug, 'golden')) {
+            $pkgShortTitle = 'Gói Hội Viên Vàng';
+        } elseif ($disc >= 5 || str_contains($slug, 'silver')) {
+            $pkgShortTitle = 'Gói Hội Viên Bạc';
+        } else {
+            $raw = trim(explode('–', explode('-', explode('(', (string)$post['title'])[0])[0])[0]);
+            $pkgShortTitle = !str_starts_with(mb_strtolower($raw), 'gói') ? ('Gói ' . $raw) : $raw;
+        }
+    ?>
     <!-- Modal Đăng Ký / Thanh Toán Gói Hội Viên -->
     <div class="modal fade" id="modalSubscribeMembership" tabindex="-1" aria-labelledby="modalSubLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -388,7 +402,7 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
                     <!-- Tóm tắt gói -->
                     <div class="p-3 rounded-3 mb-3 bg-light border border-secondary border-opacity-10">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-teal text-white fw-bold px-3 py-1 rounded-pill"><?= htmlspecialchars($post['title']) ?></span>
+                            <span class="badge bg-teal text-white fw-bold px-3 py-1 rounded-pill"><?= htmlspecialchars($pkgShortTitle) ?></span>
                             <span class="badge bg-danger text-white fw-bold px-2 py-1 rounded-pill">-<?= (int)$post['discount_percent'] ?>% Tiền Sân</span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-1">
@@ -403,7 +417,7 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
 
                     <!-- Phương thức thanh toán -->
                     <label class="form-label fw-bold small text-muted text-uppercase mb-2">Chọn phương thức thanh toán</label>
-                    <div class="d-flex flex-column gap-2 mb-3">
+                    <div class="d-flex flex-column gap-2 mb-2">
                         <label class="p-2 border rounded-3 d-flex align-items-center gap-3 cursor-pointer bg-surface">
                             <input type="radio" name="subPaymentMethod" value="VietQR" checked class="form-check-input mt-0">
                             <i class="fa-solid fa-qrcode text-teal fs-4"></i>
@@ -428,12 +442,6 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
                                 <div class="text-muted" style="font-size:0.75rem;">Thẻ ghi nợ hoặc tín dụng</div>
                             </div>
                         </label>
-                    </div>
-
-                    <!-- Ghi chú tự động kích hoạt -->
-                    <div class="p-2 rounded-3 border bg-light text-center small text-muted">
-                        <i class="fa-solid fa-shield-halved text-success me-1"></i>
-                        Hệ thống sẽ tự động kích hoạt quyền lợi giảm giá <strong><?= (int)$post['discount_percent'] ?>%</strong> ngay sau khi xác nhận.
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
