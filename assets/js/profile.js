@@ -214,92 +214,59 @@ async function loadMyMembership() {
         // 3. Tab Gói Hội Viên - Khối thẻ thành viên đang hoạt động
         if (activeBox) {
             if (active && Number(active.discount_percent) > 0) {
-                let cardGradient = 'linear-gradient(135deg, #334155 0%, #475569 50%, #64748b 100%)';
-                let tierTitle = 'HỘI VIÊN BẠC (SILVER)';
-                let iconClass = 'fa-solid fa-shield-halved';
-                let accentColor = '#e2e8f0';
+                let cardGradient = 'linear-gradient(135deg, #475569 0%, #334155 100%)';
+                let shortName = 'Hội Viên Bạc (Silver)';
+                let perkText = 'Tự động giảm 5% toàn bộ tiền sân cho mọi lượt đặt lịch';
 
                 if (active.tier === 'gold') {
-                    cardGradient = 'linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%)';
-                    tierTitle = 'HỘI VIÊN VÀNG (GOLD)';
-                    iconClass = 'fa-solid fa-crown';
-                    accentColor = '#fef3c7';
+                    cardGradient = 'linear-gradient(135deg, #d97706 0%, #b45309 100%)';
+                    shortName = 'Hội Viên Vàng (Gold)';
+                    perkText = 'Tự động giảm 10% tiền sân & ưu tiên đặt sân giờ vàng';
                 } else if (active.tier === 'platinum') {
-                    cardGradient = 'linear-gradient(135deg, #090d16 0%, #1e293b 50%, #334155 100%)';
-                    tierTitle = 'HỘI VIÊN BẠCH KIM (PLATINUM)';
-                    iconClass = 'fa-solid fa-gem';
-                    accentColor = '#cbd5e1';
+                    cardGradient = 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)';
+                    shortName = 'Hội Viên Bạch Kim (Platinum)';
+                    perkText = 'Tự động giảm 15% tiền sân cao nhất toàn hệ thống';
                 }
 
                 const endFormatted = active.end_date ? active.end_date.substring(0, 10).split('-').reverse().join('/') : '--';
                 const startFormatted = active.start_date ? active.start_date.substring(0, 10).split('-').reverse().join('/') : '--';
-                const benefitsArray = (active.benefits || '').split('\n').map(b => b.trim()).filter(Boolean);
 
                 activeBox.innerHTML = `
-                    <div class="card border-0 rounded-4 p-4 text-white position-relative overflow-hidden shadow-lg"
-                         style="background: ${cardGradient}; min-height: 220px;">
-                        <div class="position-absolute end-0 bottom-0 opacity-15 me-n3 mb-n3 pointer-events-none" style="font-size: 11rem; line-height: 1; user-select: none;">
-                            <i class="${iconClass}"></i>
+                    <div class="card border-0 rounded-4 p-4 text-white shadow-sm" style="background: ${cardGradient};">
+                        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-white bg-opacity-20 px-3 py-1 rounded-pill fw-bold text-white" style="font-size:0.75rem;">
+                                    <i class="fa-solid fa-crown text-warning me-1"></i>GODMINTON VIP
+                                </span>
+                                <span class="badge bg-success text-white px-2 py-1 rounded-pill fw-semibold" style="font-size:0.7rem;">
+                                    <i class="fa-solid fa-circle-check me-1"></i>Đang kích hoạt
+                                </span>
+                            </div>
+                            <div class="fs-4 fw-extrabold text-warning">
+                                GIẢM ${active.discount_percent}% TIỀN SÂN
+                            </div>
                         </div>
 
-                        <div class="position-relative z-1 d-flex flex-column justify-content-between h-100">
-                            <div>
-                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="badge bg-white bg-opacity-20 backdrop-blur px-3 py-1 rounded-pill fw-bold" style="letter-spacing:1px; font-size:0.75rem;">
-                                            <i class="fa-solid fa-bolt text-warning me-1"></i>GODMINTON VIP PASS
-                                        </span>
-                                        <span class="badge bg-success text-white px-2 py-1 rounded-pill fw-bold" style="font-size:0.7rem;">
-                                            <i class="fa-solid fa-circle-check me-1"></i>Đang kích hoạt
-                                        </span>
-                                    </div>
-                                    <div class="fs-4 fw-black text-warning">
-                                        GIẢM ${active.discount_percent}% TIỀN SÂN
-                                    </div>
-                                </div>
+                        <h3 class="fw-bold mb-2">${shortName}</h3>
+                        <p class="small opacity-90 mb-4">
+                            <i class="fa-solid fa-circle-check text-warning me-1"></i> ${perkText}
+                        </p>
 
-                                <h3 class="fw-black mb-1 tracking-wide text-uppercase" style="text-shadow: 0 2px 8px rgba(0,0,0,0.3); font-weight: 800;">
-                                    ${BookingAccount.escape(active.package_title || tierTitle)}
-                                </h3>
-                                <div class="small opacity-90 mb-3">
-                                    Mã thẻ: <span class="font-monospace fw-bold">#MB-${String(active.id).padStart(5, '0')}</span> · Phương thức: <strong>${BookingAccount.escape(active.payment_method || 'VietQR')}</strong>
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-3 border-top border-white border-opacity-20">
+                            <div>
+                                <div class="small opacity-75">Hạn sử dụng gói:</div>
+                                <div class="fw-bold fs-6">
+                                    Đến ${endFormatted}
+                                    <span class="badge bg-warning text-dark ms-2 fw-bold">Còn ${active.days_left || 0} ngày</span>
                                 </div>
                             </div>
-
-                            ${benefitsArray.length ? `
-                            <div class="p-3 rounded-3 bg-black bg-opacity-20 backdrop-blur mb-3">
-                                <div class="small fw-bold text-uppercase mb-2" style="color: ${accentColor}; font-size:0.75rem;">
-                                    <i class="fa-solid fa-gift me-1"></i>Đặc quyền thành viên đang hưởng:
-                                </div>
-                                <div class="row g-2">
-                                    ${benefitsArray.map(b => `
-                                        <div class="col-md-6 small d-flex align-items-center gap-2">
-                                            <i class="fa-solid fa-check text-warning" style="font-size:0.75rem;"></i>
-                                            <span>${BookingAccount.escape(b)}</span>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>` : ''}
-
-                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-3 border-top border-white border-opacity-20">
-                                <div>
-                                    <div class="small opacity-75">Thời hạn gói hội viên:</div>
-                                    <div class="fw-bold fs-6">
-                                        ${startFormatted} – ${endFormatted}
-                                        <span class="badge bg-warning text-dark ms-2 fw-bold">Còn ${active.days_left || 0} ngày</span>
-                                    </div>
-                                </div>
-                                <div class="d-flex gap-2 flex-wrap">
-                                    <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm text-dark btn-open-renew-membership">
-                                        <i class="fa-solid fa-arrows-rotate me-1"></i> Gia hạn gói
-                                    </button>
-                                    <a href="courts.php" class="btn btn-light rounded-pill px-3 fw-bold shadow-sm" style="color: #0f172a;">
-                                        <i class="fa-solid fa-table-tennis-paddle-ball me-1 text-teal"></i> Đặt sân ngay
-                                    </a>
-                                    <a href="explore.php?tab=membership" class="btn btn-outline-light rounded-pill px-3 fw-semibold">
-                                        <i class="fa-solid fa-compass me-1"></i> Xem các gói khác
-                                    </a>
-                                </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm text-dark btn-open-renew-membership">
+                                    <i class="fa-solid fa-arrows-rotate me-1"></i> Gia hạn gói
+                                </button>
+                                <a href="courts.php" class="btn btn-light rounded-pill px-3 fw-bold shadow-sm" style="color: #0f172a;">
+                                    <i class="fa-solid fa-table-tennis-paddle-ball me-1 text-teal"></i> Đặt sân ngay
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -311,7 +278,7 @@ async function loadMyMembership() {
                     renewBtn.addEventListener('click', () => {
                         const modalEl = document.getElementById('modalRenewMembership');
                         if (!modalEl) return;
-                        document.getElementById('renewPackageTitle').textContent = active.package_title || tierTitle;
+                        document.getElementById('renewPackageTitle').textContent = shortName;
                         document.getElementById('renewDiscountBadge').textContent = `-${active.discount_percent}% Tiền Sân`;
                         document.getElementById('renewCurrentEnd').textContent = endFormatted;
                         document.getElementById('renewAddDays').textContent = `+${active.duration_days || 30} ngày (cộng dồn)`;
@@ -345,7 +312,7 @@ async function loadMyMembership() {
             }
         }
 
-        // 4. Tab Gói Hội Viên - Lịch sử đăng ký
+        // 4. Tab Gói Hội Viên - Lịch sử đăng ký (Tinh gọn, rõ ràng)
         if (historyList) {
             if (!history.length) {
                 historyList.innerHTML = `
@@ -355,6 +322,12 @@ async function loadMyMembership() {
                     </div>
                 `;
             } else {
+                const tierTitles = {
+                    silver: 'Gói Hội Viên Bạc',
+                    gold: 'Gói Hội Viên Vàng',
+                    platinum: 'Gói Hội Viên Bạch Kim'
+                };
+
                 historyList.innerHTML = history.map(item => {
                     const start = item.start_date ? item.start_date.substring(0, 10).split('-').reverse().join('/') : '--';
                     const end = item.end_date ? item.end_date.substring(0, 10).split('-').reverse().join('/') : '--';
@@ -367,27 +340,24 @@ async function loadMyMembership() {
                         statusBadge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Đã chuyển gói</span>';
                     }
 
-                    let tierBadge = '<span class="badge text-white rounded-pill fw-bold" style="background:#64748b;">BẠC (5%)</span>';
-                    if (item.tier === 'gold') tierBadge = '<span class="badge bg-warning text-dark rounded-pill fw-bold">VÀNG (10%)</span>';
-                    else if (item.tier === 'platinum') tierBadge = '<span class="badge bg-dark text-white rounded-pill fw-bold">BẠCH KIM (15%)</span>';
+                    const discountPercent = item.discount_percent || (item.tier === 'platinum' ? 15 : (item.tier === 'gold' ? 10 : 5));
+                    const discountBadge = `<span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill fw-bold">-${discountPercent}% Sân</span>`;
+                    const cleanTitle = tierTitles[item.tier] || item.package_title || 'Gói Hội Viên';
 
                     return `
                         <div class="p-3 rounded-3 border bg-surface d-flex align-items-center justify-content-between flex-wrap gap-2 ${isCurrent ? 'border-teal shadow-sm' : ''}">
                             <div>
                                 <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                                    <strong class="fs-6 text-dark">${BookingAccount.escape(item.package_title || 'Gói Hội Viên')}</strong>
-                                    ${tierBadge}
+                                    <strong class="fs-6 text-dark">${cleanTitle}</strong>
+                                    ${discountBadge}
                                     ${statusBadge}
                                 </div>
                                 <div class="small text-muted">
-                                    <span><i class="fa-regular fa-calendar me-1 text-teal"></i>${start} – ${end} (${item.duration_days} ngày)</span>
-                                    <span class="mx-2">·</span>
-                                    <span>Phương thức: <strong>${BookingAccount.escape(item.payment_method || 'VietQR')}</strong></span>
+                                    <i class="fa-regular fa-calendar me-1 text-teal"></i> ${start} – ${end} (${item.duration_days} ngày)
                                 </div>
                             </div>
                             <div class="text-sm-end">
                                 <div class="fw-bold fs-6 text-teal">${BookingAccount.money(item.price_paid || 0)}</div>
-                                <div class="small text-muted">Mã: #MB-${item.id}</div>
                             </div>
                         </div>
                     `;
