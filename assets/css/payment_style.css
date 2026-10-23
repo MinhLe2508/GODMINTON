@@ -421,12 +421,29 @@ textarea.pay-input {
 
 /* ---- Responsive ---- */
 @media (max-width: 767px) {
-    .pm-grid { grid-template-columns: repeat(2, 1fr); }
+    .pm-grid { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
     .step-label { display: none; }
     .order-hero { height: 110px; }
 }
-@media (max-width: 400px) {
-    .pm-grid { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 380px) {
+    .pm-grid { grid-template-columns: repeat(2, 1fr); gap: 0.45rem; }
+}
+@media (max-width: 576px) {
+    .bank-panel {
+        padding: 0.85rem;
+    }
+    .bank-panel .d-flex.gap-3 {
+        flex-direction: column;
+        align-items: center;
+    }
+    .bank-panel .qr-box {
+        width: 170px;
+        height: 220px;
+        margin: 0 auto;
+    }
+    .bank-panel .flex-grow-1 {
+        width: 100%;
+    }
 }
 /* Completed booking screen: centered card with a separate bottom footer. */
 .success-overlay {

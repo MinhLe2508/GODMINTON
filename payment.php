@@ -78,8 +78,8 @@ if ($currentUser !== null) {
 <div class="container">
 <div class="row g-4 justify-content-center">
 
-    <!-- ============ LEFT: FORM ============ -->
-    <div class="col-lg-7">
+    <!-- ============ LEFT: FORM (Desktop: Left, Mobile: Bottom) ============ -->
+    <div class="col-lg-7 order-2 order-lg-1">
 
         <!-- 1. Thông tin người đặt -->
         <div class="card border rounded-4 p-4 shadow-sm mb-4">
@@ -125,8 +125,17 @@ if ($currentUser !== null) {
 
             <div class="pm-grid" id="pmGrid">
 
+                <!-- Chuyển khoản (Mặc định) -->
+                <button class="pm-btn selected" data-method="bank" id="pm-bank" onclick="selectPM(this)">
+                    <span class="pm-check"><i class="fa-solid fa-check"></i></span>
+                    <div class="pm-icon-wrap">
+                        <i class="fa-solid fa-building-columns" style="color:#0d9488; font-size:1.8rem;"></i>
+                    </div>
+                    <span class="pm-name">Chuyển khoản</span>
+                </button>
+
                 <!-- VNPay -->
-                <button class="pm-btn selected" data-method="vnpay" id="pm-vnpay" onclick="selectPM(this)">
+                <button class="pm-btn" data-method="vnpay" id="pm-vnpay" onclick="selectPM(this)">
                     <span class="pm-check"><i class="fa-solid fa-check"></i></span>
                     <div class="pm-icon-wrap">
                         <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR.png"
@@ -155,15 +164,6 @@ if ($currentUser !== null) {
                     <span class="pm-name">ZaloPay</span>
                 </button>
 
-                <!-- Chuyển khoản -->
-                <button class="pm-btn" data-method="bank" id="pm-bank" onclick="selectPM(this)">
-                    <span class="pm-check"><i class="fa-solid fa-check"></i></span>
-                    <div class="pm-icon-wrap">
-                        <i class="fa-solid fa-building-columns" style="color:#0d9488; font-size:1.8rem;"></i>
-                    </div>
-                    <span class="pm-name">Chuyển khoản</span>
-                </button>
-
                 <!-- Thẻ QT -->
                 <button class="pm-btn" data-method="card" id="pm-card" onclick="selectPM(this)">
                     <span class="pm-check"><i class="fa-solid fa-check"></i></span>
@@ -186,7 +186,7 @@ if ($currentUser !== null) {
             </div>
 
             <!-- QR bank transfer details -->
-            <div class="bank-panel" id="bankPanel">
+            <div class="bank-panel show" id="bankPanel">
                 <div class="d-flex gap-3 flex-wrap align-items-start">
                     <div class="qr-box" onclick="openQrModal()" title="Nhấn để phóng to mã QR">
                         <img src="assets/img/vietqr-payment.png?v=<?= filemtime(__DIR__ . '/assets/img/vietqr-payment.png') ?>"
@@ -294,16 +294,21 @@ if ($currentUser !== null) {
         </div>
 
         <!-- Mobile: CTA button (bên dưới form trên mobile) -->
-        <div class="d-lg-none">
-            <button class="btn-pay-cta mb-4" id="btnPayMobile" onclick="handlePayment()">
+        <div class="d-lg-none mb-4">
+            <button class="btn-pay-cta mb-3" id="btnPayMobile" onclick="handlePayment()">
                 <span id="btnPayMobileText">Xác Nhận & Đặt Cọc</span>
             </button>
+            <div class="text-center">
+                <a href="booking.php" style="font-size:0.8rem; color:var(--text-secondary); text-decoration:none;">
+                    <i class="fa-solid fa-arrow-left me-1"></i>Quay lại chọn khung giờ
+                </a>
+            </div>
         </div>
 
     </div><!-- /col-lg-7 -->
 
-    <!-- ============ RIGHT: ORDER SUMMARY ============ -->
-    <div class="col-lg-5">
+    <!-- ============ RIGHT: ORDER SUMMARY (Desktop: Right Sticky, Mobile: Top) ============ -->
+    <div class="col-lg-5 order-1 order-lg-2">
         <div class="sticky-top" style="top: 72px;">
 
             <!-- Countdown -->
@@ -435,8 +440,8 @@ if ($currentUser !== null) {
                 </button>
             </div>
 
-            <!-- Back link -->
-            <div class="text-center">
+            <!-- Desktop Back link -->
+            <div class="d-none d-lg-block text-center">
                 <a href="booking.php" style="font-size:0.8rem; color:var(--text-secondary); text-decoration:none;">
                     <i class="fa-solid fa-arrow-left me-1"></i>Quay lại chọn khung giờ
                 </a>

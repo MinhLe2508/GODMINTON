@@ -21,7 +21,7 @@ let booking = {
     courtName: 'Cầu Lông Quận 1 – Lê Thánh Tôn Sport',
     pricePerHour: 100000,
     duration: 1.5, 
-    method: 'vnpay',
+    method: 'bank',
     voucherCode: '',
     appliedVoucher: null,
     _base: 0, _discount: 0, _fee: 0, _total: 0, _deposit: 0
