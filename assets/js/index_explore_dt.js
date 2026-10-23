@@ -4,10 +4,8 @@ let exploreNews=[];
 const exploreCategories={
     event:{label:'Sự kiện',icon:'fa-trophy'},
     membership:{label:'Hội viên',icon:'fa-id-card'},
-    class:{label:'Khóa học',icon:'fa-person-chalkboard'},
-    promo:{label:'Ưu đãi',icon:'fa-gift'},
+    announcement:{label:'Thông báo',icon:'fa-bell'},
     notice:{label:'Thông báo',icon:'fa-bell'},
-    pass:{label:'Pass sân',icon:'fa-ticket'},
     general:{label:'Tin tức',icon:'fa-newspaper'}
 };
 function exploreDate(value){

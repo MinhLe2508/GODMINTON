@@ -307,17 +307,8 @@
                     <button class="explore-tab" onclick="filterExplore(this,'membership')">
                         <i class="fa-solid fa-id-card"></i> Gói hội viên
                     </button>
-                    <button class="explore-tab" onclick="filterExplore(this,'class')">
-                        <i class="fa-solid fa-person-chalkboard"></i> Khóa học
-                    </button>
-                    <button class="explore-tab" onclick="filterExplore(this,'promo')">
-                        <i class="fa-solid fa-gift"></i> Ưu đãi
-                    </button>
-                    <button class="explore-tab" onclick="filterExplore(this,'notice')">
+                    <button class="explore-tab" onclick="filterExplore(this,'announcement')">
                         <i class="fa-solid fa-bell"></i> Thông báo
-                    </button>
-                    <button class="explore-tab" onclick="filterExplore(this,'pass')">
-                        <i class="fa-solid fa-ticket"></i> Pass sân
                     </button>
                 </div>
             </div>
