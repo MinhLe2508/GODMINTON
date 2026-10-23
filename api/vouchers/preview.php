@@ -53,11 +53,14 @@ try {
         $courtAmount += (int)round((float)$slot['price_per_hour'] / 2) + (($h >= 17 && $h <= 21) ? 7500 : 0);
     }
 
+    require_once __DIR__ . '/../../includes/membership-service.php';
+    $activeMembership = membership_get_active_for_user($pdo, $userId);
+
     // Kiểm tra và lấy voucher
     $voucher = voucher_validate_and_get($pdo, $code, $userId, $courtId, $courtAmount, false);
 
     // Tính toán chi tiết tiền
-    $pricing = voucher_calculate_pricing($courtAmount, $voucher);
+    $pricing = voucher_calculate_pricing($courtAmount, $voucher, $activeMembership);
 
     http_response_code(200);
     echo json_encode([
@@ -71,6 +74,13 @@ try {
                 'max_discount'     => $voucher['max_discount'] !== null ? (int)$voucher['max_discount'] : null,
                 'funded_by'        => $voucher['funded_by'],
             ],
+            'membership' => $activeMembership ? [
+                'id'               => (int)$activeMembership['id'],
+                'tier'             => $activeMembership['tier'],
+                'discount_percent' => (int)$activeMembership['discount_percent'],
+                'package_title'    => $activeMembership['package_title'],
+                'discount_amount'  => $pricing['membership_discount_amount'],
+            ] : null,
             'pricing' => $pricing,
         ],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);

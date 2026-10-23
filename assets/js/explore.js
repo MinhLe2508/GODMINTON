@@ -126,6 +126,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else if (type === 'membership') {
                 chipHtml = '<span class="post-type-chip chip-membership"><i class="fa-solid fa-id-card"></i> Gói hội viên</span>';
+                if (item.discount_percent && Number(item.discount_percent) > 0) {
+                    chipHtml += ` <span class="badge bg-danger text-white rounded-pill px-2 ms-1 fw-bold">-${escape(item.discount_percent)}%</span>`;
+                }
                 if (item.price !== null) {
                     metaHtml = `<span class="post-meta-text fw-bold text-teal"><i class="fa-solid fa-tag me-1"></i>${escape(formatVND(item.price))}${item.duration_days ? ` / ${escape(item.duration_days)} ngày` : ''}</span>`;
                 }

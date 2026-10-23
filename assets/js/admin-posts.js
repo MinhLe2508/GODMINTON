@@ -327,6 +327,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Trường gói hội viên
             document.getElementById('formMemPrice').value = post.price !== null ? post.price : '';
             document.getElementById('formMemDuration').value = post.duration_days || '';
+            const discInput = document.getElementById('formMemDiscountPercent');
+            if (discInput) discInput.value = post.discount_percent || '';
             document.getElementById('formMemBenefits').value = post.benefits || '';
 
             // Thời gian publish/expire
@@ -356,6 +358,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        const discVal = document.getElementById('formMemDiscountPercent')?.value;
         const payload = {
             type,
             title,
@@ -371,6 +374,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             event_location: document.getElementById('formEventLocation').value.trim(),
             price: document.getElementById('formMemPrice').value !== '' ? parseFloat(document.getElementById('formMemPrice').value) : null,
             duration_days: document.getElementById('formMemDuration').value !== '' ? parseInt(document.getElementById('formMemDuration').value, 10) : null,
+            discount_percent: (discVal !== undefined && discVal !== '') ? parseInt(discVal, 10) : 0,
             benefits: document.getElementById('formMemBenefits').value.trim()
         };
 

@@ -255,15 +255,20 @@ $currentUser = [
 
                         <!-- ================= TRƯỜNG ĐẶC THÙ CHO GÓI HỘI VIÊN ================= -->
                         <div id="sectionMembershipFields" class="col-12 p-3 rounded-4 bg-surface border" style="display: none;">
-                            <h6 class="fw-bold text-warning mb-3"><i class="fa-solid fa-id-card me-1"></i> Thông tin Gói hội viên ưu đãi (Mức 1 - Giới thiệu)</h6>
+                            <h6 class="fw-bold text-warning mb-3"><i class="fa-solid fa-id-card me-1"></i> Thông tin Gói hội viên ưu đãi (Silver 5%, Gold 10%, Platinum 15%)</h6>
                             <div class="row g-3">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label for="formMemPrice" class="form-label fw-semibold small">Giá niêm yết (VNĐ)</label>
-                                    <input type="number" min="0" step="1000" class="form-control" id="formMemPrice" placeholder="VD: 499000">
+                                    <input type="number" min="0" step="1000" class="form-control" id="formMemPrice" placeholder="VD: 199000">
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label for="formMemDuration" class="form-label fw-semibold small">Thời hạn gói (Số ngày)</label>
                                     <input type="number" min="1" class="form-control" id="formMemDuration" placeholder="VD: 30">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="formMemDiscountPercent" class="form-label fw-semibold small">Giảm giá tiền sân (%) <span class="text-danger">*</span></label>
+                                    <input type="number" min="0" max="100" class="form-control" id="formMemDiscountPercent" placeholder="VD: 5, 10 hoặc 15">
+                                    <div class="form-text" style="font-size: 0.72rem;">Tự động giảm % này cho đơn đặt sân của hội viên.</div>
                                 </div>
                                 <div class="col-12">
                                     <label for="formMemBenefits" class="form-label fw-semibold small">Danh sách quyền lợi thành viên (mỗi dòng 1 ý)</label>

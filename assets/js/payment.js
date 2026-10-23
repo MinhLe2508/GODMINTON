@@ -134,11 +134,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 function calcPrices() {
     const rawBase = Math.round(booking.pricePerHour * booking.duration);
     let base = rawBase;
-    let discount = 0;
+    let memberDiscount = 0;
+    let voucherDiscount = 0;
     let fee = 0;
     let total = base;
-    let deposit = Math.round(total * 0.5);
 
+    // 1. Kiểm tra Hội viên của người dùng
+    const user = (typeof window.__GODMINTON_USER__ !== 'undefined' && window.__GODMINTON_USER__);
+    const membership = user?.membership;
+
+    const bannerEl = document.getElementById('memberVipBanner');
+    const bannerTier = document.getElementById('memberBannerTier');
+    const bannerPercent = document.getElementById('memberBannerPercent');
+    const prowMembership = document.getElementById('prowMembership');
+    const prMemberPercent = document.getElementById('prMemberPercent');
+    const prMemberDiscount = document.getElementById('prMemberDiscount');
+
+    if (membership && Number(membership.discount_percent) > 0) {
+        const mPercent = Number(membership.discount_percent);
+        memberDiscount = Math.round((base * mPercent) / 100);
+
+        if (bannerEl) bannerEl.style.display = 'flex';
+        if (bannerTier) bannerTier.textContent = (membership.tier || 'VIP').toUpperCase();
+        if (bannerPercent) bannerPercent.textContent = `${mPercent}%`;
+
+        if (prowMembership) prowMembership.style.display = 'flex';
+        if (prMemberPercent) prMemberPercent.textContent = `${mPercent}%`;
+        if (prMemberDiscount) prMemberDiscount.textContent = `- ${fmt(memberDiscount)}`;
+    } else {
+        if (bannerEl) bannerEl.style.display = 'none';
+        if (prowMembership) prowMembership.style.display = 'none';
+    }
+
+    // 2. Kiểm tra Voucher áp dụng
     const prowDiscount = document.getElementById('prowDiscount');
     const prDiscount = document.getElementById('prDiscount');
     const prDiscountPercent = document.getElementById('prDiscountPercent');
@@ -147,24 +175,38 @@ function calcPrices() {
     if (booking.appliedVoucher && booking.appliedVoucher.pricing) {
         const pr = booking.appliedVoucher.pricing;
         base = pr.court_amount;
-        discount = pr.discount_amount;
+        memberDiscount = pr.membership_discount_amount || memberDiscount;
+        voucherDiscount = Math.max(0, pr.discount_amount - memberDiscount);
         fee = pr.platform_fee;
         total = pr.total_amount;
-        deposit = pr.deposit_amount;
 
         if (prowDiscount) prowDiscount.style.display = 'flex';
-        if (prDiscount) prDiscount.textContent = `- ${fmt(discount)}`;
+        if (prDiscount) prDiscount.textContent = `- ${fmt(voucherDiscount)}`;
         if (prDiscountPercent) prDiscountPercent.textContent = `${booking.appliedVoucher.voucher.discount_percent}%`;
         if (prFeeLabel) prFeeLabel.textContent = 'Phí dịch vụ (5%)';
         document.getElementById('prFee').textContent = fmt(fee);
     } else {
         if (prowDiscount) prowDiscount.style.display = 'none';
-        if (prFeeLabel) prFeeLabel.textContent = 'Phí dịch vụ';
-        document.getElementById('prFee').textContent = '0 đ (Miễn phí)';
+        
+        // Khi không có voucher, phí sàn tính theo tiền sau giảm hội viên (nếu có giảm)
+        if (memberDiscount > 0) {
+            const afterDiscount = Math.max(0, base - memberDiscount);
+            fee = Math.round(afterDiscount * 0.05);
+            total = afterDiscount + fee;
+            if (prFeeLabel) prFeeLabel.textContent = 'Phí dịch vụ (5%)';
+            document.getElementById('prFee').textContent = fmt(fee);
+        } else {
+            fee = 0;
+            total = base;
+            if (prFeeLabel) prFeeLabel.textContent = 'Phí dịch vụ';
+            document.getElementById('prFee').textContent = '0 đ (Miễn phí)';
+        }
     }
 
+    const deposit = Math.round(total * 0.5);
+
     booking._base    = base;
-    booking._discount= discount;
+    booking._discount= memberDiscount + voucherDiscount;
     booking._fee     = fee;
     booking._total   = total;
     booking._deposit = deposit;

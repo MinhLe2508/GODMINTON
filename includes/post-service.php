@@ -159,7 +159,7 @@ function post_get_public_list(PDO $pdo, array $filters = []): array {
         SELECT p.id, p.type, p.title, p.slug, p.summary, p.cover_image,
                p.publish_at, p.expire_at, p.is_pinned, p.created_at,
                p.event_start, p.event_end, p.event_location,
-               p.price, p.duration_days, p.benefits,
+               p.price, p.duration_days, p.discount_percent, p.benefits,
                u.name AS author_name
         FROM posts p
         LEFT JOIN users u ON u.id = p.created_by
@@ -344,6 +344,9 @@ function post_validate_payload(array $data, bool $isUpdate = false): array {
                 throw new PostError(422, 'INVALID_DURATION', 'Thời hạn gói phải lớn hơn 0 ngày.');
             }
         }
+        if (isset($data['discount_percent']) && $data['discount_percent'] !== '') {
+            $discountPercent = max(0, min(100, (int)$data['discount_percent']));
+        }
         $benefits = !empty($data['benefits']) ? trim((string)$data['benefits']) : null;
     }
 
@@ -362,6 +365,7 @@ function post_validate_payload(array $data, bool $isUpdate = false): array {
         'event_location' => $eventLocation,
         'price' => $price,
         'duration_days' => $durationDays,
+        'discount_percent' => $discountPercent,
         'benefits' => $benefits
     ];
 }
@@ -378,12 +382,12 @@ function post_create(PDO $pdo, int $adminId, array $data): int {
             type, title, slug, summary, content, cover_image, status,
             publish_at, expire_at, is_pinned, created_by,
             event_start, event_end, event_location,
-            price, duration_days, benefits, created_at, updated_at
+            price, duration_days, discount_percent, benefits, created_at, updated_at
         ) VALUES (
             ?, ?, ?, ?, ?, ?, ?,
             ?, ?, ?, ?,
             ?, ?, ?,
-            ?, ?, ?, NOW(), NOW()
+            ?, ?, ?, ?, NOW(), NOW()
         )
     ');
 
@@ -404,6 +408,7 @@ function post_create(PDO $pdo, int $adminId, array $data): int {
         $validated['event_location'],
         $validated['price'],
         $validated['duration_days'],
+        $validated['discount_percent'],
         $validated['benefits']
     ]);
 
@@ -444,6 +449,7 @@ function post_update(PDO $pdo, int $id, array $data): bool {
             event_location = ?,
             price = ?,
             duration_days = ?,
+            discount_percent = ?,
             benefits = ?,
             updated_at = NOW()
         WHERE id = ?
@@ -465,6 +471,7 @@ function post_update(PDO $pdo, int $id, array $data): bool {
         $validated['event_location'],
         $validated['price'],
         $validated['duration_days'],
+        $validated['discount_percent'],
         $validated['benefits'],
         $id
     ]);

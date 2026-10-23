@@ -5,8 +5,13 @@
  * Tuân thủ quy tắc hiển thị Mục 2.4: Nếu không đủ điều kiện công khai -> Trả về 404.
  */
 
+require_once __DIR__ . '/includes/auth-session.php';
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/includes/post-service.php';
+require_once __DIR__ . '/includes/membership-service.php';
+
+god_auth_start();
+$currentUserId = (int)($_SESSION['user_id'] ?? 0);
 
 $slug = isset($_GET['slug']) ? trim((string)$_GET['slug']) : '';
 $post = null;
@@ -19,6 +24,11 @@ if ($slug !== '') {
 if (!$post) {
     http_response_code(404);
 }
+
+$userActiveMembership = ($currentUserId > 0 && $post && $post['type'] === 'membership') 
+    ? membership_get_active_for_user($pdo, $currentUserId) 
+    : null;
+$isCurrentPackageActive = ($post && $userActiveMembership && (int)$userActiveMembership['post_id'] === (int)$post['id']);
 
 $typeLabels = [
     'event'        => ['label' => 'Sự kiện', 'icon' => 'fa-trophy', 'chip_class' => 'chip-event'],
@@ -43,6 +53,8 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
     <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
 
     <style>
@@ -194,11 +206,20 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
             </div>
 
             <?php elseif ($post['type'] === 'membership'): ?>
-            <!-- Khối thông tin Gói hội viên ưu đãi (Mức 1: Giới thiệu quyền lợi, KHÔNG có nút mua) -->
+            <!-- Khối thông tin Gói hội viên ưu đãi: Silver 5%, Gold 10%, Platinum 15% -->
             <div class="highlight-meta-box mb-4">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
                     <div>
-                        <span class="badge bg-warning bg-opacity-25 text-warning fw-bold px-3 py-1 rounded-pill mb-1">Gói đặc quyền</span>
+                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                            <span class="badge bg-warning bg-opacity-25 text-warning fw-bold px-3 py-1 rounded-pill">
+                                <i class="fa-solid fa-crown me-1"></i> Gói đặc quyền
+                            </span>
+                            <?php if (!empty($post['discount_percent'])): ?>
+                            <span class="badge bg-danger text-white fw-bold px-3 py-1 rounded-pill">
+                                <i class="fa-solid fa-percent me-1"></i> GIẢM <?= (int)$post['discount_percent'] ?>% TIỀN SÂN
+                            </span>
+                            <?php endif; ?>
+                        </div>
                         <h4 class="fw-extrabold mb-0"><?= htmlspecialchars($post['title']) ?></h4>
                     </div>
                     <?php if ($post['price'] !== null): ?>
@@ -228,15 +249,52 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
                 </div>
                 <?php endif; ?>
 
-                <!-- Lưu ý & Nút phụ xem sân (Tuyệt đối không có luồng mua / thanh toán) -->
+                <!-- Trạng thái kích hoạt & Nút Đăng Ký / Gia Hạn -->
                 <div class="mt-4 pt-3 border-top border-secondary border-opacity-25 d-flex align-items-center justify-content-between flex-wrap gap-3">
-                    <div class="small text-muted" style="max-width: 520px;">
-                        <i class="fa-solid fa-circle-info me-1 text-teal"></i>
-                        <em>Gói hội viên chỉ mang tính chất thông tin chính sách ưu đãi của hệ thống. Bạn có thể xem ngay các cụm sân cầu lông đối tác đang hoạt động.</em>
-                    </div>
-                    <a href="courts.php" class="btn btn-teal rounded-pill px-4 fw-bold">
-                        <i class="fa-solid fa-layer-group me-1"></i> Xem danh sách sân
-                    </a>
+                    <?php if (!$currentUserId): ?>
+                        <div class="small text-muted" style="max-width: 520px;">
+                            <i class="fa-solid fa-circle-info me-1 text-teal"></i>
+                            Đăng nhập tài khoản GODMINTON để đăng ký gói hội viên và tự động hưởng chiết khấu <strong><?= (int)$post['discount_percent'] ?>%</strong> khi đặt sân.
+                        </div>
+                        <a href="login.php?redirect=<?= urlencode('post-detail.php?slug=' . $post['slug']) ?>" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm">
+                            <i class="fa-solid fa-right-to-bracket me-1"></i> Đăng nhập để đăng ký gói
+                        </a>
+                    <?php elseif ($isCurrentPackageActive): ?>
+                        <div>
+                            <div class="badge bg-success bg-opacity-10 text-success border border-success p-2 rounded-3 d-inline-flex align-items-center gap-2">
+                                <i class="fa-solid fa-circle-check fs-5"></i>
+                                <div class="text-start">
+                                    <strong>Bạn đang kích hoạt gói này!</strong>
+                                    <div class="small opacity-75">Còn <?= (int)$userActiveMembership['days_left'] ?> ngày (hạn đến <?= date('d/m/Y', strtotime($userActiveMembership['end_date'])) ?>)</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <button type="button" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm" onclick="openSubscribeModal()">
+                                <i class="fa-solid fa-arrows-rotate me-1"></i> Gia hạn thêm <?= (int)$post['duration_days'] ?> ngày
+                            </button>
+                            <a href="courts.php" class="btn btn-outline-teal rounded-pill px-3 fw-bold">
+                                <i class="fa-solid fa-table-tennis-paddle-ball me-1"></i> Đặt sân ngay
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <div class="small text-muted" style="max-width: 520px;">
+                            <i class="fa-solid fa-bolt me-1 text-warning"></i>
+                            <?php if ($userActiveMembership): ?>
+                                Bạn đang dùng gói <strong><?= htmlspecialchars($userActiveMembership['package_title']) ?></strong>. Đăng ký gói này sẽ nâng cấp tài khoản lên mức giảm <strong><?= (int)$post['discount_percent'] ?>%</strong>.
+                            <?php else: ?>
+                                Kích hoạt ngay để được tự động giảm <strong><?= (int)$post['discount_percent'] ?>%</strong> toàn bộ tiền sân trong <strong><?= (int)$post['duration_days'] ?> ngày</strong>.
+                            <?php endif; ?>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <button type="button" class="btn btn-teal rounded-pill px-4 py-2 fw-bold shadow-sm" onclick="openSubscribeModal()">
+                                <i class="fa-solid fa-crown me-1"></i> Đăng ký gói ngay (<?= post_format_vnd($post['price']) ?>)
+                            </button>
+                            <a href="courts.php" class="btn btn-outline-secondary rounded-pill px-3">
+                                <i class="fa-solid fa-table-tennis-paddle-ball me-1"></i> Xem sân
+                            </a>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -297,7 +355,145 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
     <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
+
+    <?php if ($post && $post['type'] === 'membership'): ?>
+    <!-- Modal Đăng Ký / Thanh Toán Gói Hội Viên -->
+    <div class="modal fade" id="modalSubscribeMembership" tabindex="-1" aria-labelledby="modalSubLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modalSubLabel">
+                        <i class="fa-solid fa-crown text-warning me-2"></i>Đăng Ký Gói Hội Viên
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <!-- Tóm tắt gói -->
+                    <div class="p-3 rounded-3 mb-3 bg-light border border-secondary border-opacity-10">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-teal text-white fw-bold px-3 py-1 rounded-pill"><?= htmlspecialchars($post['title']) ?></span>
+                            <span class="badge bg-danger text-white fw-bold px-2 py-1 rounded-pill">-<?= (int)$post['discount_percent'] ?>% Tiền Sân</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted small">Thời hạn kích hoạt:</span>
+                            <span class="fw-bold"><?= (int)$post['duration_days'] ?> ngày</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Tổng thanh toán:</span>
+                            <span class="fs-4 fw-extrabold text-teal"><?= post_format_vnd($post['price']) ?></span>
+                        </div>
+                    </div>
+
+                    <!-- Phương thức thanh toán -->
+                    <label class="form-label fw-bold small text-muted text-uppercase mb-2">Chọn phương thức thanh toán</label>
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <label class="p-2 border rounded-3 d-flex align-items-center gap-3 cursor-pointer bg-surface">
+                            <input type="radio" name="subPaymentMethod" value="VietQR" checked class="form-check-input mt-0">
+                            <i class="fa-solid fa-qrcode text-teal fs-4"></i>
+                            <div>
+                                <div class="fw-bold small">Chuyển khoản VietQR (Mô phỏng tức thì)</div>
+                                <div class="text-muted" style="font-size:0.75rem;">Hỗ trợ quét qua mọi App ngân hàng Việt Nam</div>
+                            </div>
+                        </label>
+                        <label class="p-2 border rounded-3 d-flex align-items-center gap-3 cursor-pointer bg-surface">
+                            <input type="radio" name="subPaymentMethod" value="MoMo" class="form-check-input mt-0">
+                            <i class="fa-solid fa-wallet text-danger fs-4"></i>
+                            <div>
+                                <div class="fw-bold small">Ví điện tử MoMo</div>
+                                <div class="text-muted" style="font-size:0.75rem;">Thanh toán nhanh chóng</div>
+                            </div>
+                        </label>
+                        <label class="p-2 border rounded-3 d-flex align-items-center gap-3 cursor-pointer bg-surface">
+                            <input type="radio" name="subPaymentMethod" value="Card" class="form-check-input mt-0">
+                            <i class="fa-solid fa-credit-card text-primary fs-4"></i>
+                            <div>
+                                <div class="fw-bold small">Thẻ Visa / Mastercard</div>
+                                <div class="text-muted" style="font-size:0.75rem;">Thẻ ghi nợ hoặc tín dụng</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Ghi chú tự động kích hoạt -->
+                    <div class="p-2 rounded-3 border bg-light text-center small text-muted">
+                        <i class="fa-solid fa-shield-halved text-success me-1"></i>
+                        Hệ thống sẽ tự động kích hoạt quyền lợi giảm giá <strong><?= (int)$post['discount_percent'] ?>%</strong> ngay sau khi xác nhận.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm" id="btnConfirmSubscribe" onclick="submitSubscribe(<?= (int)$post['id'] ?>)">
+                        <span id="btnSubText"><i class="fa-solid fa-check me-1"></i> Xác nhận & Kích hoạt</span>
+                        <span id="btnSubSpinner" class="spinner-border spinner-border-sm ms-1" style="display:none;" role="status"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let subModalInstance = null;
+    function openSubscribeModal() {
+        const modalEl = document.getElementById('modalSubscribeMembership');
+        if (!modalEl) return;
+        subModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+        subModalInstance.show();
+    }
+
+    async function submitSubscribe(postId) {
+        const btn = document.getElementById('btnConfirmSubscribe');
+        const text = document.getElementById('btnSubText');
+        const spinner = document.getElementById('btnSubSpinner');
+        const methodEl = document.querySelector('input[name="subPaymentMethod"]:checked');
+        const method = methodEl ? methodEl.value : 'VietQR';
+
+        btn.disabled = true;
+        text.style.display = 'none';
+        spinner.style.display = 'inline-block';
+
+        try {
+            const res = await fetch('api/memberships/subscribe.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ post_id: postId, payment_method: method })
+            });
+
+            const json = await res.json();
+            if (res.ok && json.status === 'success') {
+                if (subModalInstance) subModalInstance.hide();
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Đăng Ký Thành Công!',
+                    html: `Chúc mừng bạn đã kích hoạt thành công <strong>${json.data.package_title}</strong>.<br>Hạng: <span class="badge bg-warning text-dark text-uppercase">${json.data.tier}</span> (Giảm <strong>${json.data.discount_percent}%</strong> tiền sân khi đặt lịch).`,
+                    confirmButtonText: 'Đồng ý',
+                    confirmButtonColor: '#0d9488'
+                });
+                window.location.reload();
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Đăng ký thất bại',
+                    text: json.message || 'Không thể đăng ký gói lúc này. Vui lòng thử lại sau.',
+                    confirmButtonColor: '#0d9488'
+                });
+            }
+        } catch (e) {
+            console.error('Lỗi đăng ký hội viên:', e);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi kết nối',
+                text: 'Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại đường truyền.',
+                confirmButtonColor: '#0d9488'
+            });
+        } finally {
+            btn.disabled = false;
+            text.style.display = 'inline';
+            spinner.style.display = 'none';
+        }
+    }
+    </script>
+    <?php endif; ?>
 </body>
 </html>

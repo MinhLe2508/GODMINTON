@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS `posts` (
   -- Trường đặc thù cho Gói hội viên ưu đãi (type = 'membership')
   `price` decimal(12,0) DEFAULT NULL COMMENT 'Giá niêm yết gói hội viên (VNĐ)',
   `duration_days` int(10) unsigned DEFAULT NULL COMMENT 'Thời hạn hiệu lực của gói (ngày)',
+  `discount_percent` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT 'Phần trăm giảm giá khi đặt sân (5% / 10% / 15%)',
   `benefits` text DEFAULT NULL COMMENT 'Danh sách quyền lợi của gói (mỗi dòng một ý)',
   
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,

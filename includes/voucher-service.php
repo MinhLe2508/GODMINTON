@@ -94,44 +94,50 @@ function voucher_clear_failure(PDO $pdo, int $userId): void {
 }
 
 /**
- * Hàm tính tiền duy nhất của hệ thống Voucher
+ * Hàm tính tiền duy nhất của hệ thống Voucher & Gói hội viên
  * Áp dụng cùng 1 công thức cho cả Preview và Confirm Booking.
  */
-function voucher_calculate_pricing(int $courtAmount, ?array $voucher = null): array {
+function voucher_calculate_pricing(int $courtAmount, ?array $voucher = null, ?array $membership = null): array {
     $courtAmount = max(0, $courtAmount);
 
-    if (!$voucher) {
-        $deposit = (int)round($courtAmount * 0.5);
-        return [
-            'voucher_id'          => null,
-            'voucher_code'        => null,
-            'court_amount'        => $courtAmount,
-            'discount_amount'     => 0,
-            'discount_funded_by'  => null,
-            'platform_fee'        => 0,
-            'total_amount'        => $courtAmount,
-            'deposit_amount'      => $deposit,
-            'owner_amount'        => $courtAmount,
-            'discount_percent'    => 0,
-        ];
+    // 1. Tính chiết khấu gói hội viên (nếu có)
+    $memberPercent = 0;
+    $membershipDiscount = 0;
+    $membershipId = null;
+    if ($membership && !empty($membership['discount_percent'])) {
+        $memberPercent = (int)$membership['discount_percent'];
+        $membershipDiscount = (int)round(($courtAmount * $memberPercent) / 100);
+        $membershipId = isset($membership['id']) ? (int)$membership['id'] : null;
     }
 
-    $percent = (int)($voucher['discount_percent'] ?? 0);
-    $rawDiscount = (int)round(($courtAmount * $percent) / 100);
+    // 2. Tính chiết khấu voucher (nếu có)
+    $voucherDiscount = 0;
+    $voucherPercent = 0;
+    $voucherId = null;
+    $voucherCode = null;
+    $voucherFundedBy = 'platform';
 
-    $maxDiscount = isset($voucher['max_discount']) && $voucher['max_discount'] !== null
-        ? (int)$voucher['max_discount']
-        : null;
+    if ($voucher) {
+        $voucherId = (int)$voucher['id'];
+        $voucherCode = strtoupper(trim($voucher['code']));
+        $voucherPercent = (int)($voucher['discount_percent'] ?? 0);
+        $rawDiscount = (int)round(($courtAmount * $voucherPercent) / 100);
 
-    if ($maxDiscount !== null && $maxDiscount > 0) {
-        $discountAmount = min($rawDiscount, $maxDiscount);
-    } else {
-        $discountAmount = $rawDiscount;
+        $maxDiscount = isset($voucher['max_discount']) && $voucher['max_discount'] !== null
+            ? (int)$voucher['max_discount']
+            : null;
+
+        if ($maxDiscount !== null && $maxDiscount > 0) {
+            $voucherDiscount = min($rawDiscount, $maxDiscount);
+        } else {
+            $voucherDiscount = $rawDiscount;
+        }
+        $voucherFundedBy = $voucher['funded_by'] ?? 'platform';
     }
-    // Không vượt quá tiền sân gốc
-    $discountAmount = min($courtAmount, max(0, $discountAmount));
 
-    $afterDiscount = max(0, $courtAmount - $discountAmount);
+    // Tổng tiền giảm không vượt quá tiền sân gốc
+    $totalDiscount = min($courtAmount, max(0, $membershipDiscount + $voucherDiscount));
+    $afterDiscount = max(0, $courtAmount - $totalDiscount);
 
     // Phí sàn = 5% của tiền sân sau giảm
     $platformFee = (int)round($afterDiscount * 0.05);
@@ -143,25 +149,30 @@ function voucher_calculate_pricing(int $courtAmount, ?array $voucher = null): ar
     $depositAmount = (int)round($totalAmount * 0.5);
 
     // Tiền chủ sân nhận
-    $fundedBy = $voucher['funded_by'] ?? 'platform';
-    if ($fundedBy === 'owner') {
-        $ownerAmount = $afterDiscount;
+    if ($voucher && $voucherFundedBy === 'owner') {
+        // Chủ sân chịu phần giảm của voucher, nền tảng chịu phần giảm hội viên
+        $ownerAmount = max(0, $courtAmount - $voucherDiscount);
     } else {
-        // Nền tảng bù phần giảm, chủ sân nhận đủ giá gốc
+        // Nền tảng chịu toàn bộ chiết khấu, chủ sân nhận đủ tiền sân gốc
         $ownerAmount = $courtAmount;
     }
 
+    $fundedBy = ($totalDiscount > 0) ? ($voucher && $voucherFundedBy === 'owner' ? 'owner' : 'platform') : null;
+
     return [
-        'voucher_id'          => (int)$voucher['id'],
-        'voucher_code'        => strtoupper(trim($voucher['code'])),
-        'court_amount'        => $courtAmount,
-        'discount_amount'     => $discountAmount,
-        'discount_funded_by'  => $fundedBy,
-        'platform_fee'        => $platformFee,
-        'total_amount'        => $totalAmount,
-        'deposit_amount'      => $depositAmount,
-        'owner_amount'        => $ownerAmount,
-        'discount_percent'    => $percent,
+        'voucher_id'                  => $voucherId,
+        'voucher_code'                => $voucherCode,
+        'user_membership_id'          => $membershipId,
+        'membership_discount_amount'  => $membershipDiscount,
+        'membership_discount_percent' => $memberPercent,
+        'court_amount'                => $courtAmount,
+        'discount_amount'             => $totalDiscount,
+        'discount_funded_by'          => $fundedBy,
+        'platform_fee'                => $platformFee,
+        'total_amount'                => $totalAmount,
+        'deposit_amount'              => $depositAmount,
+        'owner_amount'                => $ownerAmount,
+        'discount_percent'            => $voucherPercent,
     ];
 }
 
