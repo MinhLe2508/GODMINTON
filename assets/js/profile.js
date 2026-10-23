@@ -375,11 +375,35 @@ async function loadMyMembership() {
                     renewBtn.addEventListener('click', () => {
                         const modalEl = document.getElementById('modalRenewMembership');
                         if (!modalEl) return;
+                        if (typeof showRenewStep1 === 'function') showRenewStep1();
                         document.getElementById('renewPackageTitle').textContent = shortName;
                         document.getElementById('renewDiscountBadge').textContent = `-${active.discount_percent}% Tiền Sân`;
                         document.getElementById('renewCurrentEnd').textContent = endFormatted;
                         document.getElementById('renewAddDays').textContent = `+1 tháng (cộng dồn)`;
-                        document.getElementById('renewPriceText').textContent = BookingAccount.money(active.price_paid || 0);
+
+                        const priceNum = Math.round(Number(active.price_paid) || 0);
+                        const priceText = BookingAccount.money(priceNum);
+                        document.getElementById('renewPriceText').textContent = priceText;
+                        const qrPriceEl = document.getElementById('renewQrPriceText');
+                        if (qrPriceEl) qrPriceEl.textContent = priceText;
+
+                        const userId = (savedProfile && savedProfile.id) ? savedProfile.id : 'VIP';
+                        const renewRef = 'GIAHAN' + userId + 'P' + active.post_id;
+                        const refEl = document.getElementById('renewTransferRef');
+                        if (refEl) refEl.textContent = renewRef;
+
+                        const qrUrl = `https://api.vietqr.io/image/970422-0783547289-compact2.jpg?amount=${priceNum}&addInfo=${encodeURIComponent(renewRef)}&accountName=TRUONG%20MINH%20TRIET`;
+                        const qrImg = document.getElementById('renewQrImg');
+                        if (qrImg) qrImg.src = qrUrl;
+
+                        const btnCopyPrice = document.getElementById('btnCopyRenewPrice');
+                        if (btnCopyPrice) {
+                            btnCopyPrice.onclick = () => copyRenewText(priceNum.toString(), 'Số tiền');
+                        }
+                        const btnCopyRef = document.getElementById('btnCopyRenewRef');
+                        if (btnCopyRef) {
+                            btnCopyRef.onclick = () => copyRenewText(renewRef, 'Nội dung chuyển khoản');
+                        }
 
                         window.__CURRENT_ACTIVE_POST_ID__ = active.post_id;
                         const instance = bootstrap.Modal.getOrCreateInstance(modalEl);
@@ -484,6 +508,44 @@ async function loadMyMembership() {
     }
 }
 
+// Điều hướng 2 bước & sao chép thông tin thanh toán VietQR cho Modal Gia Hạn
+window.showRenewQrStep = function() {
+    const s1 = document.getElementById('renewStep1');
+    const s2 = document.getElementById('renewStep2');
+    if (s1) s1.style.display = 'none';
+    if (s2) s2.style.display = 'block';
+};
+
+window.showRenewStep1 = function() {
+    const s1 = document.getElementById('renewStep1');
+    const s2 = document.getElementById('renewStep2');
+    if (s1) s1.style.display = 'block';
+    if (s2) s2.style.display = 'none';
+};
+
+window.copyRenewText = function(text, label) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            if (window.Swal) {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `Đã chép ${label}!`,
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            } else {
+                alert(`Đã sao chép ${label}: ${text}`);
+            }
+        }).catch(() => {
+            alert(`${label}: ${text}`);
+        });
+    } else {
+        alert(`${label}: ${text}`);
+    }
+};
+
 function initRenewMembershipModal() {
     const btn = document.getElementById('btnConfirmRenew');
     if (!btn || btn.dataset.bound === 'true') return;
@@ -492,9 +554,6 @@ function initRenewMembershipModal() {
     btn.addEventListener('click', async () => {
         const postId = window.__CURRENT_ACTIVE_POST_ID__;
         if (!postId) return;
-
-        const methodEl = document.querySelector('input[name="renewPaymentMethod"]:checked');
-        const method = methodEl ? methodEl.value : 'VietQR';
 
         const text = document.getElementById('btnRenewText');
         const spinner = document.getElementById('btnRenewSpinner');
@@ -507,7 +566,7 @@ function initRenewMembershipModal() {
             const res = await fetch('api/memberships/subscribe.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ post_id: postId, payment_method: method })
+                body: JSON.stringify({ post_id: postId, payment_method: 'VietQR' })
             });
             const json = await res.json();
 
@@ -520,9 +579,9 @@ function initRenewMembershipModal() {
 
                 if (window.Swal) {
                     await Swal.fire({
-                        icon: 'info',
-                        title: 'Đã Gửi Yêu Cầu Gia Hạn!',
-                        html: `Yêu cầu gia hạn gói <strong>${json.data.package_title}</strong> của bạn đã được gửi thành công và <strong>đang chờ Quản trị viên (Admin) duyệt xác nhận</strong>.<br>Hệ thống sẽ cộng dồn hạn sử dụng ngay sau khi Admin xác nhận.`,
+                        icon: 'success',
+                        title: 'Đã Gửi Xác Nhận Chuyển Khoản!',
+                        html: `Yêu cầu gia hạn gói <strong>${json.data.package_title}</strong> của bạn đã được ghi nhận và <strong>đang chờ Quản trị viên (Admin) đối soát, kích hoạt</strong>.<br>Hệ thống sẽ cộng dồn hạn sử dụng ngay sau khi Admin xác nhận.`,
                         confirmButtonText: 'Đã hiểu',
                         confirmButtonColor: '#0d9488'
                     });
