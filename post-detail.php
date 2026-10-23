@@ -387,69 +387,136 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
             $raw = trim(explode('–', explode('-', explode('(', (string)$post['title'])[0])[0])[0]);
             $pkgShortTitle = !str_starts_with(mb_strtolower($raw), 'gói') ? ('Gói ' . $raw) : $raw;
         }
+        $subTransferRef = 'HOIVIEN' . ($currentUserId > 0 ? $currentUserId : 'VIP') . 'P' . (int)$post['id'];
+        $subQrUrl = 'https://api.vietqr.io/image/970422-0783547289-compact2.jpg?amount=' . (int)$post['price'] . '&addInfo=' . urlencode($subTransferRef) . '&accountName=TRUONG%20MINH%20TRIET';
     ?>
     <!-- Modal Đăng Ký / Thanh Toán Gói Hội Viên -->
     <div class="modal fade" id="modalSubscribeMembership" tabindex="-1" aria-labelledby="modalSubLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-4 border-0 shadow-lg">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold" id="modalSubLabel">
-                        <i class="fa-solid fa-crown text-warning me-2"></i>Đăng Ký Gói Hội Viên
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-                </div>
-                <div class="modal-body pt-3">
-                    <!-- Tóm tắt gói -->
-                    <div class="p-3 rounded-3 mb-3 bg-light border border-secondary border-opacity-10">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-teal text-white fw-bold px-3 py-1 rounded-pill"><?= htmlspecialchars($pkgShortTitle) ?></span>
-                            <span class="badge bg-danger text-white fw-bold px-2 py-1 rounded-pill">-<?= (int)$post['discount_percent'] ?>% Tiền Sân</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="text-muted small">Thời hạn kích hoạt:</span>
-                            <span class="fw-bold"><?= (int)$post['duration_days'] === 30 ? '1 tháng (30 ngày)' : (int)$post['duration_days'] . ' ngày' ?></span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-muted small">Tổng thanh toán:</span>
-                            <span class="fs-4 fw-extrabold text-teal"><?= post_format_vnd($post['price']) ?></span>
-                        </div>
+                <!-- BƯỚC 1: XÁC NHẬN ĐĂNG KÝ & CHỌN CHUYỂN KHOẢN -->
+                <div id="subStep1">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold" id="modalSubLabel">
+                            <i class="fa-solid fa-crown text-warning me-2"></i>Đăng Ký Gói Hội Viên
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                     </div>
+                    <div class="modal-body pt-3">
+                        <!-- Tóm tắt gói -->
+                        <div class="p-3 rounded-3 mb-3 bg-light border border-secondary border-opacity-10">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-teal text-white fw-bold px-3 py-1 rounded-pill"><?= htmlspecialchars($pkgShortTitle) ?></span>
+                                <span class="badge bg-danger text-white fw-bold px-2 py-1 rounded-pill">-<?= (int)$post['discount_percent'] ?>% Tiền Sân</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-muted small">Thời hạn kích hoạt:</span>
+                                <span class="fw-bold"><?= (int)$post['duration_days'] === 30 ? '1 tháng (30 ngày)' : (int)$post['duration_days'] . ' ngày' ?></span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted small">Tổng thanh toán:</span>
+                                <span class="fs-4 fw-extrabold text-teal"><?= post_format_vnd($post['price']) ?></span>
+                            </div>
+                        </div>
 
-                    <!-- Phương thức thanh toán -->
-                    <label class="form-label fw-bold small text-muted text-uppercase mb-2">Chọn phương thức thanh toán</label>
-                    <div class="d-flex flex-column gap-2 mb-2">
-                        <label class="p-2 border rounded-3 d-flex align-items-center gap-3 cursor-pointer bg-surface">
-                            <input type="radio" name="subPaymentMethod" value="VietQR" checked class="form-check-input mt-0">
-                            <i class="fa-solid fa-qrcode text-teal fs-4"></i>
-                            <div>
-                                <div class="fw-bold small">Chuyển khoản VietQR (Mô phỏng tức thì)</div>
-                                <div class="text-muted" style="font-size:0.75rem;">Hỗ trợ quét qua mọi App ngân hàng Việt Nam</div>
+                        <!-- Phương thức thanh toán duy nhất: Chuyển khoản VietQR -->
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-2">Phương thức thanh toán</label>
+                        <div class="p-3 border rounded-3 d-flex align-items-center gap-3 bg-surface border-teal shadow-2xs" style="border-width: 1.5px !important;">
+                            <div class="icon-circle bg-teal text-white flex-shrink-0" style="width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                <i class="fa-solid fa-qrcode"></i>
                             </div>
-                        </label>
-                        <label class="p-2 border rounded-3 d-flex align-items-center gap-3 cursor-pointer bg-surface">
-                            <input type="radio" name="subPaymentMethod" value="MoMo" class="form-check-input mt-0">
-                            <i class="fa-solid fa-wallet text-danger fs-4"></i>
-                            <div>
-                                <div class="fw-bold small">Ví điện tử MoMo</div>
-                                <div class="text-muted" style="font-size:0.75rem;">Thanh toán nhanh chóng</div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold small text-teal d-flex align-items-center justify-content-between">
+                                    <span>Chuyển khoản VietQR (Ngân hàng 24/7)</span>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0" style="font-size:0.7rem;">Tự động</span>
+                                </div>
+                                <div class="text-muted" style="font-size:0.75rem;">Hỗ trợ quét qua mọi App ngân hàng tại Việt Nam</div>
                             </div>
-                        </label>
-                        <label class="p-2 border rounded-3 d-flex align-items-center gap-3 cursor-pointer bg-surface">
-                            <input type="radio" name="subPaymentMethod" value="Card" class="form-check-input mt-0">
-                            <i class="fa-solid fa-credit-card text-primary fs-4"></i>
-                            <div>
-                                <div class="fw-bold small">Thẻ Visa / Mastercard</div>
-                                <div class="text-muted" style="font-size:0.75rem;">Thẻ ghi nợ hoặc tín dụng</div>
-                            </div>
-                        </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm" onclick="showQrStep()">
+                            <span><i class="fa-solid fa-qrcode me-1"></i> Xác nhận</span>
+                        </button>
                     </div>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
-                    <button type="button" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm" id="btnConfirmSubscribe" onclick="submitSubscribe(<?= (int)$post['id'] ?>)">
-                        <span id="btnSubText"><i class="fa-solid fa-check me-1"></i> Xác nhận & Kích hoạt</span>
-                        <span id="btnSubSpinner" class="spinner-border spinner-border-sm ms-1" style="display:none;" role="status"></span>
-                    </button>
+
+                <!-- BƯỚC 2: HIỂN THỊ MÃ QR & XÁC NHẬN ĐÃ CHUYỂN KHOẢN -->
+                <div id="subStep2" style="display: none;">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold text-teal">
+                            <i class="fa-solid fa-qrcode me-2"></i>Thanh Toán VietQR
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body pt-3">
+                        <!-- Mã QR VietQR -->
+                        <div class="text-center mb-3">
+                            <div class="p-2 d-inline-block bg-white rounded-3 border shadow-sm">
+                                <img src="<?= htmlspecialchars($subQrUrl) ?>"
+                                     onerror="this.src='assets/img/vietqr-payment.png?v=<?= filemtime(__DIR__ . '/assets/img/vietqr-payment.png') ?>';"
+                                     alt="VietQR MB Bank - TRUONG MINH TRIET"
+                                     class="img-fluid rounded-2"
+                                     style="max-height: 220px; width: auto; object-fit: contain;">
+                            </div>
+                            <div class="mt-1 small text-muted" style="font-size: 0.78rem;">
+                                Mở App ngân hàng quét mã QR để chuyển khoản tức thì
+                            </div>
+                        </div>
+
+                        <!-- Thông tin tài khoản ngân hàng -->
+                        <div class="p-2 rounded-3 bg-light border border-secondary border-opacity-10 small mb-2">
+                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
+                                <span class="text-muted">Ngân hàng:</span>
+                                <strong class="text-dark">MB Bank (Quân Đội)</strong>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
+                                <span class="text-muted">Số tài khoản:</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <strong class="text-dark font-monospace fs-6">0783547289</strong>
+                                    <button type="button" class="btn btn-sm btn-link p-0 text-teal text-decoration-none" onclick="copySubText('0783547289', 'Số tài khoản')">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
+                                <span class="text-muted">Chủ tài khoản:</span>
+                                <strong class="text-dark">TRUONG MINH TRIET</strong>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
+                                <span class="text-muted">Số tiền chuyển:</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <strong class="text-danger fw-bold fs-6"><?= post_format_vnd($post['price']) ?></strong>
+                                    <button type="button" class="btn btn-sm btn-link p-0 text-teal text-decoration-none" onclick="copySubText('<?= (int)$post['price'] ?>', 'Số tiền')">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-1">
+                                <span class="text-muted">Nội dung CK:</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <strong class="text-primary font-monospace"><?= htmlspecialchars($subTransferRef) ?></strong>
+                                    <button type="button" class="btn btn-sm btn-link p-0 text-teal text-decoration-none" onclick="copySubText('<?= htmlspecialchars($subTransferRef) ?>', 'Nội dung chuyển khoản')">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center text-muted" style="font-size: 0.74rem;">
+                            <i class="fa-solid fa-circle-check text-success me-1"></i> Sau khi chuyển tiền xong, vui lòng nhấn nút <strong>Xác nhận đã chuyển khoản</strong> bên dưới.
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-3" onclick="showStep1()">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
+                        </button>
+                        <button type="button" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm" id="btnConfirmSubscribe" onclick="submitSubscribe(<?= (int)$post['id'] ?>)">
+                            <span id="btnSubText"><i class="fa-solid fa-circle-check me-1"></i> Xác nhận đã chuyển khoản</span>
+                            <span id="btnSubSpinner" class="spinner-border spinner-border-sm ms-1" style="display:none;" role="status"></span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -457,19 +524,56 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
 
     <script>
     let subModalInstance = null;
+
+    function showQrStep() {
+        const s1 = document.getElementById('subStep1');
+        const s2 = document.getElementById('subStep2');
+        if (s1) s1.style.display = 'none';
+        if (s2) s2.style.display = 'block';
+    }
+
+    function showStep1() {
+        const s1 = document.getElementById('subStep1');
+        const s2 = document.getElementById('subStep2');
+        if (s1) s1.style.display = 'block';
+        if (s2) s2.style.display = 'none';
+    }
+
     function openSubscribeModal() {
         const modalEl = document.getElementById('modalSubscribeMembership');
         if (!modalEl) return;
+        showStep1();
         subModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
         subModalInstance.show();
+    }
+
+    function copySubText(text, label) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: `Đã chép ${label}!`,
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                } else {
+                    alert(`Đã sao chép ${label}: ${text}`);
+                }
+            }).catch(() => {
+                alert(`${label}: ${text}`);
+            });
+        } else {
+            alert(`${label}: ${text}`);
+        }
     }
 
     async function submitSubscribe(postId) {
         const btn = document.getElementById('btnConfirmSubscribe');
         const text = document.getElementById('btnSubText');
         const spinner = document.getElementById('btnSubSpinner');
-        const methodEl = document.querySelector('input[name="subPaymentMethod"]:checked');
-        const method = methodEl ? methodEl.value : 'VietQR';
 
         btn.disabled = true;
         text.style.display = 'none';
@@ -479,16 +583,16 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
             const res = await fetch('api/memberships/subscribe.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ post_id: postId, payment_method: method })
+                body: JSON.stringify({ post_id: postId, payment_method: 'VietQR' })
             });
 
             const json = await res.json();
             if (res.ok && json.status === 'success') {
                 if (subModalInstance) subModalInstance.hide();
                 await Swal.fire({
-                    icon: 'info',
-                    title: 'Đã Gửi Yêu Cầu Đăng Ký!',
-                    html: `Yêu cầu đăng ký <strong>${json.data.package_title}</strong> của bạn đã được gửi thành công và <strong>đang chờ Quản trị viên (Admin) xác nhận</strong>.<br>Hệ thống sẽ kích hoạt tự động ngay sau khi Admin duyệt. Bạn có thể theo dõi trong Trang cá nhân.`,
+                    icon: 'success',
+                    title: 'Đã Gửi Xác Nhận Chuyển Khoản!',
+                    html: `Yêu cầu đăng ký <strong>${json.data.package_title}</strong> của bạn đã được ghi nhận và <strong>đang chờ Quản trị viên (Admin) đối soát, kích hoạt</strong>.<br>Bạn có thể theo dõi tiến trình trong Trang cá nhân.`,
                     confirmButtonText: 'Đã hiểu',
                     confirmButtonColor: '#0d9488'
                 });
