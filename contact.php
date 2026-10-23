@@ -122,7 +122,7 @@
                     <ul class="list-unstyled footer-links">
                         <li><a href="index.php">Trang chủ</a></li>
                         <li><a href="courts.php">Tìm kiếm sân</a></li>
-                        <li><a href="news.php">Tin tức</a></li>
+                        <li><a href="explore.php">Khám phá</a></li>
                     </ul>
                 </div>
             </div>

@@ -95,6 +95,115 @@
             background-color: #0d9488 !important;
             color: #ffffff !important;
         }
+
+        /* Swiper Carousel Nổi Bật: Mũi tên trong suốt 2 bên & ẩn trên di động */
+        .featured-courts-slider-wrap {
+            position: relative;
+        }
+        .featuredCourtsSwiper {
+            padding-top: 8px;
+            padding-bottom: 12px;
+        }
+        .featured-swiper-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1.5px solid rgba(255, 255, 255, 0.75);
+            color: var(--brand-teal, #0d9488);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            cursor: pointer;
+            z-index: 20;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 0;
+            outline: none;
+        }
+        /* Vị trí mũi tên: dời ra hẳn bên ngoài thẻ sân, hoàn toàn không đè lên nội dung */
+        .featured-swiper-prev {
+            left: -54px;
+        }
+        .featured-swiper-next {
+            right: -54px;
+        }
+        .featured-swiper-btn:hover {
+            background: rgba(255, 255, 255, 0.9);
+            color: #0f766e;
+            border-color: #ffffff;
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.22);
+            transform: translateY(-50%) scale(1.1);
+        }
+        .featured-swiper-btn:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+        .featured-swiper-btn.swiper-button-disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: translateY(-50%) scale(0.95);
+        }
+        .featured-swiper-btn.swiper-button-lock {
+            display: none !important;
+        }
+
+        /* Chế độ Dark mode cho nút mũi tên trong suốt */
+        [data-bs-theme="dark"] .featured-swiper-btn {
+            background: rgba(15, 23, 42, 0.55);
+            border-color: rgba(255, 255, 255, 0.16);
+            color: #2dd4bf;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+        [data-bs-theme="dark"] .featured-swiper-btn:hover {
+            background: rgba(15, 23, 42, 0.88);
+            color: #5eead4;
+            border-color: rgba(45, 212, 191, 0.5);
+            box-shadow: 0 6px 22px rgba(45, 212, 191, 0.25);
+        }
+
+        /* Màn hình lớn (>= 1400px): dời rộng thêm */
+        @media (min-width: 1400px) {
+            .featured-swiper-prev {
+                left: -60px;
+            }
+            .featured-swiper-next {
+                right: -60px;
+            }
+        }
+
+        /* Màn hình laptop vừa (992px - 1199.98px) */
+        @media (min-width: 992px) and (max-width: 1199.98px) {
+            .featured-swiper-prev {
+                left: -48px;
+            }
+            .featured-swiper-next {
+                right: -48px;
+            }
+        }
+
+        /* Màn hình tablet (768px - 991.98px) */
+        @media (min-width: 768px) and (max-width: 991.98px) {
+            .featured-swiper-prev {
+                left: -32px;
+            }
+            .featured-swiper-next {
+                right: -32px;
+            }
+        }
+
+        /* Ẩn hoàn toàn mũi tên trên điện thoại di động */
+        @media (max-width: 767.98px) {
+            .featured-swiper-btn {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -217,17 +326,26 @@
             </div>
 
             <!-- Swiper Carousel — slides sẽ được render bởi JS/AJAX -->
-            <div class="swiper featuredCourtsSwiper pb-5" data-aos="fade-up">
-                <div class="swiper-wrapper" id="featuredCourtsWrapper">
-                    <!-- Loading placeholder -->
-                    <div class="swiper-slide">
-                        <div class="text-center py-5">
-                            <div class="spinner-border text-teal" role="status"></div>
-                            <div class="mt-2 text-muted small">Đang tải sân nổi bật...</div>
+            <div class="position-relative featured-courts-slider-wrap" data-aos="fade-up">
+                <div class="swiper featuredCourtsSwiper">
+                    <div class="swiper-wrapper" id="featuredCourtsWrapper">
+                        <!-- Loading placeholder -->
+                        <div class="swiper-slide">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-teal" role="status"></div>
+                                <div class="mt-2 text-muted small">Đang tải sân nổi bật...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="swiper-pagination"></div>
+
+                <!-- Mũi tên điều hướng trong suốt bên trái & bên phải (Ẩn trên điện thoại di động) -->
+                <button type="button" class="featured-swiper-btn featured-swiper-prev" aria-label="Sân trước">
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="featured-swiper-btn featured-swiper-next" aria-label="Sân sau">
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
             </div>
         </div>
     </section>
@@ -290,7 +408,7 @@
                     <span class="text-teal fw-bold text-uppercase small">Cộng Đồng GODMINTON</span>
                     <h2 class="fw-extrabold mb-0">Khám Phá</h2>
                 </div>
-                <a href="news.php" class="btn btn-outline-teal rounded-pill px-3 mt-2 mt-sm-0">
+                <a href="explore.php" class="btn btn-outline-teal rounded-pill px-3 mt-2 mt-sm-0">
                     Xem tất cả <i class="fa-solid fa-arrow-right ms-1"></i>
                 </a>
             </div>
@@ -307,17 +425,8 @@
                     <button class="explore-tab" onclick="filterExplore(this,'membership')">
                         <i class="fa-solid fa-id-card"></i> Gói hội viên
                     </button>
-                    <button class="explore-tab" onclick="filterExplore(this,'class')">
-                        <i class="fa-solid fa-person-chalkboard"></i> Khóa học
-                    </button>
-                    <button class="explore-tab" onclick="filterExplore(this,'promo')">
-                        <i class="fa-solid fa-gift"></i> Ưu đãi
-                    </button>
-                    <button class="explore-tab" onclick="filterExplore(this,'notice')">
+                    <button class="explore-tab" onclick="filterExplore(this,'announcement')">
                         <i class="fa-solid fa-bell"></i> Thông báo
-                    </button>
-                    <button class="explore-tab" onclick="filterExplore(this,'pass')">
-                        <i class="fa-solid fa-ticket"></i> Pass sân
                     </button>
                 </div>
             </div>
@@ -356,7 +465,7 @@
                     <nav aria-label="Liên kết hỗ trợ">
                         <ul class="list-unstyled footer-links small mb-0 d-grid gap-1">
                             <li><a href="contact.php">Liên hệ hỗ trợ</a></li>
-                            <li><a href="news.php">Tin tức cầu lông</a></li>
+                            <li><a href="explore.php">Khám phá</a></li>
                         </ul>
                     </nav>
                 </div>
@@ -422,7 +531,10 @@
                     spaceBetween: 20,
                     loop: json.data.length > 3,
                     autoplay: { delay: 4000, disableOnInteraction: false },
-                    pagination: { el: '.swiper-pagination', clickable: true },
+                    navigation: {
+                        nextEl: '.featured-swiper-next',
+                        prevEl: '.featured-swiper-prev',
+                    },
                     breakpoints: {
                         576:  { slidesPerView: 2 },
                         992:  { slidesPerView: 3 },

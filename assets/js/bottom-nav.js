@@ -39,8 +39,8 @@
             id:      'news',
             label:   'Khám phá',
             icon:    'fa-compass',
-            href:    'news.php',
-            match:   ['news.php', 'news.html'],
+            href:    'explore.php',
+            match:   ['explore.php', 'post-detail.php', 'news.php', 'news.html'],
         },
         {
             id:      'contact',
@@ -96,13 +96,6 @@
         align-items: stretch;
     }
 
-    /* Desktop admin layout: không đè sidebar */
-    @media (min-width: 992px) {
-        body.admin-body #godmintonBottomNav {
-            left: 260px;
-        }
-    }
-
     .owner-return-link {
         position: fixed;
         right: 16px;
@@ -126,8 +119,11 @@
         color: #fff;
     }
     @media (min-width: 992px) {
-        body.has-owner-nav #godmintonBottomNav { display: none; }
+        body.admin-body #godmintonBottomNav,
+        body.has-owner-nav #godmintonBottomNav { display: none !important; }
+        body.admin-body,
         body.has-owner-nav { padding-bottom: 0 !important; }
+        body.admin-body .owner-return-link { display: none !important; }
     }
 
     /* Dark mode adjustment */
@@ -530,8 +526,8 @@
     }
 
     function inject() {
-        // Không inject thanh điều hướng trên trang Đăng nhập / Đăng ký
-        if (currentPage === 'auth.php' || currentPage === 'auth.html') return;
+        // Không inject thanh điều hướng trên trang Đăng nhập / Đăng ký hoặc các trang quản trị admin
+        if (currentPage === 'auth.php' || currentPage === 'auth.html' || currentPage === 'admin-vouchers.php' || currentPage === 'admin-memberships.php' || currentPage === 'admin-posts.php') return;
 
         // Inject Theme Button nếu trang chưa có
         injectThemeToggle();
@@ -583,7 +579,7 @@
         'payment.php': 16, 'payment.html': 16,
         'confirm.php': 18, 'confirm.html': 18,
         'history.php': 20, 'history.html': 20,
-        'news.php': 30, 'news.html': 30,
+        'explore.php': 30, 'post-detail.php': 32, 'news.php': 30, 'news.html': 30,
         'contact.php': 40, 'contact.html': 40,
         'profile.php': 50, 'profile.html': 50,
         'auth.php': 52, 'auth.html': 52,

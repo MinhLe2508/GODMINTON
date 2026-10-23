@@ -192,7 +192,6 @@ body.admin-body {
 /* Light mode styles */
 [data-bs-theme="light"] .admin-topbar .admin-icon-btn,
 [data-bs-theme="light"] .admin-topbar #pushBellToggle,
-[data-bs-theme="light"] .admin-topbar #themeToggle,
 [data-bs-theme="light"] .admin-topbar .bnav-bell-float {
     background: #ffffff !important;
     border: 1.5px solid rgba(13, 148, 136, 0.3) !important;
@@ -200,8 +199,9 @@ body.admin-body {
 }
 
 [data-bs-theme="light"] .admin-topbar #themeToggle {
-    color: #475569 !important;
-    border-color: rgba(148, 163, 184, 0.4) !important;
+    background: #ffffff !important;
+    border: 1.5px solid rgba(13, 148, 136, 0.35) !important;
+    color: #0d9488 !important;
 }
 
 [data-bs-theme="light"] .admin-topbar .admin-icon-btn:hover,
@@ -225,16 +225,16 @@ body.admin-body {
 /* Dark mode styles */
 [data-bs-theme="dark"] .admin-topbar .admin-icon-btn,
 [data-bs-theme="dark"] .admin-topbar #pushBellToggle,
-[data-bs-theme="dark"] .admin-topbar #themeToggle,
 [data-bs-theme="dark"] .admin-topbar .bnav-bell-float {
-    background: rgba(30, 41, 59, 0.8) !important;
-    border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+    background: rgba(13, 39, 48, 0.85) !important;
+    border: 1.5px solid rgba(45, 212, 191, 0.25) !important;
     color: #2dd4bf !important;
 }
 
 [data-bs-theme="dark"] .admin-topbar #themeToggle {
+    background: rgba(13, 39, 48, 0.85) !important;
+    border: 1.5px solid rgba(45, 212, 191, 0.25) !important;
     color: #fbbf24 !important;
-    border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
 [data-bs-theme="dark"] .admin-topbar .admin-icon-btn:hover,
@@ -415,3 +415,245 @@ body.admin-body {
 }
 .admin-sidebar-brand, .admin-sidebar-footer { flex-shrink: 0; }
 .admin-sidebar .admin-nav { min-height: 0; overscroll-behavior: contain; }
+
+/* ==========================================================
+   ADMIN LIGHT & DARK THEME REFINEMENTS
+   Đảm bảo giao diện Sáng / Tối đồng bộ, tinh tế, độ tương phản chuẩn
+   ========================================================== */
+
+/* Helper Text Classes */
+.admin-text-primary {
+    color: var(--text-primary, #0f172a) !important;
+}
+.admin-text-secondary {
+    color: var(--text-secondary, #64748b) !important;
+}
+
+/* User Avatar */
+.user-avatar-sm {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: rgba(13, 148, 136, 0.12);
+    color: var(--brand-teal, #0d9488);
+    border: 1px solid rgba(13, 148, 136, 0.25);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+/* Dòng chờ duyệt (Pending) trong bảng admin: Light Mode */
+.admin-table tr.row-pending-approval,
+.admin-table tr.table-warning {
+    --bs-table-bg: rgba(245, 158, 11, 0.08) !important;
+    background-color: rgba(245, 158, 11, 0.08) !important;
+    border-left: 3px solid #f59e0b;
+}
+.admin-table tr.row-pending-approval td,
+.admin-table tr.table-warning td {
+    background-color: transparent !important;
+    color: inherit !important;
+}
+
+/* ==========================================================
+   CHẾ ĐỘ TỐI (DARK MODE) CHO TOÀN BỘ ADMIN
+   ========================================================== */
+[data-bs-theme="dark"] body.admin-body {
+    background-color: var(--bg-body, #05161c);
+    color: var(--text-primary, #f8fafc);
+}
+
+[data-bs-theme="dark"] .admin-topbar {
+    background: var(--bg-surface, #0a2128);
+    border-bottom-color: var(--border-color, #173844);
+}
+
+[data-bs-theme="dark"] .admin-stat-card,
+[data-bs-theme="dark"] .admin-panel {
+    background: var(--bg-card, #0d2730);
+    border-color: var(--border-color, #173844);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+[data-bs-theme="dark"] .admin-panel-head {
+    border-bottom-color: var(--border-color, #173844);
+}
+
+/* Tự động khắc phục triệt để class hardcode .text-dark trong Dark Mode */
+[data-bs-theme="dark"] .admin-main .text-dark:not(.badge):not(.btn-warning),
+[data-bs-theme="dark"] .admin-panel .text-dark:not(.badge):not(.btn-warning),
+[data-bs-theme="dark"] .admin-table .text-dark:not(.badge):not(.btn-warning),
+[data-bs-theme="dark"] .modal .text-dark:not(.badge):not(.btn-warning) {
+    color: #f1f5f9 !important;
+}
+
+/* Text secondary / muted rõ nét trong dark mode */
+[data-bs-theme="dark"] .admin-main .text-muted,
+[data-bs-theme="dark"] .admin-panel .text-muted,
+[data-bs-theme="dark"] .admin-table .text-muted {
+    color: #94a3b8 !important;
+}
+
+/* Bảng dữ liệu trong Dark Mode */
+[data-bs-theme="dark"] .admin-table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-primary, #f8fafc);
+    border-color: var(--border-color, #173844);
+}
+
+[data-bs-theme="dark"] .admin-table thead th {
+    background-color: rgba(10, 33, 40, 0.7);
+    color: var(--text-secondary, #94a3b8);
+    border-bottom-color: var(--border-color, #173844) !important;
+}
+
+[data-bs-theme="dark"] .admin-table td {
+    border-bottom-color: rgba(23, 56, 68, 0.6);
+}
+
+[data-bs-theme="dark"] .admin-table tbody tr:hover {
+    background-color: rgba(20, 184, 166, 0.06);
+}
+
+/* Dòng chờ duyệt: Dark Mode sang trọng, không chói */
+[data-bs-theme="dark"] .admin-table tr.row-pending-approval,
+[data-bs-theme="dark"] .admin-table tr.table-warning {
+    --bs-table-bg: rgba(245, 158, 11, 0.12) !important;
+    background-color: rgba(245, 158, 11, 0.12) !important;
+    border-left: 3px solid #f59e0b;
+}
+[data-bs-theme="dark"] .admin-table tr.row-pending-approval td,
+[data-bs-theme="dark"] .admin-table tr.table-warning td {
+    background-color: transparent !important;
+    color: #fef3c7 !important;
+}
+[data-bs-theme="dark"] .admin-table tr.row-pending-approval .admin-text-primary,
+[data-bs-theme="dark"] .admin-table tr.table-warning .admin-text-primary,
+[data-bs-theme="dark"] .admin-table tr.row-pending-approval .text-dark,
+[data-bs-theme="dark"] .admin-table tr.table-warning .text-dark {
+    color: #ffffff !important;
+}
+[data-bs-theme="dark"] .admin-table tr.row-pending-approval .text-muted,
+[data-bs-theme="dark"] .admin-table tr.table-warning .text-muted {
+    color: #fde68a !important;
+    opacity: 0.9;
+}
+
+/* User avatar trong Dark Mode */
+[data-bs-theme="dark"] .user-avatar-sm {
+    background: rgba(13, 148, 136, 0.22);
+    color: #2dd4bf;
+    border-color: rgba(45, 212, 191, 0.35);
+}
+
+/* Form Controls & Select trong Dark Mode */
+[data-bs-theme="dark"] .admin-content .form-control,
+[data-bs-theme="dark"] .admin-content .form-select,
+[data-bs-theme="dark"] .membership-filter-toolbar .form-control,
+[data-bs-theme="dark"] .membership-filter-toolbar .form-select {
+    background-color: #071c22 !important;
+    border: 1px solid #1a424e !important;
+    color: #f8fafc !important;
+}
+[data-bs-theme="dark"] .admin-content .form-control::placeholder,
+[data-bs-theme="dark"] .membership-filter-toolbar .form-control::placeholder {
+    color: #64748b !important;
+}
+[data-bs-theme="dark"] .admin-content .form-control:focus,
+[data-bs-theme="dark"] .admin-content .form-select:focus,
+[data-bs-theme="dark"] .membership-filter-toolbar .form-control:focus,
+[data-bs-theme="dark"] .membership-filter-toolbar .form-select:focus {
+    background-color: #0b2832 !important;
+    border-color: #0d9488 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.25) !important;
+}
+[data-bs-theme="dark"] .form-select option {
+    background-color: #0d2730;
+    color: #f8fafc;
+}
+
+/* Nút hành động khác (btn-light) & dropdown trong Dark Mode */
+[data-bs-theme="dark"] .admin-panel .btn-light {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #f8fafc !important;
+}
+[data-bs-theme="dark"] .admin-panel .btn-light:hover {
+    background-color: rgba(255, 255, 255, 0.16) !important;
+    color: #ffffff !important;
+}
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: #0d2730 !important;
+    border: 1px solid #173844 !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55) !important;
+}
+[data-bs-theme="dark"] .dropdown-item {
+    color: #e2e8f0 !important;
+}
+[data-bs-theme="dark"] .dropdown-item:hover,
+[data-bs-theme="dark"] .dropdown-item:focus {
+    background-color: rgba(13, 148, 136, 0.2) !important;
+    color: #ffffff !important;
+}
+[data-bs-theme="dark"] .dropdown-divider {
+    border-top-color: #173844 !important;
+}
+
+/* Subtle Badges trong Dark Mode */
+[data-bs-theme="dark"] .badge.bg-secondary-subtle {
+    background-color: rgba(148, 163, 184, 0.15) !important;
+    color: #cbd5e1 !important;
+    border-color: rgba(148, 163, 184, 0.25) !important;
+}
+[data-bs-theme="dark"] .badge.bg-success-subtle {
+    background-color: rgba(34, 197, 94, 0.15) !important;
+    color: #4ade80 !important;
+    border-color: rgba(34, 197, 94, 0.25) !important;
+}
+[data-bs-theme="dark"] .badge.bg-danger-subtle {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
+}
+[data-bs-theme="dark"] .badge.bg-warning-subtle {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    color: #fbbf24 !important;
+    border-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+/* Custom Purple Subtle Badge cho loại bài Sự kiện (Light + Dark mode) */
+.bg-purple-subtle {
+    background-color: rgba(139, 92, 246, 0.12) !important;
+}
+.text-purple {
+    color: #7c3aed !important;
+}
+.border-purple-subtle {
+    border-color: rgba(139, 92, 246, 0.28) !important;
+}
+[data-bs-theme="dark"] .bg-purple-subtle {
+    background-color: rgba(139, 92, 246, 0.2) !important;
+}
+[data-bs-theme="dark"] .text-purple {
+    color: #c4b5fd !important;
+}
+[data-bs-theme="dark"] .border-purple-subtle {
+    border-color: rgba(139, 92, 246, 0.4) !important;
+}
+
+/* Modals trong Dark Mode */
+[data-bs-theme="dark"] .modal-content {
+    background-color: #0d2730 !important;
+    border: 1px solid #173844 !important;
+    color: #f8fafc !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6) !important;
+}
+[data-bs-theme="dark"] .modal .bg-light {
+    background-color: #081e24 !important;
+    border-color: #173844 !important;
+}

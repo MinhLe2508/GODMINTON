@@ -277,7 +277,7 @@ require_once __DIR__ . '/config/db.php';
                 <ul class="list-unstyled footer-links">
                     <li><a href="index.php">Trang chủ</a></li>
                     <li><a href="courts.php">Tìm kiếm sân</a></li>
-                    <li><a href="news.php">Tin tức</a></li>
+                    <li><a href="explore.php">Khám phá</a></li>
                     <li><a href="contact.php">Hỗ trợ</a></li>
                 </ul>
             </div>

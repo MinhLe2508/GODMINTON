@@ -7,8 +7,15 @@ window.BookingAccount = (() => {
     async function request(url, options = {}) {
         const method = options.method || 'GET';
         if (method !== 'GET' && !token) await identity();
+        let body = options.body;
+        if (body !== undefined && body !== null && typeof body === 'object' && !(body instanceof FormData)) {
+            body = JSON.stringify(body);
+        }
         const response = await fetch(url, {
-            ...options, credentials: 'same-origin', cache: 'no-store',
+            ...options,
+            body,
+            credentials: 'same-origin',
+            cache: 'no-store',
             headers: {'Accept':'application/json', ...(method !== 'GET' ? {'Content-Type':'application/json','X-GODMINTON-CSRF':token} : {}), ...options.headers}
         });
         let result;

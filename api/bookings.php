@@ -2,6 +2,7 @@
 /** GET own history; POST keeps week 2 payment/confirm compatibility; supports optional voucher. */
 require_once __DIR__.'/../includes/booking-service.php';
 require_once __DIR__.'/../includes/voucher-service.php';
+require_once __DIR__.'/../includes/membership-service.php';
 
 try {
  $user=booking_account_user();
@@ -33,11 +34,12 @@ try {
    $h=(int)substr($slot['start_time'],0,2);$courtAmount+=(int)round($slot['price_per_hour']/2)+(($h>=17&&$h<=21)?7500:0);$previous=$slot['end_time'];
   }
 
+  $activeMembership = membership_get_active_for_user($pdo, (int)$user['id']);
   $voucher=null;
   if($voucherCode!==''){
    $voucher=voucher_validate_and_get($pdo,$voucherCode,(int)$user['id'],(int)$first['court_id'],$courtAmount,true);
   }
-  $pricing=voucher_calculate_pricing($courtAmount,$voucher);
+  $pricing=voucher_calculate_pricing($courtAmount,$voucher,$activeMembership);
   $totalPrice=$pricing['total_amount'];
   $deposit=$pricing['deposit_amount'];
 
@@ -45,12 +47,14 @@ try {
    $pdo->prepare('UPDATE vouchers SET used_count=used_count+1 WHERE id=?')->execute([(int)$voucher['id']]);
   }
 
-  $pdo->prepare("INSERT INTO bookings(user_id,court_id,voucher_id,court_amount,discount_amount,discount_funded_by,platform_fee,owner_amount,total_price,deposit_amount,status,payment_method,notes) VALUES(?,?,?,?,?,?,?,?,?,?,'confirmed',?,?)")->execute([
+  $pdo->prepare("INSERT INTO bookings(user_id,court_id,voucher_id,user_membership_id,court_amount,discount_amount,membership_discount_amount,discount_funded_by,platform_fee,owner_amount,total_price,deposit_amount,status,payment_method,notes) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,'confirmed',?,?)")->execute([
    $user['id'],
    $first['court_id'],
    $pricing['voucher_id'],
+   $pricing['user_membership_id'],
    $pricing['court_amount'],
    $pricing['discount_amount'],
+   $pricing['membership_discount_amount'],
    $pricing['discount_funded_by'],
    $pricing['platform_fee'],
    $pricing['owner_amount'],
@@ -84,6 +88,9 @@ try {
    'time_range'=>substr($first['start_time'],0,5).' - '.substr($last['end_time'],0,5),
    'court_amount'=>$pricing['court_amount'],
    'discount_amount'=>$pricing['discount_amount'],
+   'membership_discount_amount'=>$pricing['membership_discount_amount'],
+   'membership_tier'=>$activeMembership['tier'] ?? null,
+   'membership_percent'=>$pricing['membership_discount_percent'],
    'voucher_code'=>$pricing['voucher_code'],
    'platform_fee'=>$pricing['platform_fee'],
    'total_price'=>$totalPrice,

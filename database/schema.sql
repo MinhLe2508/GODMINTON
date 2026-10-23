@@ -1,4 +1,4 @@
--- GODMINTON schema, exported 2026-10-22 10:37:08 +07:00
+-- GODMINTON schema, exported 2026-10-23 22:17:45 +07:00
 -- Select an EMPTY database before importing. No DROP/USE/CREATE DATABASE statements.
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS=0;
@@ -76,9 +76,11 @@ CREATE TABLE `bookings` (
   `user_id` int(10) unsigned NOT NULL,
   `court_id` int(10) unsigned NOT NULL,
   `voucher_id` int(10) unsigned DEFAULT NULL,
+  `user_membership_id` int(10) unsigned DEFAULT NULL,
   `booking_code` varchar(30) DEFAULT NULL,
   `court_amount` decimal(12,0) NOT NULL DEFAULT 0,
   `discount_amount` decimal(12,0) NOT NULL DEFAULT 0,
+  `membership_discount_amount` decimal(12,0) NOT NULL DEFAULT 0,
   `discount_funded_by` enum('platform','owner') DEFAULT NULL,
   `platform_fee` decimal(12,0) NOT NULL DEFAULT 0,
   `owner_amount` decimal(12,0) NOT NULL DEFAULT 0,
@@ -207,18 +209,34 @@ CREATE TABLE `owner_requests` (
   CONSTRAINT `fk_owner_request_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `push_subscriptions` (
+CREATE TABLE `posts` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned DEFAULT NULL,
-  `endpoint` text NOT NULL,
-  `p256dh` varchar(255) NOT NULL,
-  `auth` varchar(255) NOT NULL,
-  `user_agent` varchar(255) DEFAULT NULL,
+  `type` enum('event','membership','announcement') NOT NULL COMMENT 'Loại bài: event (Sự kiện), membership (Gói hội viên), announcement (Thông báo)',
+  `title` varchar(255) NOT NULL COMMENT 'Tiêu đề bài viết',
+  `slug` varchar(255) NOT NULL COMMENT 'Đường dẫn tĩnh thân thiện (duy nhất)',
+  `summary` text DEFAULT NULL COMMENT 'Tóm tắt bài viết ngắn gọn',
+  `content` mediumtext NOT NULL COMMENT 'Nội dung chi tiết (Markdown giới hạn / văn bản an toàn)',
+  `cover_image` varchar(2048) DEFAULT NULL COMMENT 'Đường dẫn ảnh bìa bài viết',
+  `status` enum('draft','published','archived') NOT NULL DEFAULT 'draft' COMMENT 'Trạng thái: draft (Nháp), published (Xuất bản), archived (Lưu trữ/Ẩn)',
+  `publish_at` datetime DEFAULT NULL COMMENT 'Thời điểm bài bắt đầu hiển thị (NULL = ngay lập tức)',
+  `expire_at` datetime DEFAULT NULL COMMENT 'Thời điểm bài tự động ẩn (NULL = không giới hạn)',
+  `is_pinned` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1: Ghim bài lên đầu danh sách, 0: Bình thường',
+  `created_by` int(10) unsigned NOT NULL COMMENT 'ID quản trị viên tạo bài (users.id)',
+  `event_start` datetime DEFAULT NULL COMMENT 'Thời gian bắt đầu sự kiện',
+  `event_end` datetime DEFAULT NULL COMMENT 'Thời gian kết thúc sự kiện',
+  `event_location` varchar(255) DEFAULT NULL COMMENT 'Địa điểm tổ chức sự kiện',
+  `price` decimal(12,0) DEFAULT NULL COMMENT 'Giá niêm yết gói hội viên (VNĐ)',
+  `duration_days` int(10) unsigned DEFAULT NULL COMMENT 'Thời hạn hiệu lực của gói (ngày)',
+  `discount_percent` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT 'Phần trăm giảm giá khi đặt sân',
+  `benefits` text DEFAULT NULL COMMENT 'Danh sách quyền lợi của gói (mỗi dòng một ý)',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_endpoint` (`endpoint`(191)),
-  KEY `idx_user` (`user_id`)
+  UNIQUE KEY `uq_posts_slug` (`slug`),
+  KEY `idx_posts_type_status_dates` (`type`,`status`,`publish_at`,`expire_at`),
+  KEY `idx_posts_pinned` (`is_pinned`),
+  KEY `idx_posts_created_by` (`created_by`),
+  CONSTRAINT `fk_posts_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `push_reminder_dispatches` (
@@ -234,6 +252,20 @@ CREATE TABLE `push_reminder_dispatches` (
   UNIQUE KEY `uq_push_reminder_booking_type` (`booking_id`,`reminder_type`),
   KEY `idx_push_reminder_status` (`status`,`created_at`),
   CONSTRAINT `fk_push_reminder_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `push_subscriptions` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned DEFAULT NULL,
+  `endpoint` text NOT NULL,
+  `p256dh` varchar(255) NOT NULL,
+  `auth` varchar(255) NOT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_endpoint` (`endpoint`(191)),
+  KEY `idx_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `reviews` (
@@ -268,6 +300,27 @@ CREATE TABLE `time_slots` (
   KEY `idx_slots_lookup` (`court_id`,`slot_date`,`status`),
   CONSTRAINT `fk_slots_court` FOREIGN KEY (`court_id`) REFERENCES `courts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_slots_held_by` FOREIGN KEY (`held_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `user_memberships` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL COMMENT 'ID người dùng (users.id)',
+  `post_id` int(10) unsigned NOT NULL COMMENT 'ID bài viết gói trong posts',
+  `tier` enum('silver','gold','platinum') NOT NULL COMMENT 'Hạng hội viên: silver, gold, platinum',
+  `discount_percent` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT 'Phần trăm giảm giá thực tế được áp dụng',
+  `price_paid` decimal(12,0) NOT NULL DEFAULT 0 COMMENT 'Số tiền đã thanh toán',
+  `duration_days` int(10) unsigned NOT NULL DEFAULT 30 COMMENT 'Thời hạn của gói (ngày)',
+  `start_date` datetime NOT NULL COMMENT 'Ngày bắt đầu kích hoạt',
+  `end_date` datetime NOT NULL COMMENT 'Ngày hết hạn gói',
+  `status` enum('pending','active','expired','cancelled','rejected') NOT NULL DEFAULT 'pending' COMMENT 'Trạng thái gói: pending (chờ admin duyệt), active, expired, cancelled, rejected',
+  `payment_method` varchar(50) NOT NULL DEFAULT 'VietQR' COMMENT 'Phương thức thanh toán',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_um_user_status_end` (`user_id`,`status`,`end_date`),
+  KEY `idx_um_post` (`post_id`),
+  CONSTRAINT `fk_um_post` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_um_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `users` (

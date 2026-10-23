@@ -8,9 +8,13 @@ $currentUser = [
 ];
 if ($currentUser !== null) {
     require_once __DIR__ . '/config/db.php';
+    require_once __DIR__ . '/includes/membership-service.php';
     $userStmt = $pdo->prepare('SELECT id,name,email,phone,role FROM users WHERE id=?');
     $userStmt->execute([(int)$_SESSION['user_id']]);
     $currentUser = $userStmt->fetch() ?: null;
+    if ($currentUser) {
+        $currentUser['membership'] = membership_get_active_for_user($pdo, (int)$_SESSION['user_id']);
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -662,6 +666,14 @@ if ($currentUser !== null) {
                         </div>
                     </div>
 
+                    <!-- Membership VIP Banner -->
+                    <div id="memberVipBanner" class="alert d-flex align-items-center gap-2 mb-3 py-2 px-3 border-0 rounded-3 shadow-sm" style="display:none;">
+                        <i id="memberBannerIcon" class="fa-solid fa-crown fs-5"></i>
+                        <div id="memberBannerText" style="font-size:0.82rem; line-height:1.35;">
+                            <strong>Đặc quyền Hội viên <span id="memberBannerTier" class="text-uppercase fw-bold"></span></strong>: Tự động giảm <strong id="memberBannerPercent" class="text-danger">0%</strong> toàn bộ tiền sân!
+                        </div>
+                    </div>
+
                     <!-- Voucher input box -->
                     <div class="voucher-box">
                         <label for="voucherCodeInput" class="voucher-box-title">
@@ -695,6 +707,11 @@ if ($currentUser !== null) {
                         <div class="prow subtotal">
                             <span>Giá thuê sân</span>
                             <span id="prBase">--</span>
+                        </div>
+                        <!-- Membership discount row -->
+                        <div class="prow subtotal" id="prowMembership" style="display:none;">
+                            <span id="prMemberLabel"><i class="fa-solid fa-crown me-1 text-warning"></i>Ưu đãi hội viên (<span id="prMemberPercent">0%</span>)</span>
+                            <span id="prMemberDiscount" class="fw-bold">-0 đ</span>
                         </div>
                         <div class="prow subtotal text-success" id="prowDiscount" style="display:none;">
                             <span><i class="fa-solid fa-tag me-1"></i>Mã giảm giá (<span id="prDiscountPercent">0%</span>)</span>

@@ -214,11 +214,91 @@ function removeVietnameseTones(str) {
 function calcPrices() {
     const rawBase = Math.round(booking.pricePerHour * booking.duration);
     let base = rawBase;
-    let discount = 0;
+    let memberDiscount = 0;
+    let voucherDiscount = 0;
     let fee = 0;
     let total = base;
-    let deposit = Math.round(total * 0.5);
 
+    // 1. Kiểm tra Hội viên của người dùng
+    const user = (typeof window.__GODMINTON_USER__ !== 'undefined' && window.__GODMINTON_USER__);
+    const membership = user?.membership;
+
+    const bannerEl = document.getElementById('memberVipBanner');
+    const bannerTier = document.getElementById('memberBannerTier');
+    const bannerPercent = document.getElementById('memberBannerPercent');
+    const prowMembership = document.getElementById('prowMembership');
+    const prMemberPercent = document.getElementById('prMemberPercent');
+    const prMemberDiscount = document.getElementById('prMemberDiscount');
+
+    const bannerIcon = document.getElementById('memberBannerIcon');
+    const bannerText = document.getElementById('memberBannerText');
+
+    if (membership && Number(membership.discount_percent) > 0) {
+        const mPercent = Number(membership.discount_percent);
+        memberDiscount = Math.round((base * mPercent) / 100);
+
+        let tierName = 'Hội Viên';
+        let bannerBg = 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(217,119,6,0.18))';
+        let bannerBorder = '#f59e0b';
+        let bannerTextColor = '#92400e';
+        let iconClass = 'fa-solid fa-crown text-warning';
+        let rowColor = '#0d9488';
+
+        if (membership.tier === 'silver') {
+            tierName = 'Bạc (Silver)';
+            bannerBg = 'linear-gradient(135deg, rgba(148,163,184,0.22), rgba(226,232,240,0.45))';
+            bannerBorder = '#64748b';
+            bannerTextColor = '#1e293b';
+            iconClass = 'fa-solid fa-shield-halved text-secondary';
+            rowColor = '#475569';
+        } else if (membership.tier === 'gold') {
+            tierName = 'Vàng (Gold)';
+            bannerBg = 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(251,191,36,0.28))';
+            bannerBorder = '#f59e0b';
+            bannerTextColor = '#92400e';
+            iconClass = 'fa-solid fa-crown text-warning';
+            rowColor = '#d97706';
+        } else if (membership.tier === 'platinum') {
+            tierName = 'Bạch Kim (Platinum)';
+            bannerBg = 'linear-gradient(135deg, rgba(51,65,85,0.18), rgba(100,116,139,0.3))';
+            bannerBorder = '#334155';
+            bannerTextColor = '#0f172a';
+            iconClass = 'fa-solid fa-gem text-primary';
+            rowColor = '#1e293b';
+        }
+
+        if (bannerEl) {
+            bannerEl.style.display = 'flex';
+            bannerEl.style.background = bannerBg;
+            bannerEl.style.borderLeft = `4px solid ${bannerBorder}`;
+            bannerEl.style.color = bannerTextColor;
+        }
+        if (bannerIcon) {
+            bannerIcon.className = `${iconClass} fs-5`;
+        }
+        if (bannerText) {
+            bannerText.style.color = bannerTextColor;
+        }
+        if (bannerTier) bannerTier.textContent = tierName.toUpperCase();
+        if (bannerPercent) bannerPercent.textContent = `${mPercent}%`;
+
+        if (prowMembership) {
+            prowMembership.style.display = 'flex';
+            prowMembership.style.color = rowColor;
+        }
+        const prMemberLabel = document.getElementById('prMemberLabel');
+        if (prMemberLabel) {
+            prMemberLabel.innerHTML = `<i class="${iconClass} me-1"></i>Ưu đãi Hội viên ${tierName} (<span id="prMemberPercent">${mPercent}%</span>)`;
+        } else if (prMemberPercent) {
+            prMemberPercent.textContent = `${mPercent}%`;
+        }
+        if (prMemberDiscount) prMemberDiscount.textContent = `- ${fmt(memberDiscount)}`;
+    } else {
+        if (bannerEl) bannerEl.style.display = 'none';
+        if (prowMembership) prowMembership.style.display = 'none';
+    }
+
+    // 2. Kiểm tra Voucher áp dụng
     const prowDiscount = document.getElementById('prowDiscount');
     const prDiscount = document.getElementById('prDiscount');
     const prDiscountPercent = document.getElementById('prDiscountPercent');
@@ -227,24 +307,38 @@ function calcPrices() {
     if (booking.appliedVoucher && booking.appliedVoucher.pricing) {
         const pr = booking.appliedVoucher.pricing;
         base = pr.court_amount;
-        discount = pr.discount_amount;
+        memberDiscount = pr.membership_discount_amount || memberDiscount;
+        voucherDiscount = Math.max(0, pr.discount_amount - memberDiscount);
         fee = pr.platform_fee;
         total = pr.total_amount;
-        deposit = pr.deposit_amount;
 
         if (prowDiscount) prowDiscount.style.display = 'flex';
-        if (prDiscount) prDiscount.textContent = `- ${fmt(discount)}`;
+        if (prDiscount) prDiscount.textContent = `- ${fmt(voucherDiscount)}`;
         if (prDiscountPercent) prDiscountPercent.textContent = `${booking.appliedVoucher.voucher.discount_percent}%`;
         if (prFeeLabel) prFeeLabel.textContent = 'Phí dịch vụ (5%)';
         document.getElementById('prFee').textContent = fmt(fee);
     } else {
         if (prowDiscount) prowDiscount.style.display = 'none';
-        if (prFeeLabel) prFeeLabel.textContent = 'Phí dịch vụ';
-        document.getElementById('prFee').textContent = '0 đ (Miễn phí)';
+        
+        // Khi không có voucher, phí sàn tính theo tiền sau giảm hội viên (nếu có giảm)
+        if (memberDiscount > 0) {
+            const afterDiscount = Math.max(0, base - memberDiscount);
+            fee = Math.round(afterDiscount * 0.05);
+            total = afterDiscount + fee;
+            if (prFeeLabel) prFeeLabel.textContent = 'Phí dịch vụ (5%)';
+            document.getElementById('prFee').textContent = fmt(fee);
+        } else {
+            fee = 0;
+            total = base;
+            if (prFeeLabel) prFeeLabel.textContent = 'Phí dịch vụ';
+            document.getElementById('prFee').textContent = '0 đ (Miễn phí)';
+        }
     }
 
+    const deposit = Math.round(total * 0.5);
+
     booking._base    = base;
-    booking._discount= discount;
+    booking._discount= memberDiscount + voucherDiscount;
     booking._fee     = fee;
     booking._total   = total;
     booking._deposit = deposit;
