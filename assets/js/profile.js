@@ -196,7 +196,7 @@ async function loadMyMembership() {
                         <span class="badge px-3 py-1 rounded-pill fw-bold d-inline-flex align-items-center gap-2 shadow-sm"
                               style="background: ${tierGradient}; color: #ffffff; font-size: 0.82rem; border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 3px 10px ${tierBoxShadow};">
                             <i class="${tierIcon}"></i>
-                            <span>${tierLabel} (Giảm ${active.discount_percent}% tiền sân)</span>
+                            <span>${tierLabel}</span>
                         </span>
                         ${pendingNote}
                     </div>
@@ -217,11 +217,11 @@ async function loadMyMembership() {
             }
         }
 
-        // 2. Stat box ở bảng tóm tắt nhanh
+        // 2. Stat box ở bảng tóm tắt nhanh (Chỉ hiển thị tên hạng: Bạc, Vàng, Bạch Kim)
         if (statEl) {
             if (active && Number(active.discount_percent) > 0) {
                 const tierMap = { silver: 'Bạc', gold: 'Vàng', platinum: 'Bạch Kim' };
-                statEl.textContent = `${tierMap[active.tier] || 'VIP'} (${active.discount_percent}%)`;
+                statEl.textContent = tierMap[active.tier] || 'Vàng';
             } else {
                 statEl.textContent = 'Chưa có';
             }
