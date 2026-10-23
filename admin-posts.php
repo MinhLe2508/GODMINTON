@@ -307,14 +307,15 @@ $currentUser = [
 
                         <!-- Quản lý Ảnh bìa (Upload file hoặc Nhập URL) -->
                         <div class="col-12">
-                            <label class="form-label fw-semibold small">Ảnh bìa bài viết</label>
-                            <div class="row g-2 align-items-center">
+                            <label class="form-label fw-semibold small mb-1">Ảnh bìa bài viết</label>
+                            <div class="row g-2 align-items-start">
                                 <div class="col-md-6">
                                     <input type="file" class="form-control" id="formCoverFile" accept="image/jpeg,image/png,image/webp">
                                     <div class="form-text" style="font-size: 0.72rem;">Chấp nhận JPG, PNG, WEBP tối đa 5 MiB.</div>
                                 </div>
                                 <div class="col-md-6">
                                     <input type="url" class="form-control" id="formCoverUrl" placeholder="Hoặc dán URL ảnh: https://...">
+                                    <div class="form-text" style="font-size: 0.72rem;">Nhập đường dẫn trực tiếp nếu dùng ảnh online.</div>
                                 </div>
                             </div>
                             <!-- Khung xem trước ảnh -->
