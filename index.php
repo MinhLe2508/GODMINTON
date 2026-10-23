@@ -95,6 +95,94 @@
             background-color: #0d9488 !important;
             color: #ffffff !important;
         }
+
+        /* Swiper Carousel Nổi Bật: Mũi tên trong suốt 2 bên & ẩn trên di động */
+        .featured-courts-slider-wrap {
+            position: relative;
+        }
+        .featuredCourtsSwiper {
+            padding-top: 8px;
+            padding-bottom: 12px;
+        }
+        .featured-swiper-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1.5px solid rgba(255, 255, 255, 0.75);
+            color: var(--brand-teal, #0d9488);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            cursor: pointer;
+            z-index: 20;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 0;
+            outline: none;
+        }
+        .featured-swiper-prev {
+            left: -20px;
+        }
+        .featured-swiper-next {
+            right: -20px;
+        }
+        .featured-swiper-btn:hover {
+            background: rgba(255, 255, 255, 0.9);
+            color: #0f766e;
+            border-color: #ffffff;
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.22);
+            transform: translateY(-50%) scale(1.1);
+        }
+        .featured-swiper-btn:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+        .featured-swiper-btn.swiper-button-disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            pointer-events: none;
+            transform: translateY(-50%) scale(0.95);
+        }
+        .featured-swiper-btn.swiper-button-lock {
+            display: none !important;
+        }
+
+        /* Chế độ Dark mode cho nút mũi tên trong suốt */
+        [data-bs-theme="dark"] .featured-swiper-btn {
+            background: rgba(15, 23, 42, 0.55);
+            border-color: rgba(255, 255, 255, 0.16);
+            color: #2dd4bf;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+        [data-bs-theme="dark"] .featured-swiper-btn:hover {
+            background: rgba(15, 23, 42, 0.88);
+            color: #5eead4;
+            border-color: rgba(45, 212, 191, 0.5);
+            box-shadow: 0 6px 22px rgba(45, 212, 191, 0.25);
+        }
+
+        /* Căn chỉnh vị trí trên màn hình máy tính bảng / laptop vừa */
+        @media (min-width: 768px) and (max-width: 1199.98px) {
+            .featured-swiper-prev {
+                left: -8px;
+            }
+            .featured-swiper-next {
+                right: -8px;
+            }
+        }
+
+        /* Ẩn hoàn toàn mũi tên trên điện thoại di động */
+        @media (max-width: 767.98px) {
+            .featured-swiper-btn {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -217,17 +305,26 @@
             </div>
 
             <!-- Swiper Carousel — slides sẽ được render bởi JS/AJAX -->
-            <div class="swiper featuredCourtsSwiper pb-5" data-aos="fade-up">
-                <div class="swiper-wrapper" id="featuredCourtsWrapper">
-                    <!-- Loading placeholder -->
-                    <div class="swiper-slide">
-                        <div class="text-center py-5">
-                            <div class="spinner-border text-teal" role="status"></div>
-                            <div class="mt-2 text-muted small">Đang tải sân nổi bật...</div>
+            <div class="position-relative featured-courts-slider-wrap" data-aos="fade-up">
+                <div class="swiper featuredCourtsSwiper">
+                    <div class="swiper-wrapper" id="featuredCourtsWrapper">
+                        <!-- Loading placeholder -->
+                        <div class="swiper-slide">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-teal" role="status"></div>
+                                <div class="mt-2 text-muted small">Đang tải sân nổi bật...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="swiper-pagination"></div>
+
+                <!-- Mũi tên điều hướng trong suốt bên trái & bên phải (Ẩn trên điện thoại di động) -->
+                <button type="button" class="featured-swiper-btn featured-swiper-prev" aria-label="Sân trước">
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="featured-swiper-btn featured-swiper-next" aria-label="Sân sau">
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
             </div>
         </div>
     </section>
@@ -413,7 +510,10 @@
                     spaceBetween: 20,
                     loop: json.data.length > 3,
                     autoplay: { delay: 4000, disableOnInteraction: false },
-                    pagination: { el: '.swiper-pagination', clickable: true },
+                    navigation: {
+                        nextEl: '.featured-swiper-next',
+                        prevEl: '.featured-swiper-prev',
+                    },
                     breakpoints: {
                         576:  { slidesPerView: 2 },
                         992:  { slidesPerView: 3 },
