@@ -313,15 +313,15 @@ async function loadMyMembership() {
 
                 activeBox.innerHTML = `
                     ${pendingBannerHtml}
-                    <div class="card border-0 rounded-4 p-4 text-white shadow-sm" style="background: ${cardGradient};">
+                    <div class="card border-0 rounded-4 p-4 text-white shadow-sm overflow-hidden" style="background: ${cardGradient};">
                         <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                            <div class="d-flex align-items-center gap-2">
+                            <div class="d-flex align-items-center flex-wrap gap-2">
                                 <span class="badge px-3 py-1 rounded-pill fw-bold d-inline-flex align-items-center gap-2 shadow-sm"
                                       style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.3); font-size: 0.8rem;">
                                     <span style="color: #5eead4; font-weight: 800; letter-spacing: 0.8px; font-size: 0.82rem;">GODMINTON</span>
                                     <span class="badge bg-warning text-dark px-2 py-0 rounded-pill fw-extrabold" style="font-size: 0.65rem; letter-spacing: 0.5px;">VIP</span>
                                 </span>
-                                <span class="badge bg-success text-white px-3 py-1 rounded-pill fw-semibold shadow-sm" style="font-size:0.78rem;">
+                                <span class="badge bg-success text-white px-3 py-1 rounded-pill fw-semibold shadow-sm text-nowrap" style="font-size:0.78rem;">
                                     <i class="fa-solid fa-circle-check me-1"></i>Đang kích hoạt
                                 </span>
                             </div>

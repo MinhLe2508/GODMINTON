@@ -694,7 +694,7 @@ function updateSummaryBar() {
             titleEl.textContent = `${courtName} ${formatRangeShort(startTime, endTime)}`;
         }
         if (detailEl) {
-            detailEl.innerHTML = `${formatMoney(totalPrice)} • Đặt cọc ${formatMoney(deposit)} • <span class="badge bg-warning text-dark"><i class="fa-regular fa-clock me-1"></i>Còn ${mins}p${secs < 10 ? '0' : ''}${secs}s</span>`;
+            detailEl.innerHTML = `<span>${formatMoney(totalPrice)}</span> <span class="opacity-75">•</span> <span>Đặt cọc ${formatMoney(deposit)}</span> <span class="badge bg-warning text-dark ms-1"><i class="fa-regular fa-clock me-1"></i>Còn ${mins}p${secs < 10 ? '0' : ''}${secs}s</span>`;
         }
 
         const payBtn = document.getElementById('btnGoPayment');
@@ -749,7 +749,7 @@ function updateSummaryBar() {
             titleEl.textContent = `${court.name} ${formatRangeShort(startTime, endTime)}`;
         }
         if (detailEl) {
-            detailEl.innerHTML = `${formatMoney(totalPrice)} • Đặt cọc ${formatMoney(deposit)} • <span class="badge bg-info text-dark"><i class="fa-solid fa-hand-pointer me-1"></i>Đang chọn ${countCells} ô (${durationLabel})</span>`;
+            detailEl.innerHTML = `<span>${formatMoney(totalPrice)}</span> <span class="opacity-75">•</span> <span>Đặt cọc ${formatMoney(deposit)}</span> <span class="badge bg-info text-dark ms-1"><i class="fa-solid fa-hand-pointer me-1"></i>Đang chọn ${countCells} ô (${durationLabel})</span>`;
         }
 
         const payBtn = document.getElementById('btnGoPayment');
@@ -803,7 +803,7 @@ function startCountdownTick() {
                 let totalPrice = 0;
                 myHeldSlots.forEach(s => { totalPrice += (s.price || 50000); });
                 const deposit = Math.round(totalPrice * 0.5);
-                detailEl.innerHTML = `${formatMoney(totalPrice)} • Đặt cọc ${formatMoney(deposit)} • <span class="badge bg-warning text-dark"><i class="fa-regular fa-clock me-1"></i>${timeStr}</span>`;
+                detailEl.innerHTML = `<span>${formatMoney(totalPrice)}</span> <span class="opacity-75">•</span> <span>Đặt cọc ${formatMoney(deposit)}</span> <span class="badge bg-warning text-dark ms-1"><i class="fa-regular fa-clock me-1"></i>${timeStr}</span>`;
             }
         } else if (myHeldSlots.length > 0 && myHeldSlots[0].hold_seconds_left <= 0) {
             myHeldSlots = [];
