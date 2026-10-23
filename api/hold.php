@@ -121,9 +121,19 @@ function doHold(PDO $pdo, int $userId, array $slotIds): array {
         }
 
         $total = 0;
+        $nowDt = new DateTimeImmutable('now', new DateTimeZone('Asia/Ho_Chi_Minh'));
+        $todayStr = $nowDt->format('Y-m-d');
+        $nowTimeStr = $nowDt->format('H:i:s');
+
         foreach ($slotIds as $sid) {
             $s     = $byId[$sid];
             $range = substr($s['start_time'], 0, 5) . '–' . substr($s['end_time'], 0, 5);
+
+            // Chặn đặt khung giờ đã trôi qua trong quá khứ
+            $isPast = ($s['slot_date'] < $todayStr) || ($s['slot_date'] === $todayStr && $s['start_time'] <= $nowTimeStr);
+            if ($isPast) {
+                throw new HoldError(400, "Khung giờ {$s['sub_court_name']} {$range} đã trôi qua. Bạn không thể giữ chỗ hoặc đặt khung giờ trong quá khứ!");
+            }
 
             if ($s['status'] === 'booked') {
                 throw new HoldError(409, "Khung giờ {$s['sub_court_name']} {$range} đã có khách hàng khác đặt thành công.");

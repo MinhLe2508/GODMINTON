@@ -80,6 +80,39 @@ function timeToSlotIdx(timeStr) {
     return Math.floor((totalMins - startMins) / SLOT_MINS);
 }
 
+/* -------- Kiểm tra khung giờ đã qua trong quá khứ -------- */
+function isSlotPast(dateStr, slotIdx) {
+    if (!dateStr || slotIdx < 0 || slotIdx >= TIME_SLOTS.length) return false;
+    const now = new Date();
+    const todayStr = formatDateLocal(now);
+
+    // 1. Ngày trước hôm nay -> Đã qua hoàn toàn
+    if (dateStr < todayStr) return true;
+    // 2. Ngày sau hôm nay -> Tương lai, khả dụng
+    if (dateStr > todayStr) return false;
+
+    // 3. Ngày hôm nay: kiểm tra theo giờ phút hiện tại
+    const slot = TIME_SLOTS[slotIdx];
+    const curHour = now.getHours();
+    const curMin = now.getMinutes();
+
+    // Khung giờ đã bắt đầu hoặc đã qua (start_time <= current_time)
+    return (slot.h < curHour || (slot.h === curHour && slot.m <= curMin));
+}
+
+function handlePastSlotClick(timeLabel) {
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: `Khung giờ ${timeLabel} đã qua`,
+        text: 'Bạn không thể đặt khung giờ trong quá khứ. Vui lòng chọn các khung giờ sắp tới!',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+    });
+}
+
 /* -------- Fetch Slots from MySQL API -------- */
 async function fetchSlots(courtId, dateStr, isPolling = false) {
     try {
@@ -302,6 +335,9 @@ function renderCalendar(visibleCourts) {
                 continue;
             }
 
+            // Kiểm tra xem ô giờ này có thuộc về quá khứ hay không
+            const isPast = isSlotPast(activeDateStr, i);
+
             // Tìm slot MySQL khớp với ô này
             const matchingSlot = slotsForCourt.find(s => {
                 const sIdx = timeToSlotIdx(s.start_time);
@@ -309,6 +345,20 @@ function renderCalendar(visibleCourts) {
                 return i >= sIdx && i < eIdx;
             });
             const slotDbId = matchingSlot ? matchingSlot.id : 0;
+
+            // Nếu ô đã trôi qua trong quá khứ -> Khóa ô, không cho phép đặt
+            if (isPast) {
+                const nextSlot = TIME_SLOTS[i + 1];
+                const nextLabel = nextSlot ? nextSlot.label : '24:00';
+                tbody += `<td class="cal-td-slot cal-td-past${isHourStart ? ' hour-start' : ''}"
+                                data-court="${court.id}" data-slot="${i}"
+                                title="Khung giờ ${slot.label} – ${nextLabel} đã qua (không thể đặt)"
+                                onclick="handlePastSlotClick('${slot.label} – ${nextLabel}')">
+                                <div class="past-label">Đã qua</div>
+                          </td>`;
+                i++;
+                continue;
+            }
 
             // Kiểm tra xem ô này có đang được người dùng chọn không
             const isSelected = (selectedCourtId === court.id && selectedSlotIndices.includes(i));
@@ -358,6 +408,12 @@ function renderCalendar(visibleCourts) {
 
 /* -------- Click handler: Cho phép chọn từ 1 tiếng (2 ô) hoặc 1.5 tiếng (3 ô) trở lên -------- */
 async function handleSlotClick(courtIndex, slotIdx, type, slotId) {
+    // 1. Chặn click vào bất kỳ slot nào đã thuộc về quá khứ
+    if (isSlotPast(activeDateStr, slotIdx)) {
+        handlePastSlotClick(TIME_SLOTS[slotIdx]?.label || '');
+        return;
+    }
+
     if (type === 'booked' || type === 'locked') {
         Swal.fire({
             icon: type === 'locked' ? 'info' : 'error',
@@ -468,12 +524,15 @@ async function handleSlotClick(courtIndex, slotIdx, type, slotId) {
 /* -------- Kiểm tra 1 slotIdx có available không -------- */
 function isCellAvailable(slotsForCourt, idx) {
     if (idx < 0 || idx >= TIME_SLOTS.length) return false;
+    // Chặn nếu slot này đã thuộc về quá khứ
+    if (isSlotPast(activeDateStr, idx)) return false;
+
     const targetSlot = slotsForCourt.find(s => {
         const sIdx = timeToSlotIdx(s.start_time);
         const eIdx = timeToSlotIdx(s.end_time);
         return idx >= sIdx && idx < eIdx;
     });
-    return targetSlot && targetSlot.status === 'available';
+    return targetSlot && targetSlot.status === 'available' && !targetSlot.is_past;
 }
 
 /* -------- Lấy danh sách slot ID trong MySQL tương ứng với selectedSlotIndices -------- */
@@ -498,6 +557,22 @@ function getSelectedDbSlotIds() {
 
 /* -------- Thực hiện Giữ Chỗ (Hold) cho các ô đã chọn (30p, 1h, 1.5h, 2h...) -------- */
 async function confirmHoldSelectedSlots() {
+    // 1. Kiểm tra nếu vùng chọn chứa bất kỳ slot nào đã trôi qua
+    const hasPast = selectedSlotIndices.some(idx => isSlotPast(activeDateStr, idx));
+    if (hasPast) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Khung giờ đã trôi qua',
+            text: 'Một hoặc nhiều khung giờ bạn chọn đã trôi qua trong quá khứ. Vui lòng chọn các khung giờ sắp tới!',
+            confirmButtonColor: '#0d9488'
+        });
+        selectedCourtId = null;
+        selectedSlotIndices = [];
+        renderCalendar(getVisibleCourts());
+        updateSummaryBar();
+        return;
+    }
+
     const slotIds = getSelectedDbSlotIds();
     if (slotIds.length === 0) {
         Swal.fire({ icon: 'warning', title: 'Chưa chọn khung giờ', text: 'Vui lòng chọn ít nhất 1 khung giờ (30 phút)!', confirmButtonColor: '#0d9488' });

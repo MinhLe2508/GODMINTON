@@ -427,6 +427,40 @@
     text-overflow: ellipsis;
 }
 
+/* Past time slot - Greyed out & Disabled */
+.cal-td-slot.cal-td-past {
+    background-color: #f1f5f9 !important;
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(148, 163, 184, 0.15) 6px, rgba(148, 163, 184, 0.15) 12px) !important;
+    cursor: not-allowed !important;
+    user-select: none;
+    opacity: 0.65;
+    position: relative;
+    transition: none !important;
+}
+.cal-td-slot.cal-td-past:hover {
+    background-color: #e2e8f0 !important;
+    filter: none !important;
+}
+[data-bs-theme="dark"] .cal-td-slot.cal-td-past {
+    background-color: rgba(15, 23, 42, 0.75) !important;
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255, 255, 255, 0.04) 6px, rgba(255, 255, 255, 0.04) 12px) !important;
+    opacity: 0.45;
+}
+.cal-td-slot.cal-td-past .past-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #94a3b8;
+    font-size: 0.68rem;
+    font-weight: 600;
+    pointer-events: none;
+    user-select: none;
+}
+[data-bs-theme="dark"] .cal-td-slot.cal-td-past .past-label {
+    color: #64748b;
+}
+
 /* "Now" indicator line */
 .now-indicator {
     position: absolute;

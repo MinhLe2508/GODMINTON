@@ -72,6 +72,11 @@ try {
             $slotPrice += 7500;
         }
 
+        $nowDt = new DateTimeImmutable('now', new DateTimeZone('Asia/Ho_Chi_Minh'));
+        $todayStr = $nowDt->format('Y-m-d');
+        $nowTimeStr = $nowDt->format('H:i:s');
+        $isPast = ($slot['slot_date'] < $todayStr) || ($slot['slot_date'] === $todayStr && $slot['start_time'] <= $nowTimeStr);
+
         $isMyHold = ($currentUserId && $slot['status'] === 'holding' && (int)$slot['held_by'] === $currentUserId && $secondsLeft > 0);
 
         echo json_encode([
@@ -88,6 +93,7 @@ try {
                 'time_range' => "{$startShort} - {$endShort}",
                 'price' => $slotPrice,
                 'status' => $slot['status'],
+                'is_past' => $isPast,
                 'held_by' => $slot['held_by'] ? (int)$slot['held_by'] : null,
                 'holding_user_id' => $slot['held_by'] ? (int)$slot['held_by'] : null,
                 'hold_expires_at' => $slot['hold_expires_at'],
@@ -167,6 +173,10 @@ try {
     $data = [];
     $baseSlotPrice = round((float)$court['price_per_hour'] / 2);
 
+    $nowDt = new DateTimeImmutable('now', new DateTimeZone('Asia/Ho_Chi_Minh'));
+    $todayStr = $nowDt->format('Y-m-d');
+    $nowTimeStr = $nowDt->format('H:i:s');
+
     foreach ($rawSlots as $s) {
         $secondsLeft = ($s['status'] === 'holding' && !empty($s['hold_expires_at'])) 
             ? max(0, min(300, (int)($s['sec_left'] ?? 0))) 
@@ -182,6 +192,7 @@ try {
         }
 
         $isMyHold = ($currentUserId && $s['status'] === 'holding' && (int)$s['held_by'] === $currentUserId && $secondsLeft > 0);
+        $isPast = ($s['slot_date'] < $todayStr) || ($s['slot_date'] === $todayStr && $s['start_time'] <= $nowTimeStr);
 
         $data[] = [
             'id' => (int)$s['id'],
@@ -193,6 +204,7 @@ try {
             'time_range' => "{$startShort} - {$endShort}",
             'price' => $price,
             'status' => $s['status'],
+            'is_past' => $isPast,
             'held_by' => $s['held_by'] ? (int)$s['held_by'] : null,
             'holding_user_id' => $s['held_by'] ? (int)$s['held_by'] : null,
             'hold_expires_at' => $s['hold_expires_at'],
