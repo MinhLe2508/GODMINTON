@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     async function load(){
         feed.textContent='Đang tải nội dung...';
         try{
-            const res = await ContentClient.request('api/posts.php?limit=6');
+            const res = await ContentClient.request('api/posts.php?limit=50');
             exploreNews = Array.isArray(res?.items) ? res.items : (Array.isArray(res) ? res : []);
             if (!exploreNews.length) {
                 try {
