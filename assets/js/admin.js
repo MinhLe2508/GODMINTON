@@ -181,6 +181,7 @@ const AdminApp = (() => {
         ];
 
         if(user.role==='admin')navItems.push(
+            {key:'memberships',href:'admin-memberships.php',icon:'fa-crown',label:'Quản lý hội viên'},
             {key:'users',href:'admin-users.php',icon:'fa-users-gear',label:'Quản lý tài khoản'},
             {key:'owner-requests',href:'admin-owner-requests.php',icon:'fa-file-circle-check',label:'Yêu cầu chủ sân'},
             {key:'posts',href:'admin-posts.php',icon:'fa-newspaper',label:'Quản lý bài viết'}
