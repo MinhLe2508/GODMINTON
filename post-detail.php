@@ -230,7 +230,7 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
                     <?php if ($post['price'] !== null): ?>
                     <div class="text-sm-end">
                         <div class="fs-3 fw-extrabold text-teal"><?= post_format_vnd($post['price']) ?></div>
-                        <div class="small text-muted"><?= !empty($post['duration_days']) ? 'Thời hạn ' . (int)$post['duration_days'] . ' ngày' : 'Gói hội viên' ?></div>
+                        <div class="small text-muted"><?= (!empty($post['duration_days']) && (int)$post['duration_days'] === 30) ? 'Thời hạn 1 tháng' : (!empty($post['duration_days']) ? 'Thời hạn ' . (int)$post['duration_days'] . ' ngày' : 'Gói hội viên') ?></div>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -300,7 +300,7 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
                             <?php if ($userActiveMembership): ?>
                                 Bạn đang dùng gói <strong><?= htmlspecialchars($userActiveMembership['package_title']) ?></strong>. Đăng ký gói này sẽ nâng cấp tài khoản lên mức giảm <strong><?= (int)$post['discount_percent'] ?>%</strong>.
                             <?php else: ?>
-                                Kích hoạt ngay để được tự động giảm <strong><?= (int)$post['discount_percent'] ?>%</strong> toàn bộ tiền sân trong <strong><?= (int)$post['duration_days'] ?> ngày</strong>.
+                                Kích hoạt ngay để được tự động giảm <strong><?= (int)$post['discount_percent'] ?>%</strong> toàn bộ tiền sân trong <strong><?= (int)$post['duration_days'] === 30 ? '1 tháng' : (int)$post['duration_days'] . ' ngày' ?></strong>.
                             <?php endif; ?>
                         </div>
                         <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -393,7 +393,7 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
                         </div>
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="text-muted small">Thời hạn kích hoạt:</span>
-                            <span class="fw-bold"><?= (int)$post['duration_days'] ?> ngày</span>
+                            <span class="fw-bold"><?= (int)$post['duration_days'] === 30 ? '1 tháng (30 ngày)' : (int)$post['duration_days'] . ' ngày' ?></span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="text-muted small">Tổng thanh toán:</span>

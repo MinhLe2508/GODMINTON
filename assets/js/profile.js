@@ -362,7 +362,7 @@ async function loadMyMembership() {
                         document.getElementById('renewPackageTitle').textContent = shortName;
                         document.getElementById('renewDiscountBadge').textContent = `-${active.discount_percent}% Tiền Sân`;
                         document.getElementById('renewCurrentEnd').textContent = endFormatted;
-                        document.getElementById('renewAddDays').textContent = `+${active.duration_days || 30} ngày (cộng dồn)`;
+                        document.getElementById('renewAddDays').textContent = `+1 tháng (cộng dồn)`;
                         document.getElementById('renewPriceText').textContent = BookingAccount.money(active.price_paid || 0);
 
                         window.__CURRENT_ACTIVE_POST_ID__ = active.post_id;
