@@ -140,15 +140,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <h6 class="fw-bold mb-2">Phương Thức Thanh Toán Cọc</h6>
                 <div class="d-flex flex-column gap-2 mb-3">
                     <div class="form-check p-3 border rounded-3 bg-body-tertiary">
-                        <input class="form-check-input" type="radio" name="paymentMethod" id="payQr" value="VietQR" checked>
-                        <label class="form-check-label fw-bold small ms-2" for="payQr">
-                            <i class="fa-solid fa-qrcode text-teal me-1"></i> Chuyển khoản QR Code VietQR / MoMo (Khuyên dùng)
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="payVnpay" value="VNPay" checked>
+                        <label class="form-check-label fw-bold small ms-2" for="payVnpay">
+                            <i class="fa-solid fa-qrcode text-primary me-1"></i> Cổng thanh toán VNPAY-QR / ATM nội địa
                         </label>
                     </div>
                     <div class="form-check p-3 border rounded-3 bg-body-tertiary">
-                        <input class="form-check-input" type="radio" name="paymentMethod" id="payCash" value="Tiền mặt">
-                        <label class="form-check-label fw-bold small ms-2" for="payCash">
-                            <i class="fa-solid fa-money-bill-wave text-success me-1"></i> Thanh toán tiền mặt tại quầy lễ tân sân
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="payMomo" value="MoMo">
+                        <label class="form-check-label fw-bold small ms-2" for="payMomo">
+                            <i class="fa-solid fa-mobile-screen text-danger me-1"></i> Ví điện tử MoMo
+                        </label>
+                    </div>
+                    <div class="form-check p-3 border rounded-3 bg-body-tertiary">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="payZalopay" value="ZaloPay">
+                        <label class="form-check-label fw-bold small ms-2" for="payZalopay">
+                            <i class="fa-solid fa-wallet text-info me-1"></i> Ví điện tử ZaloPay
+                        </label>
+                    </div>
+                    <div class="form-check p-3 border rounded-3 bg-body-tertiary">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="payQr" value="Chuyển khoản VietQR">
+                        <label class="form-check-label fw-bold small ms-2" for="payQr">
+                            <i class="fa-solid fa-building-columns text-teal me-1"></i> Chuyển khoản Ngân hàng VietQR 24/7
                         </label>
                     </div>
                 </div>
@@ -178,9 +190,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <!-- QR Code Box -->
                 <div id="qrMockBox" class="p-3 rounded-3 bg-light text-center mb-3">
                     <div class="small fw-bold text-muted mb-2">Mã QR Thanh Toán Cọc</div>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=GODMINTON_BOOKING_DEPOSIT_${depositAmount}" class="rounded-3 border p-1 shadow-sm mb-2" alt="QR VietQR">
+                    <img src="assets/img/vnpay-payment.png" class="rounded-3 border p-1 shadow-sm mb-2" style="max-width:160px;" alt="QR Thanh Toán">
                     <div class="small text-muted" style="font-size:0.75rem;">
-                        Ngân hàng Vietcombank • STK: 1234 5678 9012 • Số tiền: ${formatVND(depositAmount)}
+                        MB Bank • STK / Ví: 0783547289 • Số tiền: ${formatVND(depositAmount)}
                     </div>
                 </div>
 
@@ -202,7 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 4. Xử lý nút hoàn tất: Gọi API POST api/bookings.php với mảng slot_ids
     document.getElementById('btnConfirmBooking').addEventListener('click', async () => {
-        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'VietQR';
+        const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'VNPay';
         const notes = document.getElementById('bookingNotes')?.value.trim() || '';
         const btn = document.getElementById('btnConfirmBooking');
 
@@ -298,13 +310,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="card border rounded-4 p-5 text-center shadow-sm" role="alert">
                 <h4 class="fw-bold">Không thể xác minh phiên giữ chỗ</h4>
                 <p class="text-muted">${message}</p>
-                <div class="d-flex justify-content-center gap-2">
-                    <button id="retryConfirm" type="button" class="btn btn-teal rounded-pill">Thử lại</button>
-                    <a class="btn btn-outline-secondary rounded-pill" href="booking.php?court_id=${courtId}&amp;date=${encodeURIComponent(dateStr)}">Chọn lại khung giờ</a>
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                    <a href="booking.php?court_id=${courtId}&date=${encodeURIComponent(dateStr)}" class="btn btn-teal rounded-pill px-4">Quay lại chọn giờ</a>
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="window.location.reload()">Thử lại</button>
                 </div>
             </div>`;
-        document.getElementById('retryConfirm').addEventListener('click', () => window.location.reload());
     }
-
 });
 })();
