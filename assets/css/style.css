@@ -289,6 +289,9 @@ body {
 }
 
 /* Theme Toggle Button placement in Header */
+.app-brand-head {
+    position: relative !important;
+}
 .bnav-theme-float {
     top: 20px !important;
     right: 20px !important;
@@ -296,6 +299,13 @@ body {
     height: 44px !important;
     font-size: 1.1rem !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+}
+.app-brand-head .bnav-theme-float,
+body:has(.app-brand-head) .bnav-theme-float {
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    right: 20px !important;
 }
 
 [data-bs-theme="light"] .bnav-theme-float {
@@ -333,6 +343,14 @@ body {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
     cursor: pointer !important;
     transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.app-brand-head .bnav-bell-float,
+body:has(.app-brand-head) .bnav-bell-float {
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    right: 74px !important;
 }
 
 .bnav-bell-float i,
@@ -578,6 +596,20 @@ body.admin-body {
         width: 36px !important;
         height: 36px !important;
         font-size: 0.95rem !important;
+    }
+    .app-brand-head .bnav-theme-float,
+    body:has(.app-brand-head) .bnav-theme-float {
+        position: absolute !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        right: 12px !important;
+    }
+    .app-brand-head .bnav-bell-float,
+    body:has(.app-brand-head) .bnav-bell-float {
+        position: absolute !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        right: 54px !important;
     }
     .bnav-bell-float .bell-active-dot {
         top: 6px;

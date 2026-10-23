@@ -82,7 +82,7 @@ if ($currentUser !== null) {
     <div class="col-lg-7 order-2 order-lg-1">
 
         <!-- 1. Thông tin người đặt -->
-        <div class="card border rounded-4 p-4 shadow-sm mb-4">
+        <div class="card border rounded-4 p-3 p-sm-4 shadow-sm mb-4">
             <p class="pay-section-title">
                 <i class="fa-solid fa-circle-user"></i> Thông Tin Người Đặt
             </p>
@@ -118,7 +118,7 @@ if ($currentUser !== null) {
         </div>
 
         <!-- 2. Chọn phương thức thanh toán -->
-        <div class="card border rounded-4 p-4 shadow-sm mb-4">
+        <div class="card border rounded-4 p-3 p-sm-4 shadow-sm mb-4">
             <p class="pay-section-title">
                 <i class="fa-solid fa-wallet"></i> Phương Thức Thanh Toán
             </p>

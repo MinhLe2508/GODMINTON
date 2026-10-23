@@ -435,7 +435,12 @@
             }
         });
 
-        document.body.appendChild(btn);
+        const brandHead = document.querySelector('.app-brand-head');
+        if (brandHead) {
+            brandHead.appendChild(btn);
+        } else {
+            document.body.appendChild(btn);
+        }
 
         injectPushBellToggle();
     }

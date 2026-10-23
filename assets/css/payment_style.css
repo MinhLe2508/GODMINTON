@@ -419,30 +419,155 @@ textarea.pay-input {
 }
 .sdrow:last-child { border-bottom: none; }
 
-/* ---- Responsive ---- */
+/* ---- Responsive for Tablets & Mobile ---- */
 @media (max-width: 767px) {
-    .pm-grid { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
     .step-label { display: none; }
     .order-hero { height: 110px; }
 }
-@media (max-width: 380px) {
-    .pm-grid { grid-template-columns: repeat(2, 1fr); gap: 0.45rem; }
-}
+
+/* Phones (<= 576px, e.g. iPhone 16 393px, Galaxy 360px) */
 @media (max-width: 576px) {
+    /* Compact card padding on mobile so content isn't squeezed */
+    .card.p-4 {
+        padding: 1.15rem 0.95rem !important;
+        border-radius: 1rem !important;
+    }
+    .order-body {
+        padding: 0.9rem 0.95rem !important;
+    }
+
+    /* 2 columns for payment methods on phones: spacious, no text clipping, no 3-line wrapping */
+    .pm-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.55rem !important;
+    }
+    .pm-btn {
+        min-height: 74px !important;
+        padding: 0.75rem 0.45rem 0.6rem !important;
+    }
+    .pm-btn .pm-name {
+        font-size: 0.72rem !important;
+        line-height: 1.25 !important;
+    }
+    .pm-icon-wrap {
+        height: 28px !important;
+    }
+    .pm-icon-wrap img {
+        height: 24px !important;
+        max-width: 56px !important;
+    }
+    .pm-icon-wrap i {
+        font-size: 1.45rem !important;
+    }
+
+    /* Bank QR panel centered and spacious */
     .bank-panel {
-        padding: 0.85rem;
+        padding: 0.9rem 0.8rem !important;
     }
     .bank-panel .d-flex.gap-3 {
-        flex-direction: column;
-        align-items: center;
+        flex-direction: column !important;
+        align-items: center !important;
     }
     .bank-panel .qr-box {
-        width: 170px;
-        height: 220px;
-        margin: 0 auto;
+        width: 160px !important;
+        height: 200px !important;
+        margin: 0 auto 0.5rem auto !important;
     }
     .bank-panel .flex-grow-1 {
-        width: 100%;
+        width: 100% !important;
+    }
+    .copy-row {
+        padding: 0.45rem 0.65rem !important;
+        font-size: 0.8rem !important;
+    }
+    .copy-btn {
+        background: rgba(13, 148, 136, 0.1) !important;
+        color: var(--brand-teal) !important;
+        padding: 0.2rem 0.55rem !important;
+        border-radius: 999px !important;
+        font-size: 0.7rem !important;
+        border: 1px solid rgba(13, 148, 136, 0.2) !important;
+    }
+
+    /* Compact countdown */
+    .countdown-wrap {
+        padding: 0.5rem 0.75rem !important;
+        margin-bottom: 0.65rem !important;
+    }
+    .countdown-timer {
+        font-size: 0.98rem !important;
+    }
+
+    /* Compact step bar */
+    .step-bar {
+        padding: 0.65rem 0 0.35rem !important;
+    }
+    .step-dot {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 0.7rem !important;
+    }
+    .step-item::before {
+        top: 13px !important;
+    }
+
+    /* Voucher box compact */
+    .voucher-box {
+        padding: 0.75rem 0.85rem !important;
+        margin-bottom: 0.85rem !important;
+    }
+    .voucher-box .input-group .form-control {
+        height: 40px !important;
+        font-size: 0.82rem !important;
+    }
+    .voucher-box .input-group .btn-teal {
+        height: 40px !important;
+        padding: 0 0.9rem !important;
+        font-size: 0.82rem !important;
+    }
+    .voucher-box .input-group .btn-outline-danger {
+        height: 40px !important;
+    }
+
+    /* Booking CTA button */
+    .btn-pay-cta {
+        height: 48px !important;
+        font-size: 0.92rem !important;
+        border-radius: 0.75rem !important;
+    }
+}
+
+/* Extra Small Phones (<= 380px, e.g. iPhone SE, Galaxy Fold cover) */
+@media (max-width: 380px) {
+    .card.p-4 {
+        padding: 0.95rem 0.7rem !important;
+    }
+    .order-body {
+        padding: 0.75rem 0.7rem !important;
+    }
+    .bdr {
+        font-size: 0.78rem !important;
+        padding: 0.35rem 0 !important;
+    }
+    .prow {
+        font-size: 0.8rem !important;
+    }
+    .prow.total-row .prow-val {
+        font-size: 1.1rem !important;
+    }
+    .prow.deposit-row .prow-val {
+        font-size: 1rem !important;
+    }
+    .pm-btn {
+        min-height: 68px !important;
+        padding: 0.65rem 0.35rem 0.5rem !important;
+    }
+    .pm-btn .pm-name {
+        font-size: 0.66rem !important;
+    }
+    .bank-panel .qr-box {
+        width: 135px !important;
+        height: 175px !important;
     }
 }
 /* Completed booking screen: centered card with a separate bottom footer. */
