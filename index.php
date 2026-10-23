@@ -127,11 +127,12 @@
             padding: 0;
             outline: none;
         }
+        /* Vị trí mũi tên: dời ra hẳn bên ngoài thẻ sân, hoàn toàn không đè lên nội dung */
         .featured-swiper-prev {
-            left: -20px;
+            left: -54px;
         }
         .featured-swiper-next {
-            right: -20px;
+            right: -54px;
         }
         .featured-swiper-btn:hover {
             background: rgba(255, 255, 255, 0.9);
@@ -167,13 +168,33 @@
             box-shadow: 0 6px 22px rgba(45, 212, 191, 0.25);
         }
 
-        /* Căn chỉnh vị trí trên màn hình máy tính bảng / laptop vừa */
-        @media (min-width: 768px) and (max-width: 1199.98px) {
+        /* Màn hình lớn (>= 1400px): dời rộng thêm */
+        @media (min-width: 1400px) {
             .featured-swiper-prev {
-                left: -8px;
+                left: -60px;
             }
             .featured-swiper-next {
-                right: -8px;
+                right: -60px;
+            }
+        }
+
+        /* Màn hình laptop vừa (992px - 1199.98px) */
+        @media (min-width: 992px) and (max-width: 1199.98px) {
+            .featured-swiper-prev {
+                left: -48px;
+            }
+            .featured-swiper-next {
+                right: -48px;
+            }
+        }
+
+        /* Màn hình tablet (768px - 991.98px) */
+        @media (min-width: 768px) and (max-width: 991.98px) {
+            .featured-swiper-prev {
+                left: -32px;
+            }
+            .featured-swiper-next {
+                right: -32px;
             }
         }
 
