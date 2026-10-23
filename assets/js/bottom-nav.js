@@ -487,6 +487,8 @@
             }
         };
 
+        // This script owns the injected bell click handler; prevent push-client from adding a second toggle.
+        bellBtn.dataset.bellBound = 'bottom-nav';
         bellBtn.addEventListener('click', openPushModal);
 
         const themeBtn = document.getElementById('themeToggle');

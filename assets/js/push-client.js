@@ -602,7 +602,7 @@ window.PushClient = (() => {
         }
 
         if (!btn.dataset.bellBound) {
-            btn.dataset.bellBound = 'true';
+            btn.dataset.bellBound = 'push-client';
             btn.addEventListener('click', handleBellClick);
         }
 
