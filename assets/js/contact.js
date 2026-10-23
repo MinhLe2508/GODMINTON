@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form=document.getElementById('contactForm'), button=document.getElementById('btnContactSubmit'), success=document.getElementById('alertSuccess');
-    const errorBox=document.createElement('div');errorBox.className='alert alert-danger d-none';errorBox.setAttribute('role','alert');form.prepend(errorBox);
+    const errorBox=document.createElement('div');errorBox.className='contact-feedback contact-feedback-error d-none';errorBox.setAttribute('role','alert');errorBox.setAttribute('aria-live','assertive');form.prepend(errorBox);
     let submitting=false;
     form.addEventListener('submit',async event=>{
         event.preventDefault();if(submitting || !form.reportValidity())return;
