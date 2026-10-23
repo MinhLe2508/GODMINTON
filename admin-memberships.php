@@ -52,6 +52,24 @@ $currentUser = [
             color: #f1f5f9;
             border: 1px solid rgba(255,255,255,0.2);
         }
+        .stat-tier-group {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-bottom: 0.45rem;
+        }
+        .stat-tier-pill {
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 0.28rem 0.58rem;
+            line-height: 1.15;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.01em;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
         .user-avatar-sm {
             width: 40px;
             height: 40px;
@@ -148,10 +166,10 @@ $currentUser = [
                             <i class="fa-solid fa-layer-group"></i>
                         </div>
                         <div>
-                            <div class="d-flex align-items-center gap-1 mb-1">
-                                <span class="badge tier-badge-silver rounded-pill px-2 py-0" style="font-size:0.7rem;" id="statCountSilver">Bạc: 0</span>
-                                <span class="badge tier-badge-gold rounded-pill px-2 py-0" style="font-size:0.7rem;" id="statCountGold">Vàng: 0</span>
-                                <span class="badge tier-badge-platinum rounded-pill px-2 py-0" style="font-size:0.7rem;" id="statCountPlatinum">B.Kim: 0</span>
+                            <div class="stat-tier-group">
+                                <span class="badge stat-tier-pill tier-badge-silver rounded-pill" id="statCountSilver">Bạc: 0</span>
+                                <span class="badge stat-tier-pill tier-badge-gold rounded-pill" id="statCountGold">Vàng: 0</span>
+                                <span class="badge stat-tier-pill tier-badge-platinum rounded-pill" id="statCountPlatinum">B.Kim: 0</span>
                             </div>
                             <div class="admin-stat-label">Phân bố hạng thành viên</div>
                         </div>
