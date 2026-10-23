@@ -478,14 +478,9 @@ header('Cache-Control: no-store');
                         <!-- TAB 5: GÓI HỘI VIÊN -->
                         <div class="tab-pane fade" id="tabProfileMembership" role="tabpanel">
                             <div class="profile-card">
-                                <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom flex-wrap gap-2">
-                                    <div>
-                                        <h5 class="fw-bold mb-1"><i class="fa-solid fa-crown text-warning me-2"></i>Gói Hội Viên Của Tôi</h5>
-                                        <p class="text-muted small mb-0">Theo dõi đặc quyền chiết khấu và thời hạn gói hội viên</p>
-                                    </div>
-                                    <a href="explore.php?tab=membership" class="btn btn-sm btn-teal rounded-pill px-3 fw-semibold">
-                                        <i class="fa-solid fa-compass me-1"></i> Khám phá tất cả các gói
-                                    </a>
+                                <div class="mb-4 pb-2 border-bottom">
+                                    <h5 class="fw-bold mb-1"><i class="fa-solid fa-crown text-warning me-2"></i>Gói Hội Viên Của Tôi</h5>
+                                    <p class="text-muted small mb-0">Theo dõi đặc quyền chiết khấu và thời hạn gói hội viên</p>
                                 </div>
 
                                 <!-- Box chi tiết gói hiện tại (Render bởi profile.js) -->

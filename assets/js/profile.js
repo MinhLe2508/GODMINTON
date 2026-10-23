@@ -385,12 +385,9 @@ async function loadMyMembership() {
                         <p class="text-muted small mx-auto mb-4" style="max-width: 520px;">
                             Đăng ký gói hội viên GODMINTON để nhận đặc quyền <strong>giảm trực tiếp 5% – 15%</strong> toàn bộ tiền sân cho mọi lượt đặt lịch, ưu tiên giữ sân giờ vàng và nhiều quà tặng hấp dẫn!
                         </p>
-                        <div class="d-flex justify-content-center gap-2 flex-wrap">
-                            <a href="explore.php?tab=membership" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm">
-                                <i class="fa-solid fa-crown me-1 text-warning"></i> Khám phá & Đăng ký gói ngay
-                            </a>
-                            <a href="courts.php" class="btn btn-outline-secondary rounded-pill px-3">
-                                Xem danh sách sân
+                        <div class="d-flex justify-content-center">
+                            <a href="explore.php?tab=membership" class="btn btn-teal rounded-pill px-4 py-2 fw-bold shadow-sm">
+                                <i class="fa-solid fa-crown me-2 text-warning"></i> Đăng ký gói hội viên ngay
                             </a>
                         </div>
                     </div>
