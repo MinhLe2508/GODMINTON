@@ -125,9 +125,6 @@ $currentUser = [
                 <button id="themeToggle" type="button" class="admin-icon-btn" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
                     <i class="fa-solid fa-moon"></i>
                 </button>
-                <a href="admin-posts.php?type=membership" class="btn btn-outline-teal rounded-pill px-3 fw-semibold d-none d-md-inline-flex" title="Cấu hình giá và đặc quyền gói">
-                    <i class="fa-solid fa-sliders me-1"></i> Cấu hình gói bài viết
-                </a>
                 <button class="btn btn-teal rounded-pill px-3 fw-semibold" id="btnOpenGrantModal">
                     <i class="fa-solid fa-crown me-1 text-warning"></i> Cấp gói hội viên
                 </button>
