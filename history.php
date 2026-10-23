@@ -18,6 +18,37 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
     <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        main {
+            padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px)) !important;
+        }
+        #bookingListContainer .card {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        @media (max-width: 576px) {
+            #bookingListContainer .card {
+                padding: 1.15rem 1rem !important;
+                border-radius: 1rem !important;
+            }
+            .header-history-actions .btn {
+                padding: 0.45rem 0.85rem !important;
+                font-size: 0.85rem !important;
+            }
+        }
+        @media (max-width: 380px) {
+            h3.fw-extrabold {
+                font-size: 1.25rem !important;
+            }
+            #bookingListContainer .card {
+                padding: 1rem 0.85rem !important;
+            }
+            .header-history-actions .btn {
+                padding: 0.38rem 0.65rem !important;
+                font-size: 0.78rem !important;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -39,7 +70,7 @@
                     <p class="text-muted small mb-0">Theo dõi trạng thái đơn đặt sân, thông tin khung giờ và thanh toán
                     </p>
                 </div>
-                <div class="d-flex align-items-center gap-2 flex-wrap mt-2 mt-sm-0">
+                <div class="header-history-actions d-flex align-items-center gap-2 flex-wrap mt-2 mt-sm-0">
                     <a href="courts.php" class="btn btn-teal rounded-pill px-3 fw-bold">
                         <i class="fa-solid fa-plus me-1"></i> Đặt Sân Mới
                     </a>
