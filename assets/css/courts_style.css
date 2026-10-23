@@ -351,11 +351,58 @@
 .court-card:hover img { transform: scale(1.04); }
 
 /* ============================================================
-    MOBILE
+    PUSH BELL TOGGLE INSIDE SEARCH BAR
     ============================================================ */
+.sb-actions #pushBellToggle,
+.sb-actions .sb-btn#pushBellToggle {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    width: auto !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+.sb-actions #pushBellToggle .bell-active-dot {
+    position: absolute;
+    top: 8px;
+    right: calc(50% - 15px);
+    width: 7px;
+    height: 7px;
+    background: #10b981;
+    border-radius: 50%;
+    border: 1.5px solid #0f172a;
+    box-shadow: 0 0 6px #10b981;
+}
+[data-bs-theme="light"] .sb-actions #pushBellToggle .bell-active-dot {
+    border-color: #ffffff;
+}
+
+/* ============================================================
+    MOBILE RESPONSIVE
+    ============================================================ */
+@media (max-width: 768px) {
+    .sb-btn { padding: 0 0.75rem; min-width: 56px; }
+}
+
 @media (max-width: 575px) {
     .search-bar-wrap { top: 0; }
-    .sb-btn { padding: 0 0.65rem; min-width: 52px; }
+    .sb-actions {
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .sb-actions::-webkit-scrollbar { display: none; }
+    .sb-btn { padding: 0 0.5rem; min-width: 44px; }
     .sb-btn .sb-lbl { display: none; }
+    .sb-actions #pushBellToggle { min-width: 44px !important; padding: 0 0.5rem !important; }
+    .sb-actions #pushBellToggle .bell-active-dot { top: 12px; right: 10px; }
     .filter-drawer { width: 100vw; }
+}
+
+@media (max-width: 380px) {
+    .sb-btn { padding: 0 0.35rem; min-width: 38px; }
+    .sb-actions #pushBellToggle { min-width: 38px !important; padding: 0 0.35rem !important; }
 }

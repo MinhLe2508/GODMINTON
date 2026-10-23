@@ -70,8 +70,14 @@
                     <span class="sb-lbl">Yêu thích</span>
                 </button>
 
+                <!-- Thông báo đẩy PWA -->
+                <button class="sb-btn" id="pushBellToggle" type="button" title="Thông báo đẩy PWA (Bấm để bật/tắt hoặc gửi thử)" aria-label="Thông báo đẩy PWA">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="sb-lbl">Thông báo</span>
+                </button>
+
                 <!-- Giao diện Sáng / Tối -->
-                <button class="sb-btn" id="themeToggle" title="Chuyển chế độ Sáng / Tối">
+                <button class="sb-btn" id="themeToggle" type="button" title="Chuyển chế độ Sáng / Tối" aria-label="Chuyển chế độ Sáng / Tối">
                     <i class="fa-solid fa-moon"></i>
                     <span class="sb-lbl">Giao diện</span>
                 </button>
@@ -321,6 +327,8 @@
 <script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
 <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
 <script src="assets/js/courts.js?v=<?= filemtime(__DIR__ . '/assets/js/courts.js') ?>"></script>
+<!-- Push Client PWA -->
+<script src="assets/js/push-client.js?v=<?= filemtime(__DIR__ . '/assets/js/push-client.js') ?>"></script>
 <!-- Bottom Nav -->
 <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 </body>

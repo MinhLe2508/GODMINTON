@@ -152,13 +152,19 @@ window.PushClient = (() => {
 
         // 1. Gọi API gửi thông báo
         let subscription = await getSubscription();
-        if (!subscription) throw new Error('Thiết bị chưa bật thông báo. Hãy bật nhận thông báo trước.');
+        if (!subscription) {
+            await subscribe();
+            subscription = await getSubscription();
+            if (!subscription) throw new Error('Thiết bị chưa thể bật nhận thông báo.');
+            try { await updateBellUI(); } catch (_) {}
+        }
         const currentKey = urlBase64ToUint8Array(await getVapidPublicKey());
         if (subscription.options?.applicationServerKey &&
             !sameKey(subscription.options.applicationServerKey, currentKey)) {
             await subscribe();
             subscription = await getSubscription();
             if (!subscription) throw new Error('Không thể cập nhật đăng ký thông báo của thiết bị.');
+            try { await updateBellUI(); } catch (_) {}
         }
         const res = await fetch('api/push/send.php', {
             method: 'POST',
@@ -603,8 +609,11 @@ window.PushClient = (() => {
         const btn = document.getElementById('pushBellToggle');
         if (!btn) return;
 
+        const isSbBtn = btn.classList.contains('sb-btn') || !!btn.closest('.sb-actions');
+        const lblHtml = isSbBtn ? '<span class="sb-lbl">Thông báo</span>' : '';
+
         if (!isSupported()) {
-            btn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+            btn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>' + lblHtml;
             btn.title = 'Trình duyệt không hỗ trợ Web Push';
             btn.classList.remove('active');
             return;
@@ -618,19 +627,19 @@ window.PushClient = (() => {
         }
 
         if (permission === 'denied') {
-            btn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+            btn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>' + lblHtml;
             btn.title = 'Thông báo bị chặn trong cài đặt trình duyệt';
             btn.classList.remove('active');
         } else if (isSubscribed && permission === 'granted' && (mode === 'enabled' || mode === 'all' || mode === 'personalized')) {
-            btn.innerHTML = '<i class="fa-solid fa-bell"></i><span class="bell-active-dot" aria-hidden="true"></span>';
+            btn.innerHTML = '<i class="fa-solid fa-bell"></i><span class="bell-active-dot" aria-hidden="true"></span>' + lblHtml;
             btn.title = 'Thông báo: Đang bật';
             btn.classList.add('active');
         } else if (mode === 'none' || mode === 'unsubscribed') {
-            btn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+            btn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>' + lblHtml;
             btn.title = 'Thông báo: Không nhận thông báo';
             btn.classList.remove('active');
         } else {
-            btn.innerHTML = '<i class="fa-regular fa-bell"></i>';
+            btn.innerHTML = '<i class="fa-regular fa-bell"></i>' + lblHtml;
             btn.title = 'Bật nhận thông báo';
             btn.classList.remove('active');
         }
@@ -643,26 +652,32 @@ window.PushClient = (() => {
         toggleBellDropdown();
     }
 
-    // Khởi tạo nút chuông thông báo nổi hoặc tích hợp trên thanh topbar admin
+    // Khởi tạo nút chuông thông báo nổi hoặc tích hợp trên thanh topbar/searchbar
     async function initBellButton() {
         let btn = document.getElementById('pushBellToggle');
         const themeBtn = document.getElementById('themeToggle');
         const isAdmin = !!(document.querySelector('.admin-layout') || document.querySelector('.admin-topbar') || window.location.pathname.includes('admin-'));
+        const isSb = !!(themeBtn && (themeBtn.classList.contains('sb-btn') || themeBtn.closest('.sb-actions')));
+        const isWf = !!(themeBtn && themeBtn.closest('.wf-public-header'));
 
         if (!btn) {
             btn = document.createElement('button');
             btn.id = 'pushBellToggle';
             btn.type = 'button';
-            if (isAdmin) {
+            if (isSb) {
+                btn.className = 'sb-btn';
+            } else if (isAdmin) {
                 btn.className = (themeBtn && themeBtn.classList.contains('admin-icon-btn'))
-                    ? 'admin-icon-btn bnav-bell-float'
-                    : 'btn btn-outline-secondary rounded-circle bnav-bell-float';
+                    ? 'admin-icon-btn'
+                    : 'btn btn-outline-secondary rounded-circle';
+            } else if (isWf) {
+                btn.className = 'btn btn-outline-secondary rounded-circle';
             } else {
                 btn.className = 'bnav-theme-float bnav-bell-float';
             }
             btn.setAttribute('aria-label', 'Thông báo đẩy PWA');
             btn.title = 'Thông báo đẩy PWA';
-            btn.innerHTML = '<i class="fa-regular fa-bell"></i>';
+            btn.innerHTML = isSb ? '<i class="fa-regular fa-bell"></i><span class="sb-lbl">Thông báo</span>' : '<i class="fa-regular fa-bell"></i>';
 
             if (themeBtn && themeBtn.parentNode) {
                 themeBtn.parentNode.insertBefore(btn, themeBtn);
@@ -672,12 +687,17 @@ window.PushClient = (() => {
                 document.body.appendChild(btn);
             }
         } else {
-            if (!btn.innerHTML.trim()) {
-                btn.innerHTML = '<i class="fa-regular fa-bell"></i>';
+            if (isSb) {
+                btn.classList.remove('bnav-theme-float', 'bnav-bell-float');
+                btn.classList.add('sb-btn');
+            } else if (isAdmin) {
+                btn.classList.remove('bnav-theme-float', 'bnav-bell-float');
+                if (!btn.classList.contains('admin-icon-btn') && !btn.classList.contains('rounded-circle')) {
+                    btn.classList.add('admin-icon-btn');
+                }
             }
-            if (isAdmin && !btn.classList.contains('admin-icon-btn') && !btn.classList.contains('rounded-circle')) {
-                btn.classList.remove('bnav-theme-float');
-                btn.classList.add('admin-icon-btn');
+            if (!btn.innerHTML.trim()) {
+                btn.innerHTML = isSb ? '<i class="fa-regular fa-bell"></i><span class="sb-lbl">Thông báo</span>' : '<i class="fa-regular fa-bell"></i>';
             }
         }
 

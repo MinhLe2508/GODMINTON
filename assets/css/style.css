@@ -394,10 +394,13 @@ body {
     border-color: #ffffff;
 }
 
-/* Reset float positioning when bell or theme button is in admin-topbar */
+/* Reset float positioning when bell or theme button is in admin-topbar, sb-actions, or wf-public-header */
 .admin-topbar .bnav-bell-float,
 .admin-topbar #pushBellToggle,
-.admin-topbar #themeToggle {
+.admin-topbar #themeToggle,
+.wf-public-header .bnav-bell-float,
+.wf-public-header #pushBellToggle,
+.wf-public-header #themeToggle {
     position: static !important;
     top: auto !important;
     right: auto !important;
@@ -410,6 +413,14 @@ body {
     box-shadow: none !important;
     display: inline-flex !important;
     align-items: center !important;
+}
+
+.sb-actions #pushBellToggle,
+.sb-actions .bnav-bell-float {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    box-shadow: none !important;
 }
 
 /* Không hiển thị thanh bottom nav trên mọi trang quản trị/chủ sân */

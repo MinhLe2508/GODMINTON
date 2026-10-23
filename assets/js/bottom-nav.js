@@ -445,20 +445,26 @@
 
         const isAdmin = !!(document.querySelector('.admin-layout') || document.querySelector('.admin-topbar') || window.location.pathname.includes('admin-'));
         const themeBtn = document.getElementById('themeToggle');
+        const isSb = !!(themeBtn && (themeBtn.classList.contains('sb-btn') || themeBtn.closest('.sb-actions')));
+        const isWf = !!(themeBtn && themeBtn.closest('.wf-public-header'));
 
         const bellBtn = document.createElement('button');
         bellBtn.id = 'pushBellToggle';
         bellBtn.type = 'button';
-        if (isAdmin) {
+        if (isSb) {
+            bellBtn.className = 'sb-btn';
+        } else if (isAdmin) {
             bellBtn.className = (themeBtn && themeBtn.classList.contains('admin-icon-btn'))
-                ? 'admin-icon-btn bnav-bell-float'
-                : 'btn btn-outline-secondary rounded-circle bnav-bell-float';
+                ? 'admin-icon-btn'
+                : 'btn btn-outline-secondary rounded-circle';
+        } else if (isWf) {
+            bellBtn.className = 'btn btn-outline-secondary rounded-circle';
         } else {
             bellBtn.className = 'bnav-theme-float bnav-bell-float';
         }
         bellBtn.title = 'Thông báo đẩy PWA (Bấm để bật/tắt hoặc gửi thử)';
         bellBtn.setAttribute('aria-label', 'Thông báo đẩy PWA');
-        bellBtn.innerHTML = '<i class="fa-regular fa-bell"></i>';
+        bellBtn.innerHTML = isSb ? '<i class="fa-regular fa-bell"></i><span class="sb-lbl">Thông báo</span>' : '<i class="fa-regular fa-bell"></i>';
 
         const openPushModal = () => {
             if (window.PushClient && typeof window.PushClient.handleBellClick === 'function') {
