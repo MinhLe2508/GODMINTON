@@ -479,8 +479,7 @@ header('Cache-Control: no-store');
                         <div class="tab-pane fade" id="tabProfileMembership" role="tabpanel">
                             <div class="profile-card">
                                 <div class="mb-4 pb-2 border-bottom">
-                                    <h5 class="fw-bold mb-1"><i class="fa-solid fa-crown text-warning me-2"></i>Gói Hội Viên Của Tôi</h5>
-                                    <p class="text-muted small mb-0">Theo dõi đặc quyền chiết khấu và thời hạn gói hội viên</p>
+                                    <h5 class="fw-bold mb-0"><i class="fa-solid fa-crown text-warning me-2"></i>Gói Hội Viên Của Tôi</h5>
                                 </div>
 
                                 <!-- Box chi tiết gói hiện tại (Render bởi profile.js) -->
