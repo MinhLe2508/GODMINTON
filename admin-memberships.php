@@ -75,12 +75,13 @@ $currentUser = [
             height: 40px;
             border-radius: 50%;
             object-fit: cover;
-            background: #e2e8f0;
+            background: rgba(13, 148, 136, 0.12);
+            color: var(--brand-teal, #0d9488);
+            border: 1px solid rgba(13, 148, 136, 0.25);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            color: #0d9488;
             font-size: 1rem;
             flex-shrink: 0;
         }
@@ -197,7 +198,7 @@ $currentUser = [
             <div class="row g-3 mb-4">
                 <div class="col-6 col-lg-3">
                     <div class="admin-stat-card border-warning border-opacity-25">
-                        <div class="admin-stat-icon bg-warning bg-opacity-15 text-warning">
+                        <div class="admin-stat-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
                             <i class="fa-solid fa-user-clock"></i>
                         </div>
                         <div>
@@ -360,7 +361,7 @@ $currentUser = [
                                     <i class="fa-solid fa-user-check"></i>
                                 </div>
                                 <div class="text-truncate">
-                                    <div class="fw-bold text-dark small text-truncate" id="grantSelectedUserName">--</div>
+                                    <div class="fw-bold admin-text-primary small text-truncate" id="grantSelectedUserName">--</div>
                                     <div class="text-muted text-truncate" style="font-size: 0.74rem;" id="grantSelectedUserDetails">--</div>
                                 </div>
                             </div>
@@ -430,8 +431,8 @@ $currentUser = [
             <form id="formExtendMembership">
                 <input type="hidden" id="extendMembershipId">
                 <div class="modal-body pt-3">
-                    <div class="p-3 rounded-3 bg-light border border-secondary border-opacity-10 mb-3">
-                        <div class="fw-bold fs-6 text-dark mb-1" id="extendTargetName">Tên khách hàng</div>
+                    <div class="p-3 rounded-3 border border-secondary border-opacity-10 mb-3" style="background: var(--bg-surface, rgba(13, 148, 136, 0.05));">
+                        <div class="fw-bold fs-6 admin-text-primary mb-1" id="extendTargetName">Tên khách hàng</div>
                         <div class="small text-muted mb-2" id="extendPackageTitle">Gói Hội Viên Bạc</div>
                         <div class="small">
                             Hạn hiện tại: <strong id="extendCurrentEndDate">--/--/----</strong>

@@ -196,12 +196,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 return `
-                    <tr class="${isPending ? 'table-warning bg-warning bg-opacity-10' : ''}">
+                    <tr class="${isPending ? 'row-pending-approval' : ''}">
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 ${avatarHtml}
                                 <div>
-                                    <div class="fw-bold text-dark">${AdminApp.escapeHTML(item.user_name)}</div>
+                                    <div class="fw-bold admin-text-primary">${AdminApp.escapeHTML(item.user_name)}</div>
                                     <div class="small text-muted" style="font-size:0.75rem;">
                                         ${AdminApp.escapeHTML(item.user_email)} ${item.user_phone ? `· ${AdminApp.escapeHTML(item.user_phone)}` : ''}
                                     </div>
@@ -214,10 +214,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <i class="fa-solid fa-crown me-1"></i>${item.tier_label}
                                 </span>
                             </div>
-                            <div class="small fw-semibold text-dark">${AdminApp.escapeHTML(item.package_title)}</div>
+                            <div class="small fw-semibold admin-text-primary">${AdminApp.escapeHTML(item.package_title)}</div>
                         </td>
                         <td>
-                            <div class="small fw-semibold text-dark">
+                            <div class="small fw-semibold admin-text-primary">
                                 ${isPending ? `Yêu cầu ngày: ${startDate}` : `${startDate} – ${endDate}`}
                             </div>
                             <div class="small text-muted mt-1" style="font-size:0.75rem;">
@@ -440,11 +440,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         grantResultsList.innerHTML = list.map(c => `
             <a href="#" class="list-group-item list-group-item-action py-2 px-3 border-0 border-bottom d-flex align-items-center gap-2 user-search-item" data-id="${c.id}">
-                <div class="user-avatar-sm flex-shrink-0" style="width: 30px; height: 30px; font-size: 0.75rem; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #0d9488;">
+                <div class="user-avatar-sm flex-shrink-0" style="width: 30px; height: 30px; font-size: 0.75rem;">
                     ${(c.name || 'K').charAt(0).toUpperCase()}
                 </div>
                 <div class="overflow-hidden flex-grow-1">
-                    <div class="fw-bold text-dark small text-truncate">${AdminApp.escapeHTML(c.name)}</div>
+                    <div class="fw-bold admin-text-primary small text-truncate">${AdminApp.escapeHTML(c.name)}</div>
                     <div class="text-muted text-truncate" style="font-size: 0.72rem;">
                         ${AdminApp.escapeHTML(c.email)} ${c.phone ? '· ' + AdminApp.escapeHTML(c.phone) : ''}
                     </div>

@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const statusBadges = {
             published: '<span class="badge bg-success-subtle text-success border border-success-subtle">Xuất bản</span>',
             draft: '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Bản nháp</span>',
-            archived: '<span class="badge bg-dark-subtle text-dark border border-dark-subtle">Đã lưu trữ</span>'
+            archived: '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Đã lưu trữ</span>'
         };
 
         tableBody.innerHTML = posts.map(p => {
@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <ul class="dropdown-menu shadow-sm border-0 rounded-3">
                                 <li><a class="dropdown-item small btn-change-status" href="#" data-id="${p.id}" data-status="published"><i class="fa-solid fa-check text-success me-1"></i> Xuất bản (Published)</a></li>
                                 <li><a class="dropdown-item small btn-change-status" href="#" data-id="${p.id}" data-status="draft"><i class="fa-solid fa-file-pen text-secondary me-1"></i> Bản nháp (Draft)</a></li>
-                                <li><a class="dropdown-item small btn-change-status" href="#" data-id="${p.id}" data-status="archived"><i class="fa-solid fa-box-archive text-dark me-1"></i> Lưu trữ (Archived)</a></li>
+                                <li><a class="dropdown-item small btn-change-status" href="#" data-id="${p.id}" data-status="archived"><i class="fa-solid fa-box-archive text-secondary me-1"></i> Lưu trữ (Archived)</a></li>
                             </ul>
                         </div>
                     </td>
