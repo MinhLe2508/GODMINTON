@@ -27,7 +27,7 @@ function renderExploreFeed() {
             return t === activeExploreFilter || (activeExploreFilter === 'announcement' && t === 'notice');
         });
     if(!items.length){feed.innerHTML='<div class="col-12"><div class="explore-empty"><i class="fa-regular fa-newspaper" aria-hidden="true"></i><h6>Chưa có bài viết trong mục này</h6><p class="mb-0 small text-muted">Nội dung sẽ xuất hiện khi có bài viết được đăng.</p></div></div>';return;}
-    feed.innerHTML=items.slice(0,6).map(item=>{
+    feed.innerHTML=items.map(item=>{
         const rawCategory = item.type || item.category || 'general';
         const category = Object.hasOwn(exploreCategories, rawCategory) ? rawCategory : (rawCategory === 'notice' ? 'announcement' : 'general');
         const meta = exploreCategories[category] || { label: 'Bài viết', icon: 'fa-newspaper' };
