@@ -2,7 +2,7 @@
     BOOKING CALENDAR GRID
     ======================================================= */
 
-/* ---- Sticky Toolbar ---- */
+/* ---- Sticky Toolbar & Stacking Order ---- */
 .booking-toolbar {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 251, 249, 0.8) 100%);
     border: 1px solid rgba(13, 148, 136, 0.18);
@@ -14,6 +14,70 @@
 [data-bs-theme="dark"] .booking-toolbar {
     background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(6, 32, 38, 0.88) 100%);
     border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Stacking Order: Thanh 1 (chứa menu Đổi Sân) luôn có z-index cao nhất để dropdown nổi lên trên các thanh sau */
+.booking-court-header {
+    position: relative;
+    z-index: 1050 !important;
+}
+.booking-court-header .dropdown {
+    position: relative;
+    z-index: 1060;
+}
+.booking-court-header .dropdown-menu {
+    z-index: 1080 !important;
+    min-width: 270px;
+    max-width: 380px;
+    background: var(--bg-card, #ffffff);
+    border: 1.5px solid rgba(13, 148, 136, 0.25) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2) !important;
+}
+.booking-court-header .dropdown-item {
+    color: var(--text-primary, #0f172a);
+    font-size: 0.88rem;
+    transition: all 0.15s ease;
+}
+.booking-court-header .dropdown-item:hover,
+.booking-court-header .dropdown-item:focus {
+    background: rgba(13, 148, 136, 0.12);
+    color: var(--brand-teal, #0d9488);
+    transform: translateX(3px);
+}
+.booking-court-header .dropdown-item.active {
+    background: rgba(13, 148, 136, 0.15) !important;
+    color: var(--brand-teal, #0d9488) !important;
+    font-weight: 700;
+}
+[data-bs-theme="dark"] .booking-court-header .dropdown-menu {
+    background: #0d2730 !important;
+    border-color: #173844 !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6) !important;
+}
+[data-bs-theme="dark"] .booking-court-header .dropdown-item {
+    color: #f1f5f9;
+}
+[data-bs-theme="dark"] .booking-court-header .dropdown-item:hover,
+[data-bs-theme="dark"] .booking-court-header .dropdown-item:focus {
+    background: rgba(45, 212, 191, 0.2);
+    color: #2dd4bf;
+}
+[data-bs-theme="dark"] .booking-court-header .dropdown-item.active {
+    background: rgba(45, 212, 191, 0.2) !important;
+    color: #2dd4bf !important;
+}
+
+.booking-date-legend-toolbar {
+    position: relative;
+    z-index: 20 !important;
+}
+.booking-filter-court-toolbar {
+    position: relative;
+    z-index: 15 !important;
+}
+.cal-wrapper {
+    position: relative;
+    z-index: 10 !important;
 }
 
 /* ---- Date nav pills (Lịch ngày trong tuần gradient) ---- */

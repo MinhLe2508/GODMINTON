@@ -80,7 +80,7 @@ function booking_text($value): string {return htmlspecialchars((string)$value,EN
     <div class="container-fluid px-3 px-lg-4 py-4">
 
         <!-- ===== COURT INFO HEADER ===== -->
-        <div class="booking-toolbar mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="booking-toolbar booking-court-header mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
                 <div class="brand-logo-badge" style="border-radius:10px; width:44px; height:44px; font-size:1.1rem;">
                     <i class="fa-solid fa-layer-group"></i>
@@ -104,12 +104,25 @@ function booking_text($value): string {return htmlspecialchars((string)$value,EN
                     <i class="fa-solid fa-circle-info me-1"></i>Thông tin sân
                 </a>
                 <div class="dropdown">
-                    <button class="btn btn-outline-teal btn-sm rounded-pill px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <button class="btn btn-outline-teal btn-sm rounded-pill px-3 dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fa-solid fa-shuffle me-1"></i>Đổi sân
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4" style="max-height:320px;overflow-y:auto">
-                        <?php foreach ($switchCourts as $switchCourt): ?>
-                        <li><a class="dropdown-item" href="booking.php?court_id=<?= (int)$switchCourt['id'] ?>"><?= booking_text($switchCourt['name']) ?></a></li>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2" style="max-height:360px;overflow-y:auto;min-width:270px;">
+                        <li class="dropdown-header small text-uppercase text-muted fw-bold px-3 py-1">
+                            <i class="fa-solid fa-layer-group me-1 text-teal"></i>Danh sách sân cầu lông
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <?php foreach ($switchCourts as $switchCourt): 
+                            $isCurrent = ((int)$switchCourt['id'] === (int)$bookingCourt['id']);
+                        ?>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2 px-3 d-flex align-items-center justify-content-between <?= $isCurrent ? 'active fw-bold' : '' ?>" href="booking.php?court_id=<?= (int)$switchCourt['id'] ?>">
+                                <span><?= booking_text($switchCourt['name']) ?></span>
+                                <?php if ($isCurrent): ?>
+                                    <i class="fa-solid fa-check small text-teal ms-2"></i>
+                                <?php endif; ?>
+                            </a>
+                        </li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
@@ -117,7 +130,7 @@ function booking_text($value): string {return htmlspecialchars((string)$value,EN
         </div>
 
         <!-- ===== DATE SELECTOR + LEGEND ===== -->
-        <div class="booking-toolbar mb-3">
+        <div class="booking-toolbar booking-date-legend-toolbar mb-3">
             <div class="row align-items-center g-3">
                 <!-- Date pills -->
                 <div class="col-lg-7">
@@ -162,7 +175,7 @@ function booking_text($value): string {return htmlspecialchars((string)$value,EN
         </div>
 
         <!-- ===== COURT FILTER TABS ===== -->
-        <div class="booking-toolbar mb-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+        <div class="booking-toolbar booking-filter-court-toolbar mb-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <span class="small fw-bold text-muted">Hiển thị sân:</span>
                 <div class="court-tabs" id="courtTabsRow">
