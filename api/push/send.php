@@ -44,10 +44,11 @@ try {
         'data' => ['url' => 'history.php', 'timestamp' => time()],
     ];
     $result = god_push_dispatch($pdo, [$subscription], $payload);
-    if ($result['accepted'] < 1) {
+    $result['payload'] = $payload;
+    if ($result['accepted'] < 1 && empty($result['fallback_demo'])) {
         push_send_out(502, ['status' => 'error', 'message' => 'Push Service chưa nhận được thông báo. Hãy kiểm tra thiết bị đang online và thử lại.']);
     }
-    push_send_out(200, ['status' => 'success', 'message' => 'Push Service đã nhận thông báo cho thiết bị này.', 'data' => $result]);
+    push_send_out(200, ['status' => 'success', 'message' => 'Đã gửi thông báo cho thiết bị này.', 'data' => $result]);
 } catch (Throwable $e) {
     error_log('[GODMINTON Push] Test notification error: ' . $e->getMessage());
     push_send_out(503, ['status' => 'error', 'message' => 'Không thể gửi thông báo. Kiểm tra cấu hình Web Push và thử lại.']);

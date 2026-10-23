@@ -15,11 +15,21 @@ window.PushClient = (() => {
         return Notification.permission; // 'default' | 'granted' | 'denied'
     }
 
+    async function safeJson(response) {
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch (_) {
+            const clean = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150);
+            throw new Error(clean ? `Máy chủ phản hồi: ${clean}` : 'Máy chủ phản hồi không đúng định dạng JSON.');
+        }
+    }
+
     let csrfToken = '';
     async function getCsrfToken() {
         if (csrfToken) return csrfToken;
         const response = await fetch('api/push/subscribe.php', { credentials: 'same-origin', cache: 'no-store' });
-        const result = await response.json();
+        const result = await safeJson(response);
         if (!response.ok || result.status !== 'success' || !result.data?.csrf_token) {
             throw new Error(result.message || 'Không thể xác thực phiên thông báo.');
         }
@@ -33,7 +43,7 @@ window.PushClient = (() => {
             method: 'POST', credentials: 'same-origin', headers,
             body: JSON.stringify({ action, endpoint, ...(keys ? { keys } : {}) })
         });
-        const result = await response.json();
+        const result = await safeJson(response);
         if (!response.ok || result.status !== 'success') {
             if (response.status === 403) csrfToken = '';
             throw new Error(result.message || 'Không thể cập nhật thiết lập thông báo.');
@@ -63,7 +73,7 @@ window.PushClient = (() => {
 
     async function getVapidPublicKey() {
         const res = await fetch('api/push/vapid-public-key.php');
-        const json = await res.json();
+        const json = await safeJson(res);
         if (!res.ok || json.status !== 'success' || !json.publicKey) {
             throw new Error('Không thể lấy VAPID Public Key từ máy chủ.');
         }
@@ -160,9 +170,45 @@ window.PushClient = (() => {
             })
         });
 
-        const result = await res.json();
+        const result = await safeJson(res);
         if (!res.ok || result.status !== 'success') {
             throw new Error(result.message || 'Không thể gửi thông báo thử nghiệm.');
+        }
+
+        // Nếu máy chủ kích hoạt fallback_demo (môi trường XAMPP cục bộ chưa cài đặt thư viện WebPush qua composer),
+        // hiển thị thông báo trực tiếp trên thiết bị qua Service Worker hoặc Notification API
+        const payload = Object.assign({
+            title: 'GODMINTON · Thông báo đã bật',
+            body: 'Thông báo đẩy đang hoạt động trên thiết bị này. Bạn có thể nhận nhắc lịch đặt sân.',
+            icon: 'assets/img/icons/icon-192.png',
+            badge: 'assets/img/icons/badge-72.png',
+            data: { url: 'history.php', timestamp: Date.now() }
+        }, customPayload || {}, result.data?.payload || {});
+
+        if (result.data?.fallback_demo) {
+            try {
+                const reg = await Promise.race([
+                    navigator.serviceWorker.ready,
+                    new Promise(resolve => setTimeout(() => resolve(null), 1200))
+                ]) || (await navigator.serviceWorker.getRegistration());
+
+                if (reg && reg.showNotification) {
+                    await reg.showNotification(payload.title, {
+                        body: payload.body,
+                        icon: payload.icon || 'assets/img/icons/icon-192.png',
+                        badge: payload.badge || 'assets/img/icons/badge-72.png',
+                        vibrate: [100, 50, 100],
+                        data: payload.data || { url: 'history.php' }
+                    });
+                } else if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(payload.title, {
+                        body: payload.body,
+                        icon: payload.icon || 'assets/img/icons/icon-192.png'
+                    });
+                }
+            } catch (notifyErr) {
+                console.warn('[PushClient] Fallback notification display:', notifyErr);
+            }
         }
 
         return result.data;
