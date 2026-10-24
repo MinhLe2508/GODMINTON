@@ -37,8 +37,8 @@ try {
     if (!$subscription) push_send_out(404, ['status' => 'error', 'message' => 'Thiết bị chưa đăng ký thông báo. Hãy bật thông báo rồi thử lại.']);
 
     $payload = [
-        'title' => 'GODMINTON · Thông báo đã bật',
-        'body' => 'Thông báo đẩy đang hoạt động trên thiết bị này. Bạn có thể nhận nhắc lịch đặt sân.',
+        'title' => 'GODMINTON · Nhắc lịch thi đấu (Demo)',
+        'body' => 'Trận cầu của bạn tại Thảm A1 sắp bắt đầu sau 5 phút. Khởi động kỹ và sẵn sàng vào sân!',
         'icon' => 'assets/img/icons/icon-192.png',
         'badge' => 'assets/img/icons/badge-72.png',
         'data' => ['url' => 'history.php', 'timestamp' => time()],
@@ -48,7 +48,7 @@ try {
     if ($result['accepted'] < 1 && empty($result['fallback_demo'])) {
         push_send_out(502, ['status' => 'error', 'message' => 'Push Service chưa nhận được thông báo. Hãy kiểm tra thiết bị đang online và thử lại.']);
     }
-    push_send_out(200, ['status' => 'success', 'message' => 'Đã gửi thông báo cho thiết bị này.', 'data' => $result]);
+    push_send_out(200, ['status' => 'success', 'message' => 'Đã gửi thông báo demo cho thiết bị này.', 'data' => $result]);
 } catch (Throwable $e) {
     error_log('[GODMINTON Push] Test notification error: ' . $e->getMessage());
     push_send_out(503, ['status' => 'error', 'message' => 'Không thể gửi thông báo. Kiểm tra cấu hình Web Push và thử lại.']);

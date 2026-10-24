@@ -181,21 +181,21 @@ window.PushClient = (() => {
             throw new Error(result.message || 'Không thể gửi thông báo thử nghiệm.');
         }
 
-        // Nếu máy chủ kích hoạt fallback_demo (môi trường XAMPP cục bộ chưa cài đặt thư viện WebPush qua composer),
-        // hiển thị thông báo trực tiếp trên thiết bị qua Service Worker hoặc Notification API
+        // Tạo thông báo demo nhắc lịch thi đấu (còn 5 phút)
         const payload = Object.assign({
-            title: 'GODMINTON · Thông báo đã bật',
-            body: 'Thông báo đẩy đang hoạt động trên thiết bị này. Bạn có thể nhận nhắc lịch đặt sân.',
+            title: 'GODMINTON · Nhắc lịch thi đấu (Demo)',
+            body: 'Trận cầu của bạn tại Thảm A1 sắp bắt đầu sau 5 phút. Khởi động kỹ và sẵn sàng vào sân!',
             icon: 'assets/img/icons/icon-192.png',
             badge: 'assets/img/icons/badge-72.png',
             data: { url: 'history.php', timestamp: Date.now() }
         }, customPayload || {}, result.data?.payload || {});
 
-        if (result.data?.fallback_demo) {
-            try {
+        // Hiển thị trực tiếp thông báo demo trên màn hình thiết bị qua Service Worker hoặc Notification API
+        try {
+            if (Notification.permission === 'granted') {
                 const reg = await Promise.race([
                     navigator.serviceWorker.ready,
-                    new Promise(resolve => setTimeout(() => resolve(null), 1200))
+                    new Promise(resolve => setTimeout(() => resolve(null), 1500))
                 ]) || (await navigator.serviceWorker.getRegistration());
 
                 if (reg && reg.showNotification) {
@@ -206,15 +206,15 @@ window.PushClient = (() => {
                         vibrate: [100, 50, 100],
                         data: payload.data || { url: 'history.php' }
                     });
-                } else if ('Notification' in window && Notification.permission === 'granted') {
+                } else if ('Notification' in window) {
                     new Notification(payload.title, {
                         body: payload.body,
                         icon: payload.icon || 'assets/img/icons/icon-192.png'
                     });
                 }
-            } catch (notifyErr) {
-                console.warn('[PushClient] Fallback notification display:', notifyErr);
             }
+        } catch (notifyErr) {
+            console.warn('[PushClient] Demo notification display:', notifyErr);
         }
 
         return result.data;
@@ -318,20 +318,12 @@ window.PushClient = (() => {
                 }
 
                 await sendTestNotification({
-                    title: 'GODMINTON – Nhắc lịch thi đấu',
-                    body: 'Trận cầu của bạn tại Thảm A1 sắp bắt đầu lúc 18:00. Khởi động kỹ và sẵn sàng vào sân!',
+                    title: 'GODMINTON · Nhắc lịch thi đấu (Demo)',
+                    body: 'Trận cầu của bạn tại Thảm A1 sắp bắt đầu sau 5 phút. Khởi động kỹ và sẵn sàng vào sân!',
                     url: 'history.php'
                 });
 
-                if (window.Swal) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Đã gửi thông báo!',
-                        text: 'Kiểm tra thông báo đẩy xuất hiện trên màn hình máy tính hoặc điện thoại của bạn.',
-                        confirmButtonColor: '#0d9488',
-                        timer: 3000
-                    });
-                }
+                showToast('success', 'Đã gửi thông báo demo thành công!');
             } catch (err) {
                 if (window.Swal) {
                     Swal.fire({ icon: 'warning', title: 'Thông báo', text: err.message, confirmButtonColor: '#0d9488' });
@@ -514,11 +506,11 @@ window.PushClient = (() => {
             }
             try {
                 await sendTestNotification({
-                    title: 'GODMINTON – Nhắc lịch thi đấu',
-                    body: 'Trận cầu của bạn tại Thảm A1 sắp bắt đầu lúc 18:00. Khởi động kỹ và sẵn sàng vào sân!',
+                    title: 'GODMINTON · Nhắc lịch thi đấu (Demo)',
+                    body: 'Trận cầu của bạn tại Thảm A1 sắp bắt đầu sau 5 phút. Khởi động kỹ và sẵn sàng vào sân!',
                     url: 'history.php'
                 });
-                showToast('success', 'Đã gửi thông báo thành công!');
+                showToast('success', 'Đã gửi thông báo demo thành công!');
             } catch (err) {
                 if (window.Swal) {
                     Swal.fire({

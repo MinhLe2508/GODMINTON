@@ -26,13 +26,13 @@ try {
         JOIN time_slots s ON s.id = bs.slot_id
         WHERE b.status = 'confirmed'
         GROUP BY b.id, b.user_id, b.booking_code, c.name
-        HAVING TIMESTAMPDIFF(SECOND, NOW(), MIN(CONCAT(s.slot_date, ' ', s.start_time))) BETWEEN 0 AND 2100
+        HAVING TIMESTAMPDIFF(SECOND, NOW(), MIN(CONCAT(s.slot_date, ' ', s.start_time))) BETWEEN 0 AND 360
         ORDER BY starts_at ASC")->fetchAll();
 
     $findDispatch = $pdo->prepare("SELECT id,status,attempts FROM push_reminder_dispatches
-        WHERE booking_id=? AND reminder_type='start_30_minutes' LIMIT 1");
+        WHERE booking_id=? AND reminder_type IN ('start_5_minutes', 'start_30_minutes') LIMIT 1");
     $createDispatch = $pdo->prepare("INSERT IGNORE INTO push_reminder_dispatches (booking_id,reminder_type,status)
-        VALUES (?,'start_30_minutes','pending')");
+        VALUES (?,'start_5_minutes','pending')");
     $beginAttempt = $pdo->prepare("UPDATE push_reminder_dispatches SET status='pending',attempts=attempts+1,last_error=NULL
         WHERE id=? AND status<>'sent' AND attempts<3");
     $markSent = $pdo->prepare("UPDATE push_reminder_dispatches SET status='sent',sent_at=NOW(),last_error=NULL WHERE id=?");
@@ -58,8 +58,8 @@ try {
         try {
             $startsAt = new DateTimeImmutable((string)$booking['starts_at']);
             $payload = [
-                'title' => 'GODMINTON · Sắp đến giờ đặt sân',
-                'body' => sprintf('%s · %s · %s. Mã đặt: %s',
+                'title' => 'GODMINTON · Sắp đến giờ vào sân (còn 5 phút)',
+                'body' => sprintf('%s · %s · Bắt đầu lúc %s. Mã đặt: %s. Hãy khởi động sẵn sàng vào sân!',
                     $booking['court_name'], $booking['court_names'], $startsAt->format('H:i d/m'), $booking['booking_code'] ?: ('#' . $booking['id'])),
                 'icon' => 'assets/img/icons/icon-192.png',
                 'badge' => 'assets/img/icons/badge-72.png',

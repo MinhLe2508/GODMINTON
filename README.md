@@ -124,7 +124,7 @@ Tuần 4 → `manifest.json`, `sw.js`, `api/push/*`.
    - Bảng `push_subscriptions` (`database/migration_push_subscriptions.sql`) lưu trữ endpoint, p256dh, auth của từng thiết bị.
 2. **Cấu hình VAPID (`config/vapid.php`)**:
    - Cặp khóa mật mã đường cong elliptic NIST P-256 tiêu chuẩn, cấp phát VAPID Public Key qua `api/push/vapid-public-key.php`.
-3. **Luồng gửi thật**: `api/push/send.php` gửi qua Push Service tới đúng subscription của thiết bị đang đăng nhập; Service Worker hiển thị thông báo kể cả khi trang đã đóng. Worker `tools/send-push-reminders.php` nhắc đơn đã xác nhận trước giờ chơi 25–35 phút, chống gửi trùng và thử lại tối đa 3 lần.
+3. **Luồng gửi thật**: `api/push/send.php` gửi qua Push Service tới đúng subscription của thiết bị đang đăng nhập; Service Worker hiển thị thông báo kể cả khi trang đã đóng. Worker `tools/send-push-reminders.php` nhắc đơn đã xác nhận trước giờ chơi ~5 phút, chống gửi trùng và thử lại tối đa 3 lần.
 4. **Giao diện quản lý thông báo**:
    - Tích hợp nút bật/tắt và nút "Gửi thử thông báo" trực quan trên trang [Hồ sơ cá nhân](file:///c:/xampp/htdocs/GODMINTON/profile.php) và [Lịch sử đặt sân](file:///c:/xampp/htdocs/GODMINTON/history.php) thông qua [assets/js/push-client.js](file:///c:/xampp/htdocs/GODMINTON/assets/js/push-client.js).
 
