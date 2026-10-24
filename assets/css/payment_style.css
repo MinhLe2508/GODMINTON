@@ -360,6 +360,31 @@ textarea.pay-input {
     background: linear-gradient(135deg, #0050c8 0%, #003d99 100%);
     color: #fff;
 }
+.btn-gw-action.bank-action {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(13, 148, 136, 0.28);
+}
+.btn-gw-action.bank-action:hover {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(13, 148, 136, 0.38);
+}
+.btn-gw-action.bank-action.confirmed {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(22, 163, 74, 0.3);
+}
+.gw-modal-header.bank-header {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+}
+@keyframes pulseCta {
+    0%, 100% { transform: scale(1); box-shadow: 0 4px 20px rgba(13,148,136,0.35); }
+    50% { transform: scale(1.028); box-shadow: 0 8px 30px rgba(13,148,136,0.65); }
+}
+.btn-pay-cta.pulse-cta {
+    animation: pulseCta 0.9s ease-in-out 3;
+}
 
 /* QR box and animated laser scan line */
 .qr-box {

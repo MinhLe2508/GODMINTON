@@ -360,11 +360,8 @@ function calcPrices() {
 }
 
 function updateCtaLabels() {
-    const cfg = PAYMENT_GATEWAY_CONFIG[booking.method] || PAYMENT_GATEWAY_CONFIG.bank;
-    let ctaText = `Xác Nhận & Đặt Cọc (${cfg.label})`;
-    if (booking.method === 'bank') {
-        ctaText = `Xác Nhận Đã Chuyển Khoản (${cfg.label})`;
-    }
+    const cfg = PAYMENT_GATEWAY_CONFIG[booking.method] || PAYMENT_GATEWAY_CONFIG.vnpay;
+    const ctaText = `Xác Nhận & Đặt Cọc (${cfg.label})`;
     ['btnPayMobileText','btnPayDesktopText'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = ctaText;
@@ -673,7 +670,16 @@ function openGatewayCheckout(gateway) {
 function confirmGatewayCheckout() {
     booking.gatewayVerified = true;
     const badge = document.getElementById('onlineVerifiedBadge');
-    if (badge) badge.style.display = 'inline-flex';
+    if (badge) {
+        badge.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i>Đã xác thực trực tuyến';
+        badge.style.display = 'inline-flex';
+    }
+
+    const btnBank = document.getElementById('btnConfirmBankTransfer');
+    if (btnBank && booking.method === 'bank') {
+        btnBank.classList.add('confirmed');
+        btnBank.innerHTML = '<i class="fa-solid fa-check-double text-white me-1"></i> Đã xác nhận chuyển tiền';
+    }
 
     const modalEl = document.getElementById('gatewayCheckoutModal');
     if (modalEl && typeof bootstrap !== 'undefined') {
@@ -693,6 +699,66 @@ function confirmGatewayCheckout() {
         handlePayment();
     } else {
         toast('Đã ghi nhận thanh toán! Vui lòng kiểm tra thông tin người đặt để hoàn tất.');
+        highlightCtaButton();
+    }
+}
+
+/* ---- Xác nhận chuyển khoản ngân hàng VietQR ---- */
+function confirmBankTransfer() {
+    markBankTransferConfirmed();
+
+    Swal.fire({
+        icon: 'success',
+        title: 'Đã ghi nhận chuyển khoản!',
+        html: `
+            <div class="text-start p-3 rounded-3 bg-light mb-3" style="font-size:0.85rem;">
+                <div class="d-flex justify-content-between mb-2 pb-1 border-bottom">
+                    <span class="text-muted">Mã thanh toán:</span>
+                    <strong class="font-monospace text-teal fs-6">${booking._transferRef}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2 pb-1 border-bottom">
+                    <span class="text-muted">Số tiền cọc:</span>
+                    <strong class="text-warning fs-6">${fmt(booking._deposit)}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Trạng thái:</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                        <i class="fa-solid fa-check me-1"></i>Đã ghi nhận chuyển tiền
+                    </span>
+                </div>
+            </div>
+            <p class="small text-muted mb-0">Hệ thống đã ghi nhận thông tin chuyển khoản. Bạn hãy nhấn nút <strong>"Xác Nhận & Đặt Cọc"</strong> để hoàn tất và nhận hóa đơn đặt sân!</p>
+        `,
+        confirmButtonText: 'Đến nút Xác Nhận & Đặt Cọc <i class="fa-solid fa-arrow-right ms-1"></i>',
+        confirmButtonColor: '#0d9488'
+    }).then(() => {
+        highlightCtaButton();
+    });
+}
+
+function markBankTransferConfirmed() {
+    booking.gatewayVerified = true;
+    const btn = document.getElementById('btnConfirmBankTransfer');
+    if (btn) {
+        btn.classList.add('confirmed');
+        btn.innerHTML = '<i class="fa-solid fa-check-double text-white me-1"></i> Đã xác nhận chuyển tiền';
+    }
+    const badge = document.getElementById('onlineVerifiedBadge');
+    if (badge) {
+        badge.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i>Đã xác nhận chuyển khoản';
+        badge.style.display = 'inline-flex';
+    }
+    toast('Đã ghi nhận chuyển khoản thành công!');
+}
+
+function highlightCtaButton() {
+    const isMobile = window.innerWidth < 992;
+    const targetBtn = document.getElementById(isMobile ? 'btnPayMobile' : 'btnPayDesktop');
+    if (targetBtn) {
+        targetBtn.classList.remove('pulse-cta');
+        void targetBtn.offsetWidth;
+        targetBtn.classList.add('pulse-cta');
+        targetBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 }
 
@@ -833,6 +899,51 @@ async function handlePayment() {
         return;
     }
 
+    // Với Chuyển khoản ngân hàng: Nếu chưa xác nhận chuyển khoản trước đó
+    if (booking.method === 'bank' && !booking.gatewayVerified) {
+        const confirmResult = await Swal.fire({
+            icon: 'question',
+            title: 'Xác nhận chuyển khoản ngân hàng',
+            html: `
+                <div class="text-start p-3 rounded-3 bg-light mb-3" style="font-size:0.85rem;">
+                    <div class="d-flex justify-content-between mb-2 pb-1 border-bottom">
+                        <span class="text-muted">Mã thanh toán:</span>
+                        <strong class="font-monospace text-teal fs-6">${booking._transferRef}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 pb-1 border-bottom">
+                        <span class="text-muted">Số tiền cần cọc:</span>
+                        <strong class="text-warning fs-6">${fmt(booking._deposit)}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Ngân hàng:</span>
+                        <strong>MB Bank (Quân Đội)</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Số TK:</span>
+                        <strong class="text-teal font-monospace">0783547289</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Chủ TK:</span>
+                        <strong>TRUONG MINH TRIET</strong>
+                    </div>
+                </div>
+                <p class="small text-muted mb-0">Bạn đã hoàn tất chuyển khoản theo mã thanh toán trên ứng dụng ngân hàng chưa?</p>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa-solid fa-circle-check me-1"></i> Tôi đã chuyển khoản thành công',
+            cancelButtonText: 'Để tôi kiểm tra lại',
+            confirmButtonColor: '#0d9488',
+            cancelButtonColor: '#64748b',
+            reverseButtons: true
+        });
+
+        if (!confirmResult.isConfirmed) {
+            return;
+        }
+
+        markBankTransferConfirmed();
+    }
+
     paymentSubmitting = true;
     const btns = ['btnPayMobile','btnPayDesktop'];
     btns.forEach(id => {
@@ -887,57 +998,6 @@ async function handlePayment() {
             const successOverlay = document.getElementById('successOverlay');
             const paymentNote = document.getElementById('successPaymentNote');
             if (paymentNote) paymentNote.hidden = !bData.payment_is_demo;
-
-            // Ô thông báo xác nhận chuyển khoản / đặt cọc thành công (chuẩn UX giống phần gói hội viên)
-            if (window.Swal) {
-                const titleText = (booking.method === 'bank')
-                    ? 'Xác nhận chuyển khoản thành công!'
-                    : `Xác nhận thanh toán ${paymentMethodLabel} thành công!`;
-
-                const swalRes = await Swal.fire({
-                    icon: 'success',
-                    title: titleText,
-                    html: `
-                        <div class="text-start p-3 rounded-3 bg-light border small my-2" style="font-size:0.85rem; line-height:1.6;">
-                            <div class="d-flex justify-content-between mb-2 border-bottom pb-1">
-                                <span class="text-muted">Mã đặt sân:</span>
-                                <strong class="text-teal font-monospace fs-6">${bData.booking_code}</strong>
-                            </div>
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Sân cầu lông:</span>
-                                <strong>${bData.court_name}</strong>
-                            </div>
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Khung giờ:</span>
-                                <strong>${bData.time_range} (${booking.duration} giờ)</strong>
-                            </div>
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Tiền đặt cọc:</span>
-                                <strong class="text-danger fw-bold">${fmt(bData.deposit_amount)}</strong>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <span class="text-muted">Phương thức:</span>
-                                <span class="badge bg-teal text-white rounded-pill px-2">${paymentMethodLabel}</span>
-                            </div>
-                        </div>
-                        <p class="mb-0 text-muted small">
-                            <i class="fa-regular fa-envelope me-1"></i>Hệ thống đã ghi nhận đơn đặt thành công và gửi thông tin chi tiết về email <strong>${email}</strong>.
-                        </p>
-                    `,
-                    confirmButtonText: '<i class="fa-solid fa-calendar-check me-1"></i> Xem lịch đặt sân',
-                    confirmButtonColor: '#0d9488',
-                    showCancelButton: true,
-                    cancelButtonText: 'Xem chi tiết vé',
-                    cancelButtonColor: '#64748b',
-                    allowOutsideClick: false
-                });
-
-                if (swalRes.isConfirmed) {
-                    window.location.href = 'history.php';
-                    return;
-                }
-            }
-
             successOverlay.inert = false;
             successOverlay.ariaHidden = 'false';
             successOverlay.classList.add('show');

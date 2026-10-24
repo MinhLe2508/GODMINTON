@@ -564,31 +564,50 @@ if ($currentUser !== null) {
                             <strong>TRUONG MINH TRIET</strong>
                         </div>
                         <div class="copy-row">
-                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:65px;">Nội dung</span>
-                            <strong id="transferRef" class="js-transfer-ref" style="word-break:break-all;">DATSAN-...</strong>
+                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:65px;">Mã TT (Nội dung)</span>
+                            <strong id="transferRef" class="js-transfer-ref text-teal" style="word-break:break-all;">DATSAN-...</strong>
                             <button type="button" class="copy-btn" onclick="copyTransferRef()">
                                 <i class="fa-regular fa-copy"></i> Copy
                             </button>
                         </div>
                         <div class="mt-2 d-flex align-items-start gap-1" style="font-size:0.73rem; color:var(--text-secondary);">
                             <i class="fa-solid fa-circle-exclamation text-warning mt-1 flex-shrink-0"></i>
-                            <span>Chuyển đúng nội dung để hệ thống tự xác nhận. Số tiền: <strong class="text-warning js-deposit-amount" id="bankAmountText">--</strong></span>
+                            <span>Chuyển đúng mã thanh toán để hệ thống tự xác nhận. Số tiền: <strong class="text-warning js-deposit-amount" id="bankAmountText">--</strong></span>
                         </div>
-                        <div class="mt-2 d-flex gap-2">
+
+                        <!-- Khối Mã thanh toán & Nút xác nhận chuyển khoản thành công -->
+                        <div class="bank-confirm-box mt-3 p-2 p-sm-3 rounded-3" style="background: rgba(13, 148, 136, 0.05); border: 1.5px dashed var(--brand-teal);">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                                <div>
+                                    <div class="small text-muted d-flex align-items-center gap-1">
+                                        <i class="fa-solid fa-receipt text-teal"></i> Mã thanh toán giao dịch:
+                                    </div>
+                                    <div class="fs-6 fw-extrabold font-monospace text-teal mt-1">
+                                        <span class="js-transfer-ref">DATSAN-...</span>
+                                    </div>
+                                </div>
+                                <div class="text-sm-end">
+                                    <div class="text-muted" style="font-size:0.72rem;">Cọc cần thanh toán:</div>
+                                    <strong class="text-warning fs-6 js-deposit-amount">--</strong>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between pt-2 border-top border-teal-subtle">
+                                <button type="button" class="btn btn-sm btn-gw-action bank-action rounded-pill px-3 py-2" id="btnConfirmBankTransfer" onclick="confirmBankTransfer()">
+                                    <i class="fa-solid fa-circle-check me-1"></i> Xác nhận chuyển khoản thành công
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3 py-2" onclick="openGatewayCheckout('bank')">
+                                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Mở Cổng VietQR Web
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 d-flex gap-2">
                             <button type="button" class="btn btn-sm btn-outline-teal rounded-pill" onclick="openQrModal('bank')" style="font-size:0.75rem; padding:0.25rem 0.75rem;">
                                 <i class="fa-solid fa-expand me-1"></i> Xem QR cỡ lớn
                             </button>
                             <a href="assets/img/vietqr-payment.png" download="VietQR-GODMINTON.png" class="btn btn-sm btn-outline-secondary rounded-pill" style="font-size:0.75rem; padding:0.25rem 0.75rem;">
                                 <i class="fa-solid fa-download me-1"></i> Tải ảnh QR
                             </a>
-                        </div>
-                        <div class="mt-3 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <span class="small text-muted" style="font-size:0.75rem;">
-                                <i class="fa-solid fa-circle-check text-success me-1"></i> Sau khi chuyển tiền xong, bấm xác nhận bên dưới.
-                            </span>
-                            <button type="button" class="btn btn-sm btn-teal rounded-pill px-3 py-1 fw-bold shadow-2xs" onclick="handlePayment()" style="font-size:0.78rem;">
-                                <i class="fa-solid fa-circle-check me-1"></i> Xác nhận đã chuyển khoản
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -839,11 +858,8 @@ if ($currentUser !== null) {
                         <span class="fw-bold font-monospace text-warning" id="modalTransferRef">DATSAN-...</span>
                     </div>
                 </div>
-                <div class="d-flex gap-2 justify-content-center flex-wrap">
-                    <button type="button" class="btn btn-teal rounded-pill px-3 py-1 text-sm fw-bold shadow-sm" onclick="bootstrap.Modal.getInstance(document.getElementById('qrModal'))?.hide(); handlePayment();">
-                        <i class="fa-solid fa-circle-check me-1"></i> Tôi đã chuyển khoản
-                    </button>
-                    <a id="qrModalDownloadBtn" href="assets/img/vietqr-payment.png" download="QR-GODMINTON.png" class="btn btn-outline-teal rounded-pill px-3 py-1 text-sm">
+                <div class="d-flex gap-2 justify-content-center">
+                    <a id="qrModalDownloadBtn" href="assets/img/vietqr-payment.png" download="QR-GODMINTON.png" class="btn btn-teal rounded-pill px-3 py-1 text-sm">
                         <i class="fa-solid fa-download me-1"></i> Tải ảnh QR
                     </a>
                     <button type="button" class="btn btn-outline-secondary rounded-pill px-3 py-1 text-sm" data-bs-dismiss="modal">
