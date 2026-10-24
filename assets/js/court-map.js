@@ -24,7 +24,9 @@
     let pendingCourts = null;
     let routeLayer = null;
     let userMarker = null;
+    let userLocationMarker = null;
     let routePanelEl = null;
+    let lastKnownUserPos = null;
 
     // Helper: Escape chuỗi HTML chống tấn công XSS trong popup
     function escapeHtml(text) {
@@ -384,7 +386,187 @@
         clearRoutePanel();
     }
 
-    // Chỉ đường từ vị trí của khách đến sân
+    // Tạo icon hiển thị vị trí của người dùng với hiệu ứng sóng lan toả
+    function createUserMarkerIcon(isHome) {
+        return L.divIcon({
+            className: 'court-user-location-wrapper',
+            html: `
+                <div class="court-user-pulse-marker" title="${isHome ? 'Vị trí của bạn' : 'Điểm xuất phát'}">
+                    <div class="user-pulse-wave"></div>
+                    <div class="user-pulse-dot"><i class="fa-solid ${isHome ? 'fa-location-crosshairs' : 'fa-person-walking'}"></i></div>
+                </div>
+            `,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+        });
+    }
+
+    // TÍNH NĂNG ĐỊNH VỊ VỊ TRÍ CỦA TÔI (LOCATE ME)
+    function locateUser() {
+        if (!map) return;
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'Đang định vị vị trí của bạn...',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        }
+
+        if (!navigator.geolocation) {
+            handleLocateFallback('Trình duyệt không hỗ trợ định vị GPS.');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const userLat = pos.coords.latitude;
+                const userLng = pos.coords.longitude;
+                lastKnownUserPos = { lat: userLat, lng: userLng };
+
+                if (userLocationMarker && map) {
+                    userLocationMarker.setLatLng([userLat, userLng]);
+                } else {
+                    userLocationMarker = L.marker([userLat, userLng], {
+                        icon: createUserMarkerIcon(true),
+                        zIndexOffset: 1200
+                    }).addTo(map);
+                }
+                userLocationMarker.bindPopup(`<b>Vị trí hiện tại của bạn</b><br><small class="text-success"><i class="fa-solid fa-circle-check"></i> Đã định vị chính xác vị trí của bạn</small>`).openPopup();
+
+                map.flyTo([userLat, userLng], 15, { duration: 1.2 });
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Đã định vị vị trí của bạn thành công!',
+                        showConfirmButton: false,
+                        timer: 2500
+                    });
+                }
+            },
+            (err) => {
+                console.warn('[CourtMap] Không thể định vị GPS:', err);
+                const msg = err.code === 1 ? 'Bạn chưa cho phép cấp quyền vị trí trên trình duyệt.'
+                          : err.code === 2 ? 'Không thể lấy thông tin GPS từ thiết bị.'
+                          : 'Hết thời gian chờ lấy vị trí.';
+                handleLocateFallback(msg);
+            },
+            {
+                enableHighAccuracy: false,
+                timeout: 8000,
+                maximumAge: 60000
+            }
+        );
+    }
+
+    function handleLocateFallback(msg) {
+        const fallbackLat = DEFAULT_CENTER[0];
+        const fallbackLng = DEFAULT_CENTER[1];
+        lastKnownUserPos = { lat: fallbackLat, lng: fallbackLng };
+
+        if (userLocationMarker && map) {
+            userLocationMarker.setLatLng([fallbackLat, fallbackLng]);
+        } else {
+            userLocationMarker = L.marker([fallbackLat, fallbackLng], {
+                icon: createUserMarkerIcon(true),
+                zIndexOffset: 1200
+            }).addTo(map);
+        }
+        userLocationMarker.bindPopup(`<b>Vị trí tham chiếu (Trung tâm TP.HCM)</b><br><small class="text-muted">${escapeHtml(msg || 'Cấp quyền vị trí để định vị chuẩn xác')}</small>`).openPopup();
+
+        map.flyTo([fallbackLat, fallbackLng], 14, { duration: 1 });
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'warning',
+                title: msg || 'Chưa định vị được GPS, dùng vị trí trung tâm TP.HCM',
+                showConfirmButton: false,
+                timer: 3500
+            });
+        }
+    }
+
+    // Vẽ đường đi trực tiếp trên bản đồ Leaflet
+    async function drawRouteOnMap(startLat, startLng, destLat, destLng, courtName, isFallbackStart) {
+        clearRoute();
+
+        // Tạo marker xuất phát
+        const userIcon = createUserMarkerIcon(false);
+        userMarker = L.marker([startLat, startLng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
+        userMarker.bindPopup(`<b>${isFallbackStart ? 'Điểm xuất phát (Trung tâm TP.HCM)' : 'Vị trí hiện tại của bạn'}</b><br><small class="text-muted">${isFallbackStart ? 'Chưa bật GPS thực tế' : 'Điểm xuất phát'}</small>`);
+
+        let distanceKm = 0;
+        let durationMin = 0;
+        let routeCoords = [];
+
+        try {
+            const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${destLng},${destLat}?overview=full&geometries=geojson`;
+            const res = await fetch(osrmUrl);
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.routes && data.routes.length > 0) {
+                    const r = data.routes[0];
+                    distanceKm = parseFloat((r.distance / 1000).toFixed(1));
+                    durationMin = Math.max(1, Math.round(r.duration / 60));
+                    routeCoords = r.geometry.coordinates.map(c => [c[1], c[0]]);
+                }
+            }
+        } catch (err) {
+            console.warn('[CourtMap] Không thể kết nối OSRM, dùng fallback đường thẳng:', err);
+        }
+
+        // Nếu OSRM không trả về route hợp lệ, dùng đường thẳng Haversine
+        if (routeCoords.length === 0) {
+            routeCoords = [[startLat, startLng], [destLat, destLng]];
+            distanceKm = calcHaversine(startLat, startLng, destLat, destLng);
+            durationMin = Math.max(1, Math.round((distanceKm / 30) * 60)); // ước tính tốc độ 30km/h
+        }
+
+        // Vẽ lộ trình trên bản đồ với 2 lớp đường (đường viền nền + đường chính xanh ngọc rực rỡ)
+        const bgLine = L.polyline(routeCoords, {
+            color: '#042f2e',
+            weight: 7,
+            opacity: 0.5,
+            lineJoin: 'round'
+        });
+        const mainLine = L.polyline(routeCoords, {
+            color: '#0d9488',
+            weight: 5,
+            opacity: 0.95,
+            lineJoin: 'round'
+        });
+
+        routeLayer = L.featureGroup([bgLine, mainLine]).addTo(map);
+
+        // Fit bounds hiển thị cả người dùng và sân
+        try {
+            map.fitBounds(routeLayer.getBounds(), { padding: [60, 60], maxZoom: 16 });
+        } catch (_) {}
+
+        // Hiển thị bảng lộ trình nổi ngay trên bản đồ
+        showRoutePanel(destLat, destLng, courtName || 'Sân cầu lông', distanceKm, durationMin, startLat, startLng);
+
+        if (isFallbackStart && typeof Swal !== 'undefined') {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                title: 'Đang chỉ đường từ Trung tâm TP.HCM (Bật định vị để chỉ từ chỗ bạn)',
+                showConfirmButton: false,
+                timer: 4000
+            });
+        }
+    }
+
+    // Chỉ đường từ vị trí của khách đến sân (Vẽ trực tiếp trên Leaflet, không ép chuyển sang Google)
     function routeToCourt(destLat, destLng, courtName, courtAddress) {
         destLat = parseFloat(destLat);
         destLng = parseFloat(destLng);
@@ -393,116 +575,51 @@
             return;
         }
 
-        if (!navigator.geolocation) {
-            if (confirm('Trình duyệt không hỗ trợ định vị GPS. Bạn có muốn mở chỉ đường trên Google Maps không?')) {
-                window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`, '_blank');
-            }
-            return;
-        }
-
         // Đóng popup đang mở
         map.closePopup();
 
-        // Toast thông báo đang định vị
+        // 1. Nếu đã có tọa độ định vị từ trước, dùng ngay tọa độ đó để vẽ
+        if (lastKnownUserPos && !isNaN(lastKnownUserPos.lat) && !isNaN(lastKnownUserPos.lng)) {
+            drawRouteOnMap(lastKnownUserPos.lat, lastKnownUserPos.lng, destLat, destLng, courtName, false);
+            return;
+        }
+
+        // 2. Nếu không hỗ trợ Geolocation, vẽ ngay lộ trình từ trung tâm TP.HCM trực tiếp trên Leaflet
+        if (!navigator.geolocation) {
+            drawRouteOnMap(DEFAULT_CENTER[0], DEFAULT_CENTER[1], destLat, destLng, courtName, true);
+            return;
+        }
+
+        // Toast thông báo đang lấy vị trí
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 toast: true,
                 position: 'top-end',
                 icon: 'info',
-                title: 'Đang xác định vị trí của bạn...',
+                title: 'Đang xác định vị trí của bạn để chỉ đường...',
                 showConfirmButton: false,
-                timer: 2000
+                timer: 1800
             });
         }
 
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            const userLat = pos.coords.latitude;
-            const userLng = pos.coords.longitude;
-
-            clearRoute();
-
-            // Tạo icon vị trí người dùng với hiệu ứng sóng lan toả
-            const userIcon = L.divIcon({
-                className: 'court-user-location-wrapper',
-                html: `
-                    <div class="court-user-pulse-marker" title="Vị trí của bạn">
-                        <div class="user-pulse-wave"></div>
-                        <div class="user-pulse-dot"><i class="fa-solid fa-person-walking"></i></div>
-                    </div>
-                `,
-                iconSize: [26, 26],
-                iconAnchor: [13, 13]
-            });
-
-            userMarker = L.marker([userLat, userLng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
-            userMarker.bindPopup(`<b>Vị trí hiện tại của bạn</b><br><small class="text-muted">Điểm xuất phát</small>`);
-
-            // Thử gọi OSRM Routing API công khai
-            let distanceKm = 0;
-            let durationMin = 0;
-            let routeCoords = [];
-
-            try {
-                const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson`;
-                const res = await fetch(osrmUrl);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data.routes && data.routes.length > 0) {
-                        const r = data.routes[0];
-                        distanceKm = parseFloat((r.distance / 1000).toFixed(1));
-                        durationMin = Math.max(1, Math.round(r.duration / 60));
-                        routeCoords = r.geometry.coordinates.map(c => [c[1], c[0]]);
-                    }
-                }
-            } catch (err) {
-                console.warn('[CourtMap] Không thể kết nối OSRM, dùng fallback đường thẳng:', err);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const userLat = pos.coords.latitude;
+                const userLng = pos.coords.longitude;
+                lastKnownUserPos = { lat: userLat, lng: userLng };
+                drawRouteOnMap(userLat, userLng, destLat, destLng, courtName, false);
+            },
+            (err) => {
+                console.warn('[CourtMap] Không lấy được GPS, tự động dùng trung tâm TP.HCM làm điểm xuất phát:', err);
+                // Vẽ ngay lộ trình trên Leaflet bản đồ, TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHUYỂN TRANG GOOGLE MAPS
+                drawRouteOnMap(DEFAULT_CENTER[0], DEFAULT_CENTER[1], destLat, destLng, courtName, true);
+            },
+            {
+                enableHighAccuracy: false,
+                timeout: 6000,
+                maximumAge: 60000
             }
-
-            // Nếu OSRM không trả về route hợp lệ, dùng đường thẳng Haversine
-            if (routeCoords.length === 0) {
-                routeCoords = [[userLat, userLng], [destLat, destLng]];
-                distanceKm = calcHaversine(userLat, userLng, destLat, destLng);
-                durationMin = Math.max(1, Math.round((distanceKm / 30) * 60)); // ước tính tốc độ 30km/h
-            }
-
-            // Vẽ lộ trình trên bản đồ với 2 lớp đường (đường viền nền + đường chính xanh ngọc rực rỡ)
-            const bgLine = L.polyline(routeCoords, {
-                color: '#042f2e',
-                weight: 7,
-                opacity: 0.5,
-                lineJoin: 'round'
-            });
-            const mainLine = L.polyline(routeCoords, {
-                color: '#0d9488',
-                weight: 5,
-                opacity: 0.95,
-                lineJoin: 'round'
-            });
-
-            routeLayer = L.featureGroup([bgLine, mainLine]).addTo(map);
-
-            // Fit bounds hiển thị cả người dùng và sân
-            try {
-                map.fitBounds(routeLayer.getBounds(), { padding: [60, 60], maxZoom: 16 });
-            } catch (_) {}
-
-            // Hiển thị bảng lộ trình nổi
-            showRoutePanel(destLat, destLng, courtName || 'Sân cầu lông', distanceKm, durationMin, userLat, userLng);
-
-        }, (err) => {
-            console.warn('[CourtMap] Geolocation error:', err);
-            const msg = err.code === 1 ? 'Bạn chưa cấp quyền truy cập vị trí trên trình duyệt.'
-                      : err.code === 2 ? 'Không thể lấy thông tin vị trí từ thiết bị.'
-                      : 'Hết thời gian chờ lấy vị trí.';
-
-            if (confirm(`${msg}\n\nBạn có muốn mở chỉ đường trực tiếp trên Google Maps không?`)) {
-                window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`, '_blank');
-            }
-        }, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 60000
-        });
+        );
     }
 
     // Lắng nghe sự kiện thay đổi fullscreen toàn cục
@@ -529,6 +646,7 @@
         init: initCourtMap,
         updateMarkers: updateMarkers,
         resetView: resetView,
+        locateUser: locateUser,
         toggleFullscreen: toggleFullscreen,
         routeToCourt: routeToCourt,
         clearRoute: clearRoute,

@@ -160,8 +160,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <button type="button" class="btn btn-sm btn-teal rounded-pill px-3 fw-semibold" onclick="if(window.CourtMap) window.CourtMap.routeToCourt(${court.latitude}, ${court.longitude}, '${escapeText(court.name)}', '${escapeText(court.address || '')}');" title="Chỉ đường từ vị trí của bạn">
                                 <i class="fa-solid fa-diamond-turn-right me-1"></i> Chỉ đường
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3" onclick="if(window.CourtMap && window.CourtMap.resetView) window.CourtMap.resetView();" title="Quay về góc nhìn trung tâm">
-                                <i class="fa-solid fa-crosshairs me-1"></i> Định vị
+                            <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3" onclick="if(window.CourtMap && window.CourtMap.locateUser) window.CourtMap.locateUser(); else if(window.CourtMap && window.CourtMap.resetView) window.CourtMap.resetView();" title="Định vị vị trí hiện tại của tôi">
+                                <i class="fa-solid fa-location-crosshairs me-1"></i> Định vị
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3 btn-court-map-fullscreen" onclick="if(window.CourtMap && window.CourtMap.toggleFullscreen) window.CourtMap.toggleFullscreen();" title="Phóng to toàn màn hình">
                                 <i class="fa-solid fa-expand me-1 icon-fullscreen-state"></i> <span class="text-fullscreen-state">Toàn màn hình</span>

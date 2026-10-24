@@ -33,8 +33,11 @@ $encodedData = json_encode($initialMapData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_H
                 <small class="text-muted">Khu vực hoạt động: Đô thị TP.HCM (OpenStreetMap)</small>
             </div>
         </div>
-        <div class="d-flex gap-2 align-items-center">
-            <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3" onclick="if(window.CourtMap && window.CourtMap.resetView) window.CourtMap.resetView();" title="Quay về góc nhìn trung tâm">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3" onclick="if(window.CourtMap && window.CourtMap.locateUser) window.CourtMap.locateUser(); else if(window.CourtMap && window.CourtMap.resetView) window.CourtMap.resetView();" title="Định vị vị trí hiện tại của bạn">
+                <i class="fa-solid fa-location-crosshairs me-1"></i> Định vị
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="if(window.CourtMap && window.CourtMap.resetView) window.CourtMap.resetView();" title="Quay về góc nhìn trung tâm">
                 <i class="fa-solid fa-crosshairs me-1"></i> Trung tâm
             </button>
             <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3 btn-court-map-fullscreen" onclick="if(window.CourtMap && window.CourtMap.toggleFullscreen) window.CourtMap.toggleFullscreen();" title="Phóng to toàn màn hình">
