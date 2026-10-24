@@ -721,7 +721,7 @@ function confirmGatewayTransferDone() {
         summaryBadge.innerHTML = '<i class="fa-solid fa-check me-1"></i>Đã xác nhận chuyển khoản';
     }
 
-    // Hiển thị thông báo hướng dẫn người dùng bấm nút "Xác nhận đặt cọc"
+    // Hiển thị thông báo xác nhận đã chuyển khoản
     if (window.Swal) {
         Swal.fire({
             icon: 'success',
@@ -743,9 +743,8 @@ function confirmGatewayTransferDone() {
                         </span>
                     </div>
                 </div>
-                <p class="small text-muted mb-0">Hệ thống đã ghi nhận thông tin chuyển khoản. Bây giờ bạn hãy bấm nút <strong>"Xác nhận đặt cọc"</strong> để hoàn tất và xuất hóa đơn đặt sân!</p>
             `,
-            confirmButtonText: '<i class="fa-solid fa-circle-check me-1"></i> Đến nút Xác nhận đặt cọc',
+            confirmButtonText: '<i class="fa-solid fa-circle-check me-1"></i> Hoàn tất',
             confirmButtonColor: '#0d9488'
         }).then(() => {
             highlightCtaDepositButton();
