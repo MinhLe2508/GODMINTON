@@ -582,6 +582,14 @@ if ($currentUser !== null) {
                                 <i class="fa-solid fa-download me-1"></i> Tải ảnh QR
                             </a>
                         </div>
+                        <div class="mt-3 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <span class="small text-muted" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-circle-check text-success me-1"></i> Sau khi chuyển tiền xong, bấm xác nhận bên dưới.
+                            </span>
+                            <button type="button" class="btn btn-sm btn-teal rounded-pill px-3 py-1 fw-bold shadow-2xs" onclick="handlePayment()" style="font-size:0.78rem;">
+                                <i class="fa-solid fa-circle-check me-1"></i> Xác nhận đã chuyển khoản
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -831,8 +839,11 @@ if ($currentUser !== null) {
                         <span class="fw-bold font-monospace text-warning" id="modalTransferRef">DATSAN-...</span>
                     </div>
                 </div>
-                <div class="d-flex gap-2 justify-content-center">
-                    <a id="qrModalDownloadBtn" href="assets/img/vietqr-payment.png" download="QR-GODMINTON.png" class="btn btn-teal rounded-pill px-3 py-1 text-sm">
+                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                    <button type="button" class="btn btn-teal rounded-pill px-3 py-1 text-sm fw-bold shadow-sm" onclick="bootstrap.Modal.getInstance(document.getElementById('qrModal'))?.hide(); handlePayment();">
+                        <i class="fa-solid fa-circle-check me-1"></i> Tôi đã chuyển khoản
+                    </button>
+                    <a id="qrModalDownloadBtn" href="assets/img/vietqr-payment.png" download="QR-GODMINTON.png" class="btn btn-outline-teal rounded-pill px-3 py-1 text-sm">
                         <i class="fa-solid fa-download me-1"></i> Tải ảnh QR
                     </a>
                     <button type="button" class="btn btn-outline-secondary rounded-pill px-3 py-1 text-sm" data-bs-dismiss="modal">

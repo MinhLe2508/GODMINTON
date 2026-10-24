@@ -360,8 +360,11 @@ function calcPrices() {
 }
 
 function updateCtaLabels() {
-    const cfg = PAYMENT_GATEWAY_CONFIG[booking.method] || PAYMENT_GATEWAY_CONFIG.vnpay;
-    const ctaText = `Xác Nhận & Đặt Cọc (${cfg.label})`;
+    const cfg = PAYMENT_GATEWAY_CONFIG[booking.method] || PAYMENT_GATEWAY_CONFIG.bank;
+    let ctaText = `Xác Nhận & Đặt Cọc (${cfg.label})`;
+    if (booking.method === 'bank') {
+        ctaText = `Xác Nhận Đã Chuyển Khoản (${cfg.label})`;
+    }
     ['btnPayMobileText','btnPayDesktopText'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = ctaText;
@@ -884,6 +887,57 @@ async function handlePayment() {
             const successOverlay = document.getElementById('successOverlay');
             const paymentNote = document.getElementById('successPaymentNote');
             if (paymentNote) paymentNote.hidden = !bData.payment_is_demo;
+
+            // Ô thông báo xác nhận chuyển khoản / đặt cọc thành công (chuẩn UX giống phần gói hội viên)
+            if (window.Swal) {
+                const titleText = (booking.method === 'bank')
+                    ? 'Xác nhận chuyển khoản thành công!'
+                    : `Xác nhận thanh toán ${paymentMethodLabel} thành công!`;
+
+                const swalRes = await Swal.fire({
+                    icon: 'success',
+                    title: titleText,
+                    html: `
+                        <div class="text-start p-3 rounded-3 bg-light border small my-2" style="font-size:0.85rem; line-height:1.6;">
+                            <div class="d-flex justify-content-between mb-2 border-bottom pb-1">
+                                <span class="text-muted">Mã đặt sân:</span>
+                                <strong class="text-teal font-monospace fs-6">${bData.booking_code}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Sân cầu lông:</span>
+                                <strong>${bData.court_name}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Khung giờ:</span>
+                                <strong>${bData.time_range} (${booking.duration} giờ)</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Tiền đặt cọc:</span>
+                                <strong class="text-danger fw-bold">${fmt(bData.deposit_amount)}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Phương thức:</span>
+                                <span class="badge bg-teal text-white rounded-pill px-2">${paymentMethodLabel}</span>
+                            </div>
+                        </div>
+                        <p class="mb-0 text-muted small">
+                            <i class="fa-regular fa-envelope me-1"></i>Hệ thống đã ghi nhận đơn đặt thành công và gửi thông tin chi tiết về email <strong>${email}</strong>.
+                        </p>
+                    `,
+                    confirmButtonText: '<i class="fa-solid fa-calendar-check me-1"></i> Xem lịch đặt sân',
+                    confirmButtonColor: '#0d9488',
+                    showCancelButton: true,
+                    cancelButtonText: 'Xem chi tiết vé',
+                    cancelButtonColor: '#64748b',
+                    allowOutsideClick: false
+                });
+
+                if (swalRes.isConfirmed) {
+                    window.location.href = 'history.php';
+                    return;
+                }
+            }
+
             successOverlay.inert = false;
             successOverlay.ariaHidden = 'false';
             successOverlay.classList.add('show');
