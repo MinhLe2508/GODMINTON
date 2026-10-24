@@ -175,425 +175,28 @@ if ($currentUser !== null) {
 
             </div>
 
-            <!-- ==================== 2A. VNPAY WEB PANEL ==================== -->
-            <div class="bank-panel gateway-panel vnpay-theme" id="vnpayPanel">
-                <!-- Sub-navigation: Quét QR hoặc Thẻ ATM nội địa (chuẩn cổng VNPAY trên web) -->
-                <div class="gw-mode-tabs mb-3" role="tablist">
-                    <button type="button" class="gw-mode-tab active" onclick="switchGatewayTab('vnpay', 'qr', this)">
-                        <i class="fa-solid fa-qrcode me-1"></i> Quét mã VNPAY-QR
-                    </button>
-                    <button type="button" class="gw-mode-tab" onclick="switchGatewayTab('vnpay', 'web', this)">
-                        <i class="fa-solid fa-credit-card me-1"></i> Thẻ ATM / Ngân hàng nội địa
-                    </button>
-                </div>
-
-                <!-- Tab 1: VNPAY-QR -->
-                <div class="gw-tab-pane show" id="vnpay-tab-qr">
-                    <div class="d-flex gap-3 flex-wrap align-items-start">
-                        <div class="qr-box qr-box-vnpay" onclick="openQrModal('vnpay')" title="Nhấn để phóng to mã VNPAY-QR">
-                            <span class="qr-scan-line"></span>
-                            <img src="assets/img/vnpay-payment.png?v=<?= @filemtime(__DIR__ . '/assets/img/vnpay-payment.png') ?: time() ?>"
-                                 alt="VNPAY-QR - GODMINTON"
-                                 onerror="this.src='assets/img/vietqr-payment.png';">
-                            <div class="qr-zoom-hint">
-                                <i class="fa-solid fa-magnifying-glass-plus"></i> Phóng to
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 min-w-0">
-                            <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-1">
-                                <span class="fw-bold small d-flex align-items-center gap-1">
-                                    <span class="gw-dot vnpay-dot"></span> Cổng thanh toán VNPAY-QR
-                                </span>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1" style="font-size:0.7rem;">
-                                    <i class="fa-solid fa-shield-halved me-1"></i>Cổng VNPAY 24/7
-                                </span>
-                            </div>
-                            <div class="copy-row">
-                                <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:72px;">Đơn vị nhận</span>
-                                <strong>GODMINTON (TRUONG MINH TRIET)</strong>
-                            </div>
-                            <div class="copy-row">
-                                <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:72px;">Mã Terminal</span>
-                                <strong id="vnpayAccNum">0783547289 (MB Bank)</strong>
-                                <button type="button" class="copy-btn" onclick="copyText('0783547289')">
-                                    <i class="fa-regular fa-copy"></i> Copy
-                                </button>
-                            </div>
-                            <div class="copy-row">
-                                <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:72px;">Mã GD</span>
-                                <strong id="vnpayTransCode" class="text-primary">VNP-...</strong>
-                                <button type="button" class="copy-btn" onclick="copyById('vnpayTransCode')">
-                                    <i class="fa-regular fa-copy"></i> Copy
-                                </button>
-                            </div>
-                            <div class="copy-row">
-                                <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:72px;">Nội dung</span>
-                                <strong class="js-transfer-ref" style="word-break:break-all;">DATSAN-...</strong>
-                                <button type="button" class="copy-btn" onclick="copyTransferRef()">
-                                    <i class="fa-regular fa-copy"></i> Copy
-                                </button>
-                            </div>
-
-                            <div class="gw-supported-Row mt-2">
-                                <span class="gw-chip"><i class="fa-solid fa-building-columns me-1"></i>Vietcombank</span>
-                                <span class="gw-chip">BIDV</span>
-                                <span class="gw-chip">VietinBank</span>
-                                <span class="gw-chip">MB Bank</span>
-                                <span class="gw-chip">Techcombank</span>
-                                <span class="gw-chip">Ví VNPAY</span>
-                                <span class="gw-chip">+35 App NH</span>
-                            </div>
-
-                            <div class="mt-2 d-flex align-items-start gap-1" style="font-size:0.73rem; color:var(--text-secondary);">
-                                <i class="fa-solid fa-circle-exclamation text-warning mt-1 flex-shrink-0"></i>
-                                <span>Mở tính năng <strong>QR Pay</strong> trên ứng dụng Ngân hàng hoặc Ví VNPAY để quét mã. Số tiền: <strong class="text-warning js-deposit-amount">--</strong></span>
-                            </div>
-                            <div class="mt-2 d-flex flex-wrap gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-teal rounded-pill" onclick="openQrModal('vnpay')" style="font-size:0.75rem; padding:0.25rem 0.75rem;">
-                                    <i class="fa-solid fa-expand me-1"></i> Xem QR cỡ lớn
-                                </button>
-                                <a href="assets/img/vnpay-payment.png" download="VNPAY-QR-GODMINTON.png" class="btn btn-sm btn-outline-secondary rounded-pill" style="font-size:0.75rem; padding:0.25rem 0.75rem;">
-                                    <i class="fa-solid fa-download me-1"></i> Tải ảnh QR
-                                </a>
-                                <button type="button" class="btn btn-sm btn-gw-action vnpay-action rounded-pill" onclick="openGatewayCheckout('vnpay')" style="font-size:0.75rem; padding:0.25rem 0.85rem;">
-                                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Mở Cổng VNPAY Web
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tab 2: Thẻ ATM / Ngân hàng nội địa qua VNPAY -->
-                <div class="gw-tab-pane" id="vnpay-tab-web">
-                    <div class="gw-web-form">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fw-bold small">Chọn ngân hàng nội địa (NAPAS 247)</span>
-                            <span class="text-muted" style="font-size:0.72rem;">Miễn phí giao dịch</span>
-                        </div>
-                        <div class="gw-bank-grid mb-3" id="vnpayBankGrid">
-                            <button type="button" class="gw-bank-item active" onclick="selectVnpayBank(this, 'MB Bank')">MB Bank</button>
-                            <button type="button" class="gw-bank-item" onclick="selectVnpayBank(this, 'Vietcombank')">Vietcombank</button>
-                            <button type="button" class="gw-bank-item" onclick="selectVnpayBank(this, 'Techcombank')">Techcombank</button>
-                            <button type="button" class="gw-bank-item" onclick="selectVnpayBank(this, 'BIDV')">BIDV</button>
-                            <button type="button" class="gw-bank-item" onclick="selectVnpayBank(this, 'VietinBank')">VietinBank</button>
-                            <button type="button" class="gw-bank-item" onclick="selectVnpayBank(this, 'ACB')">ACB</button>
-                            <button type="button" class="gw-bank-item" onclick="selectVnpayBank(this, 'VPBank')">VPBank</button>
-                            <button type="button" class="gw-bank-item" onclick="selectVnpayBank(this, 'TPBank')">TPBank</button>
-                        </div>
-                        <div class="row g-2">
-                            <div class="col-sm-7">
-                                <label class="pay-label">Số thẻ ATM / Số tài khoản (<span id="vnpaySelectedBankLabel">MB Bank</span>)</label>
-                                <input type="text" class="pay-input" id="vnpayCardNumber" placeholder="9704 22xx xxxx xxxx" maxlength="23" oninput="formatAtmCard(this)">
-                            </div>
-                            <div class="col-sm-5">
-                                <label class="pay-label">Tháng/Năm phát hành</label>
-                                <input type="text" class="pay-input" id="vnpayCardIssue" placeholder="MM/YY (VD: 08/24)" maxlength="5" oninput="formatIssueDate(this)">
-                            </div>
-                            <div class="col-12">
-                                <label class="pay-label">Tên chủ thẻ (không dấu)</label>
-                                <input type="text" class="pay-input text-uppercase" id="vnpayCardHolder" placeholder="NGUYEN VAN A">
-                            </div>
-                        </div>
-                        <div class="mt-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <span class="small text-muted">
-                                Số tiền thanh toán: <strong class="text-warning js-deposit-amount">--</strong>
-                            </span>
-                            <button type="button" class="btn btn-sm btn-gw-action vnpay-action rounded-pill px-3 py-2" onclick="verifyInlineGateway('vnpay')">
-                                <i class="fa-solid fa-lock me-1"></i> Xác thực OTP qua VNPAY
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ==================== 2B. MOMO WEB PANEL ==================== -->
-            <div class="bank-panel gateway-panel momo-theme" id="momoPanel">
-                <div class="gw-mode-tabs mb-3" role="tablist">
-                    <button type="button" class="gw-mode-tab active" onclick="switchGatewayTab('momo', 'qr', this)">
-                        <i class="fa-solid fa-qrcode me-1"></i> Quét mã QR MoMo
-                    </button>
-                    <button type="button" class="gw-mode-tab" onclick="switchGatewayTab('momo', 'web', this)">
-                        <i class="fa-solid fa-mobile-screen-button me-1"></i> Thanh toán nhanh qua SĐT Ví MoMo
-                    </button>
-                </div>
-
-                <!-- Tab 1: MoMo QR -->
-                <div class="gw-tab-pane show" id="momo-tab-qr">
-                    <div class="d-flex gap-3 flex-wrap align-items-start">
-                        <div class="qr-box qr-box-momo" onclick="openQrModal('momo')" title="Nhấn để phóng to mã QR MoMo">
-                            <span class="qr-scan-line momo-line"></span>
-                            <img src="assets/img/momo-payment.png?v=<?= @filemtime(__DIR__ . '/assets/img/momo-payment.png') ?: time() ?>"
-                                 alt="MoMo QR - TRUONG MINH TRIET"
-                                 onerror="this.src='assets/img/vietqr-payment.png';">
-                            <div class="qr-zoom-hint">
-                                <i class="fa-solid fa-magnifying-glass-plus"></i> Phóng to
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 min-w-0">
-                            <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-1">
-                                <span class="fw-bold small d-flex align-items-center gap-1">
-                                    <span class="gw-dot momo-dot"></span> Thanh toán Ví điện tử MoMo
-                                </span>
-                                <span class="badge momo-badge px-2 py-1" style="font-size:0.7rem;">
-                                    <i class="fa-solid fa-bolt me-1"></i>Xử lý tức thì
-                                </span>
-                            </div>
-                            <div class="copy-row">
-                                <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:72px;">Ví nhận</span>
-                                <strong>Siêu ứng dụng MoMo (Hỗ trợ VietQR)</strong>
-                            </div>
-                            <div class="copy-row">
-                                <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:72px;">SĐT Ví</span>
-                                <strong id="momoAccNum">0783547289</strong>
-                                <button type="button" class="copy-btn" onclick="copyText('0783547289')">
-                                    <i class="fa-regular fa-copy"></i> Copy
-                                </button>
-                            </div>
-                            <div class="copy-row">
-                                <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:72px;">Chủ ví</span>
-                                <strong>TRUONG MINH TRIET</strong>
-                            </div>
-                            <div class="copy-row">
-                                <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:72px;">Lời nhắn</span>
-                                <strong class="js-transfer-ref" style="word-break:break-all;">DATSAN-...</strong>
-                                <button type="button" class="copy-btn" onclick="copyTransferRef()">
-                                    <i class="fa-regular fa-copy"></i> Copy
-                                </button>
-                            </div>
-
-                            <div class="gw-steps-inline mt-2">
-                                <span><strong>B1:</strong> Mở App MoMo</span>
-                                <i class="fa-solid fa-chevron-right"></i>
-                                <span><strong>B2:</strong> Chọn <strong>Quét Mã</strong></span>
-                                <i class="fa-solid fa-chevron-right"></i>
-                                <span><strong>B3:</strong> Xác nhận <strong class="text-warning js-deposit-amount">--</strong></span>
-                            </div>
-
-                            <div class="mt-2 d-flex flex-wrap gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-teal rounded-pill" onclick="openQrModal('momo')" style="font-size:0.75rem; padding:0.25rem 0.75rem;">
-                                    <i class="fa-solid fa-expand me-1"></i> Xem QR cỡ lớn
-                                </button>
-                                <a href="assets/img/momo-payment.png" download="MoMo-QR-GODMINTON.png" class="btn btn-sm btn-outline-secondary rounded-pill" style="font-size:0.75rem; padding:0.25rem 0.75rem;">
-                                    <i class="fa-solid fa-download me-1"></i> Tải ảnh QR
-                                </a>
-                                <button type="button" class="btn btn-sm btn-gw-action momo-action rounded-pill" onclick="openGatewayCheckout('momo')" style="font-size:0.75rem; padding:0.25rem 0.85rem;">
-                                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Mở Cổng MoMo Web
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tab 2: Liên kết nhanh SĐT Ví MoMo trên Web -->
-                <div class="gw-tab-pane" id="momo-tab-web">
-                    <div class="gw-web-form">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fw-bold small">Gửi yêu cầu thanh toán tới ứng dụng MoMo</span>
-                            <span class="badge momo-badge" style="font-size:0.68rem;">MoMo E-Wallet</span>
-                        </div>
-                        <p class="text-muted mb-2" style="font-size:0.76rem;">
-                            Nhập số điện thoại đăng ký Ví MoMo của bạn để nhận thông báo xác nhận thanh toán trực tiếp hoặc nhập mã giao dịch MoMo.
-                        </p>
-                        <div class="row g-2">
-                            <div class="col-sm-6">
-                                <label class="pay-label">SĐT Ví MoMo của bạn</label>
-                                <input type="tel" class="pay-input" id="momoUserPhone" placeholder="0912 345 678" maxlength="12">
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="pay-label">Nguồn tiền thanh toán</label>
-                                <select class="pay-input" id="momoSourceSelect">
-                                    <option value="wallet">Số dư Ví MoMo</option>
-                                    <option value="later">Ví Trả Sau MoMo</option>
-                                    <option value="bank">Ngân hàng liên kết MoMo</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mt-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <span class="small text-muted">
-                                Cọc cần thanh toán: <strong class="text-warning js-deposit-amount">--</strong>
-                            </span>
-                            <button type="button" class="btn btn-sm btn-gw-action momo-action rounded-pill px-3 py-2" onclick="verifyInlineGateway('momo')">
-                                <i class="fa-solid fa-paper-plane me-1"></i> Gửi xác thực MoMo OTP
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ==================== 2C. ZALOPAY WEB PANEL ==================== -->
-            <div class="bank-panel gateway-panel zalopay-theme" id="zalopayPanel">
-                <div class="gw-mode-tabs mb-3" role="tablist">
-                    <button type="button" class="gw-mode-tab active" onclick="switchGatewayTab('zalopay', 'qr', this)">
-                        <i class="fa-solid fa-qrcode me-1"></i> Quét mã QR ZaloPay / Zalo
-                    </button>
-                    <button type="button" class="gw-mode-tab" onclick="switchGatewayTab('zalopay', 'web', this)">
-                        <i class="fa-solid fa-bolt me-1"></i> Liên kết nhanh qua Zalo / ZaloPay
-                    </button>
-                </div>
-
-                <!-- Tab 1: ZaloPay QR -->
-                <div class="gw-tab-pane show" id="zalopay-tab-qr">
-                    <div class="d-flex gap-3 flex-wrap align-items-start">
-                        <div class="qr-box qr-box-zalopay" onclick="openQrModal('zalopay')" title="Nhấn để phóng to mã QR ZaloPay">
-                            <span class="qr-scan-line zalopay-line"></span>
-                            <img src="assets/img/zalopay-payment.png?v=<?= @filemtime(__DIR__ . '/assets/img/zalopay-payment.png') ?: time() ?>"
-                                 alt="ZaloPay QR - TRUONG MINH TRIET"
-                                 onerror="this.src='assets/img/vietqr-payment.png';">
-                            <div class="qr-zoom-hint">
-                                <i class="fa-solid fa-magnifying-glass-plus"></i> Phóng to
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 min-w-0">
-                            <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-1">
-                                <span class="fw-bold small d-flex align-items-center gap-1">
-                                    <span class="gw-dot zalopay-dot"></span> Cổng thanh toán Ví ZaloPay
-                                </span>
-                                <span class="badge zalopay-badge px-2 py-1" style="font-size:0.7rem;">
-                                    <i class="fa-solid fa-check-double me-1"></i>Quét từ Zalo / ZaloPay
-                                </span>
-                            </div>
-                            <div class="copy-row">
-                                <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:72px;">Cổng nhận</span>
-                                <strong>Ví ZaloPay (Tích hợp trong ứng dụng Zalo)</strong>
-                            </div>
-                            <div class="copy-row">
-                                <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:72px;">SĐT / TK</span>
-                                <strong id="zalopayAccNum">0783547289</strong>
-                                <button type="button" class="copy-btn" onclick="copyText('0783547289')">
-                                    <i class="fa-regular fa-copy"></i> Copy
-                                </button>
-                            </div>
-                            <div class="copy-row">
-                                <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:72px;">Chủ TK</span>
-                                <strong>TRUONG MINH TRIET</strong>
-                            </div>
-                            <div class="copy-row">
-                                <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:72px;">Nội dung</span>
-                                <strong class="js-transfer-ref" style="word-break:break-all;">DATSAN-...</strong>
-                                <button type="button" class="copy-btn" onclick="copyTransferRef()">
-                                    <i class="fa-regular fa-copy"></i> Copy
-                                </button>
-                            </div>
-
-                            <div class="mt-2 d-flex align-items-start gap-1" style="font-size:0.73rem; color:var(--text-secondary);">
-                                <i class="fa-solid fa-circle-info text-primary mt-1 flex-shrink-0"></i>
-                                <span>Bạn có thể mở trực tiếp <strong>ứng dụng Zalo</strong> (mục Quét QR) hoặc <strong>ZaloPay</strong> để thanh toán. Số tiền: <strong class="text-warning js-deposit-amount">--</strong></span>
-                            </div>
-                            <div class="mt-2 d-flex flex-wrap gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-teal rounded-pill" onclick="openQrModal('zalopay')" style="font-size:0.75rem; padding:0.25rem 0.75rem;">
-                                    <i class="fa-solid fa-expand me-1"></i> Xem QR cỡ lớn
-                                </button>
-                                <a href="assets/img/zalopay-payment.png" download="ZaloPay-QR-GODMINTON.png" class="btn btn-sm btn-outline-secondary rounded-pill" style="font-size:0.75rem; padding:0.25rem 0.75rem;">
-                                    <i class="fa-solid fa-download me-1"></i> Tải ảnh QR
-                                </a>
-                                <button type="button" class="btn btn-sm btn-gw-action zalopay-action rounded-pill" onclick="openGatewayCheckout('zalopay')" style="font-size:0.75rem; padding:0.25rem 0.85rem;">
-                                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Mở Cổng ZaloPay Web
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tab 2: Thanh toán nhanh qua tài khoản Zalo / ZaloPay trên Web -->
-                <div class="gw-tab-pane" id="zalopay-tab-web">
-                    <div class="gw-web-form">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fw-bold small">Thanh toán qua tài khoản Zalo / ZaloPay</span>
-                            <span class="badge zalopay-badge" style="font-size:0.68rem;">ZaloPay Gateway</span>
-                        </div>
-                        <p class="text-muted mb-2" style="font-size:0.76rem;">
-                            Nhập số điện thoại Zalo/ZaloPay để nhận thông báo xác nhận thanh toán ngay trong khung chat Zalo hoặc ứng dụng ZaloPay.
-                        </p>
-                        <div class="row g-2">
-                            <div class="col-sm-6">
-                                <label class="pay-label">Số điện thoại Zalo / ZaloPay</label>
-                                <input type="tel" class="pay-input" id="zalopayUserPhone" placeholder="0912 345 678" maxlength="12">
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="pay-label">Phương thức nguồn tiền</label>
-                                <select class="pay-input" id="zalopaySourceSelect">
-                                    <option value="zalopay_wallet">Số dư Ví ZaloPay</option>
-                                    <option value="zalo_bank">Thẻ / Ngân hàng liên kết trong Zalo</option>
-                                    <option value="zalopay_postpaid">Tài khoản Trả Sau ZaloPay</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="mt-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <span class="small text-muted">
-                                Cọc cần thanh toán: <strong class="text-warning js-deposit-amount">--</strong>
-                            </span>
-                            <button type="button" class="btn btn-sm btn-gw-action zalopay-action rounded-pill px-3 py-2" onclick="verifyInlineGateway('zalopay')">
-                                <i class="fa-solid fa-check-circle me-1"></i> Gửi yêu cầu xác thực ZaloPay
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ==================== 2D. CHUYỂN KHOẢN NGÂN HÀNG (VIETQR MB BANK) ==================== -->
-            <div class="bank-panel show" id="bankPanel">
-                <div class="d-flex gap-3 flex-wrap align-items-start">
-                    <div class="qr-box" onclick="openBankConfirmModal()" title="Nhấn để xem mã thanh toán và xác nhận chuyển khoản">
-                        <img src="assets/img/vietqr-payment.png?v=<?= filemtime(__DIR__ . '/assets/img/vietqr-payment.png') ?>"
-                             alt="VietQR MB Bank - TRUONG MINH TRIET"
-                             onerror="this.src='assets/img/vietqr-card.png?v=<?= filemtime(__DIR__ . '/assets/img/vietqr-card.png') ?>';">
-                        <div class="qr-zoom-hint">
-                            <i class="fa-solid fa-expand"></i> Mở mã QR
-                        </div>
+            <!-- Thẻ tóm tắt phương thức thanh toán đã chọn (Gọn gàng & Rõ ràng) -->
+            <div class="pm-summary-card mt-3 p-3 rounded-4" id="pmSummaryCard">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="pm-summary-icon" id="pmSummaryIcon">
+                        <i class="fa-solid fa-building-columns fs-4" style="color:#0d9488;"></i>
                     </div>
                     <div class="flex-grow-1 min-w-0">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fw-bold small d-flex align-items-center gap-1">
-                                <span class="gw-dot" style="background:#0d9488;"></span> Chuyển khoản VietQR 24/7
-                            </span>
-                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size:0.7rem;">
-                                <i class="fa-solid fa-bolt me-1"></i>Tự động 24/7
-                            </span>
+                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                            <span class="fw-bold text-dark small" id="pmSummaryTitle">Chuyển khoản VietQR 24/7 (MB Bank)</span>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0" style="font-size:0.68rem;" id="pmSummaryBadge">Tự động 24/7</span>
                         </div>
-                        <div class="copy-row">
-                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:68px;">Ngân hàng</span>
-                            <strong>MB Bank (Ngân hàng Quân Đội)</strong>
-                        </div>
-                        <div class="copy-row">
-                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:68px;">Số TK</span>
-                            <strong id="bankAccNum">0783547289</strong>
-                            <button type="button" class="copy-btn" onclick="copyText('0783547289')">
-                                <i class="fa-regular fa-copy"></i> Copy
-                            </button>
-                        </div>
-                        <div class="copy-row">
-                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:68px;">Chủ TK</span>
-                            <strong>TRUONG MINH TRIET</strong>
-                        </div>
-                        <div class="copy-row">
-                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:68px;">Nội dung CK</span>
-                            <strong id="transferRef" class="js-transfer-ref text-teal" style="word-break:break-all;">DATSAN-...</strong>
-                            <button type="button" class="copy-btn" onclick="copyTransferRef()">
-                                <i class="fa-regular fa-copy"></i> Copy
-                            </button>
-                        </div>
-                        <div class="copy-row">
-                            <span class="text-muted" style="font-size:0.75rem; flex-shrink:0; min-width:68px;">Số tiền cọc</span>
-                            <strong class="text-warning js-deposit-amount" id="bankAmountText">--</strong>
-                            <button type="button" class="copy-btn" onclick="copyById('bankAmountText')">
-                                <i class="fa-regular fa-copy"></i> Copy
-                            </button>
-                        </div>
-
-                        <!-- Nút Xác nhận đã chuyển khoản -->
-                        <button type="button" class="btn btn-teal rounded-pill fw-bold w-100 py-2 mt-2 shadow-sm d-flex align-items-center justify-content-center gap-2" id="btnOpenBankConfirm" onclick="openBankConfirmModal()">
-                            <i class="fa-solid fa-circle-check fs-6"></i> Xác nhận đã chuyển khoản (Xem mã & Hoàn tất)
-                        </button>
-
-                        <div class="d-flex justify-content-between align-items-center mt-2 pt-1 border-top" style="font-size:0.74rem;">
-                            <a href="javascript:void(0)" onclick="openBankConfirmModal()" class="text-decoration-none text-muted">
-                                <i class="fa-solid fa-qrcode me-1 text-teal"></i> Xem mã & xác nhận
-                            </a>
-                            <a href="assets/img/vietqr-payment.png" download="VietQR-GODMINTON.png" class="text-decoration-none text-muted">
-                                <i class="fa-solid fa-download me-1 text-teal"></i> Tải ảnh QR
-                            </a>
+                        <div class="text-muted" style="font-size:0.78rem;" id="pmSummaryDesc">
+                            Quét mã QR tự động từ hơn 40 ứng dụng ngân hàng & ví điện tử.
                         </div>
                     </div>
+                    <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3 py-1 text-nowrap d-none d-sm-inline-flex align-items-center gap-1" style="font-size:0.75rem;" onclick="openPaymentModalPreview()">
+                        <i class="fa-solid fa-qrcode"></i> Xem mã QR
+                    </button>
+                </div>
+                <div class="pm-summary-hint mt-2 pt-2 border-top d-flex align-items-center gap-2" style="font-size:0.75rem; color:var(--text-secondary);">
+                    <i class="fa-solid fa-shield-halved text-teal flex-shrink-0"></i>
+                    <span>Mã thanh toán QR, số tiền và nội dung chuyển khoản sẽ hiển thị trực tiếp khi bạn nhấn <strong>"Thanh Toán & Đặt Cọc"</strong>.</span>
                 </div>
             </div>
 
@@ -611,8 +214,8 @@ if ($currentUser !== null) {
 
         <!-- Mobile: CTA button (bên dưới form trên mobile) -->
         <div class="d-lg-none mb-4">
-            <button class="btn-pay-cta mb-3" id="btnPayMobile" onclick="handlePayment()">
-                <span id="btnPayMobileText">Xác Nhận & Đặt Cọc</span>
+            <button class="btn-pay-cta mb-3" id="btnPayMobile" onclick="handlePaymentCta()">
+                <span id="btnPayMobileText">Thanh Toán & Đặt Cọc</span>
             </button>
             <div class="text-center">
                 <a href="booking.php" style="font-size:0.8rem; color:var(--text-secondary); text-decoration:none;">
@@ -755,8 +358,8 @@ if ($currentUser !== null) {
 
             <!-- Desktop CTA -->
             <div class="d-none d-lg-block">
-                <button class="btn-pay-cta mb-3" id="btnPayDesktop" onclick="handlePayment()">
-                    <span id="btnPayDesktopText">Xác Nhận & Đặt Cọc</span>
+                <button class="btn-pay-cta mb-3" id="btnPayDesktop" onclick="handlePaymentCta()">
+                    <span id="btnPayDesktopText">Thanh Toán & Đặt Cọc</span>
                 </button>
             </div>
 
@@ -806,56 +409,60 @@ if ($currentUser !== null) {
     <footer class="success-footer">&copy; 2026 GODMINTON · Đặt sân cầu lông trực tuyến</footer>
 </section>
 
-<!-- Modal Xác Nhận Đã Chuyển Khoản Ngân Hàng (Hiển thị Mã QR, Nội dung chuyển khoản và Số tiền) -->
-<div class="modal fade" id="bankTransferConfirmModal" tabindex="-1" aria-labelledby="bankConfirmModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+<!-- ===================== MODAL CỔNG THANH TOÁN DUY NHẤT ===================== -->
+<div class="modal fade" id="checkoutGatewayModal" tabindex="-1" aria-labelledby="gwCheckoutLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <!-- Header -->
-            <div class="modal-header border-0 py-3 px-3 text-white" style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);">
-                <div class="d-flex align-items-center gap-2">
-                    <div style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center;">
-                        <i class="fa-solid fa-building-columns fs-6"></i>
+            <!-- Modal Header (Màu sắc và Logo thay đổi theo Cổng thanh toán) -->
+            <div class="gw-modal-header p-3 text-white" id="gwModalHeader" style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="gw-modal-logo-wrap bg-white rounded-3 p-1 d-flex align-items-center justify-content-center" id="gwModalLogoWrap" style="width:38px; height:38px; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+                            <img id="gwModalLogo" src="assets/img/logo-teal.svg" alt="Gateway" style="max-height:26px; max-width:28px; object-fit:contain;">
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-extrabold text-white" id="gwCheckoutLabel">Chuyển Khoản Ngân Hàng VietQR</h6>
+                            <span class="text-white-50" style="font-size:0.72rem;" id="gwCheckoutSub">MB Bank · Tự động xác nhận 24/7</span>
+                        </div>
                     </div>
-                    <div>
-                        <h6 class="modal-title fw-extrabold mb-0" id="bankConfirmModalLabel">Xác Nhận Đã Chuyển Khoản</h6>
-                        <span style="font-size:0.72rem; opacity:0.85;">VietQR MB Bank · Xác nhận tự động 24/7</span>
-                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <!-- Body -->
+            <!-- Modal Body -->
             <div class="modal-body p-3 p-sm-4 text-center">
-                <!-- 1. KÈM CÁI MÃ: Ảnh QR VietQR -->
-                <div class="d-inline-block p-2 bg-white rounded-3 border shadow-sm mb-3">
-                    <img id="bankConfirmModalQrImg"
-                         src="assets/img/vietqr-payment.png?v=<?= filemtime(__DIR__ . '/assets/img/vietqr-payment.png') ?>"
-                         alt="Mã QR VietQR"
-                         style="width: 190px; height: auto; border-radius: 8px;">
-                    <div class="small text-muted mt-1" style="font-size:0.72rem;">
-                        <i class="fa-solid fa-qrcode me-1 text-teal"></i> Quét mã bằng ứng dụng Ngân hàng
+                <!-- 1. KÈM CÁI MÃ: Ảnh QR Code to rõ ràng -->
+                <div class="d-inline-block p-2 bg-white rounded-4 border shadow-sm mb-3">
+                    <div class="position-relative overflow-hidden rounded-3" style="background:#fafafa;">
+                        <img id="gwModalQrImg"
+                             src="assets/img/vietqr-payment.png"
+                             alt="Mã QR Thanh Toán"
+                             style="width: 200px; height: auto; display: block; border-radius: 8px;">
+                    </div>
+                    <div class="small text-muted mt-2 d-flex align-items-center justify-content-center gap-1" style="font-size:0.72rem;" id="gwModalHintText">
+                        <i class="fa-solid fa-qrcode text-teal"></i> Quét mã bằng ứng dụng Ngân hàng hoặc Ví điện tử
                     </div>
                 </div>
 
-                <!-- 2. NỘI DUNG VÀ SỐ TIỀN -->
+                <!-- 2. THÔNG TIN CHUYỂN KHOẢN (Số tiền, Nội dung, STK/Ví) -->
                 <div class="p-3 rounded-3 text-start mb-3" style="background: var(--bg-body, #f8fafc); border: 1.5px solid var(--border-color, #e2e8f0);">
                     <!-- Số tiền -->
                     <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                         <span class="text-muted small">Số tiền cần chuyển:</span>
                         <div class="d-flex align-items-center gap-1">
-                            <strong class="text-warning fs-5 js-deposit-amount" id="bankConfirmModalAmount">--</strong>
-                            <button type="button" class="copy-btn" onclick="copyById('bankConfirmModalAmount')">
+                            <strong class="text-warning fs-5 js-deposit-amount" id="gwModalAmount">--</strong>
+                            <button type="button" class="copy-btn" onclick="copyById('gwModalAmount')" title="Sao chép số tiền">
                                 <i class="fa-regular fa-copy"></i>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Nội dung (Mã TT) -->
+                    <!-- Nội dung chuyển khoản / Mã GD -->
                     <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                         <span class="text-muted small">Nội dung chuyển khoản:</span>
                         <div class="d-flex align-items-center gap-1">
-                            <strong class="text-teal font-monospace fs-6 js-transfer-ref" id="bankConfirmModalRef" style="word-break:break-all;">DATSAN-...</strong>
-                            <button type="button" class="copy-btn" onclick="copyTransferRef()">
+                            <strong class="text-teal font-monospace fs-6 js-transfer-ref" id="gwModalRef" style="word-break:break-all;">DATSAN-...</strong>
+                            <button type="button" class="copy-btn" onclick="copyTransferRef()" title="Sao chép nội dung">
                                 <i class="fa-regular fa-copy"></i> Copy
                             </button>
                         </div>
@@ -863,141 +470,43 @@ if ($currentUser !== null) {
 
                     <!-- Tài khoản thụ hưởng -->
                     <div class="d-flex justify-content-between align-items-center mb-1 small">
-                        <span class="text-muted">Ngân hàng:</span>
-                        <strong>MB Bank (Quân Đội)</strong>
+                        <span class="text-muted" id="gwModalProviderLabel">Ngân hàng / Cổng:</span>
+                        <strong id="gwModalProviderName">MB Bank (Quân Đội)</strong>
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-1 small">
-                        <span class="text-muted">Số tài khoản:</span>
+                        <span class="text-muted" id="gwModalAccLabel">Số tài khoản / SĐT:</span>
                         <div class="d-flex align-items-center gap-1">
-                            <strong class="font-monospace text-teal">0783547289</strong>
-                            <button type="button" class="copy-btn" onclick="copyText('0783547289')">
+                            <strong class="font-monospace text-teal" id="gwModalAccValue">0783547289</strong>
+                            <button type="button" class="copy-btn" onclick="copyById('gwModalAccValue')" title="Sao chép số tài khoản">
                                 <i class="fa-regular fa-copy"></i>
                             </button>
                         </div>
                     </div>
                     <div class="d-flex justify-content-between align-items-center small">
                         <span class="text-muted">Chủ tài khoản:</span>
-                        <strong>TRUONG MINH TRIET</strong>
+                        <strong id="gwModalOwnerName">TRUONG MINH TRIET</strong>
                     </div>
                 </div>
 
+                <!-- Thông báo hướng dẫn thanh toán -->
                 <div class="alert alert-info py-2 px-3 small text-start mb-3" style="font-size:0.75rem; border-radius:0.6rem;">
                     <i class="fa-solid fa-circle-info me-1 text-teal"></i>
-                    Sau khi hoàn tất chuyển khoản từ ứng dụng ngân hàng, bạn hãy bấm nút xác nhận bên dưới để hệ thống lập tức xuất hóa đơn đặt sân.
+                    Sau khi hoàn tất thanh toán từ app ngân hàng / ví điện tử, bạn bấm nút xác nhận bên dưới để hệ thống lập tức xuất hóa đơn đặt sân.
                 </div>
 
-                <!-- Nút Xác nhận hoàn tất & Hiện hóa đơn -->
+                <!-- 3. NÚT XÁC NHẬN CHUYỂN KHOẢN & HIỆN HÓA ĐƠN -->
                 <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-teal rounded-pill fw-bold py-2 fs-6 shadow-sm" id="btnConfirmBankDone" onclick="completeBankTransferPayment()">
+                    <button type="button" class="btn btn-teal rounded-pill fw-bold py-2 fs-6 shadow-sm" id="btnGwConfirmDone" onclick="confirmGatewayPaymentAndFinish()">
                         <i class="fa-solid fa-circle-check me-1"></i> Tôi đã chuyển khoản — Xác nhận & Hiện hóa đơn
                     </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill py-2" data-bs-dismiss="modal">
-                        Quay lại kiểm tra
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Phóng to mã QR đa năng (VNPay / MoMo / ZaloPay / VietQR MB Bank) -->
-<div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header border-0 pb-0 pt-3 px-3">
-                <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="qrModalLabel">
-                    <i class="fa-solid fa-qrcode text-teal"></i> <span id="qrModalTitleText">Quét Mã Thanh Toán</span>
-                </h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center p-3">
-                <div class="qr-modal-img-wrap rounded-3 overflow-hidden shadow-sm bg-white p-2 mb-3">
-                    <img id="qrModalImg" src="assets/img/vietqr-payment.png?v=<?= filemtime(__DIR__ . '/assets/img/vietqr-payment.png') ?>" alt="Mã QR Thanh Toán" class="img-fluid rounded-3" style="max-height: 480px; width: auto; object-fit: contain;">
-                </div>
-                <div class="bg-light rounded-3 p-3 text-start small mb-3">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="text-muted">Chủ TK / Ví:</span>
-                        <span class="fw-bold" id="modalOwnerName">TRUONG MINH TRIET</span>
+                    <div class="d-flex justify-content-between align-items-center px-1">
+                        <a id="gwModalDownloadQr" href="assets/img/vietqr-payment.png" download="VietQR-GODMINTON.png" class="text-decoration-none text-muted small" style="font-size:0.74rem;">
+                            <i class="fa-solid fa-download me-1 text-teal"></i> Tải ảnh QR
+                        </a>
+                        <button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none p-0" data-bs-dismiss="modal" style="font-size:0.74rem;">
+                            Quay lại kiểm tra
+                        </button>
                     </div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="text-muted" id="modalAccLabel">Số TK / SĐT:</span>
-                        <span class="fw-bold font-monospace text-teal" id="modalAccValue">0783547289</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="text-muted">Cổng / Ngân hàng:</span>
-                        <span class="fw-bold" id="modalProviderName">MB Bank (Quân Đội)</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="text-muted">Số tiền cọc:</span>
-                        <span class="fw-bold text-danger" id="modalDepositAmount">--</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted">Nội dung:</span>
-                        <span class="fw-bold font-monospace text-warning" id="modalTransferRef">DATSAN-...</span>
-                    </div>
-                </div>
-                <div class="d-flex gap-2 justify-content-center">
-                    <a id="qrModalDownloadBtn" href="assets/img/vietqr-payment.png" download="QR-GODMINTON.png" class="btn btn-teal rounded-pill px-3 py-1 text-sm">
-                        <i class="fa-solid fa-download me-1"></i> Tải ảnh QR
-                    </a>
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-3 py-1 text-sm" data-bs-dismiss="modal">
-                        Đóng
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Cổng Thanh Toán Web Trực Tuyến (VNPay / MoMo / ZaloPay Web Checkout) -->
-<div class="modal fade" id="gatewayCheckoutModal" tabindex="-1" aria-labelledby="gwCheckoutLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="gw-modal-header" id="gwModalHeader">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="gw-modal-logo-wrap" id="gwModalLogoWrap">
-                        <img id="gwModalLogo" src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR.png" alt="Gateway">
-                    </div>
-                    <div>
-                        <h6 class="mb-0 fw-extrabold text-white" id="gwCheckoutLabel">Cổng Thanh Toán VNPAY</h6>
-                        <span class="text-white-50" style="font-size:0.72rem;" id="gwCheckoutSub">Kết nối bảo mật chuẩn PCI-DSS</span>
-                    </div>
-                </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="d-flex justify-content-between align-items-center p-3 rounded-3 mb-3" style="background:var(--bg-body); border:1px solid var(--border-color);">
-                    <div>
-                        <div class="text-muted" style="font-size:0.72rem;">Đơn vị thụ hưởng</div>
-                        <div class="fw-bold small">GODMINTON SPORT</div>
-                        <div class="text-muted" style="font-size:0.72rem;">Mã tham chiếu: <strong class="text-dark" id="gwModalRef">DATSAN-...</strong></div>
-                    </div>
-                    <div class="text-end">
-                        <div class="text-muted" style="font-size:0.72rem;">Số tiền thanh toán</div>
-                        <div class="fw-extrabold fs-5 text-teal" id="gwModalAmount">--</div>
-                    </div>
-                </div>
-
-                <div class="text-center mb-3">
-                    <div class="d-inline-block p-2 bg-white rounded-4 border shadow-sm mb-2">
-                        <img id="gwModalQrImg" src="assets/img/vnpay-payment.png" alt="QR Gateway" style="width: 210px; height: auto; border-radius: 10px;">
-                    </div>
-                    <div class="small text-muted" id="gwModalHint">
-                        Mở ứng dụng Ngân hàng hoặc Ví điện tử quét mã QR hoặc bấm xác nhận thanh toán trực tuyến bên dưới.
-                    </div>
-                </div>
-
-                <div class="p-2 rounded-3 mb-3 text-center" style="background:rgba(13,148,136,0.08); font-size:0.76rem; color:var(--brand-teal); font-weight:600;">
-                    <i class="fa-solid fa-rotate fa-spin me-1"></i> Hệ thống đang chờ tín hiệu thanh toán tự động 24/7...
-                </div>
-
-                <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-teal rounded-pill fw-bold py-2" id="btnGwConfirmNow" onclick="confirmGatewayCheckout()">
-                        <i class="fa-solid fa-circle-check me-1"></i> Tôi đã thanh toán — Xác nhận & Đặt sân ngay
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" data-bs-dismiss="modal">
-                        Quay lại trang thanh toán
-                    </button>
                 </div>
             </div>
         </div>

@@ -488,13 +488,20 @@ textarea.pay-input {
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.25rem;
-    background: linear-gradient(135deg, #005baa 0%, #003e75 100%);
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    transition: background 0.3s ease;
+}
+.gw-modal-header.bank-header {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
+}
+.gw-modal-header.vnpay-header {
+    background: linear-gradient(135deg, #005baa 0%, #003e75 100%) !important;
 }
 .gw-modal-header.momo-header {
-    background: linear-gradient(135deg, #a50064 0%, #730046 100%);
+    background: linear-gradient(135deg, #a50064 0%, #730046 100%) !important;
 }
 .gw-modal-header.zalopay-header {
-    background: linear-gradient(135deg, #0068ff 0%, #0048b3 100%);
+    background: linear-gradient(135deg, #0068ff 0%, #0048b3 100%) !important;
 }
 .gw-modal-logo-wrap {
     width: 38px;
@@ -511,6 +518,40 @@ textarea.pay-input {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
+}
+
+/* ---- Compact Payment Method Summary Card ---- */
+.pm-summary-card {
+    background: var(--bg-surface);
+    border: 1.5px solid var(--border-color);
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+.pm-summary-card:hover {
+    border-color: rgba(13, 148, 136, 0.4);
+}
+.pm-summary-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(13, 148, 136, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.pm-summary-hint {
+    border-color: var(--border-color) !important;
+}
+.btn-outline-teal {
+    color: var(--brand-teal);
+    border-color: var(--brand-teal);
+    background: transparent;
+    transition: all 0.2s ease;
+}
+.btn-outline-teal:hover {
+    background: var(--brand-teal);
+    color: #ffffff;
 }
 
 /* ---- Order summary ---- */

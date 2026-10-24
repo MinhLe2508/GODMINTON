@@ -12,65 +12,89 @@ let holdRemaining = 0;
 
 // Cấu hình chi tiết cho 4 phương thức thanh toán trên Web
 const PAYMENT_GATEWAY_CONFIG = {
-    vnpay: {
-        label: 'VNPay',
-        summaryLabel: 'VNPay (VNPAY-QR)',
-        modalTitle: 'Quét Mã VNPAY-QR',
-        checkoutTitle: 'Cổng Thanh Toán VNPAY-QR',
-        checkoutSub: 'Hỗ trợ 40+ Ngân hàng & Ví VNPAY • Bảo mật PCI-DSS',
-        providerName: 'Cổng VNPAY / MB Bank',
-        accLabel: 'Mã Terminal / TK:',
-        accValue: '0783547289',
-        ownerName: 'TRUONG MINH TRIET',
-        qrImg: 'assets/img/vnpay-payment.png',
-        downloadName: 'VNPAY-QR-GODMINTON.png',
-        logoUrl: 'https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR.png',
-        headerClass: ''
-    },
-    momo: {
-        label: 'MoMo',
-        summaryLabel: 'Ví điện tử MoMo',
-        modalTitle: 'Quét Mã QR Ví MoMo',
-        checkoutTitle: 'Cổng Thanh Toán Ví MoMo',
-        checkoutSub: 'Siêu ứng dụng MoMo • Xác nhận tức thì 24/7',
-        providerName: 'Ví điện tử MoMo',
-        accLabel: 'SĐT Ví MoMo:',
-        accValue: '0783547289',
-        ownerName: 'TRUONG MINH TRIET',
-        qrImg: 'assets/img/momo-payment.png',
-        downloadName: 'MoMo-QR-GODMINTON.png',
-        logoUrl: 'https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png',
-        headerClass: 'momo-header'
-    },
-    zalopay: {
-        label: 'ZaloPay',
-        summaryLabel: 'Ví điện tử ZaloPay',
-        modalTitle: 'Quét Mã QR Ví ZaloPay',
-        checkoutTitle: 'Cổng Thanh Toán ZaloPay',
-        checkoutSub: 'Quét mã trực tiếp từ ứng dụng Zalo hoặc ZaloPay',
-        providerName: 'Ví điện tử ZaloPay',
-        accLabel: 'SĐT / TK ZaloPay:',
-        accValue: '0783547289',
-        ownerName: 'TRUONG MINH TRIET',
-        qrImg: 'assets/img/zalopay-payment.png',
-        downloadName: 'ZaloPay-QR-GODMINTON.png',
-        logoUrl: 'https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-ZaloPay-Square.png',
-        headerClass: 'zalopay-header'
-    },
     bank: {
         label: 'Chuyển khoản VietQR',
-        summaryLabel: 'Chuyển khoản VietQR',
-        modalTitle: 'Quét Mã VietQR MB Bank',
+        summaryTitle: 'Chuyển khoản VietQR 24/7 (MB Bank)',
+        summaryDesc: 'Quét mã QR tự động từ hơn 40 ứng dụng ngân hàng & ví điện tử.',
+        badgeText: 'Tự động 24/7',
+        badgeClass: 'bg-success-subtle text-success border border-success-subtle',
+        iconHtml: '<i class="fa-solid fa-building-columns fs-4" style="color:#0d9488;"></i>',
         checkoutTitle: 'Chuyển Khoản Ngân Hàng VietQR',
-        checkoutSub: 'Tự động xác nhận 24/7 qua hệ thống NAPAS 247',
-        providerName: 'MB Bank (Quân Đội)',
-        accLabel: 'Số TK:',
+        checkoutSub: 'MB Bank · Tự động xác nhận 24/7 qua NAPAS 247',
+        providerLabel: 'Ngân hàng thụ hưởng:',
+        providerName: 'MB Bank (Ngân hàng Quân Đội)',
+        accLabel: 'Số tài khoản:',
         accValue: '0783547289',
         ownerName: 'TRUONG MINH TRIET',
         qrImg: 'assets/img/vietqr-payment.png',
         downloadName: 'VietQR-GODMINTON.png',
         logoUrl: 'assets/img/logo-teal.svg',
-        headerClass: ''
+        headerClass: 'bank-header',
+        hintText: 'Quét mã VietQR bằng ứng dụng Ngân hàng (VCB, MB, BIDV, Techcombank...)',
+        btnText: 'Tôi đã chuyển khoản — Xác nhận & Hiện hóa đơn'
+    },
+    vnpay: {
+        label: 'VNPay',
+        summaryTitle: 'Cổng thanh toán VNPAY (VNPAY-QR)',
+        summaryDesc: 'Thanh toán trực tiếp qua cổng VNPAY-QR hoặc ứng dụng ngân hàng.',
+        badgeText: 'Cổng VNPAY 24/7',
+        badgeClass: 'bg-primary-subtle text-primary border border-primary-subtle',
+        iconHtml: '<i class="fa-solid fa-qrcode fs-4" style="color:#005baa;"></i>',
+        checkoutTitle: 'Cổng Thanh Toán VNPAY-QR',
+        checkoutSub: 'Hỗ trợ 40+ Ngân hàng & Ví VNPAY · Chuẩn PCI-DSS',
+        providerLabel: 'Đơn vị / Cổng nhận:',
+        providerName: 'GODMINTON (Cổng VNPAY / MB Bank)',
+        accLabel: 'Mã Terminal / STK:',
+        accValue: '0783547289',
+        ownerName: 'TRUONG MINH TRIET',
+        qrImg: 'assets/img/vnpay-payment.png',
+        downloadName: 'VNPAY-QR-GODMINTON.png',
+        logoUrl: 'https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR.png',
+        headerClass: 'vnpay-header',
+        hintText: 'Mở tính năng QR Pay trên app Ngân hàng hoặc Ví VNPAY để quét mã',
+        btnText: 'Tôi đã thanh toán VNPAY — Xác nhận & Hiện hóa đơn'
+    },
+    momo: {
+        label: 'MoMo',
+        summaryTitle: 'Ví điện tử MoMo',
+        summaryDesc: 'Quét mã MoMo QR hoặc chuyển tiền trực tiếp trên ứng dụng MoMo.',
+        badgeText: 'Ví MoMo 24/7',
+        badgeClass: 'bg-danger-subtle text-danger border border-danger-subtle',
+        iconHtml: '<i class="fa-solid fa-mobile-screen fs-4" style="color:#ae2070;"></i>',
+        checkoutTitle: 'Cổng Thanh Toán Ví MoMo',
+        checkoutSub: 'Siêu ứng dụng MoMo · Tự động xác nhận tức thì',
+        providerLabel: 'Ví thụ hưởng:',
+        providerName: 'Ví điện tử MoMo (Hỗ trợ VietQR)',
+        accLabel: 'Số điện thoại Ví:',
+        accValue: '0783547289',
+        ownerName: 'TRUONG MINH TRIET',
+        qrImg: 'assets/img/momo-payment.png',
+        downloadName: 'MoMo-QR-GODMINTON.png',
+        logoUrl: 'https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png',
+        headerClass: 'momo-header',
+        hintText: 'Mở ứng dụng MoMo chọn mục Quét Mã để hoàn tất thanh toán',
+        btnText: 'Tôi đã thanh toán MoMo — Xác nhận & Hiện hóa đơn'
+    },
+    zalopay: {
+        label: 'ZaloPay',
+        summaryTitle: 'Ví điện tử ZaloPay',
+        summaryDesc: 'Quét mã trực tiếp từ ứng dụng Zalo hoặc ZaloPay tiện lợi.',
+        badgeText: 'ZaloPay 24/7',
+        badgeClass: 'bg-info-subtle text-info border border-info-subtle',
+        iconHtml: '<i class="fa-solid fa-wallet fs-4" style="color:#0068ff;"></i>',
+        checkoutTitle: 'Cổng Thanh Toán Ví ZaloPay',
+        checkoutSub: 'Ví ZaloPay & Ứng dụng Zalo · Xác nhận tức thì',
+        providerLabel: 'Cổng nhận ZaloPay:',
+        providerName: 'Ví ZaloPay (Tích hợp trong app Zalo)',
+        accLabel: 'SĐT / Tài khoản:',
+        accValue: '0783547289',
+        ownerName: 'TRUONG MINH TRIET',
+        qrImg: 'assets/img/zalopay-payment.png',
+        downloadName: 'ZaloPay-QR-GODMINTON.png',
+        logoUrl: 'https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-ZaloPay-Square.png',
+        headerClass: 'zalopay-header',
+        hintText: 'Quét mã trực tiếp bằng ứng dụng Zalo hoặc ZaloPay',
+        btnText: 'Tôi đã thanh toán ZaloPay — Xác nhận & Hiện hóa đơn'
     }
 };
 
@@ -199,7 +223,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setPaymentButtons(false);
     startCountdown(holdRemaining);
     updateTransferRef();
-    syncPaymentPanels();
+    syncPaymentMethodCard();
 });
 
 function removeVietnameseTones(str) {
@@ -360,8 +384,8 @@ function calcPrices() {
 }
 
 function updateCtaLabels() {
-    const cfg = PAYMENT_GATEWAY_CONFIG[booking.method] || PAYMENT_GATEWAY_CONFIG.vnpay;
-    const ctaText = `Xác Nhận & Đặt Cọc (${cfg.label})`;
+    const cfg = PAYMENT_GATEWAY_CONFIG[booking.method] || PAYMENT_GATEWAY_CONFIG.bank;
+    const ctaText = `Thanh Toán & Đặt Cọc (${cfg.label})`;
     ['btnPayMobileText','btnPayDesktopText'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = ctaText;
@@ -513,281 +537,307 @@ function initVoucherHandlers() {
     }
 }
 
-/* ---- Payment method select (VNPay, MoMo, ZaloPay, Chuyển khoản) ---- */
+/* ---- Payment method selection (VietQR, VNPay, MoMo, ZaloPay) ---- */
 function selectPM(el) {
     document.querySelectorAll('.pm-btn').forEach(b => b.classList.remove('selected'));
     el.classList.add('selected');
-    el.blur(); // Loại bỏ focus ring mặc định của trình duyệt
-    booking.method = el.dataset.method;
-    syncPaymentPanels();
+    el.blur();
+    booking.method = el.dataset.method || 'bank';
+    syncPaymentMethodCard();
 }
 
-function syncPaymentPanels() {
-    const panels = {
-        vnpay: document.getElementById('vnpayPanel'),
-        momo: document.getElementById('momoPanel'),
-        zalopay: document.getElementById('zalopayPanel'),
-        bank: document.getElementById('bankPanel')
-    };
-    Object.keys(panels).forEach(key => {
-        if (panels[key]) {
-            panels[key].classList.toggle('show', booking.method === key);
-        }
-    });
+function syncPaymentMethodCard() {
+    const cfg = PAYMENT_GATEWAY_CONFIG[booking.method] || PAYMENT_GATEWAY_CONFIG.bank;
 
-    const cfg = PAYMENT_GATEWAY_CONFIG[booking.method] || PAYMENT_GATEWAY_CONFIG.vnpay;
+    const titleEl = document.getElementById('pmSummaryTitle');
+    if (titleEl) titleEl.textContent = cfg.summaryTitle;
+
+    const descEl = document.getElementById('pmSummaryDesc');
+    if (descEl) descEl.textContent = cfg.summaryDesc;
+
+    const badgeEl = document.getElementById('pmSummaryBadge');
+    if (badgeEl) {
+        badgeEl.textContent = cfg.badgeText;
+        badgeEl.className = 'badge px-2 py-0 ' + cfg.badgeClass;
+    }
+
+    const iconEl = document.getElementById('pmSummaryIcon');
+    if (iconEl) iconEl.innerHTML = cfg.iconHtml;
+
     const bdrMethodEl = document.getElementById('bdrMethod');
-    if (bdrMethodEl) bdrMethodEl.textContent = cfg.summaryLabel;
+    if (bdrMethodEl) bdrMethodEl.textContent = cfg.label;
+
     updateCtaLabels();
 }
 
-/* ---- Chuyển tab con trong từng cổng (Quét QR vs Thanh toán Web/ATM/SĐT) ---- */
-function switchGatewayTab(gateway, tabType, btnEl) {
-    const panel = document.getElementById(`${gateway}Panel`);
-    if (!panel) return;
-    panel.querySelectorAll('.gw-mode-tab').forEach(b => b.classList.remove('active'));
-    if (btnEl) btnEl.classList.add('active');
+/* ---- Mở Popup Cổng Thanh Toán Duy Nhất (VietQR / VNPay / MoMo / ZaloPay) ---- */
+function openPaymentGatewayModal(gatewayKey) {
+    const key = gatewayKey || booking.method || 'bank';
+    const cfg = PAYMENT_GATEWAY_CONFIG[key] || PAYMENT_GATEWAY_CONFIG.bank;
 
-    const qrPane = document.getElementById(`${gateway}-tab-qr`);
-    const webPane = document.getElementById(`${gateway}-tab-web`);
-    if (qrPane) qrPane.classList.toggle('show', tabType === 'qr');
-    if (webPane) webPane.classList.toggle('show', tabType === 'web');
-}
-
-function selectVnpayBank(btnEl, bankName) {
-    const grid = document.getElementById('vnpayBankGrid');
-    if (grid) {
-        grid.querySelectorAll('.gw-bank-item').forEach(b => b.classList.remove('active'));
-    }
-    if (btnEl) btnEl.classList.add('active');
-    booking.vnpayBank = bankName;
-    const labelEl = document.getElementById('vnpaySelectedBankLabel');
-    if (labelEl) labelEl.textContent = bankName;
-}
-
-function formatAtmCard(inp) {
-    inp.value = inp.value.replace(/\D/g, '').slice(0, 19).replace(/(.{4})/g, '$1 ').trim();
-}
-
-function formatIssueDate(inp) {
-    let v = inp.value.replace(/\D/g, '');
-    if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2, 4);
-    inp.value = v;
-}
-
-/* ---- Xác thực trực tiếp trên tab Web của VNPay / MoMo / ZaloPay ---- */
-async function verifyInlineGateway(gateway) {
-    const cfg = PAYMENT_GATEWAY_CONFIG[gateway] || PAYMENT_GATEWAY_CONFIG.vnpay;
-
-    if (gateway === 'vnpay') {
-        const cardNum = document.getElementById('vnpayCardNumber')?.value.replace(/\s+/g, '') || '';
-        const holder = document.getElementById('vnpayCardHolder')?.value.trim() || '';
-        if (cardNum.length < 8 || !holder) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Thiếu thông tin thẻ nội địa',
-                text: `Vui lòng nhập số thẻ/số tài khoản ${booking.vnpayBank} và tên chủ thẻ để xác thực qua cổng VNPAY.`,
-                confirmButtonColor: '#0d9488'
-            });
-            return;
-        }
-    } else if (gateway === 'momo') {
-        const phone = document.getElementById('momoUserPhone')?.value.trim() || '';
-        if (!/^0\d{8,10}$/.test(phone.replace(/\s+/g, ''))) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Số điện thoại MoMo chưa hợp lệ',
-                text: 'Vui lòng nhập số điện thoại đăng ký Ví MoMo (10 chữ số).',
-                confirmButtonColor: '#0d9488'
-            });
-            return;
-        }
-    } else if (gateway === 'zalopay') {
-        const phone = document.getElementById('zalopayUserPhone')?.value.trim() || '';
-        if (!/^0\d{8,10}$/.test(phone.replace(/\s+/g, ''))) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Số điện thoại ZaloPay chưa hợp lệ',
-                text: 'Vui lòng nhập số điện thoại liên kết Zalo / ZaloPay (10 chữ số).',
-                confirmButtonColor: '#0d9488'
-            });
-            return;
-        }
-    }
-
-    const { value: otp } = await Swal.fire({
-        title: `Xác thực OTP ${cfg.label}`,
-        html: `<p class="small text-muted mb-2">Mã OTP xác nhận giao dịch đặt cọc <strong>${fmt(booking._deposit)}</strong> (${booking._transferRef}) đã được gửi tới thiết bị của bạn.</p>`,
-        input: 'text',
-        inputPlaceholder: 'Nhập mã OTP 6 số (VD: 123456)',
-        inputValue: '123456',
-        showCancelButton: true,
-        confirmButtonText: 'Xác nhận thanh toán',
-        cancelButtonText: 'Hủy',
-        confirmButtonColor: '#0d9488',
-        inputValidator: (value) => {
-            if (!value || value.trim().length < 4) {
-                return 'Vui lòng nhập mã OTP hợp lệ!';
-            }
-        }
-    });
-
-    if (otp) {
-        booking.gatewayVerified = true;
-        const badge = document.getElementById('onlineVerifiedBadge');
-        if (badge) badge.style.display = 'inline-flex';
-        toast(`Đã xác thực giao dịch ${cfg.label} thành công!`);
-    }
-}
-
-/* ---- Mở Cổng Thanh Toán Web (Popup Checkout Gateway) ---- */
-function openGatewayCheckout(gateway) {
-    const cfg = PAYMENT_GATEWAY_CONFIG[gateway] || PAYMENT_GATEWAY_CONFIG.vnpay;
     const header = document.getElementById('gwModalHeader');
     if (header) {
-        header.className = 'gw-modal-header ' + (cfg.headerClass || '');
+        header.className = 'gw-modal-header p-3 text-white ' + (cfg.headerClass || '');
     }
     const logo = document.getElementById('gwModalLogo');
     if (logo) logo.src = cfg.logoUrl;
+
     const title = document.getElementById('gwCheckoutLabel');
     if (title) title.textContent = cfg.checkoutTitle;
+
     const sub = document.getElementById('gwCheckoutSub');
     if (sub) sub.textContent = cfg.checkoutSub;
-    const ref = document.getElementById('gwModalRef');
-    if (ref) ref.textContent = booking._transferRef || 'DATSAN-...';
-    const amt = document.getElementById('gwModalAmount');
-    if (amt) amt.textContent = fmt(booking._deposit);
+
     const qrImg = document.getElementById('gwModalQrImg');
     if (qrImg) qrImg.src = cfg.qrImg;
 
-    const modalEl = document.getElementById('gatewayCheckoutModal');
+    const hint = document.getElementById('gwModalHintText');
+    if (hint) {
+        hint.innerHTML = `<i class="fa-solid fa-qrcode text-teal"></i> ${cfg.hintText}`;
+    }
+
+    const amt = document.getElementById('gwModalAmount');
+    if (amt) amt.textContent = fmt(booking._deposit);
+
+    const ref = document.getElementById('gwModalRef');
+    if (ref) ref.textContent = booking._transferRef || 'DATSAN-...';
+
+    const pLabel = document.getElementById('gwModalProviderLabel');
+    if (pLabel) pLabel.textContent = cfg.providerLabel;
+
+    const pName = document.getElementById('gwModalProviderName');
+    if (pName) pName.textContent = cfg.providerName;
+
+    const aLabel = document.getElementById('gwModalAccLabel');
+    if (aLabel) aLabel.textContent = cfg.accLabel;
+
+    const aVal = document.getElementById('gwModalAccValue');
+    if (aVal) aVal.textContent = cfg.accValue;
+
+    const owner = document.getElementById('gwModalOwnerName');
+    if (owner) owner.textContent = cfg.ownerName;
+
+    const dlBtn = document.getElementById('gwModalDownloadQr');
+    if (dlBtn) {
+        dlBtn.href = cfg.qrImg;
+        dlBtn.setAttribute('download', cfg.downloadName);
+    }
+
+    const confirmBtn = document.getElementById('btnGwConfirmDone');
+    if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = `<i class="fa-solid fa-circle-check me-1"></i> ${cfg.btnText}`;
+    }
+
+    const modalEl = document.getElementById('checkoutGatewayModal');
     if (modalEl && typeof bootstrap !== 'undefined') {
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
     }
 }
 
-function confirmGatewayCheckout() {
-    booking.gatewayVerified = true;
-    const badge = document.getElementById('onlineVerifiedBadge');
-    if (badge) {
-        badge.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i>Đã xác thực trực tuyến';
-        badge.style.display = 'inline-flex';
-    }
+function openPaymentModalPreview() {
+    openPaymentGatewayModal(booking.method);
+}
 
-    const btnBank = document.getElementById('btnConfirmBankTransfer');
-    if (btnBank && booking.method === 'bank') {
-        btnBank.classList.add('confirmed');
-        btnBank.innerHTML = '<i class="fa-solid fa-check-double text-white me-1"></i> Đã xác nhận chuyển tiền';
-    }
-
-    const modalEl = document.getElementById('gatewayCheckoutModal');
-    if (modalEl && typeof bootstrap !== 'undefined') {
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        if (modal) modal.hide();
-    }
-
-    const agreeTerms = document.getElementById('agreeTerms');
-    if (agreeTerms && !agreeTerms.checked) {
-        agreeTerms.checked = true;
-    }
+/* ---- Nút CTA chính trên trang: Kiểm tra thông tin -> Mở Modal Thanh Toán ---- */
+function handlePaymentCta() {
+    if (!paymentReady || paymentSubmitting || paymentComplete) return;
 
     const name  = document.getElementById('billingName')?.value.trim();
     const phone = document.getElementById('billingPhone')?.value.trim();
     const email = document.getElementById('billingEmail')?.value.trim();
-    if (name && phone && email) {
-        handlePayment();
-    } else {
-        toast('Đã ghi nhận thanh toán! Vui lòng kiểm tra thông tin người đặt để hoàn tất.');
-        highlightCtaButton();
-    }
-}
+    const agree = document.getElementById('agreeTerms')?.checked;
 
-/* ---- Xác nhận chuyển khoản ngân hàng VietQR ---- */
-function openBankConfirmModal() {
-    const amountEl = document.getElementById('bankConfirmModalAmount');
-    if (amountEl) amountEl.textContent = fmt(booking._deposit);
-    
-    const refEl = document.getElementById('bankConfirmModalRef');
-    if (refEl) refEl.textContent = booking._transferRef || 'DATSAN-...';
-
-    const modalEl = document.getElementById('bankTransferConfirmModal');
-    if (modalEl && typeof bootstrap !== 'undefined') {
-        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-        modal.show();
-    }
-}
-
-async function completeBankTransferPayment() {
-    booking.gatewayVerified = true;
-
-    const btn = document.getElementById('btnOpenBankConfirm');
-    if (btn) {
-        btn.classList.add('btn-success');
-        btn.classList.remove('btn-teal');
-        btn.innerHTML = '<i class="fa-solid fa-check-double text-white me-2"></i> Đã xác nhận chuyển tiền';
-    }
-    const badge = document.getElementById('onlineVerifiedBadge');
-    if (badge) {
-        badge.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i>Đã xác nhận chuyển khoản';
-        badge.style.display = 'inline-flex';
-    }
-
-    const modalEl = document.getElementById('bankTransferConfirmModal');
-    if (modalEl && typeof bootstrap !== 'undefined') {
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        if (modal) modal.hide();
-    }
-
-    const agreeTerms = document.getElementById('agreeTerms');
-    if (agreeTerms && !agreeTerms.checked) {
-        agreeTerms.checked = true;
-    }
-
-    const name  = document.getElementById('billingName')?.value.trim();
-    const phone = document.getElementById('billingPhone')?.value.trim();
-    const email = document.getElementById('billingEmail')?.value.trim();
-    if (!name || !phone || !email) {
+    if (!name) {
         Swal.fire({
             icon: 'warning',
-            title: 'Chưa điền thông tin người đặt',
-            text: 'Vui lòng kiểm tra và điền đầy đủ Họ tên, Số điện thoại và Email để nhận hóa đơn và vé.',
+            title: 'Thiếu thông tin người đặt',
+            text: 'Vui lòng nhập họ và tên của bạn.',
             confirmButtonColor: '#0d9488'
-        }).then(() => {
-            const inputName = document.getElementById('billingName');
-            if (inputName) inputName.focus();
-            highlightCtaButton();
+        }).then(() => document.getElementById('billingName')?.focus());
+        return;
+    }
+    if (!phone || !/^(0|\+84)\d{9,10}$/.test(phone.replace(/\s+/g, ''))) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Số điện thoại không hợp lệ',
+            text: 'Vui lòng nhập số điện thoại liên hệ (10 chữ số).',
+            confirmButtonColor: '#0d9488'
+        }).then(() => document.getElementById('billingPhone')?.focus());
+        return;
+    }
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Email nhận vé không hợp lệ',
+            text: 'Vui lòng nhập đúng địa chỉ email để nhận hóa đơn và thông tin đặt sân.',
+            confirmButtonColor: '#0d9488'
+        }).then(() => document.getElementById('billingEmail')?.focus());
+        return;
+    }
+    if (!agree) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Điều khoản đặt sân',
+            text: 'Vui lòng đánh dấu đồng ý với Điều khoản đặt sân của GODMINTON.',
+            confirmButtonColor: '#0d9488'
         });
         return;
     }
 
-    await handlePayment();
+    // Đủ thông tin -> Mở ngay Popup Cổng Thanh Toán có QR + Số tiền + Nội dung
+    openPaymentGatewayModal(booking.method);
 }
 
-function markBankTransferConfirmed() {
-    booking.gatewayVerified = true;
-    const btn = document.getElementById('btnOpenBankConfirm');
-    if (btn) {
-        btn.classList.add('btn-success');
-        btn.classList.remove('btn-teal');
-        btn.innerHTML = '<i class="fa-solid fa-check-double text-white me-2"></i> Đã xác nhận chuyển tiền';
-    }
-    const badge = document.getElementById('onlineVerifiedBadge');
-    if (badge) {
-        badge.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i>Đã xác nhận chuyển khoản';
-        badge.style.display = 'inline-flex';
-    }
-    toast('Đã ghi nhận chuyển khoản thành công!');
+// Giữ alias handlePayment để tương thích nếu được gọi từ bất kỳ đâu
+function handlePayment() {
+    handlePaymentCta();
 }
 
-function highlightCtaButton() {
-    const isMobile = window.innerWidth < 992;
-    const targetBtn = document.getElementById(isMobile ? 'btnPayMobile' : 'btnPayDesktop');
-    if (targetBtn) {
-        targetBtn.classList.remove('pulse-cta');
-        void targetBtn.offsetWidth;
-        targetBtn.classList.add('pulse-cta');
-        targetBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+/* ---- Nút trong Modal: "Tôi đã chuyển khoản — Xác nhận & Hiện hóa đơn" ---- */
+async function confirmGatewayPaymentAndFinish() {
+    await submitBookingFinal();
+}
+
+/* ---- Gửi booking lên POST api/bookings.php & Hiện hóa đơn hoàn tất ---- */
+async function submitBookingFinal() {
+    if (!paymentReady || paymentSubmitting || paymentComplete) return;
+
+    const name  = document.getElementById('billingName')?.value.trim();
+    const phone = document.getElementById('billingPhone')?.value.trim();
+    const email = document.getElementById('billingEmail')?.value.trim();
+    const note  = document.getElementById('billingNote')?.value.trim() || '';
+
+    if (!name || !phone || !email) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Thiếu thông tin người đặt',
+            text: 'Vui lòng kiểm tra và điền đầy đủ họ tên, số điện thoại và email nhận vé.',
+            confirmButtonColor: '#0d9488'
+        });
+        return;
+    }
+
+    paymentSubmitting = true;
+
+    const btnDone = document.getElementById('btnGwConfirmDone');
+    let originalDoneHtml = '';
+    if (btnDone) {
+        originalDoneHtml = btnDone.innerHTML;
+        btnDone.disabled = true;
+        btnDone.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang xác thực & xuất hóa đơn...';
+    }
+
+    ['btnPayMobile', 'btnPayDesktop'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) {
+            b.disabled = true;
+            b.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý giao dịch...';
+        }
+    });
+
+    const methodNames = {
+        bank: 'Chuyển khoản VietQR',
+        vnpay: 'VNPay',
+        momo: 'MoMo',
+        zalopay: 'ZaloPay'
+    };
+    const paymentMethodLabel = methodNames[booking.method] || 'Chuyển khoản VietQR';
+
+    try {
+        const payload = {
+            court_id: booking.courtId,
+            slot_ids: booking.slotIds,
+            payment_method: paymentMethodLabel,
+            notes: note,
+            billing_name: name,
+            billing_phone: phone,
+            billing_email: email
+        };
+        if (booking.voucherCode) {
+            payload.voucher_code = booking.voucherCode;
+        }
+
+        const response = await fetch('api/bookings.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if ((response.status === 200 || response.status === 201) && result.status === 'success') {
+            paymentComplete = true;
+            paymentReady = false;
+            clearInterval(countdownTimer);
+
+            // Đóng modal thanh toán
+            const modalEl = document.getElementById('checkoutGatewayModal');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }
+
+            const bData = result.data;
+            document.getElementById('successCode').textContent  = bData.booking_code;
+            document.getElementById('sdCourt').textContent      = bData.court_name;
+            document.getElementById('sdDate').textContent       = document.getElementById('bdrDate')?.textContent || '';
+            document.getElementById('sdTime').textContent       = `${bData.time_range} (${booking.duration} giờ)`;
+            document.getElementById('sdDeposit').textContent    = fmt(bData.deposit_amount);
+            document.getElementById('sdMethod').textContent     = paymentMethodLabel;
+            document.getElementById('sdEmail').textContent      = email;
+
+            const successOverlay = document.getElementById('successOverlay');
+            const paymentNote = document.getElementById('successPaymentNote');
+            if (paymentNote) paymentNote.hidden = !bData.payment_is_demo;
+            if (successOverlay) {
+                successOverlay.inert = false;
+                successOverlay.ariaHidden = 'false';
+                successOverlay.classList.add('show');
+                successOverlay.scrollTop = 0;
+                successOverlay.focus?.();
+            }
+            document.body.style.overflow = 'hidden';
+        } else if (response.status === 401 || result.code === 401) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Yêu cầu đăng nhập',
+                text: 'Vui lòng đăng nhập để hoàn tất tạo đơn đặt sân.',
+                confirmButtonColor: '#0d9488'
+            }).then(() => {
+                window.location.href = 'auth.php?redirect=' + encodeURIComponent('payment.php' + window.location.search);
+            });
+            if (btnDone) { btnDone.disabled = false; btnDone.innerHTML = originalDoneHtml; }
+            updateCtaLabels();
+        } else if (result.code && typeof result.code === 'string' && result.code.startsWith('VOUCHER_')) {
+            removeVoucher(true);
+            showVoucherError(result.message);
+            Swal.fire({
+                icon: 'warning',
+                title: 'Mã giảm giá không còn hiệu lực',
+                text: (result.message || 'Mã đã hết hạn hoặc hết lượt.') + ' Hệ thống đã chuyển về mức giá gốc, vui lòng kiểm tra và xác nhận lại.',
+                confirmButtonColor: '#0d9488'
+            });
+            if (btnDone) { btnDone.disabled = false; btnDone.innerHTML = originalDoneHtml; }
+            updateCtaLabels();
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Không thể tạo đơn đặt sân',
+                text: result.message || 'Phiên giữ chỗ có thể đã hết hạn hoặc không hợp lệ. Vui lòng chọn lại khung giờ.',
+                confirmButtonColor: '#0d9488'
+            });
+            if (btnDone) { btnDone.disabled = false; btnDone.innerHTML = originalDoneHtml; }
+            updateCtaLabels();
+        }
+    } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Lỗi kết nối', text: 'Không thể kết nối máy chủ.', confirmButtonColor: '#0d9488' });
+        if (btnDone) { btnDone.disabled = false; btnDone.innerHTML = originalDoneHtml; }
+        updateCtaLabels();
+    } finally {
+        paymentSubmitting = false;
+        setPaymentButtons(!paymentReady || paymentComplete);
     }
 }
 
@@ -800,11 +850,12 @@ function updateTransferRef() {
     document.querySelectorAll('.js-transfer-ref').forEach(el => {
         el.textContent = ref;
     });
-    const vnpayTransCodeEl = document.getElementById('vnpayTransCode');
-    if (vnpayTransCodeEl) vnpayTransCodeEl.textContent = vnpCode;
 
     booking._transferRef = ref;
     booking._vnpayCode = vnpCode;
+
+    const gwRef = document.getElementById('gwModalRef');
+    if (gwRef) gwRef.textContent = ref;
 }
 
 function copyText(txt) {
@@ -815,55 +866,19 @@ function copyById(id) {
     if (el) copyText(el.textContent.trim());
 }
 function copyTransferRef() {
-    copyText(booking._transferRef || document.getElementById('transferRef')?.textContent || '');
-}
-
-function openQrModal(methodKey) {
-    const key = methodKey || booking.method || 'bank';
-    const cfg = PAYMENT_GATEWAY_CONFIG[key] || PAYMENT_GATEWAY_CONFIG.bank;
-
-    const titleEl = document.getElementById('qrModalTitleText');
-    if (titleEl) titleEl.textContent = cfg.modalTitle;
-
-    const imgEl = document.getElementById('qrModalImg');
-    if (imgEl) imgEl.src = cfg.qrImg;
-
-    const ownerEl = document.getElementById('modalOwnerName');
-    if (ownerEl) ownerEl.textContent = cfg.ownerName;
-
-    const accLabelEl = document.getElementById('modalAccLabel');
-    if (accLabelEl) accLabelEl.textContent = cfg.accLabel;
-
-    const accValEl = document.getElementById('modalAccValue');
-    if (accValEl) accValEl.textContent = cfg.accValue;
-
-    const providerEl = document.getElementById('modalProviderName');
-    if (providerEl) providerEl.textContent = cfg.providerName;
-
-    const depositEl = document.getElementById('modalDepositAmount');
-    if (depositEl) depositEl.textContent = fmt(booking._deposit);
-
-    const modalRef = document.getElementById('modalTransferRef');
-    if (modalRef) {
-        modalRef.textContent = booking._transferRef || 'DATSAN-...';
-    }
-
-    const downloadBtn = document.getElementById('qrModalDownloadBtn');
-    if (downloadBtn) {
-        downloadBtn.href = cfg.qrImg;
-        downloadBtn.setAttribute('download', cfg.downloadName);
-    }
-
-    const modalEl = document.getElementById('qrModal');
-    if (modalEl && typeof bootstrap !== 'undefined') {
-        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-        modal.show();
-    }
+    copyText(booking._transferRef || 'DATSAN-...');
 }
 
 function toast(msg) {
-    Swal.fire({ toast: true, position: 'top-end', icon: 'success',
-        title: msg, showConfirmButton: false, timer: 1600, timerProgressBar: true });
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: msg,
+        showConfirmButton: false,
+        timer: 1600,
+        timerProgressBar: true
+    });
 }
 
 /* ---- Countdown: 5 phút ---- */
@@ -900,150 +915,9 @@ function startCountdown(seconds) {
     countdownTimer = setInterval(tick, 1000);
 }
 
-/* ---- Payment submit: Gửi slot_ids lên API POST api/bookings.php ---- */
 function setPaymentButtons(disabled) {
     ['btnPayMobile', 'btnPayDesktop'].forEach(id => {
         const button = document.getElementById(id);
         if (button) button.disabled = disabled;
     });
-}
-
-async function handlePayment() {
-    if (!paymentReady || paymentSubmitting || paymentComplete) return;
-    const name  = document.getElementById('billingName').value.trim();
-    const phone = document.getElementById('billingPhone').value.trim();
-    const email = document.getElementById('billingEmail').value.trim();
-    const note  = document.getElementById('billingNote')?.value.trim() || '';
-
-    if (!name || !phone || !email) {
-        Swal.fire({ icon: 'warning', title: 'Thiếu thông tin', text: 'Vui lòng điền đầy đủ họ tên, số điện thoại và email nhận vé.', confirmButtonColor: '#0d9488' });
-        return;
-    }
-    if (!/\S+@\S+\.\S+/.test(email)) {
-        Swal.fire({ icon: 'warning', title: 'Email không hợp lệ', confirmButtonColor: '#0d9488' });
-        return;
-    }
-    if (!document.getElementById('agreeTerms').checked) {
-        Swal.fire({ icon: 'info', title: 'Vui lòng đồng ý điều khoản', confirmButtonColor: '#0d9488' });
-        return;
-    }
-
-    // Với Chuyển khoản ngân hàng: Nếu chưa xác nhận chuyển khoản trước đó, mở modal xác nhận
-    if (booking.method === 'bank' && !booking.gatewayVerified) {
-        openBankConfirmModal();
-        return;
-    }
-
-    paymentSubmitting = true;
-    const btns = ['btnPayMobile','btnPayDesktop'];
-    btns.forEach(id => {
-        const b = document.getElementById(id);
-        if (b) { b.disabled = true; b.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý giao dịch...'; }
-    });
-
-    const methodNames = {
-        vnpay: 'VNPay',
-        momo: 'MoMo',
-        zalopay: 'ZaloPay',
-        bank: 'Chuyển khoản VietQR'
-    };
-    const paymentMethodLabel = methodNames[booking.method] || 'VNPay';
-
-    try {
-        const payload = {
-            court_id: booking.courtId,
-            slot_ids: booking.slotIds,
-            payment_method: paymentMethodLabel,
-            notes: note,
-            billing_name: name,
-            billing_phone: phone,
-            billing_email: email
-        };
-        if (booking.voucherCode) {
-            payload.voucher_code = booking.voucherCode;
-        }
-
-        const response = await fetch('api/bookings.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-
-        if ((response.status === 200 || response.status === 201) && result.status === 'success') {
-            paymentComplete = true;
-            paymentReady = false;
-            clearInterval(countdownTimer);
-            const bData = result.data;
-
-            document.getElementById('successCode').textContent  = bData.booking_code;
-            document.getElementById('sdCourt').textContent      = bData.court_name;
-            document.getElementById('sdDate').textContent       = document.getElementById('bdrDate').textContent;
-            document.getElementById('sdTime').textContent       = `${bData.time_range} (${booking.duration} giờ)`;
-            document.getElementById('sdDeposit').textContent    = fmt(bData.deposit_amount);
-            document.getElementById('sdMethod').textContent     = paymentMethodLabel;
-            document.getElementById('sdEmail').textContent      = email;
-
-            const successOverlay = document.getElementById('successOverlay');
-            const paymentNote = document.getElementById('successPaymentNote');
-            if (paymentNote) paymentNote.hidden = !bData.payment_is_demo;
-            successOverlay.inert = false;
-            successOverlay.ariaHidden = 'false';
-            successOverlay.classList.add('show');
-            successOverlay.scrollTop = 0;
-            successOverlay.focus?.();
-            document.body.style.overflow = 'hidden';
-        } else if (response.status === 401 || result.code === 401) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Yêu cầu đăng nhập',
-                text: 'Vui lòng đăng nhập để hoàn tất tạo đơn đặt sân.',
-                confirmButtonColor: '#0d9488'
-            }).then(() => {
-                window.location.href = 'auth.php?redirect=' + encodeURIComponent('payment.php' + window.location.search);
-            });
-            btns.forEach(id => {
-                const b = document.getElementById(id);
-                if (b) { b.disabled = false; b.innerHTML = `<span id="${id}Text">Xác Nhận & Đặt Cọc</span>`; }
-            });
-            updateCtaLabels();
-        } else if (result.code && typeof result.code === 'string' && result.code.startsWith('VOUCHER_')) {
-            removeVoucher(true);
-            showVoucherError(result.message);
-            Swal.fire({
-                icon: 'warning',
-                title: 'Mã giảm giá không còn hiệu lực',
-                text: (result.message || 'Mã đã hết hạn hoặc hết lượt.') + ' Hệ thống đã chuyển về mức giá gốc, vui lòng kiểm tra và xác nhận lại.',
-                confirmButtonColor: '#0d9488'
-            });
-            btns.forEach(id => {
-                const b = document.getElementById(id);
-                if (b) { b.disabled = false; b.innerHTML = `<span id="${id}Text">Xác Nhận & Đặt Cọc</span>`; }
-            });
-            updateCtaLabels();
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Không thể tạo đơn đặt sân',
-                text: result.message || 'Phiên giữ chỗ có thể đã hết hạn hoặc không hợp lệ. Vui lòng chọn lại khung giờ.',
-                confirmButtonColor: '#0d9488'
-            });
-            btns.forEach(id => {
-                const b = document.getElementById(id);
-                if (b) { b.disabled = false; b.innerHTML = `<span id="${id}Text">Xác Nhận & Đặt Cọc</span>`; }
-            });
-            updateCtaLabels();
-        }
-    } catch (err) {
-        Swal.fire({ icon: 'error', title: 'Lỗi kết nối', text: 'Không thể kết nối máy chủ.', confirmButtonColor: '#0d9488' });
-        btns.forEach(id => {
-            const b = document.getElementById(id);
-            if (b) { b.disabled = false; b.innerHTML = `<span id="${id}Text">Xác Nhận & Đặt Cọc</span>`; }
-        });
-        updateCtaLabels();
-    } finally {
-        paymentSubmitting = false;
-        setPaymentButtons(!paymentReady || paymentComplete);
-    }
 }
