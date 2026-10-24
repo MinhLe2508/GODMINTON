@@ -49,154 +49,145 @@ require_once __DIR__ . '/config/db.php';
             <!-- Action buttons (right side) -->
             <div class="sb-actions">
 
-                <!-- 🎛️ Filter button with badge -->
-                <button class="sb-filter-btn" id="btnOpenFilter" type="button" onclick="openFilterDrawer()">
+                <!-- Bộ lọc -->
+                <button class="sb-btn" id="btnOpenFilter" type="button" onclick="openFilterDrawer()" title="Bộ lọc">
                     <i class="fa-solid fa-sliders"></i>
-                    <span>Bộ lọc</span>
-                    <span class="sb-filter-badge" id="filterBadge" style="display:none;">0</span>
+                    <span class="sb-lbl">Bộ lọc</span>
+                    <span class="filter-count" id="filterCountBadge" style="display:none;">0</span>
                 </button>
 
-                <!-- ✕ Quick clear (shows when filters active) -->
-                <button class="sb-clear-btn" id="btnQuickClear" type="button"
-                        onclick="resetAllFilters()" title="Xóa bộ lọc" style="display:none;">
-                    <i class="fa-solid fa-xmark"></i>
+                <!-- Bản đồ -->
+                <a href="#mapSection" class="sb-btn" title="Bản đồ sân">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span class="sb-lbl">Bản đồ</span>
+                </a>
+
+                <!-- Sân đã đặt -->
+                <a href="history.php" class="sb-btn" title="Sân đã đặt">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    <span class="sb-lbl">Đã đặt</span>
+                </a>
+
+                <!-- Yêu thích -->
+                <button class="sb-btn" id="btnFavorite" type="button" onclick="toggleFavoriteFilter()" title="Sân yêu thích">
+                    <i class="fa-regular fa-heart"></i>
+                    <span class="sb-lbl">Yêu thích</span>
                 </button>
+
                 <!-- Giao diện Sáng / Tối -->
                 <button class="sb-btn" id="themeToggle" type="button" title="Chuyển chế độ Sáng / Tối" aria-label="Chuyển chế độ Sáng / Tối">
                     <i class="fa-solid fa-moon"></i>
                     <span class="sb-lbl">Giao diện</span>
                 </button>
+
             </div>
         </div>
 
-        <!-- Active filter pills row (populated by JS) -->
-        <div class="active-Filter-pills" id="activePillsRow" style="display:none;"></div>
+        <!-- Active filter tags strip (shown when filters applied) -->
+        <div class="active-tags-strip" id="activeTagsStrip">
+            <span class="small fw-bold text-muted me-1" style="font-size:0.7rem; flex-shrink:0;">ĐÃ LỌC:</span>
+            <div id="activeTagsContainer" class="d-flex flex-wrap gap-1 align-items-center"></div>
+            <button class="btn-reset-all" id="btnResetAll" type="button" onclick="resetAllFilters()">
+                <i class="fa-solid fa-rotate-left"></i> Đặt lại
+            </button>
+        </div>
 
     </div>
 </div>
 
-<!-- ==================== FILTER DRAWER (Slide-over) ==================== -->
-<!-- Backdrop -->
-<div class="filter-backdrop" id="filterBackdrop" onclick="closeFilterDrawer()"></div>
+<!-- ============================================================
+     FILTER DRAWER OVERLAY + DRAWER
+     ============================================================ -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeFilterDrawer()"></div>
 
-<!-- Drawer panel -->
 <div class="filter-drawer" id="filterDrawer" role="dialog" aria-label="Bộ lọc tìm kiếm">
 
     <!-- Header -->
     <div class="drawer-header">
         <div class="d-flex align-items-center gap-2">
-            <i class="fa-solid fa-sliders text-teal"></i>
-            <span class="fw-extrabold" style="font-size:1rem;">Bộ Lọc Tìm Kiếm</span>
+            <button class="drawer-close" type="button" onclick="closeFilterDrawer()" title="Đóng" aria-label="Đóng">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h5 class="mb-0">Bộ Lọc Tìm Kiếm</h5>
         </div>
-        <button class="drawer-close-btn" onclick="closeFilterDrawer()" aria-label="Đóng">
+        <button class="drawer-close" type="button" onclick="closeFilterDrawer()" title="Đóng" aria-label="Đóng">
             <i class="fa-solid fa-xmark"></i>
         </button>
     </div>
 
-    <!-- Scrollable body -->
+    <!-- Body -->
     <div class="drawer-body">
-
-        <!-- 1. Khu vực / Phường -->
+        <!-- Khu vực -->
         <div class="drawer-section">
             <div class="drawer-section-title">
-                <i class="fa-solid fa-location-dot text-teal me-1"></i>Khu Vực / Phường
+                <i class="fa-solid fa-location-dot text-teal me-1"></i>Khu Vực / Quận
             </div>
-            <!-- Quick area chips -->
-            <div class="area-chips-wrap" id="wardChipsWrap">
-                <button class="area-chip selected" data-ward="" onclick="selectWardChip(this, '')">
-                    Tất cả
-                </button>
-                <!-- JS sẽ điền thêm từ API wards.php -->
-            </div>
-            <!-- Fallback select (ẩn, đồng bộ với chips để courts.js đọc) -->
-            <select id="filterDistrict" class="d-none">
-                <option value="">Tất cả khu vực</option>
+            <select class="drawer-select" id="filterDistrict">
+                <option value="">Tất cả khu vực TP.HCM</option>
             </select>
         </div>
 
-        <!-- 2. Mức giá tối đa -->
+        <!-- Mức giá -->
         <div class="drawer-section">
             <div class="drawer-section-title">
-                <i class="fa-solid fa-tag text-teal me-1"></i>Mức Giá / Giờ
+                <i class="fa-solid fa-tag text-teal me-1"></i>Mức Giá Thuê
             </div>
-            <div class="price-presets" id="pricePresets">
-                <button class="price-chip selected" data-price="" onclick="selectPriceChip(this, '')">
-                    Tất cả mức giá
-                </button>
-                <button class="price-chip" data-price="80000" onclick="selectPriceChip(this, '80000')">
-                    <span>Dưới 80.000đ</span>
-                    <small class="text-muted d-block" style="font-size:0.65rem;">Tiết kiệm</small>
-                </button>
-                <button class="price-chip" data-price="100000" onclick="selectPriceChip(this, '100000')">
-                    <span>Dưới 100.000đ</span>
-                    <small class="text-muted d-block" style="font-size:0.65rem;">Phổ biến</small>
-                </button>
-                <button class="price-chip" data-price="120000" onclick="selectPriceChip(this, '120000')">
-                    <span>Dưới 120.000đ</span>
-                    <small class="text-muted d-block" style="font-size:0.65rem;">Cao cấp</small>
-                </button>
-                <button class="price-chip" data-price="150000" onclick="selectPriceChip(this, '150000')">
-                    <span>Dưới 150.000đ</span>
-                    <small class="text-muted d-block" style="font-size:0.65rem;">VIP / Thi đấu</small>
-                </button>
-            </div>
-            <!-- Hidden select synced for courts.js -->
-            <select id="filterPrice" class="d-none">
-                <option value="">Mọi mức giá</option>
-                <option value="80000">Dưới 80.000đ</option>
-                <option value="100000">Dưới 100.000đ</option>
-                <option value="120000">Dưới 120.000đ</option>
-                <option value="150000">Dưới 150.000đ</option>
+            <select class="drawer-select" id="filterPrice">
+                <option value="">Tất cả mức giá</option>
+                <option value="80000">Dưới 80.000 đ/giờ</option>
+                <option value="90000">Dưới 90.000 đ/giờ</option>
+                <option value="100000">Dưới 100.000 đ/giờ</option>
+                <option value="120000">Dưới 120.000 đ/giờ</option>
+                <option value="150000">Dưới 150.000 đ/giờ</option>
             </select>
         </div>
 
-        <!-- 3. Tiện ích sân -->
+        <!-- Tiện ích sân -->
         <div class="drawer-section">
             <div class="drawer-section-title">
-                <i class="fa-solid fa-wand-magic-sparkles text-teal me-1"></i>Tiện Ích Sân
-                <span class="text-muted fw-normal ms-1" style="font-size:0.68rem;">(chọn nhiều)</span>
+                <i class="fa-solid fa-star text-teal me-1"></i>Tiện Ích Sân
             </div>
-            <div class="amenity-grid" id="amenityGroup">
-                <button class="amenity-chip" data-value="indoor" onclick="toggleAmenity(this)">
-                    <i class="fa-solid fa-house-chimney"></i> Sân trong nhà
+            <div class="amenity-grid">
+                <button type="button" class="amenity-chip" data-value="aircon" data-label="Điều hòa" onclick="toggleAmenityChip(this)">
+                    <i class="fa-solid fa-snowflake text-info"></i> Điều hòa
                 </button>
-                <button class="amenity-chip" data-value="aircon" onclick="toggleAmenity(this)">
-                    <i class="fa-solid fa-snowflake"></i> Điều hòa
+                <button type="button" class="amenity-chip" data-value="parking" data-label="Bãi đỗ xe" onclick="toggleAmenityChip(this)">
+                    <i class="fa-solid fa-square-parking text-primary"></i> Bãi đỗ xe
                 </button>
-                <button class="amenity-chip" data-value="parking" onclick="toggleAmenity(this)">
-                    <i class="fa-solid fa-square-parking"></i> Bãi đỗ xe
+                <button type="button" class="amenity-chip" data-value="shower" data-label="Phòng tắm" onclick="toggleAmenityChip(this)">
+                    <i class="fa-solid fa-shower text-success"></i> Phòng tắm
                 </button>
-                <button class="amenity-chip" data-value="wifi" onclick="toggleAmenity(this)">
-                    <i class="fa-solid fa-wifi"></i> Wi-Fi
+                <button type="button" class="amenity-chip" data-value="rental" data-label="Cho thuê vợt" onclick="toggleAmenityChip(this)">
+                    <i class="fa-solid fa-medal text-warning"></i> Cho thuê vợt
                 </button>
-                <button class="amenity-chip" data-value="shower" onclick="toggleAmenity(this)">
-                    <i class="fa-solid fa-shower"></i> Phòng tắm
+                <button type="button" class="amenity-chip" data-value="cafe" data-label="Canteen/Cafe" onclick="toggleAmenityChip(this)">
+                    <i class="fa-solid fa-mug-hot" style="color:#f97316;"></i> Canteen/Cafe
                 </button>
-                <button class="amenity-chip" data-value="rental" onclick="toggleAmenity(this)">
-                    <i class="fa-solid fa-racquet"></i> Thuê vợt
+                <button type="button" class="amenity-chip" data-value="locker" data-label="Tủ khóa" onclick="toggleAmenityChip(this)">
+                    <i class="fa-solid fa-lock text-secondary"></i> Tủ khóa
                 </button>
-                <button class="amenity-chip" data-value="cafe" onclick="toggleAmenity(this)">
-                    <i class="fa-solid fa-mug-hot"></i> Canteen / Cafe
+                <button type="button" class="amenity-chip" data-value="wifi" data-label="Wi-Fi" onclick="toggleAmenityChip(this)">
+                    <i class="fa-solid fa-wifi" style="color:#8b5cf6;"></i> Wi-Fi
                 </button>
-                <button class="amenity-chip" data-value="locker" onclick="toggleAmenity(this)">
-                    <i class="fa-solid fa-lock"></i> Tủ khóa
+                <button type="button" class="amenity-chip" data-value="court_indoor" data-label="Sân trong nhà" onclick="toggleAmenityChip(this)">
+                    <i class="fa-solid fa-warehouse" style="color:#06b6d4;"></i> Sân trong nhà
                 </button>
             </div>
         </div>
 
-        <!-- 4. Đánh giá tối thiểu -->
+        <!-- Đánh giá tối thiểu -->
         <div class="drawer-section">
             <div class="drawer-section-title">
                 <i class="fa-solid fa-star text-warning me-1"></i>Đánh Giá Tối Thiểu
             </div>
             <div class="d-flex gap-2" id="ratingGroup">
-                <button class="amenity-chip" data-value="4.5" onclick="setRating(this, 4.5)">
+                <button type="button" class="amenity-chip" data-value="4.5" onclick="setRating(this, 4.5)">
                     <i class="fa-solid fa-star text-warning"></i> 4.5+
                 </button>
-                <button class="amenity-chip" data-value="4.0" onclick="setRating(this, 4.0)">
+                <button type="button" class="amenity-chip" data-value="4.0" onclick="setRating(this, 4.0)">
                     <i class="fa-solid fa-star text-warning"></i> 4.0+
                 </button>
-                <button class="amenity-chip" data-value="3.5" onclick="setRating(this, 3.5)">
+                <button type="button" class="amenity-chip" data-value="3.5" onclick="setRating(this, 3.5)">
                     <i class="fa-solid fa-star text-warning"></i> 3.5+
                 </button>
             </div>
@@ -210,7 +201,7 @@ require_once __DIR__ . '/config/db.php';
             <i class="fa-solid fa-rotate-left"></i> Đặt lại
         </button>
         <button type="button" id="btnApplyFilters" class="btn-drawer-apply" onclick="applyDrawerFilters()">
-            <i class="fa-solid fa-magnifying-glass me-1"></i>Tìm kiếm
+            <i class="fa-solid fa-magnifying-glass me-1"></i>Áp dụng bộ lọc
         </button>
     </div>
 </div>
