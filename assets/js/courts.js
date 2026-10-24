@@ -141,16 +141,21 @@ function clearTag(i) {
 function updateFilterBadge() {
     const count = (state.ward_id ? 1 : 0) + (state.price ? 1 : 0)
         + state.amenities.length + (state.minRating ? 1 : 0);
-    const badge = document.getElementById('filterCountBadge');
-    const btn   = document.getElementById('btnOpenFilter');
-    if (count > 0) {
-        badge.textContent = count;
-        badge.style.display = 'flex';
-        btn.classList.add('active');
-    } else {
-        badge.style.display = 'none';
-        btn.classList.remove('active');
+    const btn = document.getElementById('btnOpenFilter');
+    let badge = document.getElementById('filterCountBadge');
+
+    // Một số phiên bản giao diện thiếu badge; bổ sung trước khi cập nhật.
+    if (!badge && btn) {
+        badge = document.createElement('span');
+        badge.id = 'filterCountBadge';
+        badge.className = 'filter-count';
+        btn.appendChild(badge);
     }
+    if (badge) {
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'flex' : 'none';
+    }
+    if (btn) btn.classList.toggle('active', count > 0);
 }
 
 /* ================================================================
