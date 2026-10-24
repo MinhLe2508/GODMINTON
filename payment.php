@@ -190,8 +190,8 @@ if ($currentUser !== null) {
                             Quét mã QR tự động từ hơn 40 ứng dụng ngân hàng & ví điện tử.
                         </div>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3 py-1 text-nowrap d-none d-sm-inline-flex align-items-center gap-1" style="font-size:0.75rem;" onclick="openPaymentModalPreview()">
-                        <i class="fa-solid fa-qrcode"></i> Xem mã QR
+                    <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-2 px-sm-3 py-1 text-nowrap d-inline-flex align-items-center gap-1" style="font-size:0.75rem;" onclick="openPaymentModalPreview()">
+                        <i class="fa-solid fa-qrcode"></i> <span class="d-none d-sm-inline">Xem mã </span>QR
                     </button>
                 </div>
                 <div class="pm-summary-hint mt-2 pt-2 border-top d-flex align-items-center gap-2" style="font-size:0.75rem; color:var(--text-secondary);">
@@ -411,7 +411,7 @@ if ($currentUser !== null) {
 
 <!-- ===================== MODAL CỔNG THANH TOÁN DUY NHẤT ===================== -->
 <div class="modal fade" id="checkoutGatewayModal" tabindex="-1" aria-labelledby="gwCheckoutLabel" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+    <div class="modal-dialog modal-dialog-centered gw-checkout-dialog">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
             <!-- Modal Header (Màu sắc và Logo thay đổi theo Cổng thanh toán) -->
             <div class="gw-modal-header p-3 text-white" id="gwModalHeader" style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);">
@@ -431,16 +431,18 @@ if ($currentUser !== null) {
 
             <!-- Modal Body -->
             <div class="modal-body p-3 p-sm-4 text-center">
-                <!-- 1. KÈM CÁI MÃ: Ảnh QR Code to rõ ràng -->
-                <div class="d-inline-block p-2 bg-white rounded-4 border shadow-sm mb-3">
-                    <div class="position-relative overflow-hidden rounded-3" style="background:#fafafa;">
-                        <img id="gwModalQrImg"
-                             src="assets/img/vietqr-payment.png"
-                             alt="Mã QR Thanh Toán"
-                             style="width: 200px; height: auto; display: block; border-radius: 8px;">
-                    </div>
-                    <div class="small text-muted mt-2 d-flex align-items-center justify-content-center gap-1" style="font-size:0.72rem;" id="gwModalHintText">
-                        <i class="fa-solid fa-qrcode text-teal"></i> Quét mã bằng ứng dụng Ngân hàng hoặc Ví điện tử
+                <!-- 1. KÈM CÁI MÃ: Ảnh QR Code to rõ ràng đặt chính giữa -->
+                <div class="gw-qr-card-container mb-3">
+                    <div class="gw-qr-card shadow-sm">
+                        <div class="gw-qr-img-box">
+                            <img id="gwModalQrImg"
+                                 src="assets/img/vietqr-payment.png"
+                                 alt="Mã QR Thanh Toán"
+                                 class="gw-qr-img">
+                        </div>
+                        <div class="gw-qr-hint text-muted" id="gwModalHintText">
+                            <i class="fa-solid fa-qrcode text-teal"></i> Quét mã bằng ứng dụng Ngân hàng hoặc Ví điện tử
+                        </div>
                     </div>
                 </div>
 

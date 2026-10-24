@@ -191,6 +191,27 @@ textarea.pay-input {
     border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
+/* ---- Selected Payment Method Summary Card ---- */
+.pm-summary-card {
+    background: #ffffff;
+    border: 1.5px solid rgba(13, 148, 136, 0.25);
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.06);
+    transition: all 0.2s ease;
+}
+.pm-summary-card:hover {
+    border-color: rgba(13, 148, 136, 0.45);
+}
+.pm-summary-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 0.75rem;
+    background: rgba(13, 148, 136, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
 /* ---- Bank & E-Wallet QR panels ---- */
 .bank-panel {
     display: none;
@@ -554,6 +575,79 @@ textarea.pay-input {
     color: #ffffff;
 }
 
+/* ---- Checkout Gateway Modal Dialog & QR Styling ---- */
+.gw-checkout-dialog {
+    max-width: 440px;
+    margin: 1.75rem auto;
+}
+.gw-qr-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+.gw-qr-card {
+    background: #ffffff;
+    border: 1.5px solid var(--border-color, #e2e8f0);
+    border-radius: 1.25rem;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    max-width: 310px;
+    margin: 0 auto;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.gw-qr-card:hover {
+    box-shadow: 0 8px 24px rgba(13, 148, 136, 0.12) !important;
+}
+.gw-qr-img-box {
+    background: #fafafa;
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    border-radius: 0.85rem;
+    padding: 0.45rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 220px;
+    box-sizing: border-box;
+}
+.gw-qr-img {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: 8px;
+    object-fit: contain;
+    background: #ffffff;
+}
+.gw-qr-hint {
+    font-size: 0.74rem;
+    line-height: 1.4;
+    margin-top: 0.65rem;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    color: #64748b;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.gw-qr-hint i {
+    flex-shrink: 0;
+}
+
 /* ---- Transfer Details Table inside Checkout Gateway Modal ---- */
 .transfer-info-card {
     background: var(--bg-body, #f8fafc);
@@ -598,8 +692,10 @@ textarea.pay-input {
 .ti-value {
     color: #0f172a;
     font-weight: 700;
-    word-break: break-all;
+    word-break: break-word;
+    overflow-wrap: break-word;
     font-size: 0.86rem;
+    line-height: 1.35;
 }
 .ti-value.highlight-amount {
     font-size: 1.05rem;
@@ -643,20 +739,140 @@ textarea.pay-input {
     visibility: hidden;
 }
 
-@media (max-width: 440px) {
+#btnGwConfirmDone {
+    font-size: 0.88rem;
+    line-height: 1.35;
+    padding: 0.65rem 0.85rem;
+    white-space: normal;
+}
+
+/* Modal Responsive adjustments */
+@media (max-width: 576px) {
+    .gw-checkout-dialog {
+        margin: 0.65rem auto;
+        width: calc(100% - 1.25rem);
+        max-width: 430px;
+    }
+    #checkoutGatewayModal .modal-body {
+        padding: 1.15rem 0.95rem !important;
+    }
+    .transfer-info-card {
+        padding: 0.65rem 0.85rem;
+    }
     .ti-label {
-        flex: 0 0 120px;
-        max-width: 120px;
+        flex: 0 0 125px;
+        max-width: 125px;
         font-size: 0.78rem;
     }
+    .ti-row {
+        gap: 0.5rem;
+        padding: 0.48rem 0;
+    }
     .ti-value {
-        font-size: 0.8rem;
+        font-size: 0.82rem;
     }
     .ti-value.highlight-amount {
-        font-size: 0.95rem;
+        font-size: 1rem;
     }
     .ti-value.code-val {
         font-size: 0.84rem;
+    }
+    #btnGwConfirmDone {
+        font-size: 0.85rem;
+        padding: 0.65rem 0.75rem;
+    }
+}
+
+@media (max-width: 414px) {
+    .gw-checkout-dialog {
+        margin: 0.5rem auto;
+        width: calc(100% - 1rem);
+    }
+    #checkoutGatewayModal .modal-body {
+        padding: 1rem 0.75rem !important;
+    }
+    .gw-qr-card {
+        max-width: 285px;
+        padding: 0.75rem 0.65rem;
+    }
+    .gw-qr-img-box {
+        max-width: 200px;
+        padding: 0.35rem;
+    }
+    .gw-qr-img {
+        max-width: 185px;
+    }
+    .gw-qr-hint {
+        font-size: 0.71rem;
+        max-width: 255px;
+    }
+    .ti-label {
+        flex: 0 0 112px;
+        max-width: 112px;
+        font-size: 0.75rem;
+    }
+    .ti-value {
+        font-size: 0.79rem;
+    }
+    .ti-value.highlight-amount {
+        font-size: 0.94rem;
+    }
+    .ti-value.code-val {
+        font-size: 0.81rem;
+    }
+    .ti-copy-btn, .ti-copy-placeholder {
+        width: 26px;
+        height: 24px;
+        font-size: 0.7rem;
+    }
+    #btnGwConfirmDone {
+        font-size: 0.82rem;
+        padding: 0.6rem 0.5rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .gw-checkout-dialog {
+        margin: 0.35rem auto;
+        width: calc(100% - 0.6rem);
+    }
+    #checkoutGatewayModal .modal-body {
+        padding: 0.85rem 0.55rem !important;
+    }
+    .gw-qr-card {
+        max-width: 260px;
+        padding: 0.65rem 0.45rem;
+    }
+    .gw-qr-img-box {
+        max-width: 180px;
+        padding: 0.25rem;
+    }
+    .gw-qr-img {
+        max-width: 165px;
+    }
+    .gw-qr-hint {
+        font-size: 0.68rem;
+    }
+    .transfer-info-card {
+        padding: 0.55rem 0.65rem;
+    }
+    .ti-label {
+        flex: 0 0 102px;
+        max-width: 102px;
+        font-size: 0.72rem;
+    }
+    .ti-value {
+        font-size: 0.76rem;
+    }
+    .ti-value.highlight-amount {
+        font-size: 0.88rem;
+    }
+    .ti-value.code-val {
+        font-size: 0.77rem;
+    }
+    #btnGwConfirmDone {
+        font-size: 0.78rem;
+        padding: 0.55rem 0.4rem;
     }
 }
 
@@ -933,6 +1149,33 @@ textarea.pay-input {
         height: 40px !important;
     }
 
+    /* Compact summary card on mobile */
+    .pm-summary-card {
+        padding: 0.85rem 0.75rem !important;
+    }
+    .pm-summary-card .d-flex.align-items-center.gap-3 {
+        gap: 0.65rem !important;
+    }
+    .pm-summary-icon {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 0.6rem !important;
+    }
+    .pm-summary-icon i {
+        font-size: 1.15rem !important;
+    }
+    #pmSummaryTitle {
+        font-size: 0.8rem !important;
+    }
+    #pmSummaryDesc {
+        font-size: 0.73rem !important;
+        line-height: 1.35 !important;
+    }
+    .pm-summary-hint {
+        font-size: 0.71rem !important;
+        line-height: 1.35 !important;
+    }
+
     /* Booking CTA button */
     .btn-pay-cta {
         height: 48px !important;
@@ -972,6 +1215,25 @@ textarea.pay-input {
     .bank-panel .qr-box {
         width: 135px !important;
         height: 175px !important;
+    }
+    .pm-summary-card {
+        padding: 0.7rem 0.6rem !important;
+    }
+    .pm-summary-icon {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    .pm-summary-icon i {
+        font-size: 1rem !important;
+    }
+    #pmSummaryTitle {
+        font-size: 0.76rem !important;
+    }
+    #pmSummaryDesc {
+        font-size: 0.68rem !important;
+    }
+    .pm-summary-hint {
+        font-size: 0.67rem !important;
     }
 }
 /* Completed booking screen: centered card with a separate bottom footer. */
