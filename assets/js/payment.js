@@ -630,7 +630,7 @@ function openPaymentGatewayModal(gatewayKey) {
 
     const hint = document.getElementById('gwModalHintText');
     if (hint) {
-        hint.innerHTML = `<i class="fa-solid fa-qrcode text-teal"></i> ${cfg.hintText}`;
+        hint.style.display = 'none';
     }
 
     const amt = document.getElementById('gwModalAmount');
@@ -664,11 +664,11 @@ function openPaymentGatewayModal(gatewayKey) {
     if (confirmBtn) {
         confirmBtn.disabled = false;
         if (booking.transferConfirmed) {
-            confirmBtn.className = 'btn btn-success rounded-pill fw-bold py-2 fs-6 shadow-sm';
-            confirmBtn.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> Đã chuyển tiền — Bấm Xác nhận đặt cọc';
+            confirmBtn.className = 'btn btn-success rounded-pill fw-bold shadow-sm';
+            confirmBtn.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i> Đã thanh toán (Bấm Xác nhận đặt cọc)';
         } else {
-            confirmBtn.className = 'btn btn-teal rounded-pill fw-bold py-2 fs-6 shadow-sm';
-            confirmBtn.innerHTML = `<i class="fa-solid fa-circle-check me-1"></i> ${cfg.btnText}`;
+            confirmBtn.className = 'btn btn-teal rounded-pill fw-bold shadow-sm';
+            confirmBtn.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i> Tôi đã thanh toán';
         }
     }
 

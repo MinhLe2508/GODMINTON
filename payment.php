@@ -440,9 +440,6 @@ if ($currentUser !== null) {
                                  alt="Mã QR Thanh Toán"
                                  class="gw-qr-img">
                         </div>
-                        <div class="gw-qr-hint text-muted" id="gwModalHintText">
-                            <i class="fa-solid fa-qrcode text-teal"></i> Quét mã bằng ứng dụng Ngân hàng hoặc Ví điện tử
-                        </div>
                     </div>
                 </div>
 
@@ -503,13 +500,13 @@ if ($currentUser !== null) {
                 <!-- Thông báo hướng dẫn thanh toán -->
                 <div class="alert alert-info py-2 px-3 small text-start mb-3" style="font-size:0.75rem; border-radius:0.6rem;">
                     <i class="fa-solid fa-circle-info me-1 text-teal"></i>
-                    Sau khi hoàn tất chuyển khoản từ app ngân hàng / ví điện tử, bạn bấm <strong>"Tôi đã chuyển khoản thành công"</strong> bên dưới, sau đó bấm <strong>"Xác nhận đặt cọc"</strong> để nhận hóa đơn.
+                    Sau khi hoàn tất chuyển khoản từ app ngân hàng / ví điện tử, bạn bấm <strong>"Tôi đã thanh toán"</strong> bên dưới, sau đó bấm <strong>"Xác nhận đặt cọc"</strong> để nhận hóa đơn.
                 </div>
 
                 <!-- 3. NÚT XÁC NHẬN CHUYỂN KHOẢN -->
                 <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-teal rounded-pill fw-bold py-2 fs-6 shadow-sm" id="btnGwConfirmDone" onclick="confirmGatewayTransferDone()">
-                        <i class="fa-solid fa-circle-check me-1"></i> Tôi đã chuyển khoản thành công
+                    <button type="button" class="btn btn-teal rounded-pill fw-bold shadow-sm" id="btnGwConfirmDone" onclick="confirmGatewayTransferDone()">
+                        <i class="fa-solid fa-circle-check me-2"></i> Tôi đã thanh toán
                     </button>
                     <div class="d-flex justify-content-between align-items-center px-1">
                         <a id="gwModalDownloadQr" href="assets/img/vietqr-payment.png" download="VietQR-GODMINTON.png" class="text-decoration-none text-muted small" style="font-size:0.74rem;">

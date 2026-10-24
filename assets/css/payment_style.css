@@ -592,14 +592,14 @@ textarea.pay-input {
     background: #ffffff;
     border: 1.5px solid var(--border-color, #e2e8f0);
     border-radius: 1.25rem;
-    padding: 0.85rem;
+    padding: 0.65rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    width: 100%;
-    max-width: 310px;
+    width: fit-content;
+    max-width: 240px;
     margin: 0 auto;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -629,23 +629,6 @@ textarea.pay-input {
     border-radius: 8px;
     object-fit: contain;
     background: #ffffff;
-}
-.gw-qr-hint {
-    font-size: 0.74rem;
-    line-height: 1.4;
-    margin-top: 0.65rem;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    color: #64748b;
-    max-width: 280px;
-    margin-left: auto;
-    margin-right: auto;
-}
-.gw-qr-hint i {
-    flex-shrink: 0;
 }
 
 /* ---- Transfer Details Table inside Checkout Gateway Modal ---- */
@@ -740,10 +723,24 @@ textarea.pay-input {
 }
 
 #btnGwConfirmDone {
-    font-size: 0.88rem;
+    font-size: 0.95rem;
+    font-weight: 700;
     line-height: 1.35;
-    padding: 0.65rem 0.85rem;
-    white-space: normal;
+    padding: 0.75rem 1.25rem;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    border-radius: 9999px;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
+    transition: all 0.2s ease;
+}
+#btnGwConfirmDone:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.35);
 }
 
 /* Modal Responsive adjustments */
@@ -778,8 +775,8 @@ textarea.pay-input {
         font-size: 0.84rem;
     }
     #btnGwConfirmDone {
-        font-size: 0.85rem;
-        padding: 0.65rem 0.75rem;
+        font-size: 0.92rem;
+        padding: 0.72rem 1.15rem;
     }
 }
 
@@ -792,19 +789,15 @@ textarea.pay-input {
         padding: 1rem 0.75rem !important;
     }
     .gw-qr-card {
-        max-width: 285px;
-        padding: 0.75rem 0.65rem;
+        max-width: 220px;
+        padding: 0.55rem;
     }
     .gw-qr-img-box {
-        max-width: 200px;
+        max-width: 195px;
         padding: 0.35rem;
     }
     .gw-qr-img {
-        max-width: 185px;
-    }
-    .gw-qr-hint {
-        font-size: 0.71rem;
-        max-width: 255px;
+        max-width: 180px;
     }
     .ti-label {
         flex: 0 0 112px;
@@ -826,8 +819,8 @@ textarea.pay-input {
         font-size: 0.7rem;
     }
     #btnGwConfirmDone {
-        font-size: 0.82rem;
-        padding: 0.6rem 0.5rem;
+        font-size: 0.88rem;
+        padding: 0.68rem 1rem;
     }
 }
 
@@ -840,18 +833,15 @@ textarea.pay-input {
         padding: 0.85rem 0.55rem !important;
     }
     .gw-qr-card {
-        max-width: 260px;
-        padding: 0.65rem 0.45rem;
+        max-width: 200px;
+        padding: 0.45rem;
     }
     .gw-qr-img-box {
-        max-width: 180px;
+        max-width: 175px;
         padding: 0.25rem;
     }
     .gw-qr-img {
-        max-width: 165px;
-    }
-    .gw-qr-hint {
-        font-size: 0.68rem;
+        max-width: 160px;
     }
     .transfer-info-card {
         padding: 0.55rem 0.65rem;
@@ -871,8 +861,8 @@ textarea.pay-input {
         font-size: 0.77rem;
     }
     #btnGwConfirmDone {
-        font-size: 0.78rem;
-        padding: 0.55rem 0.4rem;
+        font-size: 0.84rem;
+        padding: 0.62rem 0.85rem;
     }
 }
 
