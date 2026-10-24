@@ -704,44 +704,73 @@ function confirmGatewayCheckout() {
 }
 
 /* ---- Xác nhận chuyển khoản ngân hàng VietQR ---- */
-function confirmBankTransfer() {
-    markBankTransferConfirmed();
+function openBankConfirmModal() {
+    const amountEl = document.getElementById('bankConfirmModalAmount');
+    if (amountEl) amountEl.textContent = fmt(booking._deposit);
+    
+    const refEl = document.getElementById('bankConfirmModalRef');
+    if (refEl) refEl.textContent = booking._transferRef || 'DATSAN-...';
 
-    Swal.fire({
-        icon: 'success',
-        title: 'Đã ghi nhận chuyển khoản!',
-        html: `
-            <div class="text-start p-3 rounded-3 bg-light mb-3" style="font-size:0.85rem;">
-                <div class="d-flex justify-content-between mb-2 pb-1 border-bottom">
-                    <span class="text-muted">Mã thanh toán:</span>
-                    <strong class="font-monospace text-teal fs-6">${booking._transferRef}</strong>
-                </div>
-                <div class="d-flex justify-content-between mb-2 pb-1 border-bottom">
-                    <span class="text-muted">Số tiền cọc:</span>
-                    <strong class="text-warning fs-6">${fmt(booking._deposit)}</strong>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span class="text-muted">Trạng thái:</span>
-                    <span class="badge bg-success-subtle text-success border border-success-subtle">
-                        <i class="fa-solid fa-check me-1"></i>Đã ghi nhận chuyển tiền
-                    </span>
-                </div>
-            </div>
-            <p class="small text-muted mb-0">Hệ thống đã ghi nhận thông tin chuyển khoản. Bạn hãy nhấn nút <strong>"Xác Nhận & Đặt Cọc"</strong> để hoàn tất và nhận hóa đơn đặt sân!</p>
-        `,
-        confirmButtonText: 'Đến nút Xác Nhận & Đặt Cọc <i class="fa-solid fa-arrow-right ms-1"></i>',
-        confirmButtonColor: '#0d9488'
-    }).then(() => {
-        highlightCtaButton();
-    });
+    const modalEl = document.getElementById('bankTransferConfirmModal');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+}
+
+async function completeBankTransferPayment() {
+    booking.gatewayVerified = true;
+
+    const btn = document.getElementById('btnOpenBankConfirm');
+    if (btn) {
+        btn.classList.add('btn-success');
+        btn.classList.remove('btn-teal');
+        btn.innerHTML = '<i class="fa-solid fa-check-double text-white me-2"></i> Đã xác nhận chuyển tiền';
+    }
+    const badge = document.getElementById('onlineVerifiedBadge');
+    if (badge) {
+        badge.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i>Đã xác nhận chuyển khoản';
+        badge.style.display = 'inline-flex';
+    }
+
+    const modalEl = document.getElementById('bankTransferConfirmModal');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    const agreeTerms = document.getElementById('agreeTerms');
+    if (agreeTerms && !agreeTerms.checked) {
+        agreeTerms.checked = true;
+    }
+
+    const name  = document.getElementById('billingName')?.value.trim();
+    const phone = document.getElementById('billingPhone')?.value.trim();
+    const email = document.getElementById('billingEmail')?.value.trim();
+    if (!name || !phone || !email) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Chưa điền thông tin người đặt',
+            text: 'Vui lòng kiểm tra và điền đầy đủ Họ tên, Số điện thoại và Email để nhận hóa đơn và vé.',
+            confirmButtonColor: '#0d9488'
+        }).then(() => {
+            const inputName = document.getElementById('billingName');
+            if (inputName) inputName.focus();
+            highlightCtaButton();
+        });
+        return;
+    }
+
+    await handlePayment();
 }
 
 function markBankTransferConfirmed() {
     booking.gatewayVerified = true;
-    const btn = document.getElementById('btnConfirmBankTransfer');
+    const btn = document.getElementById('btnOpenBankConfirm');
     if (btn) {
-        btn.classList.add('confirmed');
-        btn.innerHTML = '<i class="fa-solid fa-check-double text-white me-1"></i> Đã xác nhận chuyển tiền';
+        btn.classList.add('btn-success');
+        btn.classList.remove('btn-teal');
+        btn.innerHTML = '<i class="fa-solid fa-check-double text-white me-2"></i> Đã xác nhận chuyển tiền';
     }
     const badge = document.getElementById('onlineVerifiedBadge');
     if (badge) {
@@ -899,49 +928,10 @@ async function handlePayment() {
         return;
     }
 
-    // Với Chuyển khoản ngân hàng: Nếu chưa xác nhận chuyển khoản trước đó
+    // Với Chuyển khoản ngân hàng: Nếu chưa xác nhận chuyển khoản trước đó, mở modal xác nhận
     if (booking.method === 'bank' && !booking.gatewayVerified) {
-        const confirmResult = await Swal.fire({
-            icon: 'question',
-            title: 'Xác nhận chuyển khoản ngân hàng',
-            html: `
-                <div class="text-start p-3 rounded-3 bg-light mb-3" style="font-size:0.85rem;">
-                    <div class="d-flex justify-content-between mb-2 pb-1 border-bottom">
-                        <span class="text-muted">Mã thanh toán:</span>
-                        <strong class="font-monospace text-teal fs-6">${booking._transferRef}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2 pb-1 border-bottom">
-                        <span class="text-muted">Số tiền cần cọc:</span>
-                        <strong class="text-warning fs-6">${fmt(booking._deposit)}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="text-muted">Ngân hàng:</span>
-                        <strong>MB Bank (Quân Đội)</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="text-muted">Số TK:</span>
-                        <strong class="text-teal font-monospace">0783547289</strong>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted">Chủ TK:</span>
-                        <strong>TRUONG MINH TRIET</strong>
-                    </div>
-                </div>
-                <p class="small text-muted mb-0">Bạn đã hoàn tất chuyển khoản theo mã thanh toán trên ứng dụng ngân hàng chưa?</p>
-            `,
-            showCancelButton: true,
-            confirmButtonText: '<i class="fa-solid fa-circle-check me-1"></i> Tôi đã chuyển khoản thành công',
-            cancelButtonText: 'Để tôi kiểm tra lại',
-            confirmButtonColor: '#0d9488',
-            cancelButtonColor: '#64748b',
-            reverseButtons: true
-        });
-
-        if (!confirmResult.isConfirmed) {
-            return;
-        }
-
-        markBankTransferConfirmed();
+        openBankConfirmModal();
+        return;
     }
 
     paymentSubmitting = true;
