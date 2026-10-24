@@ -982,6 +982,14 @@ textarea.pay-input {
 }
 .btn-pay-cta:active { transform: translateY(0); }
 .btn-pay-cta:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.btn-pay-cta.btn-confirmed-deposit {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    box-shadow: 0 4px 22px rgba(5, 150, 105, 0.45) !important;
+}
+.btn-pay-cta.btn-confirmed-deposit:hover {
+    background: linear-gradient(135deg, #047857 0%, #065f46 100%) !important;
+    box-shadow: 0 6px 28px rgba(5, 150, 105, 0.6) !important;
+}
 
 /* ---- Trust badges ---- */
 .trust-badges { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; }

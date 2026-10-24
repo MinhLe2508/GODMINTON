@@ -31,7 +31,7 @@ const PAYMENT_GATEWAY_CONFIG = {
         logoUrl: 'assets/img/logo-teal.svg',
         headerClass: 'bank-header',
         hintText: 'Quét mã VietQR bằng ứng dụng Ngân hàng (VCB, MB, BIDV, Techcombank...)',
-        btnText: 'Tôi đã chuyển khoản — Xác nhận & Hiện hóa đơn'
+        btnText: 'Tôi đã chuyển khoản thành công'
     },
     vnpay: {
         label: 'VNPay',
@@ -52,7 +52,7 @@ const PAYMENT_GATEWAY_CONFIG = {
         logoUrl: 'https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR.png',
         headerClass: 'vnpay-header',
         hintText: 'Mở tính năng QR Pay trên app Ngân hàng hoặc Ví VNPAY để quét mã',
-        btnText: 'Tôi đã thanh toán VNPAY — Xác nhận & Hiện hóa đơn'
+        btnText: 'Tôi đã thanh toán VNPAY thành công'
     },
     momo: {
         label: 'MoMo',
@@ -73,7 +73,7 @@ const PAYMENT_GATEWAY_CONFIG = {
         logoUrl: 'https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png',
         headerClass: 'momo-header',
         hintText: 'Mở ứng dụng MoMo chọn mục Quét Mã để hoàn tất thanh toán',
-        btnText: 'Tôi đã thanh toán MoMo — Xác nhận & Hiện hóa đơn'
+        btnText: 'Tôi đã chuyển MoMo thành công'
     },
     zalopay: {
         label: 'ZaloPay',
@@ -94,7 +94,7 @@ const PAYMENT_GATEWAY_CONFIG = {
         logoUrl: 'https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-ZaloPay-Square.png',
         headerClass: 'zalopay-header',
         hintText: 'Quét mã trực tiếp bằng ứng dụng Zalo hoặc ZaloPay',
-        btnText: 'Tôi đã thanh toán ZaloPay — Xác nhận & Hiện hóa đơn'
+        btnText: 'Tôi đã thanh toán ZaloPay thành công'
     }
 };
 
@@ -543,7 +543,9 @@ function selectPM(el) {
     el.classList.add('selected');
     el.blur();
     booking.method = el.dataset.method || 'bank';
+    booking.transferConfirmed = false;
     syncPaymentMethodCard();
+    openPaymentGatewayModal(booking.method);
 }
 
 function syncPaymentMethodCard() {
@@ -557,8 +559,13 @@ function syncPaymentMethodCard() {
 
     const badgeEl = document.getElementById('pmSummaryBadge');
     if (badgeEl) {
-        badgeEl.textContent = cfg.badgeText;
-        badgeEl.className = 'badge px-2 py-0 ' + cfg.badgeClass;
+        if (booking.transferConfirmed) {
+            badgeEl.textContent = 'Đã xác nhận chuyển khoản';
+            badgeEl.className = 'badge px-2 py-0 bg-success text-white border-0';
+        } else {
+            badgeEl.textContent = cfg.badgeText;
+            badgeEl.className = 'badge px-2 py-0 ' + cfg.badgeClass;
+        }
     }
 
     const iconEl = document.getElementById('pmSummaryIcon');
@@ -568,6 +575,36 @@ function syncPaymentMethodCard() {
     if (bdrMethodEl) bdrMethodEl.textContent = cfg.label;
 
     updateCtaLabels();
+}
+
+/* ---- Cập nhật nhãn và trạng thái nút CTA chính ("Thanh Toán & Đặt Cọc" <-> "Xác nhận đặt cọc") ---- */
+function updateCtaLabels() {
+    const isConfirmed = !!booking.transferConfirmed;
+    const desktopText = document.getElementById('btnPayDesktopText');
+    const mobileText = document.getElementById('btnPayMobileText');
+    const desktopBtn = document.getElementById('btnPayDesktop');
+    const mobileBtn = document.getElementById('btnPayMobile');
+
+    let labelHtml = '';
+    if (isConfirmed) {
+        labelHtml = '<i class="fa-solid fa-circle-check me-2"></i> Xác nhận đặt cọc';
+    } else {
+        labelHtml = '<i class="fa-solid fa-wallet me-2"></i> Thanh Toán & Đặt Cọc';
+    }
+
+    if (desktopText) desktopText.innerHTML = labelHtml;
+    if (mobileText) mobileText.innerHTML = labelHtml;
+
+    [desktopBtn, mobileBtn].forEach(btn => {
+        if (!btn) return;
+        if (isConfirmed) {
+            btn.classList.add('btn-confirmed-deposit');
+            btn.classList.add('pulse-cta');
+        } else {
+            btn.classList.remove('btn-confirmed-deposit');
+            btn.classList.remove('pulse-cta');
+        }
+    });
 }
 
 /* ---- Mở Popup Cổng Thanh Toán Duy Nhất (VietQR / VNPay / MoMo / ZaloPay) ---- */
@@ -626,7 +663,13 @@ function openPaymentGatewayModal(gatewayKey) {
     const confirmBtn = document.getElementById('btnGwConfirmDone');
     if (confirmBtn) {
         confirmBtn.disabled = false;
-        confirmBtn.innerHTML = `<i class="fa-solid fa-circle-check me-1"></i> ${cfg.btnText}`;
+        if (booking.transferConfirmed) {
+            confirmBtn.className = 'btn btn-success rounded-pill fw-bold py-2 fs-6 shadow-sm';
+            confirmBtn.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> Đã chuyển tiền — Bấm Xác nhận đặt cọc';
+        } else {
+            confirmBtn.className = 'btn btn-teal rounded-pill fw-bold py-2 fs-6 shadow-sm';
+            confirmBtn.innerHTML = `<i class="fa-solid fa-circle-check me-1"></i> ${cfg.btnText}`;
+        }
     }
 
     const modalEl = document.getElementById('checkoutGatewayModal');
@@ -640,7 +683,95 @@ function openPaymentModalPreview() {
     openPaymentGatewayModal(booking.method);
 }
 
-/* ---- Nút CTA chính trên trang: Kiểm tra thông tin -> Mở Modal Thanh Toán ---- */
+/* ---- Bước 1: Khách bấm nút trong Modal: "Tôi đã chuyển khoản thành công" ---- */
+function confirmGatewayTransferDone() {
+    if (booking.transferConfirmed) {
+        // Đã xác nhận trước đó mà bấm tiếp trong modal -> đóng modal và tiến hành xuất hóa đơn
+        const modalEl = document.getElementById('checkoutGatewayModal');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+        submitBookingFinal();
+        return;
+    }
+
+    // Đánh dấu đã xác nhận chuyển khoản
+    booking.transferConfirmed = true;
+
+    // Đóng Popup cổng thanh toán
+    const modalEl = document.getElementById('checkoutGatewayModal');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+    }
+
+    // Cập nhật trạng thái nút và nhãn
+    updateCtaLabels();
+
+    const badge = document.getElementById('onlineVerifiedBadge');
+    if (badge) {
+        badge.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i>Đã xác nhận chuyển khoản';
+        badge.style.display = 'inline-flex';
+    }
+
+    const summaryBadge = document.getElementById('pmSummaryBadge');
+    if (summaryBadge) {
+        summaryBadge.className = 'badge px-2 py-0 bg-success text-white border-0';
+        summaryBadge.innerHTML = '<i class="fa-solid fa-check me-1"></i>Đã xác nhận chuyển khoản';
+    }
+
+    // Hiển thị thông báo hướng dẫn người dùng bấm nút "Xác nhận đặt cọc"
+    if (window.Swal) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Đã xác nhận chuyển khoản!',
+            html: `
+                <div class="text-start p-3 rounded-3 bg-light border small my-2" style="font-size:0.85rem; line-height:1.6;">
+                    <div class="d-flex justify-content-between mb-2 border-bottom pb-1">
+                        <span class="text-muted">Nội dung chuyển khoản:</span>
+                        <strong class="text-teal font-monospace fs-6">${booking._transferRef}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Số tiền đặt cọc:</span>
+                        <strong class="text-danger fw-bold fs-6">${fmt(booking._deposit)}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Trạng thái:</span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="fa-solid fa-check me-1"></i>Đã ghi nhận chuyển tiền
+                        </span>
+                    </div>
+                </div>
+                <p class="small text-muted mb-0">Hệ thống đã ghi nhận thông tin chuyển khoản. Bây giờ bạn hãy bấm nút <strong>"Xác nhận đặt cọc"</strong> để hoàn tất và xuất hóa đơn đặt sân!</p>
+            `,
+            confirmButtonText: '<i class="fa-solid fa-circle-check me-1"></i> Đến nút Xác nhận đặt cọc',
+            confirmButtonColor: '#0d9488'
+        }).then(() => {
+            highlightCtaDepositButton();
+        });
+    } else {
+        highlightCtaDepositButton();
+    }
+}
+
+// Giữ alias cho trường hợp gọi tên cũ
+function confirmGatewayPaymentAndFinish() {
+    confirmGatewayTransferDone();
+}
+
+function highlightCtaDepositButton() {
+    const isMobile = window.innerWidth < 992;
+    const targetBtn = document.getElementById(isMobile ? 'btnPayMobile' : 'btnPayDesktop');
+    if (targetBtn) {
+        targetBtn.classList.remove('pulse-cta');
+        void targetBtn.offsetWidth;
+        targetBtn.classList.add('pulse-cta');
+        targetBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+/* ---- Bước 2: Nút CTA chính trên trang ("Thanh Toán & Đặt Cọc" hoặc "Xác nhận đặt cọc") ---- */
 function handlePaymentCta() {
     if (!paymentReady || paymentSubmitting || paymentComplete) return;
 
@@ -686,18 +817,18 @@ function handlePaymentCta() {
         return;
     }
 
-    // Đủ thông tin -> Mở ngay Popup Cổng Thanh Toán có QR + Số tiền + Nội dung
-    openPaymentGatewayModal(booking.method);
+    // Nếu CHƯA xác nhận chuyển khoản: Mở popup QR để quét mã & bấm "Tôi đã chuyển khoản"
+    if (!booking.transferConfirmed) {
+        openPaymentGatewayModal(booking.method);
+        return;
+    }
+
+    // ĐÃ xác nhận chuyển khoản xong: Người dùng bấm "Xác nhận đặt cọc" -> Gọi submitBookingFinal() để xuất hóa đơn!
+    submitBookingFinal();
 }
 
-// Giữ alias handlePayment để tương thích nếu được gọi từ bất kỳ đâu
 function handlePayment() {
     handlePaymentCta();
-}
-
-/* ---- Nút trong Modal: "Tôi đã chuyển khoản — Xác nhận & Hiện hóa đơn" ---- */
-async function confirmGatewayPaymentAndFinish() {
-    await submitBookingFinal();
 }
 
 /* ---- Gửi booking lên POST api/bookings.php & Hiện hóa đơn hoàn tất ---- */
