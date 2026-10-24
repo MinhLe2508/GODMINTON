@@ -444,47 +444,57 @@ if ($currentUser !== null) {
                     </div>
                 </div>
 
-                <!-- 2. THÔNG TIN CHUYỂN KHOẢN (Số tiền, Nội dung, STK/Ví) -->
-                <div class="p-3 rounded-3 text-start mb-3" style="background: var(--bg-body, #f8fafc); border: 1.5px solid var(--border-color, #e2e8f0);">
+                <!-- 2. THÔNG TIN CHUYỂN KHOẢN (Đồng bộ thẳng hàng & cùng màu) -->
+                <div class="transfer-info-card text-start">
                     <!-- Số tiền -->
-                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                        <span class="text-muted small">Số tiền cần chuyển:</span>
-                        <div class="d-flex align-items-center gap-1">
-                            <strong class="text-warning fs-5 js-deposit-amount" id="gwModalAmount">--</strong>
-                            <button type="button" class="copy-btn" onclick="copyById('gwModalAmount')" title="Sao chép số tiền">
+                    <div class="ti-row">
+                        <span class="ti-label">Số tiền cần chuyển:</span>
+                        <div class="ti-value-wrap">
+                            <span class="ti-value highlight-amount js-deposit-amount" id="gwModalAmount">--</span>
+                            <button type="button" class="ti-copy-btn" onclick="copyById('gwModalAmount')" title="Sao chép số tiền">
                                 <i class="fa-regular fa-copy"></i>
                             </button>
                         </div>
                     </div>
 
                     <!-- Nội dung chuyển khoản / Mã GD -->
-                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                        <span class="text-muted small">Nội dung chuyển khoản:</span>
-                        <div class="d-flex align-items-center gap-1">
-                            <strong class="text-teal font-monospace fs-6 js-transfer-ref" id="gwModalRef" style="word-break:break-all;">DATSAN-...</strong>
-                            <button type="button" class="copy-btn" onclick="copyTransferRef()" title="Sao chép nội dung">
-                                <i class="fa-regular fa-copy"></i> Copy
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Tài khoản thụ hưởng -->
-                    <div class="d-flex justify-content-between align-items-center mb-1 small">
-                        <span class="text-muted" id="gwModalProviderLabel">Ngân hàng / Cổng:</span>
-                        <strong id="gwModalProviderName">MB Bank (Quân Đội)</strong>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-1 small">
-                        <span class="text-muted" id="gwModalAccLabel">Số tài khoản / SĐT:</span>
-                        <div class="d-flex align-items-center gap-1">
-                            <strong class="font-monospace text-teal" id="gwModalAccValue">0783547289</strong>
-                            <button type="button" class="copy-btn" onclick="copyById('gwModalAccValue')" title="Sao chép số tài khoản">
+                    <div class="ti-row">
+                        <span class="ti-label">Nội dung chuyển khoản:</span>
+                        <div class="ti-value-wrap">
+                            <span class="ti-value code-val js-transfer-ref" id="gwModalRef">DATSAN-...</span>
+                            <button type="button" class="ti-copy-btn" onclick="copyTransferRef()" title="Sao chép nội dung">
                                 <i class="fa-regular fa-copy"></i>
                             </button>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center small">
-                        <span class="text-muted">Chủ tài khoản:</span>
-                        <strong id="gwModalOwnerName">TRUONG MINH TRIET</strong>
+
+                    <!-- Ngân hàng thụ hưởng -->
+                    <div class="ti-row">
+                        <span class="ti-label" id="gwModalProviderLabel">Ngân hàng thụ hưởng:</span>
+                        <div class="ti-value-wrap">
+                            <span class="ti-value" id="gwModalProviderName">MB Bank (Ngân hàng Quân Đội)</span>
+                            <span class="ti-copy-placeholder" aria-hidden="true"></span>
+                        </div>
+                    </div>
+
+                    <!-- Số tài khoản -->
+                    <div class="ti-row">
+                        <span class="ti-label" id="gwModalAccLabel">Số tài khoản:</span>
+                        <div class="ti-value-wrap">
+                            <span class="ti-value code-val" id="gwModalAccValue">0783547289</span>
+                            <button type="button" class="ti-copy-btn" onclick="copyById('gwModalAccValue')" title="Sao chép số tài khoản">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Chủ tài khoản -->
+                    <div class="ti-row">
+                        <span class="ti-label">Chủ tài khoản:</span>
+                        <div class="ti-value-wrap">
+                            <span class="ti-value" id="gwModalOwnerName">TRUONG MINH TRIET</span>
+                            <span class="ti-copy-placeholder" aria-hidden="true"></span>
+                        </div>
                     </div>
                 </div>
 
