@@ -1387,3 +1387,140 @@ img, svg, video, canvas {
 .review-star-btn:focus-visible { outline: 2px solid var(--brand-teal); outline-offset: 2px; border-radius: 6px; }
 .review-avatar { width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; color: var(--brand-teal); background: rgba(13, 148, 136, 0.12); }
 .review-mine { background: rgba(13, 148, 136, 0.05); border-radius: .75rem; padding: .5rem; margin: -.5rem; }
+
+/* ================================================================
+   IN-APP PUSH NOTIFICATION BANNER (Phản hồi thị giác trực tiếp)
+   ================================================================ */
+.godminton-inapp-push-banner {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    max-width: 400px;
+    width: calc(100vw - 32px);
+    z-index: 100000;
+    background: #ffffff;
+    border-radius: 1.15rem;
+    box-shadow: 0 20px 40px -6px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(13, 148, 136, 0.25);
+    padding: 0.95rem 1.1rem;
+    cursor: pointer;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    transform: translateY(-40px) scale(0.92);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+}
+.godminton-inapp-push-banner.show {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    pointer-events: auto;
+}
+.godminton-inapp-push-banner:hover {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 24px 48px -6px rgba(0, 0, 0, 0.28), 0 0 0 1.5px rgba(13, 148, 136, 0.45);
+}
+.inapp-push-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+.inapp-push-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #0d9488;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.inapp-push-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    object-fit: contain;
+    background: #f0fdfa;
+    padding: 2px;
+    border: 1px solid rgba(13, 148, 136, 0.2);
+}
+.inapp-push-dot {
+    color: #cbd5e1;
+}
+.inapp-push-time {
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: #94a3b8;
+    text-transform: none;
+}
+.inapp-push-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.35rem;
+    line-height: 1;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+.inapp-push-close:hover {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+.inapp-push-body {
+    padding-left: 2px;
+}
+.inapp-push-title {
+    font-size: 0.94rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 0.35rem 0;
+    line-height: 1.35;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+.inapp-push-title i {
+    color: #0d9488;
+    font-size: 0.95rem;
+}
+.inapp-push-text {
+    font-size: 0.86rem;
+    color: #475569;
+    margin: 0;
+    line-height: 1.48;
+}
+
+/* Dark Mode */
+[data-bs-theme="dark"] .godminton-inapp-push-banner {
+    background: #0f172a;
+    box-shadow: 0 20px 48px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(45, 212, 191, 0.35);
+}
+[data-bs-theme="dark"] .inapp-push-title {
+    color: #f8fafc;
+}
+[data-bs-theme="dark"] .inapp-push-title i {
+    color: #2dd4bf;
+}
+[data-bs-theme="dark"] .inapp-push-text {
+    color: #cbd5e1;
+}
+[data-bs-theme="dark"] .inapp-push-brand {
+    color: #2dd4bf;
+}
+
+@media (max-width: 576px) {
+    .godminton-inapp-push-banner {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+        max-width: none;
+        padding: 0.85rem 1rem;
+    }
+}

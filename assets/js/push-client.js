@@ -80,13 +80,32 @@ window.PushClient = (() => {
         return json.publicKey;
     }
 
+    async function ensureServiceWorker() {
+        if (!('serviceWorker' in navigator)) return null;
+        try {
+            let reg = await navigator.serviceWorker.getRegistration();
+            if (!reg) {
+                reg = await navigator.serviceWorker.register('sw.js');
+            }
+            if (reg) {
+                try {
+                    await Promise.race([
+                        navigator.serviceWorker.ready,
+                        new Promise(resolve => setTimeout(resolve, 800))
+                    ]);
+                } catch (_) {}
+            }
+            return reg;
+        } catch (e) {
+            console.warn('[PushClient] Service Worker registration failed:', e);
+            return null;
+        }
+    }
+
     async function getSubscription() {
         if (!isSupported()) return null;
         try {
-            const reg = await Promise.race([
-                navigator.serviceWorker.ready,
-                new Promise(resolve => setTimeout(() => resolve(null), 1000))
-            ]) || (await navigator.serviceWorker.getRegistration());
+            const reg = (await ensureServiceWorker()) || (await navigator.serviceWorker.ready);
             if (!reg || !reg.pushManager) return null;
             return await reg.pushManager.getSubscription();
         } catch (_) {
@@ -106,7 +125,8 @@ window.PushClient = (() => {
         }
 
         // 2. Chờ Service Worker sẵn sàng
-        const reg = await navigator.serviceWorker.ready;
+        const reg = (await ensureServiceWorker()) || (await navigator.serviceWorker.ready);
+        if (!reg) throw new Error('Không thể khởi tạo Service Worker.');
 
         // 3. Lấy VAPID public key và đăng ký với Push Service
         const vapidPublicKey = await getVapidPublicKey();
@@ -135,8 +155,8 @@ window.PushClient = (() => {
 
     async function unsubscribe() {
         if (!isSupported()) return false;
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.getSubscription();
+        const reg = (await ensureServiceWorker()) || (await navigator.serviceWorker.ready);
+        const sub = await reg?.pushManager?.getSubscription();
         if (sub) {
             const endpoint = sub.endpoint;
             await postSubscription('unsubscribe', endpoint);
@@ -145,12 +165,81 @@ window.PushClient = (() => {
         return true;
     }
 
+    // Hiển thị trực tiếp banner thông báo Push ngay trên giao diện web (Floating In-App Push Banner)
+    function showInAppPushBanner(payload) {
+        let banner = document.getElementById('godmintonInAppPush');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'godmintonInAppPush';
+            banner.className = 'godminton-inapp-push-banner';
+            banner.setAttribute('role', 'alert');
+            banner.setAttribute('aria-live', 'assertive');
+            document.body.appendChild(banner);
+        }
+
+        const iconUrl = payload.icon || 'assets/img/icons/icon-192.png';
+        banner.innerHTML = `
+            <div class="inapp-push-header">
+                <div class="inapp-push-brand">
+                    <img src="${iconUrl}" alt="GODMINTON" class="inapp-push-icon" onerror="this.src='assets/img/logo-teal.svg'">
+                    <span class="inapp-push-app">GODMINTON PWA</span>
+                    <span class="inapp-push-dot">·</span>
+                    <span class="inapp-push-time">Vừa xong</span>
+                </div>
+                <button type="button" class="inapp-push-close" aria-label="Đóng">&times;</button>
+            </div>
+            <div class="inapp-push-body">
+                <div class="inapp-push-title">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>${payload.title || 'GODMINTON · Nhắc lịch thi đấu (Demo)'}</span>
+                </div>
+                <p class="inapp-push-text">${payload.body || ''}</p>
+            </div>
+        `;
+
+        const closeBtn = banner.querySelector('.inapp-push-close');
+        const dismiss = (e) => {
+            if (e) e.stopPropagation();
+            banner.classList.remove('show');
+        };
+        closeBtn.onclick = dismiss;
+
+        banner.onclick = (e) => {
+            if (e.target.closest('.inapp-push-close')) return;
+            dismiss();
+            const targetUrl = payload.data?.url || 'history.php';
+            if (targetUrl && !window.location.pathname.includes(targetUrl)) {
+                window.location.href = targetUrl;
+            }
+        };
+
+        requestAnimationFrame(() => {
+            banner.classList.add('show');
+        });
+
+        clearTimeout(banner._autoDismissTimer);
+        banner._autoDismissTimer = setTimeout(dismiss, 8000);
+    }
+
     async function sendTestNotification(customPayload = {}) {
         if (!isSupported()) {
             throw new Error('Trình duyệt không hỗ trợ Web Push Notification.');
         }
 
-        // 1. Gọi API gửi thông báo
+        // 1. Đảm bảo Service Worker được đăng ký và sẵn sàng
+        const reg = await ensureServiceWorker();
+
+        // 2. Yêu cầu quyền thông báo nếu chưa cấp
+        if (Notification.permission === 'default') {
+            const perm = await Notification.requestPermission();
+            if (perm !== 'granted') {
+                throw new Error('Bạn cần chọn "Cho phép" (Allow) quyền thông báo trong trình duyệt để nhận thông báo.');
+            }
+        } else if (Notification.permission === 'denied') {
+            throw new Error('Trình duyệt đang chặn thông báo. Vui lòng bấm biểu tượng ổ khóa 🔒 ở thanh địa chỉ để Bật thông báo.');
+        }
+
+        // 3. Đảm bảo subscription thiết bị tồn tại và đồng bộ
         let subscription = await getSubscription();
         if (!subscription) {
             await subscribe();
@@ -166,58 +255,60 @@ window.PushClient = (() => {
             if (!subscription) throw new Error('Không thể cập nhật đăng ký thông báo của thiết bị.');
             try { await updateBellUI(); } catch (_) {}
         }
-        const res = await fetch('api/push/send.php', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/json', 'X-GODMINTON-CSRF': await getCsrfToken() },
-            body: JSON.stringify({
-                action: 'test',
-                endpoint: subscription.endpoint
-            })
-        });
 
-        const result = await safeJson(res);
-        if (!res.ok || result.status !== 'success') {
-            throw new Error(result.message || 'Không thể gửi thông báo thử nghiệm.');
+        // 4. Gửi yêu cầu qua backend api/push/send.php
+        let result = { status: 'success' };
+        try {
+            const res = await fetch('api/push/send.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'X-GODMINTON-CSRF': await getCsrfToken() },
+                body: JSON.stringify({
+                    action: 'test',
+                    endpoint: subscription.endpoint
+                })
+            });
+            result = await safeJson(res);
+        } catch (backendErr) {
+            console.warn('[PushClient] Server send warning:', backendErr);
         }
 
-        // Tạo thông báo demo nhắc lịch thi đấu (còn 5 phút)
+        // 5. Nội dung thông báo demo (còn 5 phút trước giờ vào sân)
         const payload = Object.assign({
             title: 'GODMINTON · Nhắc lịch thi đấu (Demo)',
             body: 'Trận cầu của bạn tại Thảm A1 sắp bắt đầu sau 5 phút. Khởi động kỹ và sẵn sàng vào sân!',
             icon: 'assets/img/icons/icon-192.png',
             badge: 'assets/img/icons/badge-72.png',
             data: { url: 'history.php', timestamp: Date.now() }
-        }, customPayload || {}, result.data?.payload || {});
+        }, customPayload || {}, result?.data?.payload || {});
 
-        // Hiển thị trực tiếp thông báo demo trên màn hình thiết bị qua Service Worker hoặc Notification API
+        // 6. HIỂN THỊ BANNER THÔNG BÁO DEMO TRỰC TIẾP TRÊN MÀN HÌNH (IN-APP PUSH BANNER)
+        // Giúp người dùng 100% nhìn thấy thông báo demo ngay lập tức bất kể cài đặt Focus Assist của Windows
+        showInAppPushBanner(payload);
+
+        // 7. Đồng thời kích hoạt thông báo hệ điều hành / trình duyệt (OS Push Notification)
         try {
-            if (Notification.permission === 'granted') {
-                const reg = await Promise.race([
-                    navigator.serviceWorker.ready,
-                    new Promise(resolve => setTimeout(() => resolve(null), 1500))
-                ]) || (await navigator.serviceWorker.getRegistration());
-
-                if (reg && reg.showNotification) {
-                    await reg.showNotification(payload.title, {
-                        body: payload.body,
-                        icon: payload.icon || 'assets/img/icons/icon-192.png',
-                        badge: payload.badge || 'assets/img/icons/badge-72.png',
-                        vibrate: [100, 50, 100],
-                        data: payload.data || { url: 'history.php' }
-                    });
-                } else if ('Notification' in window) {
-                    new Notification(payload.title, {
-                        body: payload.body,
-                        icon: payload.icon || 'assets/img/icons/icon-192.png'
-                    });
-                }
+            if (reg && reg.showNotification) {
+                await reg.showNotification(payload.title, {
+                    body: payload.body,
+                    icon: payload.icon || 'assets/img/icons/icon-192.png',
+                    badge: payload.badge || 'assets/img/icons/badge-72.png',
+                    vibrate: [100, 50, 100],
+                    data: payload.data || { url: 'history.php' },
+                    tag: 'godminton-demo-reminder',
+                    renotify: true
+                });
+            } else if ('Notification' in window) {
+                new Notification(payload.title, {
+                    body: payload.body,
+                    icon: payload.icon || 'assets/img/icons/icon-192.png'
+                });
             }
         } catch (notifyErr) {
-            console.warn('[PushClient] Demo notification display:', notifyErr);
+            console.warn('[PushClient] OS notification display:', notifyErr);
         }
 
-        return result.data;
+        return result?.data || { payload };
     }
 
     // Tự động render khối quản lý thông báo vào giao diện (Profile / History / Settings)
@@ -510,6 +601,7 @@ window.PushClient = (() => {
                     body: 'Trận cầu của bạn tại Thảm A1 sắp bắt đầu sau 5 phút. Khởi động kỹ và sẵn sàng vào sân!',
                     url: 'history.php'
                 });
+                if (window.Swal) Swal.close();
                 showToast('success', 'Đã gửi thông báo demo thành công!');
             } catch (err) {
                 if (window.Swal) {

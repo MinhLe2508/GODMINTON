@@ -108,7 +108,7 @@ let deferredInstallPrompt = null;
 
 function initServiceWorker() {
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
+        const registerSW = () => {
             navigator.serviceWorker.register('sw.js')
                 .then(registration => {
                     console.log('[PWA] Service Worker registered with scope:', registration.scope);
@@ -127,7 +127,13 @@ function initServiceWorker() {
                 .catch(error => {
                     console.warn('[PWA] Đăng ký Service Worker thất bại:', error);
                 });
-        });
+        };
+
+        if (document.readyState === 'complete') {
+            registerSW();
+        } else {
+            window.addEventListener('load', registerSW);
+        }
     }
 }
 
