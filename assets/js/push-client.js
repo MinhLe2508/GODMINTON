@@ -683,14 +683,18 @@ window.PushClient = (() => {
             btn.title = 'Thông báo đẩy PWA';
             btn.innerHTML = isSb ? '<i class="fa-regular fa-bell"></i><span class="sb-lbl">Thông báo</span>' : '<i class="fa-regular fa-bell"></i>';
 
+            const brandHead = document.querySelector('.app-brand-head');
             if (themeBtn && themeBtn.parentNode) {
                 themeBtn.parentNode.insertBefore(btn, themeBtn);
+            } else if (brandHead) {
+                brandHead.appendChild(btn);
             } else if (isAdmin && document.querySelector('.admin-topbar-actions')) {
                 document.querySelector('.admin-topbar-actions').prepend(btn);
             } else {
                 document.body.appendChild(btn);
             }
         } else {
+            const brandHead = document.querySelector('.app-brand-head');
             if (isSb) {
                 btn.classList.remove('bnav-theme-float', 'bnav-bell-float');
                 btn.classList.add('sb-btn');
@@ -699,6 +703,15 @@ window.PushClient = (() => {
                 if (!btn.classList.contains('admin-icon-btn') && !btn.classList.contains('rounded-circle')) {
                     btn.classList.add('admin-icon-btn');
                 }
+            }
+            if (brandHead && btn.parentNode !== brandHead) {
+                if (themeBtn && themeBtn.parentNode === brandHead) {
+                    brandHead.insertBefore(btn, themeBtn);
+                } else {
+                    brandHead.appendChild(btn);
+                }
+            } else if (themeBtn && themeBtn.parentNode && btn.parentNode !== themeBtn.parentNode) {
+                themeBtn.parentNode.insertBefore(btn, themeBtn);
             }
             if (!btn.innerHTML.trim()) {
                 btn.innerHTML = isSb ? '<i class="fa-regular fa-bell"></i><span class="sb-lbl">Thông báo</span>' : '<i class="fa-regular fa-bell"></i>';

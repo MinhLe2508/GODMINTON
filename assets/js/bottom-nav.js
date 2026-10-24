@@ -501,8 +501,11 @@
         bellBtn.dataset.bellBound = 'bottom-nav';
         bellBtn.addEventListener('click', openPushModal);
 
+        const brandHead = document.querySelector('.app-brand-head');
         if (themeBtn && themeBtn.parentNode) {
             themeBtn.parentNode.insertBefore(bellBtn, themeBtn);
+        } else if (brandHead) {
+            brandHead.appendChild(bellBtn);
         } else if (isAdmin && document.querySelector('.admin-topbar-actions')) {
             document.querySelector('.admin-topbar-actions').prepend(bellBtn);
         } else {
