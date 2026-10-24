@@ -727,25 +727,29 @@ function confirmGatewayTransferDone() {
             icon: 'success',
             title: 'Đã xác nhận chuyển khoản!',
             html: `
-                <div class="text-start p-3 rounded-3 bg-light border small my-2" style="font-size:0.85rem; line-height:1.6;">
-                    <div class="d-flex justify-content-between mb-2 border-bottom pb-1">
-                        <span class="text-muted">Nội dung chuyển khoản:</span>
-                        <strong class="text-teal font-monospace fs-6">${booking._transferRef}</strong>
+                <div class="swal-confirm-box text-start p-3 rounded-3 bg-light border my-2" style="font-size:0.84rem;">
+                    <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2 gap-2">
+                        <span class="text-muted text-nowrap">Nội dung chuyển:</span>
+                        <strong class="text-teal font-monospace text-end fs-6 text-nowrap">${booking._transferRef}</strong>
                     </div>
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="text-muted">Số tiền đặt cọc:</span>
-                        <strong class="text-danger fw-bold fs-6">${fmt(booking._deposit)}</strong>
+                    <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2 gap-2">
+                        <span class="text-muted text-nowrap">Số tiền đặt cọc:</span>
+                        <strong class="text-danger fw-bold fs-6 text-end text-nowrap">${fmt(booking._deposit)}</strong>
                     </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted">Trạng thái:</span>
-                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                    <div class="d-flex justify-content-between align-items-center gap-2">
+                        <span class="text-muted text-nowrap">Trạng thái:</span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle text-nowrap">
                             <i class="fa-solid fa-check me-1"></i>Đã ghi nhận chuyển tiền
                         </span>
                     </div>
                 </div>
             `,
             confirmButtonText: '<i class="fa-solid fa-circle-check me-1"></i> Hoàn tất',
-            confirmButtonColor: '#0d9488'
+            confirmButtonColor: '#0d9488',
+            customClass: {
+                popup: 'swal-payment-responsive-popup',
+                confirmButton: 'swal-payment-confirm-btn'
+            }
         }).then(() => {
             highlightCtaDepositButton();
         });

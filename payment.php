@@ -458,7 +458,7 @@ if ($currentUser !== null) {
 
                     <!-- Nội dung chuyển khoản / Mã GD -->
                     <div class="ti-row">
-                        <span class="ti-label">Nội dung chuyển khoản:</span>
+                        <span class="ti-label">Nội dung chuyển:</span>
                         <div class="ti-value-wrap">
                             <span class="ti-value code-val js-transfer-ref" id="gwModalRef">DATSAN-...</span>
                             <button type="button" class="ti-copy-btn" onclick="copyTransferRef()" title="Sao chép nội dung">

@@ -1351,3 +1351,88 @@ textarea.pay-input {
     background: #fff;
     color: #ef4444;
 }
+
+/* ---- SweetAlert2 Payment Responsive Overrides ---- */
+.swal2-popup.swal-payment-responsive-popup,
+.swal2-popup {
+    border-radius: 1.25rem !important;
+    padding: 1.5rem 1.25rem !important;
+    max-width: 92vw !important;
+    width: 390px !important;
+    box-sizing: border-box !important;
+}
+.swal-payment-responsive-popup .swal2-title,
+.swal2-popup .swal2-title {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    padding: 0.25rem 0.5rem 0 !important;
+}
+.swal-payment-responsive-popup .swal2-html-container,
+.swal2-popup .swal2-html-container {
+    margin: 0.65rem 0 0 !important;
+    overflow: hidden !important;
+}
+.swal-confirm-box {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+}
+.swal-confirm-box strong {
+    font-size: 0.92rem;
+}
+.swal-payment-responsive-popup .swal2-actions,
+.swal2-popup .swal2-actions {
+    margin-top: 1.15rem !important;
+    width: 100% !important;
+    justify-content: center !important;
+}
+.swal-payment-responsive-popup .swal2-confirm,
+.swal-payment-confirm-btn,
+.swal2-popup .swal2-confirm {
+    border-radius: 9999px !important;
+    padding: 0.72rem 1.5rem !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    width: 100% !important;
+    max-width: 260px !important;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.4rem !important;
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
+    border: none !important;
+}
+.swal-payment-responsive-popup .swal2-confirm:hover,
+.swal-payment-confirm-btn:hover,
+.swal2-popup .swal2-confirm:hover {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%) !important;
+    box-shadow: 0 6px 18px rgba(13, 148, 136, 0.4) !important;
+}
+
+@media (max-width: 380px) {
+    .swal2-popup.swal-payment-responsive-popup,
+    .swal2-popup {
+        padding: 1.15rem 0.75rem !important;
+        width: 310px !important;
+        max-width: 95vw !important;
+    }
+    .swal-payment-responsive-popup .swal2-title,
+    .swal2-popup .swal2-title {
+        font-size: 1.05rem !important;
+    }
+    .swal-confirm-box {
+        padding: 0.65rem 0.6rem !important;
+        font-size: 0.78rem !important;
+    }
+    .swal-confirm-box strong {
+        font-size: 0.85rem !important;
+    }
+    .swal-payment-responsive-popup .swal2-confirm,
+    .swal-payment-confirm-btn,
+    .swal2-popup .swal2-confirm {
+        font-size: 0.88rem !important;
+        padding: 0.65rem 1.25rem !important;
+        max-width: 230px !important;
+    }
+}
