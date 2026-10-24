@@ -1,5 +1,6 @@
 # Dependencies (cài lại bằng composer install, KHÔNG commit)
 /vendor/*
+!/vendor/autoload.php
 !/vendor/PHPMailer/
 !/vendor/PHPMailer/**
 

@@ -2,8 +2,15 @@
 /** Only SMTP delivery through PHPMailer; no public token logs or fake delivery. */
 function god_auth_mailer(): \PHPMailer\PHPMailer\PHPMailer {
     $autoload=__DIR__.'/../vendor/autoload.php';
-    if (!is_file($autoload)) throw new RuntimeException('Mailer unavailable');
-    require_once $autoload;
+    if (is_file($autoload)) {
+        require_once $autoload;
+    } elseif (is_file(__DIR__.'/../vendor/PHPMailer/src/PHPMailer.php')) {
+        require_once __DIR__.'/../vendor/PHPMailer/src/Exception.php';
+        require_once __DIR__.'/../vendor/PHPMailer/src/PHPMailer.php';
+        require_once __DIR__.'/../vendor/PHPMailer/src/SMTP.php';
+    } else {
+        throw new RuntimeException('Mailer unavailable');
+    }
     $host=getenv('SMTP_HOST')?:'';
     $security=getenv('SMTP_ENCRYPTION')?:'tls';
     $localTest=getenv('APP_ENV')==='test' && in_array($host,['127.0.0.1','localhost'],true);
@@ -22,7 +29,7 @@ function god_auth_mailer(): \PHPMailer\PHPMailer\PHPMailer {
     $mail->Username=getenv('SMTP_USERNAME')?:''; $mail->Password=getenv('SMTP_PASSWORD')?:'';
     $mail->SMTPSecure=$localTest && $security==='none'?'':$security;
     $mail->SMTPAutoTLS=!($localTest && $security==='none');
-    $mail->Timeout=12; $mail->Timelimit=15; $mail->SMTPDebug=0;
+    $mail->Timeout=12; $mail->SMTPDebug=0;
     $mail->CharSet='UTF-8';
     $mail->setFrom(getenv('MAIL_FROM_ADDRESS'),getenv('MAIL_FROM_NAME')?:'GODMINTON');
     return $mail;

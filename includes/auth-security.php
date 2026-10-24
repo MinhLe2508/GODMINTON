@@ -15,7 +15,9 @@ function god_auth_input(): array {
     $csrf=$_SERVER['HTTP_X_GODMINTON_CSRF']??'';
     if (!hash_equals($_SESSION['csrf_token'],$csrf)) god_auth_out(403,'Phiên thao tác đã thay đổi. Tải lại trang để tiếp tục.');
     if ((int)($_SERVER['CONTENT_LENGTH']??0)>8192) god_auth_out(413,'Dữ liệu quá lớn.');
-    $in=json_decode(file_get_contents('php://input'),true);
+    $raw = file_get_contents('php://input');
+    if (str_starts_with($raw, "\xEF\xBB\xBF")) $raw = substr($raw, 3);
+    $in = json_decode($raw, true);
     if (!is_array($in)) god_auth_out(422,'JSON không hợp lệ.');
     return $in;
 }
