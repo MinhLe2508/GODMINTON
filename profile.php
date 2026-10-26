@@ -115,6 +115,103 @@ header('Cache-Control: no-store');
             position: relative;
         }
 
+        /* Nút Đổi tài khoản khác: căn giữa, nền trắng viền xanh ngọc thanh lịch, chữ #0f766e */
+        .btn-switch-account {
+            color: #0f766e !important;
+            background-color: #ffffff !important;
+            border: 1.5px solid #92cfc9 !important;
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+        }
+        .btn-switch-account i {
+            color: #0f766e !important;
+            transition: color 0.2s ease;
+        }
+        .btn-switch-account:hover,
+        .btn-switch-account:focus-visible {
+            color: #ffffff !important;
+            background-color: #0d9488 !important;
+            border-color: #0d9488 !important;
+            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.28) !important;
+            transform: translateY(-2px);
+        }
+        .btn-switch-account:hover i,
+        .btn-switch-account:focus-visible i {
+            color: #ffffff !important;
+        }
+
+        /* Nút Đăng xuất tài khoản: căn giữa, nền hồng phấn #fef4f4, viền #f8b7b7, chữ #b91c1c */
+        .btn-logout-account {
+            color: #b91c1c !important;
+            background-color: #fef4f4 !important;
+            border: 1.5px solid #f8b7b7 !important;
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+        }
+        .btn-logout-account i {
+            color: #b91c1c !important;
+            transition: color 0.2s ease;
+        }
+        .btn-logout-account:hover,
+        .btn-logout-account:focus-visible {
+            color: #ffffff !important;
+            background-color: #dc2626 !important;
+            border-color: #dc2626 !important;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.28) !important;
+            transform: translateY(-2px);
+        }
+        .btn-logout-account:hover i,
+        .btn-logout-account:focus-visible i {
+            color: #ffffff !important;
+        }
+
+        /* Dark mode cho 2 nút */
+        [data-bs-theme="dark"] .btn-switch-account {
+            color: #2dd4bf !important;
+            background-color: rgba(20, 184, 166, 0.1) !important;
+            border-color: rgba(45, 212, 191, 0.4) !important;
+        }
+        [data-bs-theme="dark"] .btn-switch-account i {
+            color: #2dd4bf !important;
+        }
+        [data-bs-theme="dark"] .btn-switch-account:hover,
+        [data-bs-theme="dark"] .btn-switch-account:focus-visible {
+            color: #ffffff !important;
+            background-color: #0d9488 !important;
+            border-color: #0d9488 !important;
+            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35) !important;
+        }
+        [data-bs-theme="dark"] .btn-switch-account:hover i,
+        [data-bs-theme="dark"] .btn-switch-account:focus-visible i {
+            color: #ffffff !important;
+        }
+
+        [data-bs-theme="dark"] .btn-logout-account {
+            color: #f87171 !important;
+            background-color: rgba(248, 113, 113, 0.1) !important;
+            border-color: rgba(248, 113, 113, 0.4) !important;
+        }
+        [data-bs-theme="dark"] .btn-logout-account i {
+            color: #f87171 !important;
+        }
+        [data-bs-theme="dark"] .btn-logout-account:hover,
+        [data-bs-theme="dark"] .btn-logout-account:focus-visible {
+            color: #ffffff !important;
+            background-color: #dc2626 !important;
+            border-color: #dc2626 !important;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35) !important;
+        }
+        [data-bs-theme="dark"] .btn-logout-account:hover i,
+        [data-bs-theme="dark"] .btn-logout-account:focus-visible i {
+            color: #ffffff !important;
+        }
+
         /* Responsive */
         @media (max-width: 991.98px) {
             .profile-nav-pills {
@@ -302,14 +399,14 @@ header('Cache-Control: no-store');
 
                         <!-- Quick actions -->
                         <div class="profile-card-actions d-flex flex-column gap-2">
-                            <a href="courts.php" class="btn btn-teal btn-profile-action btn-profile-primary rounded-pill w-100">
-                                <i class="fa-solid fa-plus"></i> <span>Đặt sân mới</span>
+                            <a href="courts.php" class="btn btn-teal rounded-pill w-100 fw-bold py-2">
+                                <i class="fa-solid fa-plus me-1"></i> Đặt sân mới
                             </a>
-                            <a href="auth.php" class="btn btn-profile-action btn-switch-account rounded-pill w-100">
-                                <i class="fa-solid fa-arrow-right-arrow-left"></i> <span>Đổi tài khoản khác</span>
+                            <a href="auth.php" class="btn btn-switch-account rounded-pill w-100 fw-semibold text-center justify-content-center py-2">
+                                <i class="fa-solid fa-arrow-right-arrow-left me-2"></i> Đổi tài khoản khác
                             </a>
-                            <button type="button" id="profileLogout" class="btn btn-profile-action btn-logout-account rounded-pill w-100">
-                                <i class="fa-solid fa-right-from-bracket"></i> <span>Đăng xuất tài khoản</span>
+                            <button type="button" id="profileLogout" class="btn btn-logout-account rounded-pill w-100 fw-semibold text-center justify-content-center py-2">
+                                <i class="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất tài khoản
                             </button>
                         </div>
                     </div>
@@ -359,21 +456,40 @@ header('Cache-Control: no-store');
                                             <label class="form-label fw-bold small">Khu vực sinh sống</label>
                                             <div class="input-group">
                                                 <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-location-dot text-muted"></i></span>
-                                                <select class="form-select border-start-0" id="inpDistrict"><option value="">Chọn khu vực (địa chỉ cũ)</option></select>
+                                                <select class="form-select border-start-0" id="inpDistrict">
+                                                    <option value="Quận 1" selected>Quận 1, TP.HCM</option>
+                                                    <option value="Quận 3">Quận 3, TP.HCM</option>
+                                                    <option value="Quận 7">Quận 7, TP.HCM</option>
+                                                    <option value="Quận 10">Quận 10, TP.HCM</option>
+                                                    <option value="Bình Thạnh">Bình Thạnh, TP.HCM</option>
+                                                    <option value="TP. Thủ Đức">TP. Thủ Đức, TP.HCM</option>
+                                                    <option value="Tân Bình">Tân Bình, TP.HCM</option>
+                                                    <option value="Gò Vấp">Gò Vấp, TP.HCM</option>
+                                                    <option value="Phú Nhuận">Phú Nhuận, TP.HCM</option>
+                                                </select>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold small">Trình độ chơi cầu lông</label>
-                                            <select class="form-select" id="inpLevel"><option value="">Chọn trình độ</option></select>
+                                            <select class="form-select" id="inpLevel">
+                                                <option value="beginner">Người mới chơi (Dưới 6 tháng)</option>
+                                                <option value="intermediate" selected>Trung bình (Phong trào 1 - 3 năm)</option>
+                                                <option value="advanced">Bán chuyên / Chuyên nghiệp (Trên 3 năm)</option>
+                                            </select>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold small">Thời gian chơi yêu thích</label>
-                                            <select class="form-select" id="inpPreferredTime"><option value="">Chọn khung giờ</option></select>
+                                            <select class="form-select" id="inpPreferredTime">
+                                                <option value="evening" selected>Buổi tối (18:00 - 22:00)</option>
+                                                <option value="morning">Buổi sáng (06:00 - 09:00)</option>
+                                                <option value="afternoon">Buổi chiều (14:00 - 18:00)</option>
+                                                <option value="weekend">Cuối tuần (Thứ 7 & CN)</option>
+                                            </select>
                                         </div>
                                     </div>
 
                                     <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-                                        <button type="button" class="btn btn-reset-profile rounded-pill px-4 fw-semibold" onclick="resetProfileForm(); this.blur();">Khôi phục</button>
+                                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="resetProfileForm(true)">Khôi phục</button>
                                         <button type="submit" class="btn btn-teal rounded-pill px-4 fw-bold">
                                             Lưu thay đổi
                                         </button>
@@ -658,5 +774,49 @@ header('Cache-Control: no-store');
     <!-- Bottom Nav -->
     <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 <script src="assets/js/password-requirements.js?v=<?= filemtime(__DIR__.'/assets/js/password-requirements.js') ?>"></script>
+<script>
+// Đảm bảo nút Khôi phục luôn đặt lại toàn bộ các ô về trạng thái ban đầu kể cả khi trình duyệt lưu cache JS cũ
+window.resetProfileForm = function(isManualReset = false) {
+    const form = document.getElementById('formUpdateProfile');
+    if (form) form.reset();
+    if (typeof savedProfile !== 'undefined' && savedProfile) {
+        const elName = document.getElementById('inpFullName');
+        const elEmail = document.getElementById('inpEmail');
+        const elPhone = document.getElementById('inpPhone');
+        if (elName) elName.value = savedProfile.name || '';
+        if (elEmail) elEmail.value = savedProfile.email || '';
+        if (elPhone) elPhone.value = savedProfile.phone || '';
+    }
+    const defaults = { district: 'Quận 1', level: 'intermediate', preferredTime: 'evening' };
+    const userId = (typeof savedProfile !== 'undefined' && savedProfile && savedProfile.id) ? savedProfile.id : 'default';
+    if (isManualReset) {
+        try { localStorage.removeItem('godminton_profile_prefs_' + userId); } catch (e) {}
+    }
+    let prefs = { ...defaults };
+    if (!isManualReset) {
+        try {
+            const raw = localStorage.getItem('godminton_profile_prefs_' + userId);
+            if (raw) prefs = { ...defaults, ...JSON.parse(raw) };
+        } catch (e) {}
+    }
+    const elDist = document.getElementById('inpDistrict');
+    const elLvl = document.getElementById('inpLevel');
+    const elTime = document.getElementById('inpPreferredTime');
+    if (elDist) elDist.value = prefs.district;
+    if (elLvl) elLvl.value = prefs.level;
+    if (elTime) elTime.value = prefs.preferredTime;
+    if (isManualReset && window.Swal) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title: 'Đã khôi phục về trạng thái ban đầu',
+            showConfirmButton: false,
+            timer: 1800,
+            timerProgressBar: true
+        });
+    }
+};
+</script>
 </body>
 </html>

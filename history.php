@@ -17,7 +17,7 @@
     <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
     <style>
         main {
             padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px)) !important;
@@ -25,6 +25,114 @@
         #bookingListContainer .card {
             overflow-wrap: anywhere;
             word-break: break-word;
+        }
+        /* Đồng bộ cụm 3 nút hành động giống giao diện Thông tin cá nhân */
+        .header-history-actions .btn-teal {
+            background: linear-gradient(180deg, #11aa9a 0%, #10a596 100%) !important;
+            color: #ffffff !important;
+            border: 1.5px solid transparent !important;
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .header-history-actions .btn-teal:hover,
+        .header-history-actions .btn-teal:focus-visible {
+            background: linear-gradient(180deg, #0d9488 0%, #0f766e 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 6px 16px rgba(13, 148, 136, 0.35) !important;
+            transform: translateY(-2px);
+        }
+        .btn-switch-account {
+            color: #0f766e !important;
+            background-color: #ffffff !important;
+            border: 1.5px solid #92cfc9 !important;
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+        }
+        .btn-switch-account i {
+            color: #0f766e !important;
+            transition: color 0.2s ease;
+        }
+        .btn-switch-account:hover,
+        .btn-switch-account:focus-visible {
+            color: #ffffff !important;
+            background-color: #0d9488 !important;
+            border-color: #0d9488 !important;
+            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.28) !important;
+            transform: translateY(-2px);
+        }
+        .btn-switch-account:hover i,
+        .btn-switch-account:focus-visible i {
+            color: #ffffff !important;
+        }
+        .btn-logout-account {
+            color: #b91c1c !important;
+            background-color: #fef4f4 !important;
+            border: 1.5px solid #f8b7b7 !important;
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+        }
+        .btn-logout-account i {
+            color: #b91c1c !important;
+            transition: color 0.2s ease;
+        }
+        .btn-logout-account:hover,
+        .btn-logout-account:focus-visible {
+            color: #ffffff !important;
+            background-color: #dc2626 !important;
+            border-color: #dc2626 !important;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.28) !important;
+            transform: translateY(-2px);
+        }
+        .btn-logout-account:hover i,
+        .btn-logout-account:focus-visible i {
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .btn-switch-account {
+            color: #2dd4bf !important;
+            background-color: rgba(20, 184, 166, 0.1) !important;
+            border-color: rgba(45, 212, 191, 0.4) !important;
+        }
+        [data-bs-theme="dark"] .btn-switch-account i {
+            color: #2dd4bf !important;
+        }
+        [data-bs-theme="dark"] .btn-switch-account:hover,
+        [data-bs-theme="dark"] .btn-switch-account:focus-visible {
+            color: #ffffff !important;
+            background-color: #0d9488 !important;
+            border-color: #0d9488 !important;
+            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35) !important;
+        }
+        [data-bs-theme="dark"] .btn-switch-account:hover i,
+        [data-bs-theme="dark"] .btn-switch-account:focus-visible i {
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .btn-logout-account {
+            color: #f87171 !important;
+            background-color: rgba(248, 113, 113, 0.1) !important;
+            border-color: rgba(248, 113, 113, 0.4) !important;
+        }
+        [data-bs-theme="dark"] .btn-logout-account i {
+            color: #f87171 !important;
+        }
+        [data-bs-theme="dark"] .btn-logout-account:hover,
+        [data-bs-theme="dark"] .btn-logout-account:focus-visible {
+            color: #ffffff !important;
+            background-color: #dc2626 !important;
+            border-color: #dc2626 !important;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35) !important;
+        }
+        [data-bs-theme="dark"] .btn-logout-account:hover i,
+        [data-bs-theme="dark"] .btn-logout-account:focus-visible i {
+            color: #ffffff !important;
         }
         @media (max-width: 576px) {
             #bookingListContainer .card {
@@ -71,14 +179,14 @@
                     </p>
                 </div>
                 <div class="header-history-actions d-flex align-items-center gap-2 flex-wrap mt-2 mt-sm-0">
-                    <a href="courts.php" class="btn btn-teal rounded-pill px-3 fw-bold">
-                        <i class="fa-solid fa-plus me-1"></i> Đặt Sân Mới
+                    <a href="courts.php" class="btn btn-teal rounded-pill px-3 py-2 fw-bold">
+                        <i class="fa-solid fa-plus me-1"></i> Đặt sân mới
                     </a>
-                    <a href="auth.php" class="btn btn-switch-account rounded-pill px-3 fw-semibold">
-                        <i class="fa-solid fa-arrow-right-arrow-left me-1"></i> Đổi tài khoản
+                    <a href="auth.php" class="btn btn-switch-account rounded-pill px-3 py-2 fw-semibold">
+                        <i class="fa-solid fa-arrow-right-arrow-left me-2"></i> Đổi tài khoản
                     </a>
-                    <button type="button" id="historyLogout" class="btn btn-logout-account rounded-pill px-3 fw-semibold">
-                        <i class="fa-solid fa-right-from-bracket me-1"></i> Đăng xuất
+                    <button type="button" id="historyLogout" class="btn btn-logout-account rounded-pill px-3 py-2 fw-semibold">
+                        <i class="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất
                     </button>
                 </div>
             </div>

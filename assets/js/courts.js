@@ -190,6 +190,64 @@ function formatVND(amount) {
 /* ================================================================
    FETCH COURTS FROM API (AJAX)
    ================================================================ */
+// Giờ hoạt động hằng ngày, dùng múi giờ Việt Nam trên mọi thiết bị.
+let courtClockOffset = 0;
+const courtTimeFormatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit',
+    second: '2-digit', hourCycle: 'h23'
+});
+
+function parseCourtTime(value, allowEndOfDay = false) {
+    const match = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(String(value || ''));
+    if (!match) return null;
+    const h = Number(match[1]), m = Number(match[2]), s = Number(match[3] || 0);
+    if (m > 59 || s > 59 || h > 24 || (h === 24 && (!allowEndOfDay || m || s))) return null;
+    return {seconds: h * 3600 + m * 60 + s, label: `${match[1]}:${match[2]}`};
+}
+
+function courtHoursState(opening, closing, now = new Date(Date.now() + courtClockOffset)) {
+    const open = parseCourtTime(opening), close = parseCourtTime(closing, true);
+    if (!open || !close || open.seconds === close.seconds) {
+        return {kind: 'unknown', label: 'Chưa rõ trạng thái', hours: ''};
+    }
+    const parts = Object.fromEntries(courtTimeFormatter.formatToParts(now).map(p => [p.type, p.value]));
+    const seconds = Number(parts.hour) * 3600 + Number(parts.minute) * 60 + Number(parts.second);
+    const overnight = open.seconds > close.seconds;
+    const isOpen = overnight
+        ? seconds >= open.seconds || seconds < close.seconds
+        : seconds >= open.seconds && seconds < close.seconds;
+    return {
+        kind: isOpen ? 'open' : 'closed',
+        label: isOpen ? 'Đang hoạt động' : 'Đã đóng cửa',
+        hours: `${open.label} – ${close.label}${overnight ? ' (hôm sau)' : ''}`
+    };
+}
+
+function renderCourtHours(court) {
+    const opening = parseCourtTime(court.opening_time);
+    const closing = parseCourtTime(court.closing_time, true);
+    const info = courtHoursState(court.opening_time, court.closing_time);
+    // Chỉ đưa chuỗi thời gian đã kiểm tra vào thuộc tính HTML.
+    return `<div class="court-hours mb-3" data-court-hours
+                 data-opening="${opening ? court.opening_time : ''}"
+                 data-closing="${closing ? court.closing_time : ''}"
+                 title="Theo giờ hoạt động hằng ngày tại Việt Nam; không phản ánh số sân trống.">
+        <span class="court-hours-status court-hours-status--${info.kind}" data-hours-status>
+            <span class="court-hours-dot" aria-hidden="true"></span><span data-hours-label>${info.label}</span>
+        </span>
+    </div>`;
+}
+
+function refreshCourtHours() {
+    document.querySelectorAll('[data-court-hours]').forEach(el => {
+        const info = courtHoursState(el.dataset.opening, el.dataset.closing);
+        const badge = el.querySelector('[data-hours-status]');
+        const label = el.querySelector('[data-hours-label]');
+        if (badge) badge.className = `court-hours-status court-hours-status--${info.kind}`;
+        if (label) label.textContent = info.label;
+    });
+}
+
 async function fetchCourts() {
     const params = new URLSearchParams();
 
@@ -204,13 +262,14 @@ async function fetchCourts() {
 
     const url = `api/courts.php?${params.toString()}`;
 
-    const res  = await fetch(url);
+    const res  = await fetch(url, {cache: 'no-store'});
     const json = await res.json();
 
     if (json.status !== 'success') {
         throw new Error(json.message || 'Lỗi khi tải danh sách sân.');
     }
 
+    if (Number.isFinite(json.server_time)) courtClockOffset = json.server_time - Date.now();
     return json.data || [];
 }
 
@@ -295,6 +354,7 @@ async function renderCourts() {
                     <div class="small text-muted mb-2">
                         <i class="fa-solid fa-location-dot text-teal me-1"></i>${court.address || ''}
                     </div>
+                    ${renderCourtHours(court)}
                     <div class="d-flex flex-wrap gap-1 mb-3">
                         ${(court.amenity_codes || []).slice(0, 3).map(code => {
                             const ic = amenityIconMap[code] || 'fa-check text-muted';
@@ -376,6 +436,7 @@ async function loadWardsDropdown() {
    INIT
    ================================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+    setInterval(refreshCourtHours, 30000);
     // Realtime text search
     const searchInput = document.getElementById('filterSearch');
     searchInput.addEventListener('input', () => {
@@ -414,3 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ESC key closes drawer
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFilterDrawer(); });
+// Cập nhật ngay khi quay lại tab sau thời gian để nền.
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refreshCourtHours();
+});
