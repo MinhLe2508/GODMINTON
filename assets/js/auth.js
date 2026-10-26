@@ -131,7 +131,7 @@ document.getElementById('registerForm')?.addEventListener('submit',async event=>
 async function requestAuthEmail(action) {
     const reset=action==='forgot-password';
     const result=await Swal.fire({titleText:reset?'Quên mật khẩu?':'Gửi lại email xác minh',
-        text:'Nhập email đăng nhập. Liên kết chỉ dùng một lần và có hạn sử dụng.',input:'email',
+        text:reset?'Nhập email đăng nhập. Liên kết đặt lại mật khẩu chỉ dùng một lần và có hạn 15 phút.':'Nhập email chưa xác minh. Mỗi lần gửi lại sẽ vô hiệu liên kết cũ; nếu email đã xác minh, hãy đăng nhập. Liên kết mới chỉ dùng một lần và có hạn 5 phút.',input:'email',
         inputValue:document.getElementById('loginEmail')?.value||'',inputPlaceholder:'name@example.com',
         showCancelButton:true,confirmButtonText:'Gửi hướng dẫn',cancelButtonText:'Hủy',showLoaderOnConfirm:true,
         allowOutsideClick:()=>!Swal.isLoading(),

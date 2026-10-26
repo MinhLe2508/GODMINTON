@@ -2,9 +2,10 @@
 require_once __DIR__.'/../../includes/auth-security.php';
 try {
     $in=god_auth_input();$email=god_auth_email($in);
-    $message='Nếu email có tài khoản phù hợp, bạn sẽ nhận được hướng dẫn. Vui lòng kiểm tra hộp thư đến và thư rác.';
-    $ipAllowed=god_auth_limit($pdo,'mail-ip',god_auth_ip(),15,3600);
-    $emailAllowed=god_auth_limit($pdo,'mail-email',$email,3,3600);
+    $message='Nếu email có tài khoản chưa xác minh, bạn sẽ nhận được liên kết trong hộp thư đến hoặc thư rác. Nếu đã yêu cầu nhiều lần, vui lòng chờ khoảng một giờ rồi thử lại.';
+    // Verification and password-reset requests use separate buckets so one cannot silently block the other.
+    $ipAllowed=god_auth_limit($pdo,'verify-mail-ip',god_auth_ip(),20,3600);
+    $emailAllowed=god_auth_limit($pdo,'verify-mail-email',$email,5,3600);
     if (!$ipAllowed || !$emailAllowed) god_auth_out(200,$message);
     $mail=god_auth_mailer();
     $pdo->beginTransaction();
