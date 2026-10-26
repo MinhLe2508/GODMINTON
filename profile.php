@@ -115,95 +115,6 @@ header('Cache-Control: no-store');
             position: relative;
         }
 
-        /* Nút Đổi tài khoản khác: căn giữa, viền mỏng thanh lịch, hover xanh nổi bật */
-        .btn-switch-account {
-            color: #0d6efd !important;
-            background-color: rgba(13, 110, 253, 0.05) !important;
-            border: 1.5px solid rgba(13, 110, 253, 0.45) !important;
-            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            text-align: center !important;
-        }
-        .btn-switch-account i {
-            color: #0d6efd !important;
-            transition: color 0.2s ease;
-        }
-        .btn-switch-account:hover {
-            color: #ffffff !important;
-            background-color: #0d6efd !important;
-            border-color: #0d6efd !important;
-            box-shadow: 0 4px 14px rgba(13, 110, 253, 0.3) !important;
-            transform: translateY(-2px);
-        }
-        .btn-switch-account:hover i {
-            color: #ffffff !important;
-        }
-
-        /* Nút Đăng xuất tài khoản: căn giữa, viền mỏng thanh lịch, hover đỏ nổi bật */
-        .btn-logout-account {
-            color: #dc2626 !important;
-            background-color: rgba(220, 38, 38, 0.05) !important;
-            border: 1.5px solid rgba(220, 38, 38, 0.45) !important;
-            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            text-align: center !important;
-        }
-        .btn-logout-account i {
-            color: #dc2626 !important;
-            transition: color 0.2s ease;
-        }
-        .btn-logout-account:hover {
-            color: #ffffff !important;
-            background-color: #dc2626 !important;
-            border-color: #dc2626 !important;
-            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3) !important;
-            transform: translateY(-2px);
-        }
-        .btn-logout-account:hover i {
-            color: #ffffff !important;
-        }
-
-        /* Dark mode cho 2 nút */
-        [data-bs-theme="dark"] .btn-switch-account {
-            color: #38bdf8 !important;
-            background-color: rgba(56, 189, 248, 0.08) !important;
-            border-color: rgba(56, 189, 248, 0.4) !important;
-        }
-        [data-bs-theme="dark"] .btn-switch-account i {
-            color: #38bdf8 !important;
-        }
-        [data-bs-theme="dark"] .btn-switch-account:hover {
-            color: #ffffff !important;
-            background-color: #0284c7 !important;
-            border-color: #0284c7 !important;
-            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important;
-        }
-        [data-bs-theme="dark"] .btn-switch-account:hover i {
-            color: #ffffff !important;
-        }
-
-        [data-bs-theme="dark"] .btn-logout-account {
-            color: #f87171 !important;
-            background-color: rgba(248, 113, 113, 0.08) !important;
-            border-color: rgba(248, 113, 113, 0.4) !important;
-        }
-        [data-bs-theme="dark"] .btn-logout-account i {
-            color: #f87171 !important;
-        }
-        [data-bs-theme="dark"] .btn-logout-account:hover {
-            color: #ffffff !important;
-            background-color: #dc2626 !important;
-            border-color: #dc2626 !important;
-            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35) !important;
-        }
-        [data-bs-theme="dark"] .btn-logout-account:hover i {
-            color: #ffffff !important;
-        }
-
         /* Responsive */
         @media (max-width: 991.98px) {
             .profile-nav-pills {
@@ -391,14 +302,14 @@ header('Cache-Control: no-store');
 
                         <!-- Quick actions -->
                         <div class="profile-card-actions d-flex flex-column gap-2">
-                            <a href="courts.php" class="btn btn-teal rounded-pill w-100 fw-bold py-2">
-                                <i class="fa-solid fa-plus me-1"></i> Đặt sân mới
+                            <a href="courts.php" class="btn btn-teal btn-profile-action btn-profile-primary rounded-pill w-100">
+                                <i class="fa-solid fa-plus"></i> <span>Đặt sân mới</span>
                             </a>
-                            <a href="auth.php" class="btn btn-switch-account rounded-pill w-100 fw-semibold text-center justify-content-center py-2">
-                                <i class="fa-solid fa-arrow-right-arrow-left me-2"></i> Đổi tài khoản khác
+                            <a href="auth.php" class="btn btn-profile-action btn-switch-account rounded-pill w-100">
+                                <i class="fa-solid fa-arrow-right-arrow-left"></i> <span>Đổi tài khoản khác</span>
                             </a>
-                            <button type="button" id="profileLogout" class="btn btn-logout-account rounded-pill w-100 fw-semibold text-center justify-content-center py-2">
-                                <i class="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất tài khoản
+                            <button type="button" id="profileLogout" class="btn btn-profile-action btn-logout-account rounded-pill w-100">
+                                <i class="fa-solid fa-right-from-bracket"></i> <span>Đăng xuất tài khoản</span>
                             </button>
                         </div>
                     </div>

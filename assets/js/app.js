@@ -69,10 +69,10 @@ async function renderNavbarUser() {
                 </a>
                 ${['admin', 'owner'].includes(user.role) ? '<a class="btn btn-warning btn-sm rounded-pill px-3 fw-semibold" href="admin-bookings.php"><i class="fa-solid fa-gauge-high me-1"></i> Quản lý</a>' : ''}
                 <a href="auth.php" class="btn btn-sm btn-switch-account rounded-pill px-3 fw-semibold" title="Đổi tài khoản khác">
-                    <i class="fa-solid fa-arrow-right-arrow-left me-1"></i> Đổi tài khoản
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i> Đổi tài khoản
                 </a>
                 <button class="btn btn-sm btn-logout-account rounded-pill px-3 fw-semibold" id="btnLogout" title="Đăng xuất tài khoản">
-                    <i class="fa-solid fa-right-from-bracket me-1"></i> Đăng xuất
+                    <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
                 </button>
             </div>
         `;
