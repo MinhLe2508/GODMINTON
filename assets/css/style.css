@@ -1358,6 +1358,22 @@ img, svg, video, canvas {
 .btn-logout-account:focus i { color: #fff; transform: translateX(2px); }
 .btn-logout-account:focus-visible { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.28); }
 
+/* Nút Khôi phục (form hồ sơ) */
+.btn-reset-profile {
+    color: var(--text-secondary);
+    background-color: transparent;
+    border: 1.5px solid var(--border-color);
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+.btn-reset-profile:hover,
+.btn-reset-profile:focus-visible {
+    color: var(--brand-teal-dark);
+    background-color: rgba(13, 148, 136, 0.08);
+    border-color: var(--brand-teal);
+    box-shadow: none;
+}
+.btn-reset-profile:active { background-color: rgba(13, 148, 136, 0.16); }
+
 /* Dark mode */
 [data-bs-theme="dark"] .btn-switch-account {
     color: #5eead4;

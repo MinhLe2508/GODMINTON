@@ -373,7 +373,7 @@ header('Cache-Control: no-store');
                                     </div>
 
                                     <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-                                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="resetProfileForm()">Khôi phục</button>
+                                        <button type="button" class="btn btn-reset-profile rounded-pill px-4 fw-semibold" onclick="resetProfileForm(); this.blur();">Khôi phục</button>
                                         <button type="submit" class="btn btn-teal rounded-pill px-4 fw-bold">
                                             Lưu thay đổi
                                         </button>

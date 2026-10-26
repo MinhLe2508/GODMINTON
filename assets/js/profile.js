@@ -9,19 +9,22 @@ function setProfileOptions(options) {
     if(!options)return;profileOptions=options;
 }
 let profileOptions=null;
-function resetProfileForm() {
+function fillProfileForm(blankPrefs) {
     if(!savedProfile)return;
     if(profileOptions){
-        fillSelect('inpDistrict',(profileOptions.areas||[]).map(a=>[a,a]),savedProfile.area_label);
-        fillSelect('inpLevel',Object.entries(profileOptions.levels||{}),savedProfile.skill_level);
-        fillSelect('inpPreferredTime',Object.entries(profileOptions.times||{}),savedProfile.preferred_time);
+        fillSelect('inpDistrict',(profileOptions.areas||[]).map(a=>[a,a]),blankPrefs?'':savedProfile.area_label);
+        fillSelect('inpLevel',Object.entries(profileOptions.levels||{}),blankPrefs?'':savedProfile.skill_level);
+        fillSelect('inpPreferredTime',Object.entries(profileOptions.times||{}),blankPrefs?'':savedProfile.preferred_time);
     }
     document.getElementById('inpFullName').value=savedProfile.name;
     document.getElementById('inpEmail').value=savedProfile.email;
     document.getElementById('inpPhone').value=savedProfile.phone || '';
 }
+// Nút "Khôi phục": đưa form về trạng thái ban đầu (họ tên/SĐT theo tài khoản, 3 ô sở thích về trống).
+function resetProfileForm() { fillProfileForm(true); }
+
 function showProfile(user) {
-    savedProfile=user;resetProfileForm();
+    savedProfile=user;fillProfileForm(false);
     const memberSince=document.getElementById('profileMemberSince');
     if(memberSince) memberSince.textContent=user.created_at ? 'Thành viên từ '+user.created_at : 'Chưa cập nhật ngày tham gia';
     document.getElementById('profileHeaderName').textContent=user.name;
