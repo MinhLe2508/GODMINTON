@@ -359,16 +359,16 @@ header('Cache-Control: no-store');
                                             <label class="form-label fw-bold small">Khu vực sinh sống</label>
                                             <div class="input-group">
                                                 <span class="input-group-text bg-body-tertiary border-end-0"><i class="fa-solid fa-location-dot text-muted"></i></span>
-                                                <select class="form-select border-start-0" id="inpDistrict" disabled title="Chưa có trường lưu trong schema hiện tại"><option value="">Chưa hỗ trợ lưu</option></select>
+                                                <select class="form-select border-start-0" id="inpDistrict"><option value="">Chọn khu vực (địa chỉ cũ)</option></select>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold small">Trình độ chơi cầu lông</label>
-                                            <select class="form-select" id="inpLevel" disabled title="Chưa có trường lưu trong schema hiện tại"><option value="">Chưa hỗ trợ lưu</option></select>
+                                            <select class="form-select" id="inpLevel"><option value="">Chọn trình độ</option></select>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold small">Thời gian chơi yêu thích</label>
-                                            <select class="form-select" id="inpPreferredTime" disabled title="Chưa có trường lưu trong schema hiện tại"><option value="">Chưa hỗ trợ lưu</option></select>
+                                            <select class="form-select" id="inpPreferredTime"><option value="">Chọn khung giờ</option></select>
                                         </div>
                                     </div>
 

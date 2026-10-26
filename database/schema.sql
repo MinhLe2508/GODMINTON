@@ -342,6 +342,9 @@ CREATE TABLE `users` (
   `locked_at` datetime DEFAULT NULL,
   `locked_by` int(10) unsigned DEFAULT NULL,
   `pending_email` varchar(150) DEFAULT NULL,
+  `area_label` varchar(100) DEFAULT NULL,
+  `skill_level` varchar(20) DEFAULT NULL,
+  `preferred_time` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

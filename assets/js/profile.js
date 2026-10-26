@@ -1,6 +1,21 @@
 let savedProfile = null;
+function fillSelect(id, entries, selected) {
+    const el=document.getElementById(id);if(!el)return;
+    const first=el.options[0];el.innerHTML='';el.appendChild(first);
+    entries.forEach(([value,label])=>{const o=document.createElement('option');o.value=value;o.textContent=label;el.appendChild(o);});
+    el.value=selected||'';
+}
+function setProfileOptions(options) {
+    if(!options)return;profileOptions=options;
+}
+let profileOptions=null;
 function resetProfileForm() {
     if(!savedProfile)return;
+    if(profileOptions){
+        fillSelect('inpDistrict',(profileOptions.areas||[]).map(a=>[a,a]),savedProfile.area_label);
+        fillSelect('inpLevel',Object.entries(profileOptions.levels||{}),savedProfile.skill_level);
+        fillSelect('inpPreferredTime',Object.entries(profileOptions.times||{}),savedProfile.preferred_time);
+    }
     document.getElementById('inpFullName').value=savedProfile.name;
     document.getElementById('inpEmail').value=savedProfile.email;
     document.getElementById('inpPhone').value=savedProfile.phone || '';
@@ -19,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const password=document.getElementById('formChangePassword');
     const save=update.querySelector('[type="submit"]');save.disabled=true;
     try {
-        const result=await BookingAccount.request('api/profile.php');showProfile(result.user);save.disabled=false;
+        const result=await BookingAccount.request('api/profile.php');setProfileOptions(result.options);showProfile(result.user);save.disabled=false;
         const bookings=await BookingAccount.request('api/bookings.php');document.getElementById('statBookingsCount').textContent=bookings.length;
         const area=document.getElementById('profileBookingsList');
         area.innerHTML=bookings.length?bookings.slice(0,6).map(b=>`<div class="card p-3">${BookingAccount.badge(b.booking_status)}<h6 class="mt-2">${BookingAccount.escape(b.court_name)}</h6><p>${BookingAccount.escape(b.booking_code)} · ${BookingAccount.escape(b.booking_date)} · ${BookingAccount.escape(b.time_range)}</p><strong>${BookingAccount.money(b.total_amount)}</strong><a href="history.php">Xem lịch sử đầy đủ</a></div>`).join(''):'<p>Bạn chưa có đơn đặt sân.</p>';
@@ -32,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }catch(e){await BookingAccount.notify(e.message,true);}
     update.addEventListener('submit',async event=>{
         event.preventDefault();save.disabled=true;
-        try {const result=await BookingAccount.request('api/profile.php',{method:'POST',body:JSON.stringify({name:document.getElementById('inpFullName').value.trim(),email:document.getElementById('inpEmail').value.trim(),phone:document.getElementById('inpPhone').value.trim()})});showProfile(result.user);await renderNavbarUser();await BookingAccount.notify('Hồ sơ đã lưu vào MySQL.');}
+        try {const result=await BookingAccount.request('api/profile.php',{method:'POST',body:JSON.stringify({name:document.getElementById('inpFullName').value.trim(),email:document.getElementById('inpEmail').value.trim(),phone:document.getElementById('inpPhone').value.trim(),area_label:document.getElementById('inpDistrict').value,skill_level:document.getElementById('inpLevel').value,preferred_time:document.getElementById('inpPreferredTime').value})});setProfileOptions(result.options);showProfile(result.user);await renderNavbarUser();await BookingAccount.notify('Hồ sơ đã lưu vào MySQL.');}
         catch(e){await BookingAccount.notify(e.message,true);}finally{save.disabled=false;}
     });
     password.addEventListener('submit',async event=>{
