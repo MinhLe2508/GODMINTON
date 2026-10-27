@@ -1,0 +1,9 @@
+# Một số cấu hình Apache/CGI bỏ header Authorization → chuyển tiếp cho PHP (SePay gửi "Authorization: Apikey ...").
+<IfModule mod_setenvif.c>
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+</IfModule>
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>

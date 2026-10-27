@@ -89,6 +89,7 @@ CREATE TABLE `bookings` (
   `payment_method` varchar(30) DEFAULT NULL,
   `notes` text DEFAULT NULL,
   `status` enum('pending','confirmed','cancelled','completed') NOT NULL DEFAULT 'pending',
+  `payment_status` enum('unpaid','deposit_paid','refunded') NOT NULL DEFAULT 'unpaid',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_booking_code` (`booking_code`),
@@ -401,6 +402,47 @@ CREATE TABLE `wards` (
   `name` varchar(100) NOT NULL,
   `old_area_label` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `payments` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `booking_id` int(10) unsigned NOT NULL,
+  `payment_code` varchar(20) NOT NULL,
+  `amount` decimal(12,0) NOT NULL,
+  `paid_amount` decimal(12,0) NOT NULL DEFAULT 0,
+  `status` enum('pending','paid','expired','cancelled','late_paid','refunded') NOT NULL DEFAULT 'pending',
+  `expires_at` datetime NOT NULL,
+  `paid_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_payment_code` (`payment_code`),
+  UNIQUE KEY `uq_payment_booking` (`booking_id`),
+  KEY `idx_pay_status_exp` (`status`,`expires_at`),
+  CONSTRAINT `fk_pay_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `sepay_transactions` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `sepay_id` bigint(20) unsigned NOT NULL,
+  `payment_id` int(10) unsigned DEFAULT NULL,
+  `gateway` varchar(100) DEFAULT NULL,
+  `account_number` varchar(50) DEFAULT NULL,
+  `transfer_type` varchar(5) DEFAULT NULL,
+  `transfer_amount` decimal(14,0) NOT NULL DEFAULT 0,
+  `content` varchar(500) DEFAULT NULL,
+  `code` varchar(100) DEFAULT NULL,
+  `reference_code` varchar(100) DEFAULT NULL,
+  `transaction_date` datetime DEFAULT NULL,
+  `raw_payload` text NOT NULL,
+  `result` varchar(30) NOT NULL DEFAULT 'received',
+  `note` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_sepay_id` (`sepay_id`),
+  KEY `idx_st_payment` (`payment_id`),
+  KEY `idx_st_result` (`result`),
+  CONSTRAINT `fk_st_payment` FOREIGN KEY (`payment_id`) REFERENCES `payments` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS=1;

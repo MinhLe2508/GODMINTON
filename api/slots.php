@@ -10,6 +10,7 @@ require_once __DIR__.'/../includes/auth-session.php';
  * Người phụ trách: Huy (Tuần 2) & Minh (Tuần 2)
  */
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/payment-service.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 
@@ -26,7 +27,8 @@ if (session_status() === PHP_SESSION_NONE) {
 $currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
 
 try {
-    // 1. Tự động dọn dẹp các slot 'holding' đã hết hạn (quá 5 phút)
+    // 1. Tự động dọn dẹp các slot 'holding' đã hết hạn và đơn quá hạn
+    payment_expire_overdue($pdo, 10);
     $cleanupStmt = $pdo->prepare("
         UPDATE time_slots 
         SET status = 'available', held_by = NULL, hold_expires_at = NULL 
@@ -59,7 +61,7 @@ try {
         }
 
         $secondsLeft = ($slot['status'] === 'holding' && !empty($slot['hold_expires_at'])) 
-            ? max(0, min(300, (int)($slot['sec_left'] ?? 0))) 
+            ? max(0, (int)($slot['sec_left'] ?? 0)) 
             : 0;
 
         $startShort = substr($slot['start_time'], 0, 5);
@@ -179,7 +181,7 @@ try {
 
     foreach ($rawSlots as $s) {
         $secondsLeft = ($s['status'] === 'holding' && !empty($s['hold_expires_at'])) 
-            ? max(0, min(300, (int)($s['sec_left'] ?? 0))) 
+            ? max(0, (int)($s['sec_left'] ?? 0)) 
             : 0;
 
         $startShort = substr($s['start_time'], 0, 5);

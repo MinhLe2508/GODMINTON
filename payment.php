@@ -497,25 +497,32 @@ if ($currentUser !== null) {
                     </div>
                 </div>
 
-                <!-- Thông báo hướng dẫn thanh toán -->
-                <div class="alert alert-info py-2 px-3 small text-start mb-3" style="font-size:0.75rem; border-radius:0.6rem;">
-                    <i class="fa-solid fa-circle-info me-1 text-teal"></i>
-                    Sau khi hoàn tất chuyển khoản từ app ngân hàng / ví điện tử, bạn bấm <strong>"Tôi đã thanh toán"</strong> bên dưới, sau đó bấm <strong>"Xác nhận đặt cọc"</strong> để nhận hóa đơn.
+                <!-- Thông báo & Trạng thái nhận diện biến động số dư SePay 24/7 -->
+                <div class="payment-status-card p-3 rounded-3 text-center mb-3 border" id="gwPaymentStatusCard" style="background: #f0fdfa; border-color: #99f6e4 !important;">
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                        <div class="spinner-grow spinner-grow-sm text-teal" role="status" style="width: 0.9rem; height: 0.9rem;"></div>
+                        <strong class="text-teal small" id="gwLiveStatusText">Đang chờ ngân hàng xác nhận giao dịch...</strong>
+                    </div>
+                    <div class="text-muted" style="font-size:0.74rem;" id="gwLiveStatusSub">
+                        Quét mã bằng app ngân hàng / ví điện tử. Hệ thống tự động xuất vé ngay khi tiền vào (thường từ 2–10 giây).
+                    </div>
                 </div>
 
-                <!-- 3. NÚT XÁC NHẬN CHUYỂN KHOẢN -->
-                <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-teal rounded-pill fw-bold shadow-sm" id="btnGwConfirmDone" onclick="confirmGatewayTransferDone()">
-                        <i class="fa-solid fa-circle-check me-2"></i> Tôi đã thanh toán
+                <!-- Nút test dev simulate (chỉ hiện khi server bật cờ SEPAY_ALLOW_SIMULATE) -->
+                <div id="devSimulateWrap" class="mb-3" style="display:none;">
+                    <button type="button" class="btn btn-outline-warning btn-sm rounded-pill w-100 py-1" onclick="devSimulatePayment()" style="font-size:0.75rem;">
+                        <i class="fa-solid fa-flask me-1"></i> [DEV TEST] Giả lập SePay nhận tiền thành công
                     </button>
-                    <div class="d-flex justify-content-between align-items-center px-1">
-                        <a id="gwModalDownloadQr" href="assets/img/vietqr-payment.png" download="VietQR-GODMINTON.png" class="text-decoration-none text-muted small" style="font-size:0.74rem;">
-                            <i class="fa-solid fa-download me-1 text-teal"></i> Tải ảnh QR
-                        </a>
-                        <button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none p-0" data-bs-dismiss="modal" style="font-size:0.74rem;">
-                            Quay lại kiểm tra
-                        </button>
-                    </div>
+                </div>
+
+                <!-- Tải ảnh QR & Quay lại -->
+                <div class="d-flex justify-content-between align-items-center px-1 pt-2 border-top">
+                    <a id="gwModalDownloadQr" href="assets/img/vietqr-payment.png" download="VietQR-GODMINTON.png" class="text-decoration-none text-muted small" style="font-size:0.75rem;">
+                        <i class="fa-solid fa-download me-1 text-teal"></i> Tải ảnh QR
+                    </a>
+                    <button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none p-0" data-bs-dismiss="modal" style="font-size:0.75rem;">
+                        Quay lại kiểm tra
+                    </button>
                 </div>
             </div>
         </div>

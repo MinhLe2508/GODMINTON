@@ -1,51 +1,46 @@
 <?php
 /**
  * api/cleanup-expired.php
- * Task 8 — Dọn các slot giữ chỗ đã hết hạn: status='holding' AND hold_expires_at < NOW()
- * → trả về 'available' (xóa held_by, hold_expires_at).
+ * Task 8 & SePay — Dọn các slot giữ chỗ đã hết hạn và xử lý huỷ các đơn thanh toán pending quá hạn.
  *
- * Người phụ trách: Huy (Tuần 2)
- *
- * 3 cách dùng (cùng một hàm, không trùng lặp code):
- *   A. Cron (khuyến nghị, chạy mỗi phút):
- *        * * * * * php /đường/dẫn/GODMINTON/api/cleanup-expired.php
- *      Windows/XAMPP: dùng Task Scheduler chạy  C:\xampp\php\php.exe  <đường dẫn file này>
- *   B. Gọi qua HTTP:  GET /api/cleanup-expired.php  → trả JSON số slot đã dọn.
- *   C. Inline (Minh dùng trong api/slots.php, trước câu SELECT):
- *        require_once __DIR__ . '/cleanup-expired.php';
- *        cleanup_expired_holds($pdo);
- *      Khi được require từ file khác, file này CHỈ định nghĩa hàm, không in gì ra.
- *
- * An toàn khi chạy song song với hold.php/confirm.php: UPDATE chỉ đụng các dòng
- * 'holding' đã quá hạn; InnoDB khoá từng dòng nên không ảnh hưởng slot đang được giữ hợp lệ.
+ * 3 cách dùng:
+ *   A. Cron: php /path/to/GODMINTON/api/cleanup-expired.php
+ *   B. HTTP: GET /api/cleanup-expired.php
+ *   C. Inline: cleanup_expired_holds($pdo);
  */
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/payment-service.php';
 
 /**
- * Trả các slot 'holding' đã hết hạn về 'available'.
+ * Trả các slot 'holding' đã hết hạn về 'available' và huỷ các giao dịch/booking quá hạn.
  *
- * @return int số slot đã dọn
+ * @return array{cleaned_slots: int, expired_payments: int}
  */
-function cleanup_expired_holds(PDO $pdo): int
+function cleanup_expired_holds(PDO $pdo): array
 {
+    $expiredPayments = payment_expire_overdue($pdo, 100);
+
     $stmt = $pdo->prepare(
         "UPDATE time_slots
             SET status = 'available', held_by = NULL, hold_expires_at = NULL
-          WHERE status = 'holding' AND hold_expires_at < NOW()"
+          WHERE status = 'holding' AND hold_expires_at IS NOT NULL AND hold_expires_at < NOW()"
     );
     $stmt->execute();
-    return $stmt->rowCount();
+    $cleanedSlots = $stmt->rowCount();
+
+    return [
+        'cleaned_slots'    => $cleanedSlots,
+        'expired_payments' => $expiredPayments,
+    ];
 }
 
-// Chỉ chạy "chế độ script" khi file này được gọi trực tiếp (cron / trình duyệt),
-// không chạy khi bị require_once từ file khác.
 $__isDirect = isset($_SERVER['SCRIPT_FILENAME'])
     && realpath($_SERVER['SCRIPT_FILENAME']) === realpath(__FILE__);
 
 if ($__isDirect) {
     try {
-        $cleaned = cleanup_expired_holds($pdo);
-        $msg = "Đã dọn {$cleaned} slot hết hạn.";
+        $result = cleanup_expired_holds($pdo);
+        $msg = "Đã dọn {$result['cleaned_slots']} slot và huỷ {$result['expired_payments']} đơn quá hạn.";
         if (PHP_SAPI === 'cli') {
             echo '[' . date('Y-m-d H:i:s') . "] {$msg}\n";
         } else {
@@ -54,10 +49,10 @@ if ($__isDirect) {
                 'status'  => 'success',
                 'code'    => 200,
                 'message' => $msg,
-                'data'    => ['cleaned' => $cleaned],
+                'data'    => $result,
             ], JSON_UNESCAPED_UNICODE);
         }
-    } catch (PDOException $e) {
+    } catch (Throwable $e) {
         error_log('[cleanup-expired] ' . $e->getMessage());
         if (PHP_SAPI === 'cli') {
             fwrite(STDERR, "Lỗi: " . $e->getMessage() . "\n");
