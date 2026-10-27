@@ -125,6 +125,19 @@ if ($post && !empty($post['voucher_id']) && !empty($post['voucher_code']) && ($p
         [data-bs-theme="dark"] .chip-event { color: #c4b5fd; }
         [data-bs-theme="dark"] .chip-membership { color: #fcd34d; }
         [data-bs-theme="dark"] .chip-announcement { color: #fda4af; }
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+        .sepay-wait-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #0d9488;
+            margin-right: 6px;
+            animation: pulseDot 1.4s infinite ease-in-out;
+        }
     </style>
 </head>
 <body>
@@ -282,7 +295,7 @@ if ($post && !empty($post['voucher_id']) && !empty($post['voucher_code']) && ($p
                             <i class="fa-solid fa-circle-info me-1 text-teal"></i>
                             Đăng nhập tài khoản GODMINTON để đăng ký gói hội viên và tự động hưởng chiết khấu <strong><?= (int)$post['discount_percent'] ?>%</strong> khi đặt sân.
                         </div>
-                        <a href="login.php?redirect=<?= urlencode('post-detail.php?slug=' . $post['slug']) ?>" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm">
+                        <a href="auth.php?redirect=<?= urlencode('post-detail.php?slug=' . $post['slug']) ?>" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm">
                             <i class="fa-solid fa-right-to-bracket me-1"></i> Đăng nhập để đăng ký gói
                         </a>
                     <?php elseif ($isCurrentPackageActive): ?>
@@ -306,13 +319,16 @@ if ($post && !empty($post['voucher_id']) && !empty($post['voucher_code']) && ($p
                     <?php elseif ($isCurrentPackagePending): ?>
                         <div class="small text-muted" style="max-width: 520px;">
                             <span class="badge bg-warning text-dark px-2 py-1 rounded-pill fw-bold mb-1">
-                                <i class="fa-solid fa-clock-rotate-left me-1"></i>Đang chờ admin xác nhận
+                                <i class="fa-solid fa-qrcode me-1"></i>Đang chờ thanh toán VietQR (SePay 24/7)
                             </span>
-                            <div>Bạn đã gửi yêu cầu đăng ký gói này. Ban Quản Trị đang duyệt và sẽ kích hoạt ngay cho bạn.</div>
+                            <div>Bạn đang có đơn đăng ký gói này. Quét mã VietQR để hệ thống tự động kích hoạt gói ngay lập tức!</div>
                         </div>
                         <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <a href="profile.php?tab=membership" class="btn btn-warning text-dark rounded-pill px-4 fw-bold shadow-sm">
-                                <i class="fa-solid fa-clock-rotate-left me-1"></i> Theo dõi tại Trang cá nhân
+                            <button type="button" class="btn btn-teal rounded-pill px-4 py-2 fw-bold shadow-sm" onclick="openSubscribeModal(true)">
+                                <i class="fa-solid fa-qrcode me-1"></i> Tiếp tục thanh toán QR (<?= post_format_vnd($post['price']) ?>)
+                            </button>
+                            <a href="profile.php?tab=membership" class="btn btn-outline-secondary rounded-pill px-3 fw-semibold">
+                                <i class="fa-solid fa-user me-1"></i> Trang cá nhân
                             </a>
                         </div>
                     <?php else: ?>
@@ -325,7 +341,7 @@ if ($post && !empty($post['voucher_id']) && !empty($post['voucher_code']) && ($p
                             <?php endif; ?>
                         </div>
                         <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <button type="button" class="btn btn-teal rounded-pill px-4 py-2 fw-bold shadow-sm" onclick="openSubscribeModal()">
+                            <button type="button" class="btn btn-teal rounded-pill px-4 py-2 fw-bold shadow-sm" onclick="openSubscribeModal(false)">
                                 <i class="fa-solid fa-crown me-1"></i> Đăng ký gói ngay (<?= post_format_vnd($post['price']) ?>)
                             </button>
                         </div>
@@ -466,14 +482,13 @@ if ($post && !empty($post['voucher_id']) && !empty($post['voucher_code']) && ($p
             $raw = trim(explode('–', explode('-', explode('(', (string)$post['title'])[0])[0])[0]);
             $pkgShortTitle = !str_starts_with(mb_strtolower($raw), 'gói') ? ('Gói ' . $raw) : $raw;
         }
-        $subTransferRef = 'HOIVIEN' . ($currentUserId > 0 ? $currentUserId : 'VIP') . 'P' . (int)$post['id'];
-        $subQrUrl = 'https://api.vietqr.io/image/970422-0783547289-compact2.jpg?amount=' . (int)$post['price'] . '&addInfo=' . urlencode($subTransferRef) . '&accountName=TRUONG%20MINH%20TRIET';
+        $bankInfo = payment_public_bank();
     ?>
-    <!-- Modal Đăng Ký / Thanh Toán Gói Hội Viên -->
+    <!-- Modal Đăng Ký / Thanh Toán Gói Hội Viên (Tích hợp SePay VietQR 24/7 tự động) -->
     <div class="modal fade" id="modalSubscribeMembership" tabindex="-1" aria-labelledby="modalSubLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow-lg">
-                <!-- BƯỚC 1: XÁC NHẬN ĐĂNG KÝ & CHỌN CHUYỂN KHOẢN -->
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+            <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+                <!-- BƯỚC 1: XÁC NHẬN ĐĂNG KÝ & TẠO MÃ VIETQR SEPAY -->
                 <div id="subStep1">
                     <div class="modal-header border-0 pb-0">
                         <h5 class="modal-title fw-bold" id="modalSubLabel">
@@ -483,7 +498,7 @@ if ($post && !empty($post['voucher_id']) && !empty($post['voucher_code']) && ($p
                     </div>
                     <div class="modal-body pt-3">
                         <!-- Tóm tắt gói -->
-                        <div class="p-3 rounded-3 mb-3 bg-light border border-secondary border-opacity-10">
+                        <div class="p-3 rounded-3 mb-3 bg-body-tertiary border border-secondary border-opacity-10">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="badge bg-teal text-white fw-bold px-3 py-1 rounded-pill"><?= htmlspecialchars($pkgShortTitle) ?></span>
                                 <span class="badge bg-danger text-white fw-bold px-2 py-1 rounded-pill">-<?= (int)$post['discount_percent'] ?>% Tiền Sân</span>
@@ -498,103 +513,122 @@ if ($post && !empty($post['voucher_id']) && !empty($post['voucher_code']) && ($p
                             </div>
                         </div>
 
-                        <!-- Phương thức thanh toán duy nhất: Chuyển khoản VietQR -->
+                        <!-- Phương thức thanh toán: Chuyển khoản VietQR SePay 24/7 -->
                         <label class="form-label fw-bold small text-muted text-uppercase mb-2">Phương thức thanh toán</label>
-                        <div class="p-3 border rounded-3 d-flex align-items-center gap-3 bg-surface border-teal shadow-2xs" style="border-width: 1.5px !important;">
+                        <div class="p-3 border rounded-3 d-flex align-items-center gap-3 bg-surface border-teal shadow-2xs mb-3" style="border-width: 1.5px !important;">
                             <div class="icon-circle bg-teal text-white flex-shrink-0" style="width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
                                 <i class="fa-solid fa-qrcode"></i>
                             </div>
                             <div class="flex-grow-1">
                                 <div class="fw-bold small text-teal d-flex align-items-center justify-content-between">
-                                    <span>Chuyển khoản VietQR (Ngân hàng 24/7)</span>
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0" style="font-size:0.7rem;">Tự động</span>
+                                    <span>Chuyển khoản VietQR 24/7 (SePay)</span>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0" style="font-size:0.7rem;">Kích hoạt tự động</span>
                                 </div>
-                                <div class="text-muted" style="font-size:0.75rem;">Hỗ trợ quét qua mọi App ngân hàng tại Việt Nam</div>
+                                <div class="text-muted" style="font-size:0.75rem;">Tự động kích hoạt gói & gửi hóa đơn sau 2–10 giây</div>
                             </div>
+                        </div>
+
+                        <div class="p-2 rounded-3 border bg-body-tertiary text-center small text-muted">
+                            <i class="fa-solid fa-bolt text-warning me-1"></i>
+                            Sau khi quét mã chuyển khoản, hệ thống sẽ <strong>tự động kích hoạt đặc quyền hội viên ngay lập tức</strong>.
                         </div>
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
-                        <button type="button" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm" onclick="showQrStep()">
-                            <span><i class="fa-solid fa-qrcode me-1"></i> Xác nhận</span>
+                        <button type="button" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm" id="btnStartSepaySub" onclick="startSepayMembershipPayment(<?= (int)$post['id'] ?>)">
+                            <span id="btnStartSubText"><i class="fa-solid fa-qrcode me-1"></i> Tạo mã QR thanh toán</span>
+                            <span id="btnStartSubSpinner" class="spinner-border spinner-border-sm ms-1" style="display:none;" role="status"></span>
                         </button>
                     </div>
                 </div>
 
-                <!-- BƯỚC 2: HIỂN THỊ MÃ QR & XÁC NHẬN ĐÃ CHUYỂN KHOẢN -->
+                <!-- BƯỚC 2: HIỂN THỊ MÃ VIETQR SEPAY & TỰ ĐỘNG XÁC NHẬN -->
                 <div id="subStep2" style="display: none;">
-                    <div class="modal-header border-0 pb-0">
-                        <h5 class="modal-title fw-bold text-teal">
-                            <i class="fa-solid fa-qrcode me-2"></i>Thanh Toán VietQR
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    <div style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 14px 20px; color: #fff;" class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85; font-weight: 700;">Thanh Toán Gói Hội Viên</div>
+                            <div class="fw-extrabold fs-6"><?= htmlspecialchars($pkgShortTitle) ?> (-<?= (int)$post['discount_percent'] ?>%)</div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-white text-teal fw-extrabold px-2 py-1 rounded-pill font-monospace" id="subQrTimerBadge" style="font-size: 0.82rem;">15:00</span>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        </div>
                     </div>
-                    <div class="modal-body pt-3">
-                        <!-- Mã QR VietQR -->
+
+                    <div class="modal-body p-3">
+                        <!-- Khung ảnh QR -->
                         <div class="text-center mb-3">
-                            <div class="p-2 d-inline-block bg-white rounded-3 border shadow-sm">
-                                <img src="<?= htmlspecialchars($subQrUrl) ?>"
-                                     onerror="this.src='assets/img/vietqr-payment.png?v=<?= filemtime(__DIR__ . '/assets/img/vietqr-payment.png') ?>';"
-                                     alt="VietQR MB Bank - TRUONG MINH TRIET"
+                            <div class="p-3 d-inline-block bg-white rounded-4 border shadow-sm">
+                                <img id="subQrImg"
+                                     src=""
+                                     alt="VietQR SePay GODMINTON"
                                      class="img-fluid rounded-2"
-                                     style="max-height: 220px; width: auto; object-fit: contain;">
-                            </div>
-                            <div class="mt-1 small text-muted" style="font-size: 0.78rem;">
-                                Mở App ngân hàng quét mã QR để chuyển khoản tức thì
+                                     style="max-height: 215px; width: auto; object-fit: contain;">
                             </div>
                         </div>
 
-                        <!-- Thông tin tài khoản ngân hàng -->
-                        <div class="p-2 rounded-3 bg-light border border-secondary border-opacity-10 small mb-2">
+                        <!-- Bảng thông tin chuyển khoản chuẩn SePay -->
+                        <div class="p-3 rounded-4 bg-body-tertiary border border-secondary border-opacity-15 small mb-3">
                             <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
-                                <span class="text-muted">Ngân hàng:</span>
-                                <strong class="text-dark">MB Bank (Quân Đội)</strong>
+                                <span class="text-muted">Số tiền cần chuyển:</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <strong class="text-body fw-extrabold fs-5" id="subPayAmountText"><?= post_format_vnd($post['price']) ?></strong>
+                                    <button type="button" class="btn btn-sm btn-outline-teal py-0 px-2 rounded-2" id="btnCopySubAmount" title="Sao chép số tiền">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary border-opacity-10">
+                                <span class="text-muted">Nội dung chuyển:</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <strong class="text-teal font-monospace fs-6" id="subPayCodeText">GDM800000</strong>
+                                    <button type="button" class="btn btn-sm btn-outline-teal py-0 px-2 rounded-2" id="btnCopySubCode" title="Sao chép nội dung">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
+                                <span class="text-muted">Ngân hàng thụ hưởng:</span>
+                                <strong class="text-body text-end" id="subPayBankName"><?= htmlspecialchars($bankInfo['name']) ?></strong>
                             </div>
                             <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
                                 <span class="text-muted">Số tài khoản:</span>
                                 <div class="d-flex align-items-center gap-2">
-                                    <strong class="text-dark font-monospace fs-6">0783547289</strong>
-                                    <button type="button" class="btn btn-sm btn-link p-0 text-teal text-decoration-none" onclick="copySubText('0783547289', 'Số tài khoản')">
+                                    <strong class="text-body font-monospace" id="subPayAccNum"><?= htmlspecialchars($bankInfo['account_number']) ?></strong>
+                                    <button type="button" class="btn btn-sm btn-outline-teal py-0 px-2 rounded-2" id="btnCopySubAcc" title="Sao chép STK">
                                         <i class="fa-regular fa-copy"></i>
                                     </button>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
+                            <div class="d-flex justify-content-between align-items-center pt-1">
                                 <span class="text-muted">Chủ tài khoản:</span>
-                                <strong class="text-dark">TRUONG MINH TRIET</strong>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
-                                <span class="text-muted">Số tiền chuyển:</span>
-                                <div class="d-flex align-items-center gap-2">
-                                    <strong class="text-danger fw-bold fs-6"><?= post_format_vnd($post['price']) ?></strong>
-                                    <button type="button" class="btn btn-sm btn-link p-0 text-teal text-decoration-none" onclick="copySubText('<?= (int)$post['price'] ?>', 'Số tiền')">
-                                        <i class="fa-regular fa-copy"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center py-1">
-                                <span class="text-muted">Nội dung CK:</span>
-                                <div class="d-flex align-items-center gap-2">
-                                    <strong class="text-primary font-monospace"><?= htmlspecialchars($subTransferRef) ?></strong>
-                                    <button type="button" class="btn btn-sm btn-link p-0 text-teal text-decoration-none" onclick="copySubText('<?= htmlspecialchars($subTransferRef) ?>', 'Nội dung chuyển khoản')">
-                                        <i class="fa-regular fa-copy"></i>
-                                    </button>
-                                </div>
+                                <strong class="text-body" id="subPayAccName"><?= htmlspecialchars($bankInfo['account_name']) ?></strong>
                             </div>
                         </div>
 
-                        <div class="text-center text-muted" style="font-size: 0.74rem;">
-                            <i class="fa-solid fa-circle-check text-success me-1"></i> Sau khi chuyển tiền xong, vui lòng nhấn nút <strong>Xác nhận đã chuyển khoản</strong> bên dưới.
+                        <!-- Trạng thái chờ ngân hàng xác nhận tự động -->
+                        <div class="p-3 rounded-3 text-center mb-2" style="background: rgba(13, 148, 136, 0.08); border: 1px solid rgba(13, 148, 136, 0.25);" id="subPayStatusBox">
+                            <div class="fw-bold text-teal small mb-1" id="subPayStatusTitle">
+                                <span class="sepay-wait-dot"></span>Đang chờ ngân hàng xác nhận giao dịch...
+                            </div>
+                            <div class="text-muted" style="font-size: 0.74rem;" id="subPayStatusDesc">
+                                Quét mã bằng app ngân hàng / ví điện tử. Hệ thống tự động kích hoạt gói hội viên ngay khi tiền vào (thường từ 2–10 giây).
+                            </div>
                         </div>
-                    </div>
-                    <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-3" onclick="showStep1()">
-                            <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
+
+                        <!-- Nút giả lập dành cho môi trường DEV TEST -->
+                        <button type="button" id="btnSimulateSubPay" class="btn btn-sm btn-outline-warning text-dark w-100 rounded-pill fw-bold mb-2" style="display: none;">
+                            <i class="fa-solid fa-flask me-1"></i> [DEV TEST] Giả lập SePay nhận tiền thành công
                         </button>
-                        <button type="button" class="btn btn-teal rounded-pill px-4 fw-bold shadow-sm" id="btnConfirmSubscribe" onclick="submitSubscribe(<?= (int)$post['id'] ?>)">
-                            <span id="btnSubText"><i class="fa-solid fa-circle-check me-1"></i> Xác nhận đã chuyển khoản</span>
-                            <span id="btnSubSpinner" class="spinner-border spinner-border-sm ms-1" style="display:none;" role="status"></span>
-                        </button>
+
+                        <div class="d-flex justify-content-between align-items-center pt-1 small">
+                            <a href="#" id="subDownloadQrLink" download class="text-teal text-decoration-none fw-semibold">
+                                <i class="fa-solid fa-download me-1"></i> Tải ảnh QR
+                            </a>
+                            <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none p-0" onclick="showStep1()">
+                                <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -603,60 +637,85 @@ if ($post && !empty($post['voucher_id']) && !empty($post['voucher_code']) && ($p
 
     <script>
     let subModalInstance = null;
+    let subPollTimer = null;
+    let subCountdownTimer = null;
+    let currentSubPaymentCode = '';
 
-    function showQrStep() {
-        const s1 = document.getElementById('subStep1');
-        const s2 = document.getElementById('subStep2');
-        if (s1) s1.style.display = 'none';
-        if (s2) s2.style.display = 'block';
+    function stopSubTimers() {
+        if (subPollTimer) { clearInterval(subPollTimer); subPollTimer = null; }
+        if (subCountdownTimer) { clearInterval(subCountdownTimer); subCountdownTimer = null; }
     }
 
     function showStep1() {
+        stopSubTimers();
         const s1 = document.getElementById('subStep1');
         const s2 = document.getElementById('subStep2');
         if (s1) s1.style.display = 'block';
         if (s2) s2.style.display = 'none';
     }
 
-    function openSubscribeModal() {
+    function openSubscribeModal(autoStartQr = false) {
         const modalEl = document.getElementById('modalSubscribeMembership');
         if (!modalEl) return;
         showStep1();
         subModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
         subModalInstance.show();
+
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            stopSubTimers();
+        }, { once: true });
+
+        if (autoStartQr) {
+            startSepayMembershipPayment(<?= (int)$post['id'] ?>);
+        }
     }
 
     function copySubText(text, label) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(() => {
+            navigator.clipboard.writeText(String(text)).then(() => {
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         toast: true,
                         position: 'top-end',
                         icon: 'success',
-                        title: `Đã chép ${label}!`,
+                        title: `Đã sao chép ${label}: ${text}`,
                         showConfirmButton: false,
                         timer: 1500
                     });
-                } else {
-                    alert(`Đã sao chép ${label}: ${text}`);
                 }
-            }).catch(() => {
-                alert(`${label}: ${text}`);
-            });
-        } else {
-            alert(`${label}: ${text}`);
+            }).catch(() => {});
         }
     }
 
-    async function submitSubscribe(postId) {
-        const btn = document.getElementById('btnConfirmSubscribe');
-        const text = document.getElementById('btnSubText');
-        const spinner = document.getElementById('btnSubSpinner');
+    function formatSubVnd(n) {
+        return Number(n || 0).toLocaleString('vi-VN') + ' đ';
+    }
 
-        btn.disabled = true;
-        text.style.display = 'none';
-        spinner.style.display = 'inline-block';
+    function startSubCountdown(seconds) {
+        if (subCountdownTimer) clearInterval(subCountdownTimer);
+        let remain = Math.max(0, Number(seconds) || 900);
+        const badge = document.getElementById('subQrTimerBadge');
+        const tick = () => {
+            const m = String(Math.floor(remain / 60)).padStart(2, '0');
+            const s = String(remain % 60).padStart(2, '0');
+            if (badge) badge.textContent = `${m}:${s}`;
+            if (remain <= 0) {
+                clearInterval(subCountdownTimer);
+            }
+            remain--;
+        };
+        tick();
+        subCountdownTimer = setInterval(tick, 1000);
+    }
+
+    async function startSepayMembershipPayment(postId) {
+        const btn = document.getElementById('btnStartSepaySub');
+        const text = document.getElementById('btnStartSubText');
+        const spinner = document.getElementById('btnStartSubSpinner');
+
+        if (btn) btn.disabled = true;
+        if (text) text.style.display = 'none';
+        if (spinner) spinner.style.display = 'inline-block';
 
         try {
             const res = await fetch('api/memberships/subscribe.php', {
@@ -666,36 +725,116 @@ if ($post && !empty($post['voucher_id']) && !empty($post['voucher_code']) && ($p
             });
 
             const json = await res.json();
-            if (res.ok && json.status === 'success') {
-                if (subModalInstance) subModalInstance.hide();
-                await Swal.fire({
-                    icon: 'success',
-                    title: 'Đã Gửi Xác Nhận Chuyển Khoản!',
-                    html: `Yêu cầu đăng ký <strong>${json.data.package_title}</strong> của bạn đã được ghi nhận và <strong>đang chờ Quản trị viên (Admin) đối soát, kích hoạt</strong>.<br>Bạn có thể theo dõi tiến trình trong Trang cá nhân.`,
-                    confirmButtonText: 'Đã hiểu',
-                    confirmButtonColor: '#0d9488'
-                });
-                window.location.reload();
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Đăng ký thất bại',
-                    text: json.message || 'Không thể đăng ký gói lúc này. Vui lòng thử lại sau.',
-                    confirmButtonColor: '#0d9488'
-                });
+            if (!res.ok || json.status !== 'success' || !json.data || !json.data.payment) {
+                throw new Error(json.message || 'Không thể khởi tạo phiên thanh toán VietQR lúc này.');
             }
+
+            const p = json.data.payment;
+            currentSubPaymentCode = p.payment_code;
+
+            // Đổ dữ liệu lên Step 2
+            const qrImg = document.getElementById('subQrImg');
+            if (qrImg) qrImg.src = p.qr_url;
+            const dlLink = document.getElementById('subDownloadQrLink');
+            if (dlLink) {
+                dlLink.href = p.qr_url;
+                dlLink.download = `VietQR-${p.payment_code}.png`;
+            }
+
+            const amountEl = document.getElementById('subPayAmountText');
+            if (amountEl) amountEl.textContent = formatSubVnd(p.amount);
+            const codeEl = document.getElementById('subPayCodeText');
+            if (codeEl) codeEl.textContent = p.payment_code;
+            const bankNameEl = document.getElementById('subPayBankName');
+            if (bankNameEl && p.bank) bankNameEl.textContent = p.bank.name;
+            const accNumEl = document.getElementById('subPayAccNum');
+            if (accNumEl && p.bank) accNumEl.textContent = p.bank.account_number;
+            const accNameEl = document.getElementById('subPayAccName');
+            if (accNameEl && p.bank) accNameEl.textContent = p.bank.account_name;
+
+            const btnCopyAmount = document.getElementById('btnCopySubAmount');
+            if (btnCopyAmount) btnCopyAmount.onclick = () => copySubText(p.amount, 'Số tiền');
+            const btnCopyCode = document.getElementById('btnCopySubCode');
+            if (btnCopyCode) btnCopyCode.onclick = () => copySubText(p.payment_code, 'Nội dung chuyển khoản');
+            const btnCopyAcc = document.getElementById('btnCopySubAcc');
+            if (btnCopyAcc && p.bank) btnCopyAcc.onclick = () => copySubText(p.bank.account_number, 'Số tài khoản');
+
+            const simBtn = document.getElementById('btnSimulateSubPay');
+            if (simBtn) {
+                if (p.simulate_available) {
+                    simBtn.style.display = 'block';
+                    simBtn.disabled = false;
+                    simBtn.innerHTML = '<i class="fa-solid fa-flask me-1"></i> [DEV TEST] Giả lập SePay nhận tiền thành công';
+                    simBtn.onclick = async () => {
+                        simBtn.disabled = true;
+                        simBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang giả lập webhook SePay...';
+                        try {
+                            await fetch('api/payments/simulate.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ code: p.payment_code })
+                            });
+                            await pollSubPaymentStatus(p.payment_code, json.data.package_title);
+                        } catch (err) {
+                            simBtn.disabled = false;
+                        }
+                    };
+                } else {
+                    simBtn.style.display = 'none';
+                }
+            }
+
+            // Chuyển sang Step 2
+            document.getElementById('subStep1').style.display = 'none';
+            document.getElementById('subStep2').style.display = 'block';
+
+            startSubCountdown(p.expires_in_seconds || 900);
+            if (subPollTimer) clearInterval(subPollTimer);
+            subPollTimer = setInterval(() => {
+                pollSubPaymentStatus(p.payment_code, json.data.package_title);
+            }, 3000);
+
         } catch (e) {
-            console.error('Lỗi đăng ký hội viên:', e);
             Swal.fire({
                 icon: 'error',
-                title: 'Lỗi kết nối',
-                text: 'Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại đường truyền.',
+                title: 'Không thể tạo mã thanh toán',
+                text: e.message || 'Vui lòng kiểm tra kết nối và thử lại.',
                 confirmButtonColor: '#0d9488'
             });
         } finally {
-            btn.disabled = false;
-            text.style.display = 'inline';
-            spinner.style.display = 'none';
+            if (btn) btn.disabled = false;
+            if (text) text.style.display = 'inline';
+            if (spinner) spinner.style.display = 'none';
+        }
+    }
+
+    async function pollSubPaymentStatus(paymentCode, packageTitle) {
+        try {
+            const res = await fetch(`api/payments/status.php?code=${encodeURIComponent(paymentCode)}`, { cache: 'no-store' });
+            const json = await res.json();
+            if (!res.ok || !json.data) return;
+
+            const d = json.data;
+            if (d.status === 'paid') {
+                stopSubTimers();
+                if (subModalInstance) subModalInstance.hide();
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Kích Hoạt Gói Hội Viên Thành Công!',
+                    html: `Hệ thống đã nhận đủ thanh toán và <strong>kích hoạt ngay lập tức ${packageTitle || 'Gói Hội Viên'}</strong> cho tài khoản của bạn.<br><br>Hóa đơn điện tử &amp; Chứng nhận Thẻ Hội Viên VIP cũng đã được gửi tới email của bạn!`,
+                    confirmButtonText: 'Tuyệt vời!',
+                    confirmButtonColor: '#0d9488'
+                });
+                window.location.reload();
+            } else if (d.status === 'expired' || d.status === 'cancelled') {
+                stopSubTimers();
+                const titleEl = document.getElementById('subPayStatusTitle');
+                const descEl = document.getElementById('subPayStatusDesc');
+                if (titleEl) titleEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> Mã QR đã hết hạn';
+                if (descEl) descEl.textContent = 'Vui lòng bấm Quay lại và tạo mã QR mới để tiếp tục thanh toán.';
+            }
+        } catch (err) {
+            // Bỏ qua lỗi mạng tạm thời trong lúc poll
         }
     }
     </script>

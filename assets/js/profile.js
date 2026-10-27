@@ -239,7 +239,7 @@ function showUserMembershipInvoice(item) {
     const badgeEl = document.getElementById('userModalInvoiceStatusBadge');
     if (badgeEl) {
         if (item.status === 'pending') {
-            badgeEl.innerHTML = '<span class="badge bg-warning text-dark border border-warning rounded-pill fw-bold px-3 py-1"><i class="fa-solid fa-clock-rotate-left me-1"></i>Chờ Admin xác nhận</span>';
+            badgeEl.innerHTML = '<span class="badge bg-warning text-dark border border-warning rounded-pill fw-bold px-3 py-1"><i class="fa-solid fa-clock-rotate-left me-1"></i>Chờ thanh toán</span>';
         } else if (item.status === 'active' && !item.is_expired) {
             badgeEl.innerHTML = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-bold px-3 py-1"><i class="fa-solid fa-circle-check me-1"></i>Đang kích hoạt</span>';
         } else if (item.status === 'rejected') {
@@ -338,7 +338,7 @@ function showUserMembershipInvoice(item) {
                         <div class="d-flex justify-content-between py-1 small">
                             <span class="text-secondary">Tình trạng ngày:</span>
                             <span class="badge ${item.status === 'active' && !item.is_expired ? 'bg-warning text-dark' : 'bg-secondary text-white'} rounded-pill fw-bold px-2 py-1">
-                                ${item.status === 'active' && !item.is_expired ? `Còn ${item.days_left || 0} ngày` : (item.status === 'pending' ? 'Chờ kích hoạt' : 'Hết hạn')}
+                                ${item.status === 'active' && !item.is_expired ? `Còn ${item.days_left || 0} ngày` : (item.status === 'pending' ? 'Chờ thanh toán' : 'Hết hạn')}
                             </span>
                         </div>
                     </div>
@@ -350,12 +350,12 @@ function showUserMembershipInvoice(item) {
                         <div class="text-uppercase fw-bold text-muted small mb-2"><i class="fa-solid fa-credit-card me-1 text-teal"></i>Chi tiết thanh toán</div>
                         <div class="d-flex justify-content-between py-1 border-bottom small">
                             <span class="text-secondary">Phương thức:</span>
-                            <span class="fw-semibold text-dark">${BookingAccount.escape(item.payment_method || 'VietQR')}</span>
+                            <span class="fw-semibold text-dark">${BookingAccount.escape(item.payment_method || 'VietQR (SePay 24/7)')}</span>
                         </div>
                         <div class="d-flex justify-content-between py-1 border-bottom small">
                             <span class="text-secondary">Trạng thái thanh toán:</span>
                             <span class="fw-bold ${item.status === 'pending' ? 'text-warning' : 'text-success'}">
-                                ${item.status === 'pending' ? 'Đã gửi xác nhận - Chờ duyệt' : 'Đã thanh toán thành công'}
+                                ${item.status === 'pending' ? 'Đang chờ chuyển khoản VietQR' : 'Đã thanh toán thành công'}
                             </span>
                         </div>
                         <div class="d-flex justify-content-between pt-2">
@@ -422,7 +422,7 @@ async function loadMyMembership() {
 
                 let pendingNote = '';
                 if (pending) {
-                    pendingNote = `<span class="badge bg-warning text-dark ms-2 px-2 py-1 rounded-pill fw-bold" style="font-size:0.75rem;"><i class="fa-solid fa-clock-rotate-left me-1"></i>Đang duyệt: ${BookingAccount.escape(pendingPkgName)}</span>`;
+                    pendingNote = `<span class="badge bg-warning text-dark ms-2 px-2 py-1 rounded-pill fw-bold" style="font-size:0.75rem;"><i class="fa-solid fa-qrcode me-1"></i>Chờ thanh toán: ${BookingAccount.escape(pendingPkgName)}</span>`;
                 }
 
                 badgeEl.innerHTML = `
@@ -438,8 +438,8 @@ async function loadMyMembership() {
             } else if (pending) {
                 badgeEl.innerHTML = `
                     <span class="badge bg-warning text-dark px-3 py-1 rounded-pill fw-bold d-inline-flex align-items-center gap-2 shadow-sm" style="font-size: 0.82rem;">
-                        <i class="fa-solid fa-clock-rotate-left"></i>
-                        <span>Đang duyệt: ${BookingAccount.escape(pendingPkgName)}</span>
+                        <i class="fa-solid fa-qrcode"></i>
+                        <span>Chờ thanh toán: ${BookingAccount.escape(pendingPkgName)}</span>
                     </span>
                 `;
             } else {
@@ -469,20 +469,20 @@ async function loadMyMembership() {
                     <div class="p-3 rounded-4 mb-3 border border-warning bg-warning bg-opacity-10 d-flex align-items-center justify-content-between flex-wrap gap-2 shadow-sm">
                         <div class="d-flex align-items-center gap-3">
                             <div class="icon-circle bg-warning text-dark flex-shrink-0" style="width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                <i class="fa-solid fa-qrcode"></i>
                             </div>
                             <div>
-                                <strong class="text-dark d-block">Yêu cầu đăng ký / gia hạn đang chờ Admin xác nhận:</strong>
-                                <span class="small text-muted">${BookingAccount.escape(pending.package_title)} · ${BookingAccount.money(pending.price_paid || 0)} · Phương thức: ${BookingAccount.escape(pending.payment_method || 'VietQR')}</span>
+                                <strong class="text-dark d-block">Đơn đăng ký / gia hạn đang chờ thanh toán VietQR (SePay 24/7):</strong>
+                                <span class="small text-muted">${BookingAccount.escape(pending.package_title)} · ${BookingAccount.money(pending.price_paid || 0)} · Tự động kích hoạt ngay khi nhận tiền</span>
                             </div>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <button type="button" class="btn btn-sm btn-teal text-white rounded-pill px-3 fw-bold btn-pay-pending-membership shadow-sm">
+                                <i class="fa-solid fa-qrcode me-1"></i> Quét mã QR thanh toán
+                            </button>
                             <button type="button" class="btn btn-sm btn-outline-warning text-dark rounded-pill px-3 fw-bold btn-view-user-pending-invoice shadow-sm" style="background:#fff;">
                                 <i class="fa-solid fa-file-invoice-dollar me-1"></i> Xem hóa đơn
                             </button>
-                            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold" style="font-size:0.8rem;">
-                                <i class="fa-solid fa-hourglass-half me-1"></i>Chờ Admin duyệt
-                            </span>
                         </div>
                     </div>
                 `;
@@ -532,7 +532,6 @@ async function loadMyMembership() {
                 }
 
                 const endFormatted = active.end_date ? active.end_date.substring(0, 10).split('-').reverse().join('/') : '--';
-                const startFormatted = active.start_date ? active.start_date.substring(0, 10).split('-').reverse().join('/') : '--';
 
                 activeBox.innerHTML = `
                     ${pendingBannerHtml}
@@ -610,28 +609,9 @@ async function loadMyMembership() {
                         const priceNum = Math.round(Number(active.price_paid) || 0);
                         const priceText = BookingAccount.money(priceNum);
                         document.getElementById('renewPriceText').textContent = priceText;
-                        const qrPriceEl = document.getElementById('renewQrPriceText');
-                        if (qrPriceEl) qrPriceEl.textContent = priceText;
-
-                        const userId = (savedProfile && savedProfile.id) ? savedProfile.id : 'VIP';
-                        const renewRef = 'GIAHAN' + userId + 'P' + active.post_id;
-                        const refEl = document.getElementById('renewTransferRef');
-                        if (refEl) refEl.textContent = renewRef;
-
-                        const qrUrl = `https://api.vietqr.io/image/970422-0783547289-compact2.jpg?amount=${priceNum}&addInfo=${encodeURIComponent(renewRef)}&accountName=TRUONG%20MINH%20TRIET`;
-                        const qrImg = document.getElementById('renewQrImg');
-                        if (qrImg) qrImg.src = qrUrl;
-
-                        const btnCopyPrice = document.getElementById('btnCopyRenewPrice');
-                        if (btnCopyPrice) {
-                            btnCopyPrice.onclick = () => copyRenewText(priceNum.toString(), 'Số tiền');
-                        }
-                        const btnCopyRef = document.getElementById('btnCopyRenewRef');
-                        if (btnCopyRef) {
-                            btnCopyRef.onclick = () => copyRenewText(renewRef, 'Nội dung chuyển khoản');
-                        }
 
                         window.__CURRENT_ACTIVE_POST_ID__ = active.post_id;
+                        window.__CURRENT_ACTIVE_PKG_TITLE__ = shortName;
                         const instance = bootstrap.Modal.getOrCreateInstance(modalEl);
                         instance.show();
                     });
@@ -680,7 +660,7 @@ async function loadMyMembership() {
 
                     let statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">Đã hết hạn</span>';
                     if (item.status === 'pending') {
-                        statusBadge = '<span class="badge bg-warning text-dark border border-warning rounded-pill fw-bold"><i class="fa-solid fa-clock-rotate-left me-1"></i>Chờ admin xác nhận</span>';
+                        statusBadge = '<span class="badge bg-warning text-dark border border-warning rounded-pill fw-bold"><i class="fa-solid fa-qrcode me-1"></i>Chờ thanh toán</span>';
                     } else if (item.status === 'rejected') {
                         statusBadge = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Đã từ chối</span>';
                     } else if (isCurrent) {
@@ -735,6 +715,20 @@ async function loadMyMembership() {
             btnPendingInv.addEventListener('click', () => showUserMembershipInvoice(pending));
         }
 
+        // Gắn sự kiện thanh toán QR ngay cho gói pending
+        const btnPayPending = activeBox ? activeBox.querySelector('.btn-pay-pending-membership') : null;
+        if (btnPayPending && pending) {
+            btnPayPending.addEventListener('click', () => {
+                const modalEl = document.getElementById('modalRenewMembership');
+                if (!modalEl) return;
+                window.__CURRENT_ACTIVE_POST_ID__ = pending.post_id;
+                window.__CURRENT_ACTIVE_PKG_TITLE__ = pending.package_title || 'Gói Hội Viên';
+                const instance = bootstrap.Modal.getOrCreateInstance(modalEl);
+                instance.show();
+                startProfileSepayMembershipPayment(pending.post_id, pending.package_title);
+            });
+        }
+
         if (historyList) {
             historyList.querySelectorAll('.btn-view-user-history-invoice').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -767,15 +761,33 @@ async function loadMyMembership() {
     }
 }
 
-// Điều hướng 2 bước & sao chép thông tin thanh toán VietQR cho Modal Gia Hạn
-window.showRenewQrStep = function() {
-    const s1 = document.getElementById('renewStep1');
-    const s2 = document.getElementById('renewStep2');
-    if (s1) s1.style.display = 'none';
-    if (s2) s2.style.display = 'block';
-};
+let renewPollTimer = null;
+let renewCountdownTimer = null;
+
+function stopRenewTimers() {
+    if (renewPollTimer) { clearInterval(renewPollTimer); renewPollTimer = null; }
+    if (renewCountdownTimer) { clearInterval(renewCountdownTimer); renewCountdownTimer = null; }
+}
+
+function startRenewCountdown(seconds) {
+    if (renewCountdownTimer) clearInterval(renewCountdownTimer);
+    let remain = Math.max(0, Number(seconds) || 900);
+    const badge = document.getElementById('renewQrTimerBadge');
+    const tick = () => {
+        const m = String(Math.floor(remain / 60)).padStart(2, '0');
+        const s = String(remain % 60).padStart(2, '0');
+        if (badge) badge.textContent = `${m}:${s}`;
+        if (remain <= 0) {
+            clearInterval(renewCountdownTimer);
+        }
+        remain--;
+    };
+    tick();
+    renewCountdownTimer = setInterval(tick, 1000);
+}
 
 window.showRenewStep1 = function() {
+    stopRenewTimers();
     const s1 = document.getElementById('renewStep1');
     const s2 = document.getElementById('renewStep2');
     if (s1) s1.style.display = 'block';
@@ -784,28 +796,168 @@ window.showRenewStep1 = function() {
 
 window.copyRenewText = function(text, label) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
+        navigator.clipboard.writeText(String(text)).then(() => {
             if (window.Swal) {
                 Swal.fire({
                     toast: true,
                     position: 'top-end',
                     icon: 'success',
-                    title: `Đã chép ${label}!`,
+                    title: `Đã sao chép ${label}: ${text}`,
                     showConfirmButton: false,
                     timer: 1500
                 });
-            } else {
-                alert(`Đã sao chép ${label}: ${text}`);
             }
-        }).catch(() => {
-            alert(`${label}: ${text}`);
-        });
-    } else {
-        alert(`${label}: ${text}`);
+        }).catch(() => {});
     }
 };
 
+async function startProfileSepayMembershipPayment(postId, packageTitle) {
+    const btn = document.getElementById('btnConfirmRenew');
+    const text = document.getElementById('btnRenewText');
+    const spinner = document.getElementById('btnRenewSpinner');
+
+    if (btn) btn.disabled = true;
+    if (text) text.style.display = 'none';
+    if (spinner) spinner.style.display = 'inline-block';
+
+    try {
+        const res = await fetch('api/memberships/subscribe.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ post_id: postId, payment_method: 'VietQR' })
+        });
+        const json = await res.json();
+
+        if (!res.ok || json.status !== 'success' || !json.data || !json.data.payment) {
+            throw new Error(json.message || 'Không thể khởi tạo mã thanh toán VietQR lúc này.');
+        }
+
+        const p = json.data.payment;
+        const pkgTitle = json.data.package_title || packageTitle || 'Gói Hội Viên';
+
+        const headerTitleEl = document.getElementById('renewStep2HeaderTitle');
+        if (headerTitleEl) headerTitleEl.textContent = pkgTitle;
+
+        const qrImg = document.getElementById('renewQrImg');
+        if (qrImg) qrImg.src = p.qr_url;
+        const dlLink = document.getElementById('renewDownloadQrLink');
+        if (dlLink) {
+            dlLink.href = p.qr_url;
+            dlLink.download = `VietQR-${p.payment_code}.png`;
+        }
+
+        const qrPriceEl = document.getElementById('renewQrPriceText');
+        if (qrPriceEl) qrPriceEl.textContent = BookingAccount.money(p.amount);
+        const refEl = document.getElementById('renewTransferRef');
+        if (refEl) refEl.textContent = p.payment_code;
+        const bankNameEl = document.getElementById('renewBankName');
+        if (bankNameEl && p.bank) bankNameEl.textContent = p.bank.name;
+        const accNumEl = document.getElementById('renewAccNum');
+        if (accNumEl && p.bank) accNumEl.textContent = p.bank.account_number;
+        const accNameEl = document.getElementById('renewAccName');
+        if (accNameEl && p.bank) accNameEl.textContent = p.bank.account_name;
+
+        const btnCopyPrice = document.getElementById('btnCopyRenewPrice');
+        if (btnCopyPrice) btnCopyPrice.onclick = () => copyRenewText(p.amount, 'Số tiền');
+        const btnCopyRef = document.getElementById('btnCopyRenewRef');
+        if (btnCopyRef) btnCopyRef.onclick = () => copyRenewText(p.payment_code, 'Nội dung chuyển khoản');
+        const btnCopyAcc = document.getElementById('btnCopyRenewAcc');
+        if (btnCopyAcc && p.bank) btnCopyAcc.onclick = () => copyRenewText(p.bank.account_number, 'Số tài khoản');
+
+        const simBtn = document.getElementById('btnSimulateRenewPay');
+        if (simBtn) {
+            if (p.simulate_available) {
+                simBtn.style.display = 'block';
+                simBtn.disabled = false;
+                simBtn.innerHTML = '<i class="fa-solid fa-flask me-1"></i> [DEV TEST] Giả lập SePay nhận tiền thành công';
+                simBtn.onclick = async () => {
+                    simBtn.disabled = true;
+                    simBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang giả lập webhook SePay...';
+                    try {
+                        await fetch('api/payments/simulate.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ code: p.payment_code })
+                        });
+                        await pollRenewPaymentStatus(p.payment_code, pkgTitle);
+                    } catch (err) {
+                        simBtn.disabled = false;
+                    }
+                };
+            } else {
+                simBtn.style.display = 'none';
+            }
+        }
+
+        const s1 = document.getElementById('renewStep1');
+        const s2 = document.getElementById('renewStep2');
+        if (s1) s1.style.display = 'none';
+        if (s2) s2.style.display = 'block';
+
+        startRenewCountdown(p.expires_in_seconds || 900);
+        if (renewPollTimer) clearInterval(renewPollTimer);
+        renewPollTimer = setInterval(() => {
+            pollRenewPaymentStatus(p.payment_code, pkgTitle);
+        }, 3000);
+
+    } catch (e) {
+        if (window.Swal) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Không thể tạo mã thanh toán',
+                text: e.message || 'Vui lòng thử lại sau.',
+                confirmButtonColor: '#0d9488'
+            });
+        }
+    } finally {
+        if (btn) btn.disabled = false;
+        if (text) text.style.display = 'inline-block';
+        if (spinner) spinner.style.display = 'none';
+    }
+}
+
+async function pollRenewPaymentStatus(paymentCode, pkgTitle) {
+    try {
+        const res = await fetch(`api/payments/status.php?code=${encodeURIComponent(paymentCode)}`, { cache: 'no-store' });
+        const json = await res.json();
+        if (!res.ok || !json.data) return;
+
+        const d = json.data;
+        if (d.status === 'paid') {
+            stopRenewTimers();
+            const modalEl = document.getElementById('modalRenewMembership');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+                const instance = bootstrap.Modal.getInstance(modalEl);
+                if (instance) instance.hide();
+            }
+            if (window.Swal) {
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Kích Hoạt / Gia Hạn Thành Công!',
+                    html: `Hệ thống đã nhận đủ thanh toán và <strong>kích hoạt ngay lập tức ${pkgTitle || 'Gói Hội Viên'}</strong> cho tài khoản của bạn.<br><br>Hóa đơn điện tử &amp; Chứng nhận Thẻ Hội Viên VIP cũng đã được gửi tới email của bạn!`,
+                    confirmButtonText: 'Tuyệt vời!',
+                    confirmButtonColor: '#0d9488'
+                });
+            }
+            await loadMyMembership();
+        } else if (d.status === 'expired' || d.status === 'cancelled') {
+            stopRenewTimers();
+            const titleEl = document.getElementById('renewPayStatusTitle');
+            const descEl = document.getElementById('renewPayStatusDesc');
+            if (titleEl) titleEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> Mã QR đã hết hạn';
+            if (descEl) descEl.textContent = 'Vui lòng bấm Quay lại để tạo mã QR thanh toán mới.';
+        }
+    } catch (err) {}
+}
+
 function initRenewMembershipModal() {
+    const modalEl = document.getElementById('modalRenewMembership');
+    if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            stopRenewTimers();
+        });
+    }
+
     const btn = document.getElementById('btnConfirmRenew');
     if (!btn || btn.dataset.bound === 'true') return;
     btn.dataset.bound = 'true';
@@ -813,72 +965,6 @@ function initRenewMembershipModal() {
     btn.addEventListener('click', async () => {
         const postId = window.__CURRENT_ACTIVE_POST_ID__;
         if (!postId) return;
-
-        const text = document.getElementById('btnRenewText');
-        const spinner = document.getElementById('btnRenewSpinner');
-
-        btn.disabled = true;
-        if (text) text.style.display = 'none';
-        if (spinner) spinner.style.display = 'inline-block';
-
-        try {
-            const res = await fetch('api/memberships/subscribe.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ post_id: postId, payment_method: 'VietQR' })
-            });
-            const json = await res.json();
-
-            if (res.ok && json.status === 'success') {
-                const modalEl = document.getElementById('modalRenewMembership');
-                if (modalEl && typeof bootstrap !== 'undefined') {
-                    const instance = bootstrap.Modal.getInstance(modalEl);
-                    if (instance) instance.hide();
-                }
-
-                if (window.Swal) {
-                    await Swal.fire({
-                        icon: 'success',
-                        title: 'Đã Gửi Xác Nhận Chuyển Khoản!',
-                        html: `Yêu cầu gia hạn gói <strong>${json.data.package_title}</strong> của bạn đã được ghi nhận và <strong>đang chờ Quản trị viên (Admin) đối soát, kích hoạt</strong>.<br>Hệ thống sẽ cộng dồn hạn sử dụng ngay sau khi Admin xác nhận.`,
-                        confirmButtonText: 'Đã hiểu',
-                        confirmButtonColor: '#0d9488'
-                    });
-                } else {
-                    alert('Yêu cầu gia hạn đã gửi, đang chờ Admin xác nhận!');
-                }
-
-                await loadMyMembership();
-            } else {
-                if (window.Swal) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gia hạn thất bại',
-                        text: json.message || 'Không thể gia hạn lúc này. Vui lòng thử lại sau.',
-                        confirmButtonColor: '#0d9488'
-                    });
-                } else {
-                    alert(json.message || 'Gia hạn thất bại.');
-                }
-            }
-        } catch (e) {
-            console.error('Lỗi gia hạn:', e);
-            if (window.Swal) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Lỗi kết nối',
-                    text: 'Không thể kết nối máy chủ để gia hạn.',
-                    confirmButtonColor: '#0d9488'
-                });
-            } else {
-                alert('Không thể kết nối máy chủ để gia hạn.');
-            }
-        } finally {
-            btn.disabled = false;
-            if (text) text.style.display = 'inline-block';
-            if (spinner) spinner.style.display = 'none';
-        }
+        await startProfileSepayMembershipPayment(postId, window.__CURRENT_ACTIVE_PKG_TITLE__ || 'Gói Hội Viên');
     });
 }
-
-

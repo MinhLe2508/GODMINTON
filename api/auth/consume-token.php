@@ -34,7 +34,13 @@ try {
         $pdo->prepare('UPDATE auth_tokens SET used_at=NOW() WHERE id=?')->execute([$token['id']]);
     }
     $pdo->commit();
-    if (in_array($mode,['reset','delete','email_change'],true) && (int)($_SESSION['user_id']??0)===(int)$token['user_id']) god_auth_clear();
+    if (in_array($mode,['reset','delete','email_change'],true)) {
+        if (god_auth_ensure_remember_schema($pdo)) {
+            $pdo->prepare('DELETE FROM remember_tokens WHERE user_id=?')->execute([(int)$token['user_id']]);
+        }
+        god_auth_clear_saved_credentials();
+        if ((int)($_SESSION['user_id']??0)===(int)$token['user_id']) god_auth_clear(true);
+    }
     if($mode==='email_change')god_auth_out(200,'Email đăng nhập đã được thay đổi. Vui lòng đăng nhập lại bằng địa chỉ mới.');
     if($mode==='delete')god_auth_out(200,'Tài khoản đã được xóa. Thông tin hồ sơ đã được ẩn danh và mọi phiên đăng nhập đã bị thu hồi.');
     god_auth_out(200,$mode==='reset'?'Đã đổi mật khẩu và đăng xuất các phiên cũ. Vui lòng đăng nhập lại.':'Email đã được xác minh. Bạn có thể đăng nhập.',['next_url'=>$mode==='verify'&&!empty($account['owner_intent'])?'owner-application.php':'auth.php']);

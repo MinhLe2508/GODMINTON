@@ -50,10 +50,11 @@ SET @g_ddl = IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS
     'ALTER TABLE `time_slots` ADD COLUMN `note` VARCHAR(255) NULL DEFAULT NULL AFTER `status`');
 PREPARE g_stmt FROM @g_ddl; EXECUTE g_stmt; DEALLOCATE PREPARE g_stmt;
 
--- Bảng payments: Lưu yêu cầu thanh toán tiền cọc gắn với đơn đặt sân
+-- Bảng payments: Lưu yêu cầu thanh toán tiền cọc đặt sân & thanh toán gói hội viên qua SePay
 CREATE TABLE IF NOT EXISTS `payments` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `booking_id` INT UNSIGNED NOT NULL,
+  `booking_id` INT UNSIGNED DEFAULT NULL,
+  `membership_id` INT UNSIGNED DEFAULT NULL,
   `payment_code` VARCHAR(20) NOT NULL,
   `amount` DECIMAL(12,0) NOT NULL,
   `paid_amount` DECIMAL(12,0) NOT NULL DEFAULT 0,
@@ -65,9 +66,19 @@ CREATE TABLE IF NOT EXISTS `payments` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_payment_code` (`payment_code`),
   UNIQUE KEY `uq_payment_booking` (`booking_id`),
+  UNIQUE KEY `uq_payment_membership` (`membership_id`),
   KEY `idx_pay_status_exp` (`status`, `expires_at`),
   CONSTRAINT `fk_pay_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Đảm bảo bảng payments đã tồn tại từ trước cũng hỗ trợ membership_id và booking_id DEFAULT NULL
+ALTER TABLE `payments` MODIFY COLUMN `booking_id` INT UNSIGNED DEFAULT NULL;
+
+SET @g_ddl = IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='payments' AND COLUMN_NAME='membership_id'),
+    'DO 0',
+    'ALTER TABLE `payments` ADD COLUMN `membership_id` INT UNSIGNED DEFAULT NULL AFTER `booking_id`, ADD UNIQUE KEY `uq_payment_membership` (`membership_id`)');
+PREPARE g_stmt FROM @g_ddl; EXECUTE g_stmt; DEALLOCATE PREPARE g_stmt;
 
 -- Bảng sepay_transactions: Lưu nguyên văn mọi webhook biến động số dư từ SePay
 CREATE TABLE IF NOT EXISTS `sepay_transactions` (
@@ -144,6 +155,25 @@ CREATE TABLE IF NOT EXISTS `push_reminder_dispatches` (
   UNIQUE KEY `uq_push_reminder_booking_type` (`booking_id`, `reminder_type`),
   KEY `idx_push_reminder_status` (`status`, `created_at`),
   CONSTRAINT `fk_push_reminder_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 6. Bảng remember_tokens: Lưu token Ghi nhớ đăng nhập (Split-Token: Selector + Validator băm SHA-256)
+CREATE TABLE IF NOT EXISTS `remember_tokens` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` INT UNSIGNED NOT NULL,
+  `selector` CHAR(24) NOT NULL,
+  `validator_hash` CHAR(64) NOT NULL,
+  `session_version` INT UNSIGNED NOT NULL DEFAULT 0,
+  `user_agent_hash` CHAR(64) DEFAULT NULL,
+  `ip_prefix` VARCHAR(45) DEFAULT NULL,
+  `expires_at` DATETIME NOT NULL,
+  `last_used_at` DATETIME DEFAULT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_remember_selector` (`selector`),
+  KEY `idx_remember_user` (`user_id`),
+  KEY `idx_remember_expires` (`expires_at`),
+  CONSTRAINT `fk_remember_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

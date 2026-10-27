@@ -126,6 +126,10 @@ if (function_exists('fastcgi_finish_request')) {
     fastcgi_finish_request();
 }
 
-if ($result['confirmed'] && $result['booking_id']) {
-    payment_send_confirmation_email($pdo, (int)$result['booking_id']);
+if (!empty($result['confirmed'])) {
+    if (!empty($result['booking_id'])) {
+        payment_send_confirmation_email($pdo, (int)$result['booking_id']);
+    } elseif (!empty($result['membership_id'])) {
+        payment_send_membership_confirmation_email($pdo, (int)$result['membership_id']);
+    }
 }

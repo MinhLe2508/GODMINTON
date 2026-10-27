@@ -22,7 +22,12 @@ try {
 
     $in = booking_account_input();
     $code = strtoupper(trim((string)($in['code'] ?? '')));
-    $s = $pdo->prepare('SELECT p.payment_code, p.amount, p.paid_amount FROM payments p JOIN bookings b ON b.id=p.booking_id WHERE p.payment_code=? AND b.user_id=?');
+    payment_ensure_schema($pdo);
+    $s = $pdo->prepare('SELECT p.payment_code, p.amount, p.paid_amount, p.booking_id, p.membership_id
+                          FROM payments p
+                          LEFT JOIN bookings b ON b.id = p.booking_id
+                          LEFT JOIN user_memberships um ON um.id = p.membership_id
+                         WHERE p.payment_code = ? AND COALESCE(b.user_id, um.user_id) = ?');
     $s->execute([$code, $user['id']]);
     $p = $s->fetch();
     if (!$p) {
@@ -36,7 +41,7 @@ try {
         'accountNumber'   => payment_config()['account_number'],
         'subAccount'      => null,
         'code'            => $p['payment_code'],
-        'content'         => $p['payment_code'] . ' dat coc san GODMINTON',
+        'content'         => $p['payment_code'] . (!empty($p['membership_id']) ? ' dang ky goi hoi vien GODMINTON' : ' dat coc san GODMINTON'),
         'transferType'    => 'in',
         'description'     => 'Giao dich gia lap',
         'transferAmount'  => max(0, (int)$p['amount'] - (int)$p['paid_amount']),
@@ -44,6 +49,13 @@ try {
         'referenceCode'   => 'SIM' . time(),
     ];
     $result = payment_process_webhook($pdo, $payload);
+    if (!empty($result['confirmed'])) {
+        if (!empty($result['booking_id'])) {
+            payment_send_confirmation_email($pdo, (int)$result['booking_id']);
+        } elseif (!empty($result['membership_id'])) {
+            payment_send_membership_confirmation_email($pdo, (int)$result['membership_id']);
+        }
+    }
     booking_account_out(200, $result, 'Đã giả lập giao dịch: ' . $result['result']);
 } catch (Throwable $e) {
     booking_account_error($e);

@@ -1,6 +1,6 @@
 /**
  * GODMINTON - Authentication Script
- * Xử lý Đăng Nhập, Đăng Ký, Đổi Tab, Theme Toggle
+ * Xử lý Đăng Nhập, Đăng Ký, Đổi Tab, Theme Toggle & Ghi Nhớ Đăng Nhập
  */
 
 function updateLogoTheme() {
@@ -100,7 +100,12 @@ document.getElementById('loginForm')?.addEventListener('submit', async event => 
     event.preventDefault();const button=document.getElementById('btnLoginSubmit');const label=button.innerHTML;
     button.disabled=true;button.textContent='Đang xác thực…';
     try {
-        const result=await callAuthApi('api/auth/login.php', {email:document.getElementById('loginEmail').value.trim(),password:document.getElementById('loginPassword').value});
+        const rememberMe = Boolean(document.getElementById('rememberMe')?.checked);
+        const result=await callAuthApi('api/auth/login.php', {
+            email: document.getElementById('loginEmail').value.trim(),
+            password: document.getElementById('loginPassword').value,
+            remember_me: rememberMe
+        });
         if(result.status==='success') {
             authCsrf=result.data.csrf_token;
             await Swal.fire({icon:'success',titleText:'Đăng nhập thành công',timer:1000,showConfirmButton:false});

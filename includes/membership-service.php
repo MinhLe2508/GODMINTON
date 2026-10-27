@@ -8,6 +8,7 @@
  */
 
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/payment-service.php';
 
 class MembershipError extends RuntimeException {
     public function __construct(
@@ -66,10 +67,12 @@ function membership_get_active_for_user(PDO $pdo, int $userId): ?array {
 }
 
 /**
- * Lấy gói hội viên đang chờ admin xác nhận (pending) của người dùng
+ * Lấy gói hội viên đang chờ thanh toán / chờ admin xác nhận (pending) của người dùng
  */
 function membership_get_pending_for_user(PDO $pdo, int $userId): ?array {
     if ($userId <= 0) return null;
+
+    payment_expire_overdue($pdo, 20);
 
     $stmt = $pdo->prepare("
         SELECT um.*, p.title AS package_title, p.slug AS package_slug, p.cover_image
@@ -90,6 +93,9 @@ function membership_get_pending_for_user(PDO $pdo, int $userId): ?array {
         'silver'   => 'Bạc (5%)',
         default    => 'Hội Viên'
     };
+
+    $pay = payment_fetch_by_membership($pdo, (int)$row['id']);
+    $row['payment'] = $pay ? payment_public_data($pay) : null;
 
     return $row;
 }
@@ -127,7 +133,7 @@ function membership_get_package_by_id(PDO $pdo, int $postId): ?array {
 }
 
 /**
- * Đăng ký hoặc gia hạn gói hội viên cho khách hàng
+ * Đăng ký hoặc gia hạn gói hội viên cho khách hàng (khởi tạo phiên thanh toán SePay VietQR tự động)
  */
 function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymentMethod = 'VietQR'): array {
     if ($userId <= 0) {
@@ -155,7 +161,6 @@ function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymen
 
     $discountPercent = (int)($pkg['discount_percent'] ?? 0);
     if ($discountPercent <= 0) {
-        // Tự động nhận diện theo tên hoặc slug nếu discount_percent chưa gán
         $slug = $pkg['slug'] ?? '';
         if (str_contains($slug, 'platinum')) $discountPercent = 15;
         elseif (str_contains($slug, 'gold') || str_contains($slug, 'golden')) $discountPercent = 10;
@@ -172,11 +177,8 @@ function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymen
         $tier = 'silver';
     }
 
-    // Kiểm tra xem user đã có yêu cầu nào đang chờ admin duyệt chưa
-    $pending = membership_get_pending_for_user($pdo, $userId);
-    if ($pending) {
-        throw new MembershipError(409, 'PENDING_EXISTS', 'Bạn đang có một yêu cầu đăng ký gói ' . ($pending['package_title'] ?? 'hội viên') . ' đang chờ Admin xác nhận. Vui lòng chờ phê duyệt trước khi gửi yêu cầu mới.');
-    }
+    payment_ensure_schema($pdo);
+    payment_expire_overdue($pdo, 20);
 
     // Kiểm tra gói đang kích hoạt của user
     $active = membership_get_active_for_user($pdo, $userId);
@@ -185,7 +187,38 @@ function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymen
     $startDate = $now;
     $isExtend = ($active && $active['tier'] === $tier);
 
-    // Tính hạn dự kiến (sẽ được chốt chính xác khi Admin duyệt, hết hạn vào 23:59:59 ngày cuối cùng)
+    // Kiểm tra xem user đã có phiên thanh toán pending nào chưa
+    $pending = membership_get_pending_for_user($pdo, $userId);
+    if ($pending) {
+        $pendingId = (int)$pending['id'];
+        $existingPay = payment_fetch_by_membership($pdo, $pendingId);
+        // Nếu cùng gói và phiên thanh toán SePay vẫn còn hạn -> trả về luôn phiên thanh toán hiện tại để khách quét tiếp
+        if ((int)$pending['post_id'] === (int)$pkg['id'] && $existingPay && $existingPay['status'] === 'pending' && (int)$existingPay['expires_in_seconds'] > 0) {
+            return [
+                'membership_id'    => $pendingId,
+                'membership_code'  => 'MB-' . str_pad((string)$pendingId, 6, '0', STR_PAD_LEFT),
+                'package_id'       => (int)$pkg['id'],
+                'package_title'    => $pkg['title'],
+                'tier'             => $tier,
+                'discount_percent' => $discountPercent,
+                'duration_days'    => $durationDays,
+                'price_paid'       => (float)$pending['price_paid'],
+                'start_date'       => $pending['start_date'],
+                'end_date'         => $pending['end_date'],
+                'status'           => 'pending',
+                'is_extend'        => $isExtend,
+                'payment'          => payment_public_data($existingPay),
+                'message'          => 'Vui lòng quét mã VietQR để hoàn tất kích hoạt gói hội viên.'
+            ];
+        }
+        // Ngược lại (khách đổi sang gói khác hoặc phiên cũ đã hết hạn) -> hủy yêu cầu pending cũ để tạo mã QR mới
+        $pdo->prepare("UPDATE user_memberships SET status = 'cancelled', updated_at = NOW() WHERE id = ? AND status = 'pending'")->execute([$pendingId]);
+        if (payment_tables_ready($pdo)) {
+            $pdo->prepare("UPDATE payments SET status = 'cancelled' WHERE membership_id = ? AND status = 'pending'")->execute([$pendingId]);
+        }
+    }
+
+    // Tính hạn dự kiến (sẽ được chốt chính xác khi thanh toán thành công, hết hạn vào 23:59:59 ngày cuối cùng)
     if ($isExtend) {
         $currentEnd = strtotime($active['end_date']);
         $baseTime = ($currentEnd > time()) ? $currentEnd : time();
@@ -213,13 +246,30 @@ function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymen
         $durationDays,
         $startDate,
         $endDate,
-        $paymentMethod
+        'VietQR (SePay 24/7)'
     ]);
 
     $membershipId = (int)$pdo->lastInsertId();
 
+    // Tạo phiên thanh toán SePay VietQR cho gói hội viên
+    $paymentData = null;
+    if (payment_tables_ready($pdo)) {
+        $paymentCode = payment_code_for_membership($membershipId);
+        $timeout = payment_config()['timeout'];
+        $payStmt = $pdo->prepare("
+            INSERT INTO payments (booking_id, membership_id, payment_code, amount, paid_amount, status, expires_at)
+            VALUES (NULL, ?, ?, ?, 0, 'pending', DATE_ADD(NOW(), INTERVAL ? MINUTE))
+        ");
+        $payStmt->execute([$membershipId, $paymentCode, (int)round($price), $timeout]);
+        $payRow = payment_fetch_by_membership($pdo, $membershipId);
+        if ($payRow) {
+            $paymentData = payment_public_data($payRow);
+        }
+    }
+
     return [
         'membership_id'    => $membershipId,
+        'membership_code'  => 'MB-' . str_pad((string)$membershipId, 6, '0', STR_PAD_LEFT),
         'package_id'       => (int)$pkg['id'],
         'package_title'    => $pkg['title'],
         'tier'             => $tier,
@@ -230,7 +280,8 @@ function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymen
         'end_date'         => $endDate,
         'status'           => 'pending',
         'is_extend'        => $isExtend,
-        'message'          => "Đăng ký thành công! Yêu cầu của bạn đã được gửi tới Ban Quản Trị và đang chờ Admin duyệt xác nhận."
+        'payment'          => $paymentData,
+        'message'          => 'Đã khởi tạo mã thanh toán VietQR. Gói hội viên sẽ tự động kích hoạt ngay sau khi nhận thanh toán.'
     ];
 }
 
@@ -290,6 +341,10 @@ function membership_approve(PDO $pdo, int $membershipId): array {
     ");
     $upd->execute([$newStart, $newEnd, $membershipId]);
 
+    if (payment_tables_ready($pdo)) {
+        $pdo->prepare("UPDATE payments SET status = 'paid', paid_amount = amount, paid_at = COALESCE(paid_at, NOW()) WHERE membership_id = ? AND status = 'pending'")->execute([$membershipId]);
+    }
+
     return [
         'id'            => $membershipId,
         'user_name'     => $mem['user_name'],
@@ -323,6 +378,9 @@ function membership_reject(PDO $pdo, int $membershipId, string $reason = ''): ar
     }
 
     $pdo->prepare("UPDATE user_memberships SET status = 'rejected', updated_at = NOW() WHERE id = ?")->execute([$membershipId]);
+    if (payment_tables_ready($pdo)) {
+        $pdo->prepare("UPDATE payments SET status = 'cancelled' WHERE membership_id = ? AND status = 'pending'")->execute([$membershipId]);
+    }
 
     return [
         'id'            => $membershipId,

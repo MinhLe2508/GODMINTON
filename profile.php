@@ -212,6 +212,20 @@ header('Cache-Control: no-store');
             color: #ffffff !important;
         }
 
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+        .sepay-wait-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #0d9488;
+            margin-right: 6px;
+            animation: pulseDot 1.4s infinite ease-in-out;
+        }
+
         /* Responsive */
         @media (max-width: 991.98px) {
             .profile-nav-pills {
@@ -609,11 +623,11 @@ header('Cache-Control: no-store');
         </div>
     </main>
 
-    <!-- Modal Gia Hạn Gói Hội Viên (Dành riêng cho Trang Cá Nhân) -->
+    <!-- Modal Gia Hạn / Thanh Toán Gói Hội Viên (Tích hợp SePay VietQR 24/7 tự động) -->
     <div class="modal fade" id="modalRenewMembership" tabindex="-1" aria-labelledby="modalRenewLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow-lg">
-                <!-- BƯỚC 1: XÁC NHẬN GIA HẠN & PHƯƠNG THỨC CHUYỂN KHOẢN -->
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+            <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+                <!-- BƯỚC 1: XÁC NHẬN GIA HẠN & KHỞI TẠO VIETQR SEPAY -->
                 <div id="renewStep1">
                     <div class="modal-header border-0 pb-0">
                         <h5 class="modal-title fw-bold" id="modalRenewLabel">
@@ -642,7 +656,7 @@ header('Cache-Control: no-store');
                             </div>
                         </div>
 
-                        <!-- Phương thức thanh toán duy nhất: Chuyển khoản VietQR -->
+                        <!-- Phương thức thanh toán: Chuyển khoản VietQR SePay 24/7 -->
                         <label class="form-label fw-bold small text-muted text-uppercase mb-2">Phương thức thanh toán</label>
                         <div class="p-3 border rounded-3 d-flex align-items-center gap-3 bg-surface border-teal shadow-2xs mb-3" style="border-width: 1.5px !important;">
                             <div class="icon-circle bg-teal text-white flex-shrink-0" style="width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
@@ -650,101 +664,114 @@ header('Cache-Control: no-store');
                             </div>
                             <div class="flex-grow-1">
                                 <div class="fw-bold small text-teal d-flex align-items-center justify-content-between">
-                                    <span>Chuyển khoản VietQR (Ngân hàng 24/7)</span>
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0" style="font-size:0.7rem;">Tự động</span>
+                                    <span>Chuyển khoản VietQR 24/7 (SePay)</span>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0" style="font-size:0.7rem;">Cộng dồn tự động</span>
                                 </div>
-                                <div class="text-muted" style="font-size:0.75rem;">Hỗ trợ quét qua mọi App ngân hàng tại Việt Nam</div>
+                                <div class="text-muted" style="font-size:0.75rem;">Tự động cộng dồn hạn gói & gửi hóa đơn sau 2–10 giây</div>
                             </div>
                         </div>
 
                         <div class="p-2 rounded-3 border bg-body-tertiary text-center small text-muted">
                             <i class="fa-solid fa-shield-halved text-success me-1"></i>
-                            Thời hạn gói sẽ được <strong>cộng dồn tự động</strong> tiếp nối từ ngày hết hạn hiện tại của bạn.
+                            Thời hạn gói sẽ được <strong>cộng dồn tự động ngay khi SePay nhận thanh toán</strong>.
                         </div>
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
-                        <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm text-dark" onclick="showRenewQrStep()">
-                            <span><i class="fa-solid fa-qrcode me-1"></i> Xác nhận & Gia hạn</span>
+                        <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm text-dark" id="btnConfirmRenew">
+                            <span id="btnRenewText"><i class="fa-solid fa-qrcode me-1"></i> Tạo mã QR & Gia hạn</span>
+                            <span id="btnRenewSpinner" class="spinner-border spinner-border-sm ms-1" style="display:none;" role="status"></span>
                         </button>
                     </div>
                 </div>
 
-                <!-- BƯỚC 2: HIỂN THỊ MÃ QR & XÁC NHẬN ĐÃ CHUYỂN KHOẢN -->
+                <!-- BƯỚC 2: HIỂN THỊ MÃ VIETQR SEPAY & TỰ ĐỘNG XÁC NHẬN -->
                 <div id="renewStep2" style="display: none;">
-                    <div class="modal-header border-0 pb-0">
-                        <h5 class="modal-title fw-bold text-teal">
-                            <i class="fa-solid fa-qrcode me-2"></i>Thanh Toán Gia Hạn VietQR
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    <div style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 14px 20px; color: #fff;" class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85; font-weight: 700;">Thanh Toán Gói Hội Viên</div>
+                            <div class="fw-extrabold fs-6" id="renewStep2HeaderTitle">Gói Hội Viên GODMINTON</div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-white text-teal fw-extrabold px-2 py-1 rounded-pill font-monospace" id="renewQrTimerBadge" style="font-size: 0.82rem;">15:00</span>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        </div>
                     </div>
-                    <div class="modal-body pt-3">
+
+                    <div class="modal-body p-3">
                         <!-- Mã QR VietQR -->
                         <div class="text-center mb-3">
-                            <div class="p-2 d-inline-block bg-white rounded-3 border shadow-sm">
+                            <div class="p-3 d-inline-block bg-white rounded-4 border shadow-sm">
                                 <img id="renewQrImg"
                                      src=""
-                                     onerror="this.src='assets/img/vietqr-payment.png?v=<?= filemtime(__DIR__ . '/assets/img/vietqr-payment.png') ?>';"
-                                     alt="VietQR MB Bank - TRUONG MINH TRIET"
+                                     alt="VietQR SePay GODMINTON"
                                      class="img-fluid rounded-2"
-                                     style="max-height: 220px; width: auto; object-fit: contain;">
-                            </div>
-                            <div class="mt-1 small text-muted" style="font-size: 0.78rem;">
-                                Mở App ngân hàng quét mã QR để chuyển khoản tức thì
+                                     style="max-height: 215px; width: auto; object-fit: contain;">
                             </div>
                         </div>
 
-                        <!-- Thông tin tài khoản ngân hàng -->
-                        <div class="p-2 rounded-3 bg-body-tertiary border border-secondary border-opacity-10 small mb-2">
+                        <!-- Thông tin tài khoản ngân hàng SePay -->
+                        <div class="p-3 rounded-4 bg-body-tertiary border border-secondary border-opacity-15 small mb-3">
                             <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
-                                <span class="text-muted">Ngân hàng:</span>
-                                <strong class="text-body">MB Bank (Quân Đội)</strong>
+                                <span class="text-muted">Số tiền cần chuyển:</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <strong class="text-body fw-extrabold fs-5" id="renewQrPriceText">-- đ</strong>
+                                    <button type="button" class="btn btn-sm btn-outline-teal py-0 px-2 rounded-2" id="btnCopyRenewPrice" title="Sao chép số tiền">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary border-opacity-10">
+                                <span class="text-muted">Nội dung chuyển:</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <strong class="text-teal font-monospace fs-6" id="renewTransferRef">--</strong>
+                                    <button type="button" class="btn btn-sm btn-outline-teal py-0 px-2 rounded-2" id="btnCopyRenewRef" title="Sao chép nội dung">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
+                                <span class="text-muted">Ngân hàng thụ hưởng:</span>
+                                <strong class="text-body text-end" id="renewBankName">MB Bank (Ngân hàng Quân Đội)</strong>
                             </div>
                             <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
                                 <span class="text-muted">Số tài khoản:</span>
                                 <div class="d-flex align-items-center gap-2">
-                                    <strong class="text-body font-monospace fs-6">0783547289</strong>
-                                    <button type="button" class="btn btn-sm btn-link p-0 text-teal text-decoration-none" onclick="copyRenewText('0783547289', 'Số tài khoản')">
+                                    <strong class="text-body font-monospace" id="renewAccNum">--</strong>
+                                    <button type="button" class="btn btn-sm btn-outline-teal py-0 px-2 rounded-2" id="btnCopyRenewAcc" title="Sao chép STK">
                                         <i class="fa-regular fa-copy"></i>
                                     </button>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
+                            <div class="d-flex justify-content-between align-items-center pt-1">
                                 <span class="text-muted">Chủ tài khoản:</span>
-                                <strong class="text-body">TRUONG MINH TRIET</strong>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-secondary border-opacity-10">
-                                <span class="text-muted">Số tiền chuyển:</span>
-                                <div class="d-flex align-items-center gap-2">
-                                    <strong class="text-danger fw-bold fs-6" id="renewQrPriceText">-- đ</strong>
-                                    <button type="button" class="btn btn-sm btn-link p-0 text-teal text-decoration-none" id="btnCopyRenewPrice">
-                                        <i class="fa-regular fa-copy"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center py-1">
-                                <span class="text-muted">Nội dung CK:</span>
-                                <div class="d-flex align-items-center gap-2">
-                                    <strong class="text-primary font-monospace" id="renewTransferRef">--</strong>
-                                    <button type="button" class="btn btn-sm btn-link p-0 text-teal text-decoration-none" id="btnCopyRenewRef">
-                                        <i class="fa-regular fa-copy"></i>
-                                    </button>
-                                </div>
+                                <strong class="text-body" id="renewAccName">--</strong>
                             </div>
                         </div>
 
-                        <div class="text-center text-muted" style="font-size: 0.74rem;">
-                            <i class="fa-solid fa-circle-check text-success me-1"></i> Sau khi chuyển tiền xong, vui lòng nhấn nút <strong>Xác nhận đã chuyển khoản</strong> bên dưới.
+                        <!-- Trạng thái chờ ngân hàng xác nhận tự động -->
+                        <div class="p-3 rounded-3 text-center mb-2" style="background: rgba(13, 148, 136, 0.08); border: 1px solid rgba(13, 148, 136, 0.25);" id="renewPayStatusBox">
+                            <div class="fw-bold text-teal small mb-1" id="renewPayStatusTitle">
+                                <span class="sepay-wait-dot"></span>Đang chờ ngân hàng xác nhận giao dịch...
+                            </div>
+                            <div class="text-muted" style="font-size: 0.74rem;" id="renewPayStatusDesc">
+                                Quét mã bằng app ngân hàng / ví điện tử. Hệ thống tự động kích hoạt / gia hạn gói hội viên ngay khi tiền vào (thường từ 2–10 giây).
+                            </div>
                         </div>
-                    </div>
-                    <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-3" onclick="showRenewStep1()">
-                            <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
+
+                        <!-- Nút giả lập dành cho môi trường DEV TEST -->
+                        <button type="button" id="btnSimulateRenewPay" class="btn btn-sm btn-outline-warning text-dark w-100 rounded-pill fw-bold mb-2" style="display: none;">
+                            <i class="fa-solid fa-flask me-1"></i> [DEV TEST] Giả lập SePay nhận tiền thành công
                         </button>
-                        <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm text-dark" id="btnConfirmRenew">
-                            <span id="btnRenewText"><i class="fa-solid fa-circle-check me-1"></i> Xác nhận đã chuyển khoản</span>
-                            <span id="btnRenewSpinner" class="spinner-border spinner-border-sm ms-1" style="display:none;" role="status"></span>
-                        </button>
+
+                        <div class="d-flex justify-content-between align-items-center pt-1 small">
+                            <a href="#" id="renewDownloadQrLink" download class="text-teal text-decoration-none fw-semibold">
+                                <i class="fa-solid fa-download me-1"></i> Tải ảnh QR
+                            </a>
+                            <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none p-0" onclick="showRenewStep1()">
+                                <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,5 +1,11 @@
-<?php header('Cache-Control: no-store, max-age=0'); ?>
 <?php
+header('Cache-Control: no-store, max-age=0');
+define('GODMINTON_DB_OPTIONAL', true);
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/auth-session.php';
+$savedLogin = god_auth_get_saved_credentials();
+$savedEmail = $savedLogin['email'] ?? '';
+$savedPassword = $savedLogin['password'] ?? '';
 // Tự sinh timestamp chống cache trình duyệt
 $v = time();
 ?>
@@ -302,6 +308,20 @@ $v = time();
             color: #ffffff !important; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
         }
 
+        .auth-remember-check {
+            width: 1.1rem !important;
+            height: 1.1rem !important;
+            border-radius: 0.32rem !important;
+            border: 1.5px solid rgba(45, 212, 191, 0.65) !important;
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            cursor: pointer !important;
+        }
+        .auth-remember-check:checked {
+            background-color: #0d9488 !important;
+            border-color: #2dd4bf !important;
+            box-shadow: 0 0 10px rgba(45, 212, 191, 0.45) !important;
+        }
+
         /* Submit Button */
         .btn-auth-submit {
             width: 100% !important; height: 50px !important;
@@ -311,9 +331,9 @@ $v = time();
             font-size: 0.98rem !important; font-weight: 800 !important;
             letter-spacing: 0.5px !important;
             cursor: pointer !important;
-            display: flex !align-items: center; justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             box-shadow: 0 6px 20px rgba(13, 148, 136, 0.45);
-            margin-top: 1.25rem;
+            margin-top: 1.15rem;
             transition: all 0.22s ease !important;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
@@ -471,21 +491,29 @@ $v = time();
                     <label for="loginEmail">Địa chỉ Email</label>
                     <div class="field-wrap">
                         <i class="fa-regular fa-envelope field-icon"></i>
-                        <input type="email" id="loginEmail" placeholder="name@example.com" required autocomplete="email">
+                        <input type="email" id="loginEmail" name="email" value="<?= htmlspecialchars($savedEmail) ?>" placeholder="name@example.com" required autocomplete="email">
                     </div>
                 </div>
 
-                <div class="auth-field">
+                <div class="auth-field mb-2">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <label class="mb-0" for="loginPassword">Mật khẩu</label>
                         <a href="javascript:void(0)" onclick="handleForgotPassword()" class="auth-forgot-link">Quên mật khẩu?</a>
                     </div>
                     <div class="field-wrap">
                         <i class="fa-solid fa-lock field-icon"></i>
-                        <input type="password" id="loginPassword" placeholder="Nhập mật khẩu..." required autocomplete="current-password">
+                        <input type="password" id="loginPassword" name="password" value="<?= htmlspecialchars($savedPassword) ?>" placeholder="Nhập mật khẩu..." required autocomplete="current-password">
                         <button type="button" class="btn-eye" onclick="toggleEye('loginPassword', this)" aria-label="Ẩn / hiện mật khẩu">
                             <i class="fa-regular fa-eye"></i>
                         </button>
+                    </div>
+                </div>
+
+                <!-- Ghi nhớ đăng nhập -->
+                <div class="d-flex align-items-center mt-2 mb-1">
+                    <div class="form-check mb-0 d-flex align-items-center gap-2 ps-0">
+                        <input type="checkbox" class="form-check-input m-0 auth-remember-check" id="rememberMe" checked>
+                        <label class="auth-check-label mb-0" for="rememberMe">Ghi nhớ đăng nhập</label>
                     </div>
                 </div>
 
