@@ -406,3 +406,26 @@
     .sb-btn { padding: 0 0.35rem; min-width: 38px; }
     .sb-actions #pushBellToggle { min-width: 38px !important; padding: 0 0.35rem !important; }
 }
+
+/* Giờ hoạt động trên thẻ sân */
+.court-hours {
+    display: flex;
+    align-items: center;
+}
+.court-hours-status {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    border-radius: 999px;
+    padding: .2rem .55rem;
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.5;
+}
+.court-hours-dot { width: .4rem; height: .4rem; border-radius: 50%; background: currentColor; }
+.court-hours-status--open { color: #166534; background: #dcfce7; }
+.court-hours-status--closed { color: #9a3412; background: #ffedd5; }
+.court-hours-status--unknown { color: #475569; background: #e2e8f0; }
+[data-bs-theme="dark"] .court-hours-status--open { color: #bbf7d0; background: #14532d; }
+[data-bs-theme="dark"] .court-hours-status--closed { color: #fed7aa; background: #7c2d12; }
+[data-bs-theme="dark"] .court-hours-status--unknown { color: #e2e8f0; background: #334155; }

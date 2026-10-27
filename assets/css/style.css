@@ -65,15 +65,23 @@ body {
 .bg-teal { background-color: var(--brand-teal) !important; }
 .bg-teal-subtle { background-color: rgba(13, 148, 136, 0.12) !important; }
 .btn-teal {
+    background: linear-gradient(180deg, #11aa9a 0%, #10a596 100%);
     background-color: var(--brand-teal);
-    color: #ffffff;
-    border: none;
+    color: #ffffff !important;
+    border: 1.5px solid transparent;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
     transition: var(--transition-fast);
 }
-.btn-teal:hover {
+.btn-teal i {
+    color: #ffffff !important;
+}
+.btn-teal:hover,
+.btn-teal:focus-visible {
+    background: linear-gradient(180deg, #0d9488 0%, #0f766e 100%);
     background-color: var(--brand-teal-dark);
-    color: #ffffff;
-    box-shadow: var(--shadow-glow);
+    color: #ffffff !important;
+    border-color: transparent;
+    box-shadow: 0 6px 16px rgba(13, 148, 136, 0.35);
     transform: translateY(-2px);
 }
 .btn-outline-teal {
@@ -1266,166 +1274,124 @@ img, svg, video, canvas {
 }
 
 /* ==========================================================
-   BUTTONS: ĐẶT SÂN MỚI / ĐỔI TÀI KHOẢN / ĐĂNG XUẤT
-   Một bộ style thống nhất theo tông Teal của GODMINTON:
-   cùng chiều cao, bo tròn, font, icon; khác nhau ở mức nhấn.
-   - Đặt sân mới   : nút chính (teal đặc)
-   - Đổi tài khoản : nút phụ (viền teal, nền trắng)
-   - Đăng xuất     : nút nguy hiểm nhẹ (đỏ nhạt -> đỏ đặc khi hover)
+   BUTTONS: ĐỔI TÀI KHOẢN & ĐĂNG XUẤT (ĐỒNG BỘ THEO TRANG CÁ NHÂN)
    ========================================================== */
-.btn-profile-action,
-.btn-switch-account,
-.btn-logout-account {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.55rem;
-    min-height: 46px;
-    padding: 0.55rem 1.1rem;
-    font-weight: 600;
-    font-size: 0.95rem;
-    line-height: 1.2;
-    letter-spacing: 0.1px;
-    border-width: 1.5px;
-    border-style: solid;
-    transition: background-color .2s ease, color .2s ease, border-color .2s ease,
-                box-shadow .2s ease, transform .2s ease;
-}
-.btn-profile-action i,
-.btn-switch-account i,
-.btn-logout-account i {
-    font-size: 0.9rem;
-    margin: 0 !important;
-    transition: transform .2s ease;
-}
-.btn-profile-action:focus-visible,
-.btn-switch-account:focus-visible,
-.btn-logout-account:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.28);
-}
-.btn-profile-action:active { transform: translateY(0) scale(0.99); }
-
-/* Nút chính */
-.btn-profile-primary {
-    background: linear-gradient(135deg, var(--brand-teal-light), var(--brand-teal));
-    border-color: var(--brand-teal);
-    color: #fff;
-    box-shadow: 0 6px 16px rgba(13, 148, 136, 0.28);
-}
-.btn-profile-primary:hover {
-    background: linear-gradient(135deg, var(--brand-teal), var(--brand-teal-dark));
-    border-color: var(--brand-teal-dark);
-    color: #fff;
-    box-shadow: 0 8px 20px rgba(13, 148, 136, 0.36);
-    transform: translateY(-1px);
-}
-.btn-profile-primary:hover i { transform: rotate(90deg); }
-
-/* Nút phụ: Đổi tài khoản */
 .btn-switch-account {
-    color: var(--brand-teal-dark);
-    background-color: var(--bg-card);
-    border-color: rgba(13, 148, 136, 0.45);
+    color: #0f766e !important;
+    background-color: #ffffff !important;
+    border: 1.5px solid #92cfc9 !important;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
 }
-.btn-switch-account i { color: var(--brand-teal); }
+.btn-switch-account i {
+    color: #0f766e !important;
+    transition: color 0.2s ease-in-out;
+}
 .btn-switch-account:hover,
-.btn-switch-account:focus {
-    color: var(--brand-teal-deep);
-    background-color: rgba(13, 148, 136, 0.10);
-    border-color: var(--brand-teal);
-    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.16);
-    transform: translateY(-1px);
+.btn-switch-account:focus-visible {
+    color: #ffffff !important;
+    background-color: #0d9488 !important;
+    border-color: #0d9488 !important;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.28) !important;
+    transform: translateY(-2px);
 }
-.btn-switch-account:hover i { transform: translateX(2px); }
+.btn-switch-account:hover i,
+.btn-switch-account:focus-visible i {
+    color: #ffffff !important;
+}
 
-/* Nút nguy hiểm nhẹ: Đăng xuất */
 .btn-logout-account {
-    color: #b91c1c;
-    background-color: rgba(239, 68, 68, 0.06);
-    border-color: rgba(239, 68, 68, 0.35);
+    color: #b91c1c !important;
+    background-color: #fef4f4 !important;
+    border: 1.5px solid #f8b7b7 !important;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
 }
-.btn-logout-account i { color: #dc2626; }
+.btn-logout-account i {
+    color: #b91c1c !important;
+    transition: color 0.2s ease-in-out;
+}
 .btn-logout-account:hover,
-.btn-logout-account:focus {
-    color: #fff;
-    background-color: #dc2626;
-    border-color: #dc2626;
-    box-shadow: 0 6px 16px rgba(220, 38, 38, 0.28);
-    transform: translateY(-1px);
+.btn-logout-account:focus-visible {
+    color: #ffffff !important;
+    background-color: #dc2626 !important;
+    border-color: #dc2626 !important;
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.28) !important;
+    transform: translateY(-2px);
 }
 .btn-logout-account:hover i,
-.btn-logout-account:focus i { color: #fff; transform: translateX(2px); }
-.btn-logout-account:focus-visible { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.28); }
-
-/* Nút Khôi phục (form hồ sơ) */
-.btn-reset-profile {
-    color: var(--text-secondary);
-    background-color: transparent;
-    border: 1.5px solid var(--border-color);
-    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+.btn-logout-account:focus-visible i {
+    color: #ffffff !important;
 }
-.btn-reset-profile:hover,
-.btn-reset-profile:focus-visible {
-    color: var(--brand-teal-dark);
-    background-color: rgba(13, 148, 136, 0.08);
-    border-color: var(--brand-teal);
-    box-shadow: none;
-}
-.btn-reset-profile:active { background-color: rgba(13, 148, 136, 0.16); }
 
-/* Dark mode */
+/* Hỗ trợ Dark Mode */
 [data-bs-theme="dark"] .btn-switch-account {
-    color: #5eead4;
-    background-color: rgba(20, 184, 166, 0.08);
-    border-color: rgba(45, 212, 191, 0.40);
+    color: #2dd4bf !important;
+    background-color: rgba(20, 184, 166, 0.1) !important;
+    border-color: rgba(45, 212, 191, 0.4) !important;
 }
-[data-bs-theme="dark"] .btn-switch-account i { color: #2dd4bf; }
+[data-bs-theme="dark"] .btn-switch-account i {
+    color: #2dd4bf !important;
+}
 [data-bs-theme="dark"] .btn-switch-account:hover,
-[data-bs-theme="dark"] .btn-switch-account:focus {
-    color: #ccfbf1;
-    background-color: rgba(20, 184, 166, 0.20);
-    border-color: #2dd4bf;
-    box-shadow: 0 4px 14px rgba(20, 184, 166, 0.22);
+[data-bs-theme="dark"] .btn-switch-account:focus-visible {
+    color: #ffffff !important;
+    background-color: #0d9488 !important;
+    border-color: #0d9488 !important;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35) !important;
 }
-[data-bs-theme="dark"] .btn-logout-account {
-    color: #fca5a5;
-    background-color: rgba(248, 113, 113, 0.08);
-    border-color: rgba(248, 113, 113, 0.40);
-}
-[data-bs-theme="dark"] .btn-logout-account i { color: #f87171; }
-[data-bs-theme="dark"] .btn-logout-account:hover,
-[data-bs-theme="dark"] .btn-logout-account:focus {
-    color: #fff;
-    background-color: #dc2626;
-    border-color: #dc2626;
+[data-bs-theme="dark"] .btn-switch-account:hover i,
+[data-bs-theme="dark"] .btn-switch-account:focus-visible i {
+    color: #ffffff !important;
 }
 
-/* Biến thể nhỏ trên Navbar (nền tối) */
-.navbar-custom .btn-switch-account,
-.navbar-custom .btn-logout-account {
-    min-height: 0;
-    padding: 0.35rem 0.9rem;
-    font-size: 0.85rem;
+[data-bs-theme="dark"] .btn-logout-account {
+    color: #f87171 !important;
+    background-color: rgba(248, 113, 113, 0.1) !important;
+    border-color: rgba(248, 113, 113, 0.4) !important;
 }
+[data-bs-theme="dark"] .btn-logout-account i {
+    color: #f87171 !important;
+}
+[data-bs-theme="dark"] .btn-logout-account:hover,
+[data-bs-theme="dark"] .btn-logout-account:focus-visible {
+    color: #ffffff !important;
+    background-color: #dc2626 !important;
+    border-color: #dc2626 !important;
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35) !important;
+}
+[data-bs-theme="dark"] .btn-logout-account:hover i,
+[data-bs-theme="dark"] .btn-logout-account:focus-visible i {
+    color: #ffffff !important;
+}
+
+/* Đảm bảo hiển thị đẹp trên Navbar tối màu */
 .navbar-custom .btn-switch-account {
-    color: #99f6e4;
-    background-color: rgba(20, 184, 166, 0.12);
-    border-color: rgba(45, 212, 191, 0.45);
+    color: #2dd4bf !important;
+    background-color: rgba(20, 184, 166, 0.12) !important;
+    border-color: rgba(45, 212, 191, 0.45) !important;
 }
-.navbar-custom .btn-switch-account i { color: #2dd4bf; }
-.navbar-custom .btn-switch-account:hover {
-    color: #fff;
-    background-color: var(--brand-teal);
-    border-color: var(--brand-teal);
+.navbar-custom .btn-switch-account i {
+    color: #2dd4bf !important;
 }
-.navbar-custom .btn-switch-account:hover i { color: #fff; }
 .navbar-custom .btn-logout-account {
-    color: #fca5a5;
-    background-color: rgba(248, 113, 113, 0.12);
-    border-color: rgba(248, 113, 113, 0.45);
+    color: #f87171 !important;
+    background-color: rgba(248, 113, 113, 0.12) !important;
+    border-color: rgba(248, 113, 113, 0.45) !important;
 }
-.navbar-custom .btn-logout-account i { color: #f87171; }
+.navbar-custom .btn-logout-account i {
+    color: #f87171 !important;
+}
+
+
+
+
 
 /* ===== Đánh giá sân ===== */
 .review-star-static { color: #f59e0b; font-size: .85rem; }

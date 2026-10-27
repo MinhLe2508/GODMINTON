@@ -1,30 +1,63 @@
 let savedProfile = null;
-function fillSelect(id, entries, selected) {
-    const el=document.getElementById(id);if(!el)return;
-    const first=el.options[0];el.innerHTML='';el.appendChild(first);
-    entries.forEach(([value,label])=>{const o=document.createElement('option');o.value=value;o.textContent=label;el.appendChild(o);});
-    el.value=selected||'';
-}
-function setProfileOptions(options) {
-    if(!options)return;profileOptions=options;
-}
-let profileOptions=null;
-function fillProfileForm(blankPrefs) {
-    if(!savedProfile)return;
-    if(profileOptions){
-        fillSelect('inpDistrict',(profileOptions.areas||[]).map(a=>[a,a]),blankPrefs?'':savedProfile.area_label);
-        fillSelect('inpLevel',Object.entries(profileOptions.levels||{}),blankPrefs?'':savedProfile.skill_level);
-        fillSelect('inpPreferredTime',Object.entries(profileOptions.times||{}),blankPrefs?'':savedProfile.preferred_time);
+const DEFAULT_EXTRA_PREFS = {
+    district: 'Quận 1',
+    level: 'intermediate',
+    preferredTime: 'evening'
+};
+function getSavedExtraPrefs(userId) {
+    try {
+        const raw = localStorage.getItem('godminton_profile_prefs_' + (userId || 'default'));
+        return raw ? { ...DEFAULT_EXTRA_PREFS, ...JSON.parse(raw) } : { ...DEFAULT_EXTRA_PREFS };
+    } catch (e) {
+        return { ...DEFAULT_EXTRA_PREFS };
     }
-    document.getElementById('inpFullName').value=savedProfile.name;
-    document.getElementById('inpEmail').value=savedProfile.email;
-    document.getElementById('inpPhone').value=savedProfile.phone || '';
 }
-// Nút "Khôi phục": đưa form về trạng thái ban đầu (họ tên/SĐT theo tài khoản, 3 ô sở thích về trống).
-function resetProfileForm() { fillProfileForm(true); }
-
+function saveExtraPrefs(userId) {
+    try {
+        const prefs = {
+            district: document.getElementById('inpDistrict')?.value || DEFAULT_EXTRA_PREFS.district,
+            level: document.getElementById('inpLevel')?.value || DEFAULT_EXTRA_PREFS.level,
+            preferredTime: document.getElementById('inpPreferredTime')?.value || DEFAULT_EXTRA_PREFS.preferredTime
+        };
+        localStorage.setItem('godminton_profile_prefs_' + (userId || 'default'), JSON.stringify(prefs));
+    } catch (e) {}
+}
+function resetProfileForm(isManualReset = false) {
+    const form = document.getElementById('formUpdateProfile');
+    if (form) form.reset();
+    if (savedProfile) {
+        const elName = document.getElementById('inpFullName');
+        const elEmail = document.getElementById('inpEmail');
+        const elPhone = document.getElementById('inpPhone');
+        if (elName) elName.value = savedProfile.name || '';
+        if (elEmail) elEmail.value = savedProfile.email || '';
+        if (elPhone) elPhone.value = savedProfile.phone || '';
+    }
+    const userId = savedProfile ? savedProfile.id : 'default';
+    if (isManualReset) {
+        try { localStorage.removeItem('godminton_profile_prefs_' + userId); } catch (e) {}
+    }
+    const prefs = isManualReset ? { ...DEFAULT_EXTRA_PREFS } : getSavedExtraPrefs(userId);
+    const elDist = document.getElementById('inpDistrict');
+    const elLvl = document.getElementById('inpLevel');
+    const elTime = document.getElementById('inpPreferredTime');
+    if (elDist) elDist.value = prefs.district;
+    if (elLvl) elLvl.value = prefs.level;
+    if (elTime) elTime.value = prefs.preferredTime;
+    if (isManualReset && window.Swal) {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title: 'Đã khôi phục về trạng thái ban đầu',
+            showConfirmButton: false,
+            timer: 1800,
+            timerProgressBar: true
+        });
+    }
+}
 function showProfile(user) {
-    savedProfile=user;fillProfileForm(false);
+    savedProfile=user;resetProfileForm();
     const memberSince=document.getElementById('profileMemberSince');
     if(memberSince) memberSince.textContent=user.created_at ? 'Thành viên từ '+user.created_at : 'Chưa cập nhật ngày tham gia';
     document.getElementById('profileHeaderName').textContent=user.name;
@@ -37,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const password=document.getElementById('formChangePassword');
     const save=update.querySelector('[type="submit"]');save.disabled=true;
     try {
-        const result=await BookingAccount.request('api/profile.php');setProfileOptions(result.options);showProfile(result.user);save.disabled=false;
+        const result=await BookingAccount.request('api/profile.php');showProfile(result.user);save.disabled=false;
         const bookings=await BookingAccount.request('api/bookings.php');document.getElementById('statBookingsCount').textContent=bookings.length;
         const area=document.getElementById('profileBookingsList');
         area.innerHTML=bookings.length?bookings.slice(0,6).map(b=>`<div class="card p-3">${BookingAccount.badge(b.booking_status)}<h6 class="mt-2">${BookingAccount.escape(b.court_name)}</h6><p>${BookingAccount.escape(b.booking_code)} · ${BookingAccount.escape(b.booking_date)} · ${BookingAccount.escape(b.time_range)}</p><strong>${BookingAccount.money(b.total_amount)}</strong><a href="history.php">Xem lịch sử đầy đủ</a></div>`).join(''):'<p>Bạn chưa có đơn đặt sân.</p>';
@@ -50,7 +83,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }catch(e){await BookingAccount.notify(e.message,true);}
     update.addEventListener('submit',async event=>{
         event.preventDefault();save.disabled=true;
-        try {const result=await BookingAccount.request('api/profile.php',{method:'POST',body:JSON.stringify({name:document.getElementById('inpFullName').value.trim(),email:document.getElementById('inpEmail').value.trim(),phone:document.getElementById('inpPhone').value.trim(),area_label:document.getElementById('inpDistrict').value,skill_level:document.getElementById('inpLevel').value,preferred_time:document.getElementById('inpPreferredTime').value})});setProfileOptions(result.options);showProfile(result.user);await renderNavbarUser();await BookingAccount.notify('Hồ sơ đã lưu vào MySQL.');}
+        try {
+            if (savedProfile) saveExtraPrefs(savedProfile.id);
+            const result=await BookingAccount.request('api/profile.php',{method:'POST',body:JSON.stringify({name:document.getElementById('inpFullName').value.trim(),email:document.getElementById('inpEmail').value.trim(),phone:document.getElementById('inpPhone').value.trim()})});
+            showProfile(result.user);
+            await renderNavbarUser();
+            await BookingAccount.notify('Hồ sơ đã lưu vào MySQL.');
+        }
         catch(e){await BookingAccount.notify(e.message,true);}finally{save.disabled=false;}
     });
     password.addEventListener('submit',async event=>{

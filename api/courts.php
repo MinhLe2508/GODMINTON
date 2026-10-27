@@ -16,6 +16,7 @@
  */
 require_once __DIR__ . '/../config/db.php';
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
 header('Access-Control-Allow-Origin: *');
 
 // Chỉ chấp nhận GET
@@ -35,6 +36,8 @@ try {
             c.latitude,
             c.longitude,
             c.price_per_hour,
+            c.opening_time,
+            c.closing_time,
             c.description,
             c.status,
             w.id   AS ward_id,
@@ -138,6 +141,8 @@ try {
             'price_formatted' => number_format($row['price_per_hour'], 0, '', '.') . ' đ',
             'description'     => $row['description'],
             'status'          => $row['status'],
+            'opening_time'    => $row['opening_time'],
+            'closing_time'    => $row['closing_time'],
             'ward_id'         => (int) $row['ward_id'],
             'ward_name'       => $row['ward_name'],
             'old_area_label'  => $row['old_area_label'],
@@ -150,7 +155,8 @@ try {
     echo json_encode([
         'status' => 'success',
         'data'   => $courts,
-        'total'  => count($courts)
+        'total'  => count($courts),
+        'server_time' => (int) round(microtime(true) * 1000)
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
 } catch (PDOException $e) {
