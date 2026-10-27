@@ -20,18 +20,18 @@ try {
     $hasBookingStmt->execute([$userId]);
     $hasPriorBookings = (bool)$hasBookingStmt->fetch();
 
-    // 2. Lấy các voucher đang còn hiệu lực
+    // 2. Lấy TẤT CẢ các voucher mà người dùng ĐÃ BẤM THU THẬP TỪ BÀI VIẾT (user_vouchers)
     $sql = "
-        SELECT v.*, c.name AS court_name
-        FROM vouchers v
+        SELECT v.*, c.name AS court_name, uv.collected_at, uv.post_id
+        FROM user_vouchers uv
+        JOIN vouchers v ON v.id = uv.voucher_id
         LEFT JOIN courts c ON c.id = v.court_id
-        WHERE v.status = 'active'
-          AND v.start_at <= NOW()
-          AND v.end_at >= NOW()
-          AND (v.usage_limit IS NULL OR v.used_count < v.usage_limit)
-        ORDER BY v.discount_percent DESC, v.id DESC
+        WHERE uv.user_id = ?
+        ORDER BY uv.collected_at DESC, v.id DESC
     ";
-    $vouchers = $pdo->query($sql)->fetchAll();
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$userId]);
+    $vouchers = $stmt->fetchAll();
 
     // 3. Đếm số lần user đã sử dụng từng voucher
     $usagesStmt = $pdo->prepare("
@@ -43,19 +43,29 @@ try {
     $usagesStmt->execute([$userId]);
     $userUsages = $usagesStmt->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
 
+    $nowStr = date('Y-m-d H:i:s');
     $list = [];
     foreach ($vouchers as $v) {
         $vId = (int)$v['id'];
         $usedByMe = (int)($userUsages[$vId] ?? 0);
         $perUserLimit = (int)($v['per_user_limit'] ?? 1);
 
-        // Nếu mã chỉ cho đơn đầu tiên mà khách đã từng đặt sân -> không khả dụng
-        if (!empty($v['first_booking_only']) && $hasPriorBookings) {
-            continue;
-        }
+        $isExpired = ($nowStr > $v['end_at']);
+        $notStarted = ($nowStr < $v['start_at']);
+        $isInactive = ($v['status'] !== 'active');
+        $isUsedUp = ($v['usage_limit'] !== null && (int)$v['used_count'] >= (int)$v['usage_limit']);
+        $isUserLimitReached = ($usedByMe >= $perUserLimit);
+        $isFirstBookingOnlyConflict = (!empty($v['first_booking_only']) && $hasPriorBookings);
 
-        // Kiểm tra đã hết lượt cá nhân chưa
-        $isUsable = ($usedByMe < $perUserLimit);
+        $isUsable = !$isExpired && !$notStarted && !$isInactive && !$isUsedUp && !$isUserLimitReached && !$isFirstBookingOnlyConflict;
+
+        $unusableReason = null;
+        if ($isInactive) $unusableReason = 'Tạm ngưng';
+        elseif ($isExpired) $unusableReason = 'Đã hết hạn';
+        elseif ($notStarted) $unusableReason = 'Chưa bắt đầu';
+        elseif ($isUsedUp) $unusableReason = 'Hết lượt toàn sàn';
+        elseif ($isUserLimitReached) $unusableReason = 'Đã sử dụng';
+        elseif ($isFirstBookingOnlyConflict) $unusableReason = 'Chỉ đơn đầu tiên';
 
         $list[] = [
             'id'                 => $vId,
@@ -73,6 +83,8 @@ try {
             'used_by_me'         => $usedByMe,
             'per_user_limit'     => $perUserLimit,
             'is_usable'          => $isUsable,
+            'unusable_reason'    => $unusableReason,
+            'collected_at'       => $v['collected_at'] ?? null,
         ];
     }
 

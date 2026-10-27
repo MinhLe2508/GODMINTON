@@ -44,12 +44,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentUser = user;
         window.__GODMINTON_USER__ = user;
         AdminApp.renderShell('posts', 'Quản lý bài viết khám phá', 'Quản trị hệ thống / Quản lý bài viết');
+        loadActiveVouchers();
     } catch (e) {
         if (emptyEl) {
             emptyEl.textContent = e.message;
             emptyEl.style.display = 'block';
         }
         return;
+    }
+
+    // Tải danh sách mã giảm giá khả dụng để gắn vào bài viết
+    let activeVouchers = [];
+    async function loadActiveVouchers() {
+        try {
+            const data = await BookingAccount.request('api/admin/vouchers.php?status=active');
+            activeVouchers = Array.isArray(data) ? data : [];
+            const selectVoucher = document.getElementById('formPostVoucher');
+            if (!selectVoucher) return;
+            selectVoucher.innerHTML = '<option value="">-- Không đính kèm mã giảm giá --</option>' + 
+                activeVouchers.map(v => {
+                    const courtTxt = v.court_name ? ` (${v.court_name})` : ' (Toàn hệ thống)';
+                    return `<option value="${v.id}">[${BookingAccount.escape(v.code)}] Giảm ${v.discount_percent}%${courtTxt}</option>`;
+                }).join('');
+        } catch (e) {
+            console.warn('Could not load vouchers for post modal:', e);
+        }
     }
 
     // 2. Chuyển đổi ẩn/hiện trường đặc thù theo loại bài viết
@@ -187,7 +206,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         tableBody.innerHTML = posts.map(p => {
             const isPinned = Number(p.is_pinned) === 1;
             const typeBadge = typeBadges[p.type] || `<span class="badge bg-secondary">${p.type}</span>`;
-            const statusBadge = statusBadges[p.status] || `<span class="badge bg-secondary">${p.status}</span>`;
+            let statusBadge = statusBadges[p.status] || `<span class="badge bg-secondary">${p.status}</span>`;
+            if (p.status === 'published') {
+                const now = new Date();
+                const pubDate = p.publish_at ? new Date(p.publish_at.replace(' ', 'T')) : null;
+                const expDate = p.expire_at ? new Date(p.expire_at.replace(' ', 'T')) : null;
+                if (expDate && !isNaN(expDate.getTime()) && expDate <= now) {
+                    statusBadge = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle" title="Đã hết hạn tự ẩn (Không hiển thị trên trang công khai)"><i class="fa-solid fa-hourglass-end me-1"></i>Đã hết hạn (Ẩn)</span>';
+                } else if (pubDate && !isNaN(pubDate.getTime()) && pubDate > now) {
+                    statusBadge = '<span class="badge bg-info-subtle text-info border border-info-subtle" title="Chưa tới thời điểm xuất bản"><i class="fa-regular fa-clock me-1"></i>Hẹn giờ đăng</span>';
+                }
+            }
 
             const imgHtml = p.cover_image
                 ? `<img src="${BookingAccount.escape(p.cover_image)}" class="post-thumb-img" alt="Thumbnail">`
@@ -202,7 +231,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="fw-bold text-truncate" style="max-width: 280px;" title="${BookingAccount.escape(p.title)}">
                             ${BookingAccount.escape(p.title)}
                         </div>
-                        <div class="small text-muted text-truncate font-monospace" style="max-width: 280px; font-size: 0.75rem;">
+                        ${p.voucher_code ? `
+                            <div class="mt-1">
+                                <span class="badge bg-teal-subtle text-teal border border-teal-subtle" style="font-size:0.7rem;">
+                                    <i class="fa-solid fa-ticket me-1"></i>Tặng mã: <strong>${BookingAccount.escape(p.voucher_code)}</strong> (-${p.voucher_discount_percent}%)
+                                </span>
+                            </div>
+                        ` : ''}
+                        <div class="small text-muted text-truncate font-monospace mt-1" style="max-width: 280px; font-size: 0.75rem;">
                             <a href="${previewUrl}" target="_blank" class="text-decoration-none text-muted" title="Xem thử bài viết">${BookingAccount.escape(p.slug)} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem;"></i></a>
                         </div>
                     </td>
@@ -295,6 +331,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         form.reset();
         document.getElementById('formPostId').value = '';
         document.getElementById('postModalTitle').textContent = 'Viết bài mới';
+        const vSelect = document.getElementById('formPostVoucher');
+        if (vSelect) vSelect.value = '';
         selectType.value = 'event';
         updateTypeFields();
         updatePreview('');
@@ -312,6 +350,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('postModalTitle').textContent = `Chỉnh sửa: ${post.title}`;
 
             selectType.value = post.type;
+            const vSelect = document.getElementById('formPostVoucher');
+            if (vSelect) vSelect.value = post.voucher_id || '';
             document.getElementById('formPostStatus').value = post.status;
             document.getElementById('formPostPinned').checked = Number(post.is_pinned) === 1;
             document.getElementById('formPostTitle').value = post.title || '';
@@ -359,8 +399,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         const discVal = document.getElementById('formMemDiscountPercent')?.value;
+        const voucherSelectVal = document.getElementById('formPostVoucher')?.value;
         const payload = {
             type,
+            voucher_id: voucherSelectVal ? parseInt(voucherSelectVal, 10) : null,
             title,
             summary: document.getElementById('formPostSummary').value.trim(),
             content,
@@ -380,6 +422,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (id) {
             payload.id = parseInt(id, 10);
+        }
+
+        if (payload.publish_at && payload.expire_at) {
+            const pubDate = new Date(payload.publish_at.replace(' ', 'T'));
+            const expDate = new Date(payload.expire_at.replace(' ', 'T'));
+            if (!isNaN(pubDate.getTime()) && !isNaN(expDate.getTime()) && pubDate >= expDate) {
+                AdminApp.toast('error', 'Thời điểm hết hạn tự ẩn phải sau thời điểm xuất bản.');
+                return;
+            }
+        }
+
+        if (payload.status === 'published' && payload.expire_at) {
+            const expDate = new Date(payload.expire_at.replace(' ', 'T'));
+            if (!isNaN(expDate.getTime()) && expDate <= new Date()) {
+                AdminApp.toast('error', 'Thời điểm hết hạn tự ẩn đã ở trong quá khứ nên bài viết sẽ bị ẩn ngay. Vui lòng chọn thời điểm ở tương lai hoặc để trống ô này.');
+                return;
+            }
         }
 
         saveBtn.disabled = true;

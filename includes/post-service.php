@@ -156,13 +156,16 @@ function post_get_public_list(PDO $pdo, array $filters = []): array {
 
     // Lấy danh sách bài viết: Ghim trước, sau đó sắp xếp theo publish_at / created_at mới nhất
     $querySql = "
-        SELECT p.id, p.type, p.title, p.slug, p.summary, p.cover_image,
+        SELECT p.id, p.type, p.voucher_id, p.title, p.slug, p.summary, p.cover_image,
                p.publish_at, p.expire_at, p.is_pinned, p.created_at,
                p.event_start, p.event_end, p.event_location,
                p.price, p.duration_days, p.discount_percent, p.benefits,
-               u.name AS author_name
+               u.name AS author_name,
+               v.code AS voucher_code,
+               v.discount_percent AS voucher_discount_percent
         FROM posts p
         LEFT JOIN users u ON u.id = p.created_by
+        LEFT JOIN vouchers v ON v.id = p.voucher_id
         WHERE {$whereSql}
         ORDER BY p.is_pinned DESC, COALESCE(p.publish_at, p.created_at) DESC, p.id DESC
         LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
@@ -189,9 +192,21 @@ function post_get_public_by_slug(PDO $pdo, string $slug): ?array {
     if ($slug === '') return null;
 
     $stmt = $pdo->prepare("
-        SELECT p.*, u.name AS author_name
+        SELECT p.*, u.name AS author_name,
+               v.code AS voucher_code,
+               v.discount_percent AS voucher_discount_percent,
+               v.max_discount AS voucher_max_discount,
+               v.min_order AS voucher_min_order,
+               v.start_at AS voucher_start_at,
+               v.end_at AS voucher_end_at,
+               v.status AS voucher_status,
+               v.usage_limit AS voucher_usage_limit,
+               v.used_count AS voucher_used_count,
+               c.name AS voucher_court_name
         FROM posts p
         LEFT JOIN users u ON u.id = p.created_by
+        LEFT JOIN vouchers v ON v.id = p.voucher_id
+        LEFT JOIN courts c ON c.id = v.court_id
         WHERE p.slug = ?
           AND p.status = 'published'
           AND (p.publish_at IS NULL OR p.publish_at <= NOW())
@@ -240,9 +255,12 @@ function post_get_admin_list(PDO $pdo, array $filters = []): array {
     $total = (int)$countStmt->fetchColumn();
 
     $querySql = "
-        SELECT p.*, u.name AS author_name
+        SELECT p.*, u.name AS author_name,
+               v.code AS voucher_code,
+               v.discount_percent AS voucher_discount_percent
         FROM posts p
         LEFT JOIN users u ON u.id = p.created_by
+        LEFT JOIN vouchers v ON v.id = p.voucher_id
         {$whereSql}
         ORDER BY p.is_pinned DESC, p.id DESC
         LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
@@ -265,7 +283,15 @@ function post_get_admin_list(PDO $pdo, array $filters = []): array {
  */
 function post_get_by_id(PDO $pdo, int $id): ?array {
     if ($id <= 0) return null;
-    $stmt = $pdo->prepare('SELECT p.*, u.name AS author_name FROM posts p LEFT JOIN users u ON u.id = p.created_by WHERE p.id = ?');
+    $stmt = $pdo->prepare('
+        SELECT p.*, u.name AS author_name,
+               v.code AS voucher_code,
+               v.discount_percent AS voucher_discount_percent
+        FROM posts p
+        LEFT JOIN users u ON u.id = p.created_by
+        LEFT JOIN vouchers v ON v.id = p.voucher_id
+        WHERE p.id = ?
+    ');
     $stmt->execute([$id]);
     $post = $stmt->fetch();
     return $post ?: null;
@@ -311,6 +337,10 @@ function post_validate_payload(array $data, bool $isUpdate = false): array {
         throw new PostError(422, 'INVALID_PUBLISH_RANGE', 'Thời gian hết hạn phải sau thời gian xuất bản.');
     }
 
+    if ($status === 'published' && $expireAt && strtotime($expireAt) <= time()) {
+        throw new PostError(422, 'EXPIRED_PUBLISH_TIME', 'Thời điểm hết hạn tự ẩn đã ở trong quá khứ nên bài viết sẽ bị ẩn ngay. Vui lòng chọn thời điểm trong tương lai hoặc để trống ô này.');
+    }
+
     $isPinned = !empty($data['is_pinned']) ? 1 : 0;
 
     // Validate trường đặc thù Sự kiện
@@ -331,6 +361,7 @@ function post_validate_payload(array $data, bool $isUpdate = false): array {
     $price = null;
     $durationDays = null;
     $benefits = null;
+    $discountPercent = 0;
     if ($type === 'membership') {
         if (isset($data['price']) && $data['price'] !== '') {
             $price = (float)$data['price'];
@@ -350,8 +381,14 @@ function post_validate_payload(array $data, bool $isUpdate = false): array {
         $benefits = !empty($data['benefits']) ? trim((string)$data['benefits']) : null;
     }
 
+    $voucherId = !empty($data['voucher_id']) ? (int)$data['voucher_id'] : null;
+    if ($voucherId !== null && $voucherId <= 0) {
+        $voucherId = null;
+    }
+
     return [
         'type' => $type,
+        'voucher_id' => $voucherId,
         'title' => $title,
         'summary' => $summary ?: null,
         'content' => $content,
@@ -365,7 +402,7 @@ function post_validate_payload(array $data, bool $isUpdate = false): array {
         'event_location' => $eventLocation,
         'price' => $price,
         'duration_days' => $durationDays,
-        'discount_percent' => $discountPercent,
+        'discount_percent' => (int)$discountPercent,
         'benefits' => $benefits
     ];
 }
@@ -379,12 +416,12 @@ function post_create(PDO $pdo, int $adminId, array $data): int {
 
     $stmt = $pdo->prepare('
         INSERT INTO posts (
-            type, title, slug, summary, content, cover_image, status,
+            type, voucher_id, title, slug, summary, content, cover_image, status,
             publish_at, expire_at, is_pinned, created_by,
             event_start, event_end, event_location,
             price, duration_days, discount_percent, benefits, created_at, updated_at
         ) VALUES (
-            ?, ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?, ?, ?, ?,
             ?, ?, ?, ?,
             ?, ?, ?,
             ?, ?, ?, ?, NOW(), NOW()
@@ -393,6 +430,7 @@ function post_create(PDO $pdo, int $adminId, array $data): int {
 
     $stmt->execute([
         $validated['type'],
+        $validated['voucher_id'],
         $validated['title'],
         $slug,
         $validated['summary'],
@@ -435,6 +473,7 @@ function post_update(PDO $pdo, int $id, array $data): bool {
     $stmt = $pdo->prepare('
         UPDATE posts SET
             type = ?,
+            voucher_id = ?,
             title = ?,
             slug = ?,
             summary = ?,
@@ -457,6 +496,7 @@ function post_update(PDO $pdo, int $id, array $data): bool {
 
     return $stmt->execute([
         $validated['type'],
+        $validated['voucher_id'],
         $validated['title'],
         $slug,
         $validated['summary'],

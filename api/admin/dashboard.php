@@ -118,6 +118,7 @@ try {
             u.phone AS user_phone,
             b.total_price,
             b.deposit_amount,
+            b.is_deposit_refunded,
             {$voucherSelect}
             b.status AS booking_status,
             b.created_at,
@@ -158,7 +159,7 @@ try {
         $status = $rb['booking_status'];
         $amount = (int)round((float)$rb['total_price']);
 
-        if ($status !== 'cancelled') {
+        if (!in_array($status, ['cancelled', 'no_show'], true)) {
             if ($bDate === $todayStr) {
                 $todayCount++;
             }
@@ -167,25 +168,29 @@ try {
             }
         }
 
-        if ($status === 'confirmed' || $status === 'pending') {
+        if (in_array($status, ['confirmed', 'pending', 'checked_in'], true)) {
             $pendingCount++;
-        } elseif ($status === 'cancelled') {
+        } elseif (in_array($status, ['cancelled', 'no_show'], true)) {
             $cancelledCount++;
         }
 
-        if ($status === 'confirmed' || $status === 'completed') {
+        if (in_array($status, ['confirmed', 'checked_in', 'completed'], true)) {
             if ($currentRole === 'admin') {
-                // Doanh thu nền tảng: Phí sàn trừ đi tiền giảm do sàn chịu (nếu có)
-                $platFee = (int)round((float)($rb['platform_fee'] ?? 0));
-                $fundedBy = $rb['discount_funded_by'] ?? null;
-                $discAmt = ($fundedBy === 'platform') ? (int)round((float)($rb['discount_amount'] ?? 0)) : 0;
-                $revenue += ($platFee - $discAmt);
+                // Doanh thu đặt sân toàn hệ thống (Tổng giá trị thực thu của các đơn hợp lệ)
+                $revenue += $amount;
             } else {
                 // Doanh thu chủ sân: Thực nhận của chủ sân (owner_amount), fallback về total_price nếu đơn cũ
                 $ownerAmt = (isset($rb['owner_amount']) && (float)$rb['owner_amount'] > 0)
                     ? (int)round((float)$rb['owner_amount'])
                     : $amount;
                 $revenue += $ownerAmt;
+            }
+        } elseif ($status === 'no_show') {
+            // Khi khách bùng sân: Tiền cọc giữ lại nếu không được hoàn cọc
+            $isDepositRefunded = (int)($rb['is_deposit_refunded'] ?? 0);
+            if (!$isDepositRefunded) {
+                $depositAmt = (int)round((float)($rb['deposit_amount'] ?? 0));
+                $revenue += $depositAmt;
             }
         }
 

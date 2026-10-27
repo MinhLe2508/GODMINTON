@@ -139,6 +139,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const detailUrl = `post-detail.php?slug=${encodeURIComponent(item.slug || '')}`;
+            const voucherBadge = item.voucher_code ? `
+                <span class="badge bg-teal text-white rounded-pill px-2 py-1" style="font-size:0.68rem; font-weight:700;">
+                    <i class="fa-solid fa-gift me-1"></i>Tặng mã -${item.voucher_discount_percent}%
+                </span>
+            ` : '';
 
             return `
                 <div class="col-md-6 col-lg-4" data-aos="fade-up">
@@ -154,7 +159,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <div class="post-card-body">
                             <div class="mb-2 d-flex align-items-center justify-content-between flex-wrap gap-1">
-                                ${chipHtml}
+                                <div class="d-flex align-items-center gap-1 flex-wrap">
+                                    ${chipHtml}
+                                    ${voucherBadge}
+                                </div>
                                 <span class="post-meta-text text-muted">${escape(item.author_name || 'Admin')}</span>
                             </div>
                             <h3 class="post-card-title">

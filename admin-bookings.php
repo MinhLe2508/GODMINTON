@@ -73,8 +73,9 @@ $currentUser = [
                         <input type="search" id="searchBooking" class="form-control form-control-sm rounded-pill" placeholder="Tìm mã đơn / khách hàng..." style="min-width:200px;">
                         <select id="filterStatus" class="form-select form-select-sm rounded-pill" style="min-width:160px;">
                             <option value="">Tất cả trạng thái</option>
-                            <option value="confirmed">Đã xác nhận</option>
+                            <option value="confirmed">Đã cọc</option>
                             <option value="completed">Hoàn thành</option>
+                            <option value="no_show">Bùng sân</option>
                             <option value="cancelled">Đã hủy</option>
                         </select>
                     </div>
@@ -85,20 +86,11 @@ $currentUser = [
                             <thead>
                                 <tr>
                                     <th>Mã đơn</th>
-                                    <th>Sân</th>
+                                    <th>Sân &amp; Thảm</th>
                                     <th>Khách hàng</th>
-                                    <th>Ngày / giờ</th>
-                                    <th>Mã giảm giá</th>
-                                    <?php if ($currentUser['role'] === 'owner'): ?>
-                                    <th>Giảm bạn chịu</th>
-                                    <th>Thực nhận</th>
-                                    <?php else: ?>
-                                    <th>Giảm giá</th>
-                                    <th>Phí sàn</th>
-                                    <?php endif; ?>
-                                    <th>Tổng khách trả</th>
+                                    <th>Đã cọc / Thu tại quầy</th>
                                     <th>Trạng thái</th>
-                                    <th class="text-end">Thao tác</th>
+                                    <th class="text-end pe-3" style="min-width:145px;">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody id="bookingsTableBody"></tbody>
@@ -110,6 +102,30 @@ $currentUser = [
                 </div>
             </div>
         </main>
+    </div>
+</div>
+
+<!-- Modal Chi Tiết & Vận Hành Sân Chuyên Nghiệp (Live Match & Billing Modal) -->
+<div class="modal fade" id="bookingDetailModal" tabindex="-1" aria-labelledby="modalBookingTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="modal-title fw-bold fs-5 mb-1" id="modalBookingTitle">Chi tiết đơn đặt</h5>
+                    <div class="small text-muted" id="modalBookingSub"></div>
+                </div>
+                <div class="d-flex align-items-center gap-3 ms-auto">
+                    <span id="modalBookingBadge"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+            </div>
+            <div class="modal-body p-4" id="modalBookingBody">
+                <!-- Nội dung chi tiết được render động qua JS -->
+            </div>
+            <div class="modal-footer border-top bg-light-subtle rounded-bottom-4 d-flex justify-content-end align-items-center gap-2" id="modalFooterActions">
+                <!-- Nút thao tác chuyển trạng thái linh hoạt -->
+            </div>
+        </div>
     </div>
 </div>
 

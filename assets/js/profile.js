@@ -87,15 +87,17 @@ async function loadMyVouchers() {
 
     try {
         const vouchers = await BookingAccount.request('api/vouchers/my-vouchers.php');
-        const usableCount = vouchers.filter(v => v.is_usable).length;
-        if (statEl) statEl.textContent = usableCount;
+        if (statEl) statEl.textContent = vouchers.length;
 
         if (!vouchers.length) {
             listEl.innerHTML = `
                 <div class="col-12 text-center py-5 text-muted">
                     <i class="fa-solid fa-ticket fs-1 d-block mb-3 text-secondary opacity-50"></i>
-                    <p class="mb-1 fw-semibold">Hiện chưa có mã giảm giá nào khả dụng.</p>
-                    <small>Các chương trình ưu đãi mới sẽ xuất hiện tại đây!</small>
+                    <p class="mb-1 fw-semibold">Kho mã giảm giá của bạn đang trống.</p>
+                    <small class="d-block mb-3 text-muted">Mã giảm giá được tặng kèm trong các bài viết Sự Kiện &amp; Bản Tin. Hãy khám phá và bấm "Nhận mã" để lưu vào kho!</small>
+                    <a href="explore.php" class="btn btn-sm btn-outline-teal rounded-pill px-4 fw-bold">
+                        <i class="fa-solid fa-compass me-1"></i> Khám phá bài viết nhận mã ngay
+                    </a>
                 </div>
             `;
             return;
@@ -106,20 +108,29 @@ async function loadMyVouchers() {
             const minText = v.min_order > 0 ? `Đơn từ ${v.min_order_text}` : 'Mọi giá trị đơn';
             const endText = v.end_at ? v.end_at.substring(0, 10).split('-').reverse().join('/') : '--';
             const scopeText = v.court_name;
-            const badgeTag = v.first_booking_only ? '<span class="badge bg-info-subtle text-info border border-info-subtle ms-1" style="font-size:0.65rem;">Khách mới</span>' : '';
+            let statusBadge = '';
+            if (!v.is_usable && v.unusable_reason) {
+                statusBadge = `<span class="badge bg-secondary text-white ms-1" style="font-size:0.68rem;">${BookingAccount.escape(v.unusable_reason)}</span>`;
+            } else if (v.first_booking_only) {
+                statusBadge = '<span class="badge bg-info-subtle text-info border border-info-subtle ms-1" style="font-size:0.65rem;">Khách mới</span>';
+            }
+
+            const cardStyle = v.is_usable
+                ? 'background:linear-gradient(135deg, rgba(13,148,136,0.06) 0%, rgba(20,184,166,0.14) 100%); border: 1.5px dashed var(--brand-teal, #0d9488);'
+                : 'background:rgba(0,0,0,0.02); border: 1.5px dashed rgba(0,0,0,0.15); opacity: 0.85;';
 
             return `
                 <div class="col-md-6">
-                    <div class="voucher-card p-3 h-100 d-flex flex-column justify-content-between position-relative shadow-sm" style="background:linear-gradient(135deg, rgba(13,148,136,0.06) 0%, rgba(20,184,166,0.14) 100%); border: 1.5px dashed var(--brand-teal, #0d9488); border-radius: 1rem;">
+                    <div class="voucher-card p-3 h-100 d-flex flex-column justify-content-between position-relative shadow-sm rounded-4" style="${cardStyle}">
                         <div>
                             <div class="d-flex align-items-center justify-content-between mb-2">
-                                <span class="badge bg-teal text-white px-2 py-1" style="font-size:0.8rem; letter-spacing:0.5px;">
+                                <span class="badge ${v.is_usable ? 'bg-teal' : 'bg-secondary'} text-white px-2 py-1" style="font-size:0.8rem; letter-spacing:0.5px;">
                                     <i class="fa-solid fa-bolt me-1"></i>GIẢM ${v.discount_percent}%
                                 </span>
-                                ${badgeTag}
+                                ${statusBadge}
                             </div>
                             <div class="d-flex align-items-center justify-content-between mb-2">
-                                <div class="fs-5 fw-extrabold text-uppercase text-dark tracking-wide font-monospace">${BookingAccount.escape(v.code)}</div>
+                                <div class="fs-5 fw-extrabold text-uppercase ${v.is_usable ? 'text-dark' : 'text-muted'} tracking-wide font-monospace">${BookingAccount.escape(v.code)}</div>
                             </div>
                             <div class="small text-muted mb-2">
                                 <div><i class="fa-solid fa-shield-halved me-1 text-teal"></i> ${maxText} · ${minText}</div>
@@ -131,7 +142,7 @@ async function loadMyVouchers() {
                             <button type="button" class="btn btn-sm btn-outline-teal rounded-pill flex-grow-1 fw-bold btn-copy-voucher" data-code="${v.code}">
                                 <i class="fa-regular fa-copy me-1"></i> Sao chép mã
                             </button>
-                            <a href="courts.php" class="btn btn-sm btn-teal rounded-pill px-3 fw-bold" title="Đặt sân để dùng mã">
+                            <a href="courts.php" class="btn btn-sm ${v.is_usable ? 'btn-teal' : 'btn-outline-secondary'} rounded-pill px-3 fw-bold" title="${v.is_usable ? 'Đặt sân để dùng mã' : (v.unusable_reason || 'Không khả dụng')}">
                                 Dùng ngay <i class="fa-solid fa-arrow-right ms-1"></i>
                             </a>
                         </div>
@@ -170,6 +181,156 @@ async function loadMyVouchers() {
         console.warn('Lỗi tải mã giảm giá:', e);
         listEl.innerHTML = `<div class="col-12 text-center text-muted py-4">Chưa có mã ưu đãi nào hoặc database chưa nâng cấp voucher.</div>`;
     }
+}
+
+let allUserMemberships = [];
+
+function showUserMembershipInvoice(item) {
+    if (!item) return;
+
+    const modalEl = document.getElementById('userMembershipInvoiceModal');
+    if (!modalEl) return;
+
+    const subEl = document.getElementById('userModalInvoiceSub');
+    if (subEl) {
+        const createdDate = item.created_at ? item.created_at.substring(0, 16).replace('T', ' ') : '—';
+        subEl.textContent = `Mã hóa đơn: #MB-${String(item.id).padStart(6, '0')} · Ngày tạo: ${createdDate}`;
+    }
+
+    const badgeEl = document.getElementById('userModalInvoiceStatusBadge');
+    if (badgeEl) {
+        if (item.status === 'pending') {
+            badgeEl.innerHTML = '<span class="badge bg-warning text-dark border border-warning rounded-pill fw-bold px-3 py-1"><i class="fa-solid fa-clock-rotate-left me-1"></i>Chờ Admin xác nhận</span>';
+        } else if (item.status === 'active' && !item.is_expired) {
+            badgeEl.innerHTML = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-bold px-3 py-1"><i class="fa-solid fa-circle-check me-1"></i>Đang kích hoạt</span>';
+        } else if (item.status === 'rejected') {
+            badgeEl.innerHTML = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1">Đã từ chối</span>';
+        } else if (item.status === 'cancelled') {
+            badgeEl.innerHTML = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1">Đã đổi gói</span>';
+        } else {
+            badgeEl.innerHTML = '<span class="badge bg-secondary text-white rounded-pill px-3 py-1">Đã hết hạn</span>';
+        }
+    }
+
+    let tierBadgeClass = 'tier-badge-silver';
+    let tierLabel = 'Hội viên Bạc';
+    if (item.tier === 'gold') {
+        tierBadgeClass = 'tier-badge-gold';
+        tierLabel = 'Hội viên Vàng';
+    } else if (item.tier === 'platinum') {
+        tierBadgeClass = 'tier-badge-platinum';
+        tierLabel = 'Hội viên Bạch Kim';
+    }
+
+    const startFormatted = item.start_date ? item.start_date.substring(0, 10).split('-').reverse().join('/') : '--';
+    const endFormatted = item.end_date ? item.end_date.substring(0, 10).split('-').reverse().join('/') : '--';
+
+    const customerName = (savedProfile && savedProfile.name) || 'Khách hàng GODMINTON';
+    const customerPhone = (savedProfile && savedProfile.phone) || '—';
+    const customerEmail = (savedProfile && savedProfile.email) || '—';
+    const cleanTitle = item.package_title || tierLabel;
+
+    const bodyEl = document.getElementById('userModalInvoiceBody');
+    if (bodyEl) {
+        bodyEl.innerHTML = `
+            <!-- 1. THÔNG TIN KHÁCH HÀNG & GÓI HỘI VIÊN -->
+            <div class="card p-3 rounded-4 border bg-body-tertiary mb-3">
+                <div class="row g-3">
+                    <!-- Khách hàng -->
+                    <div class="col-md-6 border-end-md">
+                        <div class="text-uppercase fw-bold text-muted small mb-2"><i class="fa-solid fa-user me-1 text-teal"></i>Thông tin tài khoản</div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Họ và tên:</span>
+                            <span class="fw-semibold text-dark">${BookingAccount.escape(customerName)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Điện thoại:</span>
+                            <span class="fw-semibold text-dark">${BookingAccount.escape(customerPhone)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Email:</span>
+                            <span class="fw-semibold text-dark">${BookingAccount.escape(customerEmail)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 small">
+                            <span class="text-secondary">Mã tài khoản:</span>
+                            <span class="fw-semibold text-dark">UID#${item.user_id || (savedProfile && savedProfile.id) || '—'}</span>
+                        </div>
+                    </div>
+
+                    <!-- Gói hội viên -->
+                    <div class="col-md-6">
+                        <div class="text-uppercase fw-bold text-muted small mb-2"><i class="fa-solid fa-crown me-1 text-warning"></i>Gói đăng ký</div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Gói hội viên:</span>
+                            <span class="fw-semibold text-teal">${BookingAccount.escape(cleanTitle)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Hạng thẻ:</span>
+                            <span class="badge ${tierBadgeClass} rounded-pill px-2 py-1 fw-bold" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-crown me-1"></i>${tierLabel}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Ưu đãi tiền sân:</span>
+                            <span class="fw-bold text-success">Giảm ${item.discount_percent || 0}% Tiền Sân</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 small">
+                            <span class="text-secondary">Thời hạn hiệu lực:</span>
+                            <span class="fw-semibold text-dark">${item.duration_days || 30} ngày</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. THỜI GIAN HIỆU LỰC & CHI TIẾT THANH TOÁN -->
+            <div class="row g-3">
+                <!-- Thời hạn sử dụng -->
+                <div class="col-md-6">
+                    <div class="p-3 rounded-4 border bg-body-tertiary h-100">
+                        <div class="text-uppercase fw-bold text-muted small mb-2"><i class="fa-solid fa-calendar-check me-1 text-teal"></i>Thời gian hiệu lực</div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Ngày bắt đầu:</span>
+                            <span class="fw-semibold text-dark">${startFormatted}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Hạn kết thúc:</span>
+                            <span class="fw-semibold text-danger">${endFormatted} (23:59:59)</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 small">
+                            <span class="text-secondary">Tình trạng ngày:</span>
+                            <span class="badge ${item.status === 'active' && !item.is_expired ? 'bg-warning text-dark' : 'bg-secondary text-white'} rounded-pill fw-bold px-2 py-1">
+                                ${item.status === 'active' && !item.is_expired ? `Còn ${item.days_left || 0} ngày` : (item.status === 'pending' ? 'Chờ kích hoạt' : 'Hết hạn')}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chi tiết thanh toán -->
+                <div class="col-md-6">
+                    <div class="p-3 rounded-4 border bg-body-tertiary h-100">
+                        <div class="text-uppercase fw-bold text-muted small mb-2"><i class="fa-solid fa-credit-card me-1 text-teal"></i>Chi tiết thanh toán</div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Phương thức:</span>
+                            <span class="fw-semibold text-dark">${BookingAccount.escape(item.payment_method || 'VietQR')}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Trạng thái thanh toán:</span>
+                            <span class="fw-bold ${item.status === 'pending' ? 'text-warning' : 'text-success'}">
+                                ${item.status === 'pending' ? 'Đã gửi xác nhận - Chờ duyệt' : 'Đã thanh toán thành công'}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between pt-2">
+                            <span class="fw-bold text-dark">Tổng tiền thanh toán:</span>
+                            <span class="fs-5 fw-extrabold text-teal">${BookingAccount.money(item.price_paid || 0)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
 }
 
 async function loadMyMembership() {
@@ -276,9 +437,14 @@ async function loadMyMembership() {
                                 <span class="small text-muted">${BookingAccount.escape(pending.package_title)} · ${BookingAccount.money(pending.price_paid || 0)} · Phương thức: ${BookingAccount.escape(pending.payment_method || 'VietQR')}</span>
                             </div>
                         </div>
-                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold" style="font-size:0.8rem;">
-                            <i class="fa-solid fa-hourglass-half me-1"></i>Chờ Admin duyệt
-                        </span>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-warning text-dark rounded-pill px-3 fw-bold btn-view-user-pending-invoice shadow-sm" style="background:#fff;">
+                                <i class="fa-solid fa-file-invoice-dollar me-1"></i> Xem hóa đơn
+                            </button>
+                            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold" style="font-size:0.8rem;">
+                                <i class="fa-solid fa-hourglass-half me-1"></i>Chờ Admin duyệt
+                            </span>
+                        </div>
                     </div>
                 `;
             }
@@ -379,6 +545,9 @@ async function loadMyMembership() {
                                 </div>
                             </div>
                             <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="btn btn-outline-light rounded-pill px-3 fw-semibold btn-view-user-active-invoice">
+                                    <i class="fa-solid fa-file-invoice-dollar me-1"></i> Chi tiết hóa đơn
+                                </button>
                                 <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm text-dark btn-open-renew-membership">
                                     <i class="fa-solid fa-arrows-rotate me-1"></i> Gia hạn gói
                                 </button>
@@ -497,13 +666,46 @@ async function loadMyMembership() {
                                     <i class="fa-regular fa-calendar me-1 text-teal"></i> ${start} – ${end} (${item.duration_days} ngày)
                                 </div>
                             </div>
-                            <div class="text-sm-end">
+                            <div class="text-sm-end d-flex align-items-center gap-2">
                                 <div class="fw-bold fs-6 text-teal">${BookingAccount.money(item.price_paid || 0)}</div>
+                                <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3 btn-view-user-history-invoice" data-id="${item.id}" title="Xem chi tiết hóa đơn">
+                                    <i class="fa-solid fa-file-invoice-dollar me-1"></i> Hóa đơn
+                                </button>
                             </div>
                         </div>
                     `;
                 }).join('');
             }
+        }
+
+        // Lưu dữ liệu tất cả gói để xem hóa đơn
+        allUserMemberships = [
+            ...(active ? [active] : []),
+            ...(pending ? [pending] : []),
+            ...history
+        ];
+
+        // Gắn sự kiện xem hóa đơn
+        const btnActiveInv = activeBox ? activeBox.querySelector('.btn-view-user-active-invoice') : null;
+        if (btnActiveInv && active) {
+            btnActiveInv.addEventListener('click', () => showUserMembershipInvoice(active));
+        }
+
+        const btnPendingInv = activeBox ? activeBox.querySelector('.btn-view-user-pending-invoice') : null;
+        if (btnPendingInv && pending) {
+            btnPendingInv.addEventListener('click', () => showUserMembershipInvoice(pending));
+        }
+
+        if (historyList) {
+            historyList.querySelectorAll('.btn-view-user-history-invoice').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = Number(btn.getAttribute('data-id'));
+                    const item = allUserMemberships.find(x => Number(x.id) === id);
+                    if (item) {
+                        showUserMembershipInvoice(item);
+                    }
+                });
+            });
         }
 
         // 5. Kiểm tra nếu URL có ?tab=membership thì tự động kích hoạt tab Hội Viên

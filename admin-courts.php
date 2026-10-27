@@ -109,6 +109,11 @@ $currentUser = ['id' => (int)$_SESSION['user_id'], 'name' => $_SESSION['name'] ?
                 <div class="modal-body">
                     <input type="hidden" id="courtId">
                     <div class="row g-3">
+                        <div class="col-12" id="courtOwnerWrap" style="display: none;">
+                            <label class="form-label fw-semibold small text-teal"><i class="fa-solid fa-user-tie me-1"></i>Chủ sân phụ trách (Admin phân quyền)</label>
+                            <select class="form-select border-teal" id="courtOwnerId"></select>
+                            <div class="form-text" style="font-size:0.75rem;">Chỉ định tài khoản Chủ sân của quận/huyện tương ứng để quản lý sân này.</div>
+                        </div>
                         <div class="col-md-7">
                             <label class="form-label fw-semibold small">Tên sân</label>
                             <input type="text" class="form-control" id="courtName" required placeholder="VD: Cầu Lông Quận 1 – Lê Thánh Tôn Sport">
@@ -199,6 +204,7 @@ let currentUser = null;
 let modalInstance = null;
 let myCourts = [];
 let wardsList = [];
+let ownersList = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     currentUser = AdminApp.renderShell('courts', 'Quản lý sân', 'Kênh chủ sân / Quản lý sân');
@@ -223,14 +229,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadCourtsFromServer() {
     try {
-        const { courts, wards } = await AdminApp.fetchCourts();
+        const { courts, wards, owners } = await AdminApp.fetchCourts();
         myCourts = courts;
         wardsList = wards;
+        ownersList = owners || [];
         populateWardSelect();
+        populateOwnerSelect();
         renderCourtsTable();
     } catch (err) {
         AdminApp.toast('error', err.message || 'Không tải được danh sách sân.');
     }
+}
+
+function populateOwnerSelect() {
+    const sel = document.getElementById('courtOwnerId');
+    const wrap = document.getElementById('courtOwnerWrap');
+    if (!sel || !wrap) return;
+    if (currentUser.role !== 'admin' || !ownersList.length) {
+        wrap.style.display = 'none';
+        return;
+    }
+    wrap.style.display = 'block';
+    sel.innerHTML = ownersList.map(o => `<option value="${o.id}">${AdminApp.escapeHTML(o.name)} (${AdminApp.escapeHTML(o.email)})</option>`).join('');
 }
 
 function populateWardSelect() {
@@ -309,6 +329,9 @@ function openCourtModal(courtId) {
         if (court.ward_id) {
             document.getElementById('courtWardId').value = String(court.ward_id);
         }
+        if (currentUser.role === 'admin' && document.getElementById('courtOwnerId')) {
+            document.getElementById('courtOwnerId').value = String(court.owner_id || '');
+        }
         document.getElementById('courtAddress').value = court.address || '';
         document.getElementById('courtPrice').value = court.price_per_hour || 0;
         document.getElementById('courtSubCount').value = court.total_sub_courts || 6;
@@ -366,6 +389,10 @@ async function handleSaveCourt(e) {
         owner_name: currentUser.name,
         owner_phone: currentUser.phone
     };
+
+    if (currentUser.role === 'admin' && document.getElementById('courtOwnerId')?.value) {
+        payload.owner_id = Number(document.getElementById('courtOwnerId').value);
+    }
 
     const originalLabel = btn.innerHTML;
     btn.disabled = true;

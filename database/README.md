@@ -32,13 +32,32 @@ Các bảng `bookings`, `booking_slots`, `time_slots`, `contacts`, `push_subscri
 
 ### Tài khoản phát triển cho máy cài mới
 
-| Vai trò | Email | Mật khẩu phát triển |
-|---|---|---|
-| Khách | `khach1@gmail.com` | `Khach@123` |
-| Admin | `admin@godminton.vn` | `Admin@123` |
-| Chủ sân | `owner.q1@godminton.vn` | `Owner@123` |
+| Vai trò | Email | Mật khẩu phát triển | Ghi chú |
+|---|---|---|---|
+| Khách | `khach1@gmail.com` | `Khach@123` | Tài khoản khách hàng đặt sân |
+| Admin | `admin@godminton.vn` | `Admin@123` | Quản trị viên (quản lý toàn bộ sân trên hệ thống) |
+| Chủ sân Q1 | `owner.q1@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Quận 1 |
+| Chủ sân Q2 | `owner.q2@godminton.vn` | `Owner@123` | Quản lý 5 sân khu vực Quận 2 (TP. Thủ Đức) |
+| Chủ sân Q3 | `owner.q3@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Quận 3 |
+| Chủ sân Q4 | `owner.q4@godminton.vn` | `Owner@123` | Quản lý 3 sân khu vực Quận 4 |
+| Chủ sân Q5 | `owner.q5@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Quận 5 |
+| Chủ sân Q6 | `owner.q6@godminton.vn` | `Owner@123` | Quản lý 6 sân khu vực Quận 6 |
+| Chủ sân Q7 | `owner.q7@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Quận 7 |
+| Chủ sân Q8 | `owner.q8@godminton.vn` | `Owner@123` | Quản lý 3 sân khu vực Quận 8 |
+| Chủ sân Q9 | `owner.q9@godminton.vn` | `Owner@123` | Quản lý 3 sân khu vực Quận 9 (TP. Thủ Đức) |
+| Chủ sân Q10 | `owner.q10@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Quận 10 |
+| Chủ sân Q11 | `owner.q11@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Quận 11 |
+| Chủ sân Q12 | `owner.q12@godminton.vn` | `Owner@123` | Quản lý 3 sân khu vực Quận 12 |
+| Chủ sân Bình Thạnh | `owner.binhthanh@godminton.vn` | `Owner@123` | Quản lý 6 sân khu vực Bình Thạnh |
+| Chủ sân Tân Bình | `owner.tanbinh@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Tân Bình |
+| Chủ sân Gò Vấp | `owner.govap@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Gò Vấp |
+| Chủ sân Phú Nhuận | `owner.phunhuan@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Phú Nhuận |
+| Chủ sân Tân Phú | `owner.tanphu@godminton.vn` | `Owner@123` | Quản lý 3 sân khu vực Tân Phú |
+| Chủ sân Bình Tân | `owner.binhtan@godminton.vn` | `Owner@123` | Quản lý 3 sân khu vực Bình Tân |
+| Chủ sân TP. Thủ Đức | `owner.thuduc@godminton.vn` | `Owner@123` | Quản lý 6 sân khu vực TP. Thủ Đức |
+| Chủ sân Bình Chánh | `owner.binhchanh@godminton.vn` | `Owner@123` | Quản lý 1 sân khu vực Bình Chánh |
 
-Đây là tài khoản tạo riêng cho môi trường phát triển; dữ liệu tài khoản của DB đang chạy không bị thay đổi. Không dùng bộ mật khẩu này khi triển khai công khai.
+Mật khẩu chung cho tất cả tài khoản chủ sân: **`Owner@123`**. Phân quyền: mỗi chủ sân chỉ thấy và quản lý khung giờ, giá, đơn đặt của các cụm sân thuộc quận mình; Admin quản lý toàn bộ hệ thống.
 
 ## Nâng cấp database cũ
 

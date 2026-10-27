@@ -58,6 +58,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const extendCurrentEnd = document.getElementById('extendCurrentEndDate');
     const extendDaysInput = document.getElementById('extendDaysInput');
 
+    let currentMemberships = [];
+    const invoiceModalEl = document.getElementById('membershipInvoiceModal');
+    const invoiceModal = invoiceModalEl ? bootstrap.Modal.getOrCreateInstance(invoiceModalEl) : null;
+
     // ========================================================
     // Tải dữ liệu hội viên
     // ========================================================
@@ -89,9 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.stats) {
                 if (statPending) statPending.textContent = data.stats.total_pending || 0;
                 if (statActive) statActive.textContent = data.stats.total_active || 0;
-                if (statSilver) statSilver.textContent = `Bạc: ${data.stats.silver_count || 0}`;
-                if (statGold) statGold.textContent = `Vàng: ${data.stats.gold_count || 0}`;
-                if (statPlatinum) statPlatinum.textContent = `B.Kim: ${data.stats.platinum_count || 0}`;
+                if (statSilver) statSilver.textContent = data.stats.silver_count || 0;
+                if (statGold) statGold.textContent = data.stats.gold_count || 0;
+                if (statPlatinum) statPlatinum.textContent = data.stats.platinum_count || 0;
                 if (statRevenue) statRevenue.textContent = AdminApp.formatVND(data.stats.total_revenue || 0);
             }
 
@@ -107,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 2. Render bảng danh sách
             const items = data.items || [];
+            currentMemberships = items;
             if (!items.length) {
                 tableBody.innerHTML = '';
                 emptyBox.style.display = 'block';
@@ -136,11 +141,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusBadgeHtml = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Đã hủy / đổi gói</span>';
                 }
 
-                // Days left badge
-                let daysLeftHtml = '';
-                if (item.status === 'active' && !item.is_expired) {
+                // Cột Thời hạn gói: Chỉ hiển thị badge màu vàng (hoặc badge tương ứng Còn X ngày), bỏ hẳn ngày tháng và (X ngày)
+                let durationBadgeHtml = '';
+                if (isPending) {
+                    durationBadgeHtml = `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning rounded-pill px-3 py-1 fw-bold">Chờ duyệt</span>`;
+                } else if (item.status === 'active' && !item.is_expired) {
                     const badgeColor = item.days_left <= 7 ? 'bg-danger text-white' : 'bg-warning text-dark';
-                    daysLeftHtml = `<span class="badge ${badgeColor} rounded-pill ms-1 fw-bold">Còn ${item.days_left} ngày</span>`;
+                    durationBadgeHtml = `<span class="badge ${badgeColor} rounded-pill px-3 py-1 fw-bold" style="font-size:0.8rem;">Còn ${item.days_left} ngày</span>`;
+                } else if (item.status === 'rejected') {
+                    durationBadgeHtml = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 fw-medium">Đã từ chối</span>`;
+                } else if (item.status === 'cancelled') {
+                    durationBadgeHtml = `<span class="badge bg-secondary-subtle text-muted rounded-pill px-3 py-1 fw-medium">Đã hủy gói</span>`;
+                } else {
+                    durationBadgeHtml = `<span class="badge bg-secondary text-white rounded-pill px-3 py-1 fw-bold">Đã hết hạn</span>`;
                 }
 
                 // Avatar / Initial
@@ -149,51 +162,41 @@ document.addEventListener('DOMContentLoaded', () => {
                     ? `<img src="${AdminApp.escapeHTML(item.user_avatar)}" class="user-avatar-sm" alt="Avatar">`
                     : `<div class="user-avatar-sm">${initial}</div>`;
 
-                // Cột hành động
-                let actionHtml = '';
+                // Cột thao tác: Dropdown Chọn thao tác (đồng bộ phong cách quản lý đơn đặt)
+                let itemsHtml = '';
                 if (isPending) {
-                    actionHtml = `
-                        <div class="d-flex align-items-center justify-content-end gap-1">
-                            <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold btn-approve-row"
-                                    data-id="${item.id}"
-                                    data-name="${AdminApp.escapeHTML(item.user_name)}"
-                                    data-pkg="${AdminApp.escapeHTML(item.package_title)}">
-                                <i class="fa-solid fa-circle-check me-1"></i> Duyệt gói
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2 fw-semibold btn-reject-row"
-                                    data-id="${item.id}"
-                                    data-name="${AdminApp.escapeHTML(item.user_name)}"
-                                    title="Từ chối yêu cầu">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
+                    itemsHtml = `
+                        <li><button type="button" class="dropdown-item action-gradient-item action-checkin btn-approve-row" data-id="${item.id}" data-name="${AdminApp.escapeHTML(item.user_name)}" data-pkg="${AdminApp.escapeHTML(item.package_title)}">Duyệt kích hoạt gói</button></li>
+                        <li><button type="button" class="dropdown-item action-gradient-item action-view btn-view-invoice" data-id="${item.id}">Chi tiết hóa đơn</button></li>
+                        <li><button type="button" class="dropdown-item action-gradient-item action-cancel btn-reject-row" data-id="${item.id}" data-name="${AdminApp.escapeHTML(item.user_name)}">Từ chối yêu cầu</button></li>
                     `;
                 } else {
-                    actionHtml = `
-                        <div class="dropdown d-inline-block">
-                            <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3 fw-semibold btn-open-extend" 
-                                    data-id="${item.id}" 
-                                    data-name="${AdminApp.escapeHTML(item.user_name)}" 
-                                    data-pkg="${AdminApp.escapeHTML(item.package_title)}" 
-                                    data-end="${endDate}">
-                                <i class="fa-solid fa-arrows-rotate me-1"></i> Gia hạn
-                            </button>
-                            <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Tùy chọn khác">
-                                <i class="fa-solid fa-ellipsis-vertical"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
-                                ${item.status !== 'active' ? `
-                                    <li><a class="dropdown-item py-2 text-success btn-update-status" href="#" data-id="${item.id}" data-status="active"><i class="fa-solid fa-circle-check me-2"></i>Kích hoạt lại gói</a></li>
-                                ` : `
-                                    <li><a class="dropdown-item py-2 text-secondary btn-update-status" href="#" data-id="${item.id}" data-status="expired"><i class="fa-solid fa-clock-rotate-left me-2"></i>Đánh dấu hết hạn</a></li>
-                                    <li><a class="dropdown-item py-2 text-warning btn-update-status" href="#" data-id="${item.id}" data-status="cancelled"><i class="fa-solid fa-ban me-2"></i>Hủy gói hội viên</a></li>
-                                `}
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item py-2 text-danger btn-delete-membership" href="#" data-id="${item.id}"><i class="fa-solid fa-trash me-2"></i>Xóa bản ghi này</a></li>
-                            </ul>
-                        </div>
+                    const isCurrentlyActive = (item.status === 'active' && !item.is_expired);
+                    itemsHtml = `
+                        <li><button type="button" class="dropdown-item action-gradient-item action-extend btn-open-extend" 
+                                data-id="${item.id}" 
+                                data-name="${AdminApp.escapeHTML(item.user_name)}" 
+                                data-pkg="${AdminApp.escapeHTML(item.package_title)}" 
+                                data-end="${endDate}">Gia hạn gói hội viên</button></li>
+                        ${isCurrentlyActive ? `
+                            <li><button type="button" class="dropdown-item action-gradient-item action-cancel btn-cancel-membership" data-id="${item.id}" data-name="${AdminApp.escapeHTML(item.user_name)}">Hủy gói hội viên</button></li>
+                        ` : `
+                            <li><button type="button" class="dropdown-item action-gradient-item action-checkin btn-update-status" data-id="${item.id}" data-status="active">Kích hoạt lại gói</button></li>
+                        `}
+                        <li><button type="button" class="dropdown-item action-gradient-item action-view btn-view-invoice" data-id="${item.id}">Chi tiết hóa đơn</button></li>
                     `;
                 }
+
+                const actionHtml = `
+                    <div class="dropdown d-inline-block text-end">
+                        <button class="btn btn-sm booking-action-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
+                            Chọn thao tác
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm booking-action-menu">
+                            ${itemsHtml}
+                        </ul>
+                    </div>
+                `;
 
                 return `
                     <tr class="${isPending ? 'row-pending-approval' : ''}">
@@ -217,13 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="small fw-semibold admin-text-primary">${AdminApp.escapeHTML(item.package_title)}</div>
                         </td>
                         <td>
-                            <div class="small fw-semibold admin-text-primary">
-                                ${isPending ? `Yêu cầu ngày: ${startDate}` : `${startDate} – ${endDate}`}
-                            </div>
-                            <div class="small text-muted mt-1" style="font-size:0.75rem;">
-                                ${daysLeftHtml}
-                                <span class="ms-1">(${item.duration_days} ngày)</span>
-                            </div>
+                            ${durationBadgeHtml}
                         </td>
                         <td>
                             <div class="fw-bold text-teal">${AdminApp.formatVND(item.price_paid || 0)}</div>
@@ -232,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>
                             ${statusBadgeHtml}
                         </td>
-                        <td class="text-end">
+                        <td class="text-end text-nowrap">
                             ${actionHtml}
                         </td>
                     </tr>
@@ -264,12 +261,219 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ========================================================
+    // Các hàm xử lý Thao Tác Hội Viên & Hóa Đơn
+    // ========================================================
+    function openExtendModal(id, name, pkg, end) {
+        if (extendHiddenId) extendHiddenId.value = id;
+        if (extendName) extendName.textContent = name;
+        if (extendTitle) extendTitle.textContent = pkg;
+        if (extendCurrentEnd) extendCurrentEnd.textContent = end;
+        if (extendDaysInput) extendDaysInput.value = 30;
+
+        if (extendModal) extendModal.show();
+    }
+
+    async function cancelMembership(id, name) {
+        const ok = await AdminApp.confirmAction(
+            'Hủy gói hội viên?',
+            `Bạn có chắc chắn muốn hủy gói hội viên của thành viên "${name}"? Khách hàng sẽ không còn được hưởng ưu đãi giảm giá tiền sân.`
+        );
+        if (!ok) return;
+
+        try {
+            await BookingAccount.request('api/admin/memberships.php', {
+                method: 'POST',
+                body: JSON.stringify({ action: 'update_status', id: Number(id), status: 'cancelled' })
+            });
+            AdminApp.toast('success', 'Đã hủy gói hội viên thành công!');
+            loadMemberships(currentPage);
+        } catch (err) {
+            AdminApp.toast('error', err.message || 'Lỗi khi hủy gói hội viên.');
+        }
+    }
+
+    function showMembershipInvoice(item) {
+        if (!item) return;
+
+        const subEl = document.getElementById('modalInvoiceSub');
+        if (subEl) {
+            const createdDate = item.created_at ? item.created_at.substring(0, 16).replace('T', ' ') : '—';
+            subEl.textContent = `Mã đăng ký: #MB-${String(item.id).padStart(6, '0')} · Ngày tạo: ${createdDate}`;
+        }
+
+        const badgeEl = document.getElementById('modalInvoiceStatusBadge');
+        if (badgeEl) {
+            if (item.status === 'pending') {
+                badgeEl.innerHTML = '<span class="badge bg-warning text-dark border border-warning rounded-pill fw-bold px-3 py-1"><i class="fa-solid fa-clock-rotate-left me-1"></i>Chờ xác nhận</span>';
+            } else if (item.status === 'active' && !item.is_expired) {
+                badgeEl.innerHTML = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-bold px-3 py-1"><i class="fa-solid fa-circle-check me-1"></i>Đang kích hoạt</span>';
+            } else if (item.status === 'rejected') {
+                badgeEl.innerHTML = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1">Đã từ chối</span>';
+            } else if (item.status === 'cancelled') {
+                badgeEl.innerHTML = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1">Đã hủy / đổi gói</span>';
+            } else {
+                badgeEl.innerHTML = '<span class="badge bg-secondary text-white rounded-pill px-3 py-1">Đã hết hạn</span>';
+            }
+        }
+
+        let tierBadgeClass = 'tier-badge-silver';
+        if (item.tier === 'gold') tierBadgeClass = 'tier-badge-gold';
+        else if (item.tier === 'platinum') tierBadgeClass = 'tier-badge-platinum';
+
+        const startDateFormatted = item.start_date ? item.start_date.substring(0, 10).split('-').reverse().join('/') : '--';
+        const endDateFormatted = item.end_date ? item.end_date.substring(0, 10).split('-').reverse().join('/') : '--';
+
+        const bodyEl = document.getElementById('modalInvoiceBody');
+        if (bodyEl) {
+            bodyEl.innerHTML = `
+                <!-- 1. THÔNG TIN KHÁCH HÀNG & GÓI HỘI VIÊN -->
+                <div class="card p-3 rounded-4 border bg-body-tertiary mb-3">
+                    <div class="row g-3">
+                        <!-- Cột trái: Khách hàng -->
+                        <div class="col-md-6 border-end-md">
+                            <div class="text-uppercase fw-bold text-muted small mb-2"><i class="fa-solid fa-user me-1 text-teal"></i>Khách hàng</div>
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Họ và tên:</span>
+                                <span class="fw-semibold text-dark">${AdminApp.escapeHTML(item.user_name)}</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Điện thoại:</span>
+                                <a href="tel:${AdminApp.escapeHTML(item.user_phone)}" class="fw-semibold text-teal text-decoration-none">
+                                    ${AdminApp.escapeHTML(item.user_phone || '—')}
+                                </a>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Email:</span>
+                                <span class="fw-semibold text-dark">${AdminApp.escapeHTML(item.user_email || '—')}</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 small">
+                                <span class="text-secondary">Mã tài khoản:</span>
+                                <span class="fw-semibold text-dark">UID#${item.user_id}</span>
+                            </div>
+                        </div>
+
+                        <!-- Cột phải: Thông tin gói hội viên -->
+                        <div class="col-md-6">
+                            <div class="text-uppercase fw-bold text-muted small mb-2"><i class="fa-solid fa-crown me-1 text-warning"></i>Gói hội viên</div>
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Gói đăng ký:</span>
+                                <span class="fw-semibold text-teal">${AdminApp.escapeHTML(item.package_title)}</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Hạng thẻ:</span>
+                                <span class="badge ${tierBadgeClass} rounded-pill px-2 py-1 fw-bold" style="font-size:0.75rem;">
+                                    <i class="fa-solid fa-crown me-1"></i>${item.tier_label}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Ưu đãi tiền sân:</span>
+                                <span class="fw-bold text-success">Giảm ${item.discount_percent}%</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 small">
+                                <span class="text-secondary">Thời hạn hiệu lực:</span>
+                                <span class="fw-semibold text-dark">${item.duration_days} ngày</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. THỜI GIAN HIỆU LỰC & CHI TIẾT HÓA ĐƠN -->
+                <div class="row g-3">
+                    <!-- Cột trái: Thời hạn sử dụng -->
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-4 border bg-body-tertiary h-100">
+                            <div class="text-uppercase fw-bold text-muted small mb-2"><i class="fa-solid fa-calendar-check me-1 text-teal"></i>Thời gian hiệu lực</div>
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Ngày bắt đầu:</span>
+                                <span class="fw-semibold text-dark">${startDateFormatted}</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Hạn kết thúc:</span>
+                                <span class="fw-semibold text-danger">${endDateFormatted} (23:59:59)</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 small">
+                                <span class="text-secondary">Tình trạng ngày:</span>
+                                <span class="badge ${item.status === 'active' && !item.is_expired ? 'bg-warning text-dark' : 'bg-secondary text-white'} rounded-pill fw-bold px-2 py-1">
+                                    ${item.status === 'active' && !item.is_expired ? `Còn ${item.days_left} ngày` : 'Hết hạn'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cột phải: Chi tiết thanh toán -->
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-4 border bg-body-tertiary h-100">
+                            <div class="text-uppercase fw-bold text-muted small mb-2"><i class="fa-solid fa-credit-card me-1 text-teal"></i>Chi tiết thanh toán</div>
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Phương thức:</span>
+                                <span class="fw-semibold text-dark">${AdminApp.escapeHTML(item.payment_method || 'VietQR')}</span>
+                            </div>
+                            <div class="d-flex justify-content-between py-1 border-bottom small">
+                                <span class="text-secondary">Trạng thái thanh toán:</span>
+                                <span class="fw-bold ${item.status === 'pending' ? 'text-warning' : 'text-success'}">
+                                    ${item.status === 'pending' ? 'Chờ xác nhận duyệt' : 'Đã thanh toán thành công'}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between pt-2">
+                                <span class="fw-bold text-dark">Tổng tiền thanh toán:</span>
+                                <span class="fs-5 fw-extrabold text-teal">${AdminApp.formatVND(item.price_paid || 0)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const footerEl = document.getElementById('modalInvoiceFooterActions');
+        if (footerEl) {
+            let extraBtn = '';
+            if (item.status === 'active' && !item.is_expired) {
+                extraBtn = `
+                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 btn-invoice-cancel" data-id="${item.id}">
+                        <i class="fa-solid fa-ban me-1"></i> Hủy gói
+                    </button>
+                    <button type="button" class="btn btn-sm btn-warning text-dark rounded-pill px-3 fw-bold btn-invoice-extend" 
+                            data-id="${item.id}" data-name="${AdminApp.escapeHTML(item.user_name)}" data-pkg="${AdminApp.escapeHTML(item.package_title)}" data-end="${endDateFormatted}">
+                        <i class="fa-solid fa-arrows-rotate me-1"></i> Gia hạn
+                    </button>
+                `;
+            }
+            footerEl.innerHTML = `
+                ${extraBtn}
+                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+            `;
+
+            const btnInvCancel = footerEl.querySelector('.btn-invoice-cancel');
+            if (btnInvCancel) {
+                btnInvCancel.addEventListener('click', () => {
+                    if (invoiceModal) invoiceModal.hide();
+                    cancelMembership(item.id, item.user_name);
+                });
+            }
+            const btnInvExtend = footerEl.querySelector('.btn-invoice-extend');
+            if (btnInvExtend) {
+                btnInvExtend.addEventListener('click', () => {
+                    if (invoiceModal) invoiceModal.hide();
+                    openExtendModal(item.id, item.user_name, item.package_title, endDateFormatted);
+                });
+            }
+        }
+
+        const modalEl = document.getElementById('membershipInvoiceModal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        }
+    }
+
+    // ========================================================
     // Gắn sự kiện các nút trong dòng bảng
     // ========================================================
     function attachRowActionListeners() {
         // Nút Duyệt gói
         document.querySelectorAll('.btn-approve-row').forEach(btn => {
-            btn.addEventListener('click', async () => {
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
                 const id = btn.getAttribute('data-id');
                 const name = btn.getAttribute('data-name');
                 const pkg = btn.getAttribute('data-pkg');
@@ -295,7 +499,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Nút Từ chối gói
         document.querySelectorAll('.btn-reject-row').forEach(btn => {
-            btn.addEventListener('click', async () => {
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
                 const id = btn.getAttribute('data-id');
                 const name = btn.getAttribute('data-name');
 
@@ -320,23 +525,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Nút mở modal Gia Hạn
         document.querySelectorAll('.btn-open-extend').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
                 const id = btn.getAttribute('data-id');
                 const name = btn.getAttribute('data-name');
                 const pkg = btn.getAttribute('data-pkg');
                 const end = btn.getAttribute('data-end');
-
-                if (extendHiddenId) extendHiddenId.value = id;
-                if (extendName) extendName.textContent = name;
-                if (extendTitle) extendTitle.textContent = pkg;
-                if (extendCurrentEnd) extendCurrentEnd.textContent = end;
-                if (extendDaysInput) extendDaysInput.value = 30;
-
-                if (extendModal) extendModal.show();
+                openExtendModal(id, name, pkg, end);
             });
         });
 
-        // Nút cập nhật trạng thái
+        // Nút Hủy gói hội viên
+        document.querySelectorAll('.btn-cancel-membership').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const id = btn.getAttribute('data-id');
+                const name = btn.getAttribute('data-name');
+                cancelMembership(id, name);
+            });
+        });
+
+        // Nút Xem chi tiết hóa đơn
+        document.querySelectorAll('.btn-view-invoice').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const id = Number(btn.getAttribute('data-id'));
+                const item = currentMemberships.find(x => Number(x.id) === id);
+                if (item) {
+                    showMembershipInvoice(item);
+                } else {
+                    console.warn('Không tìm thấy bản ghi hội viên ID:', id);
+                }
+            });
+        });
+
+        // Nút cập nhật trạng thái khác (ví dụ: Kích hoạt lại)
         document.querySelectorAll('.btn-update-status').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.preventDefault();

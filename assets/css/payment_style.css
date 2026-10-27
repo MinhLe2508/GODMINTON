@@ -948,27 +948,28 @@ textarea.pay-input {
     letter-spacing: 1px;
 }
 
-/* ---- CTA button ---- */
+/* ---- CTA button (Thanh toán & Đặt cọc) ---- */
 .btn-pay-cta {
     width: 100%;
-    height: 52px;
+    height: 44px;
     background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
     color: #fff;
     border: none;
-    border-radius: 0.85rem;
+    border-radius: 0.75rem;
     font-family: inherit;
-    font-size: 0.95rem;
-    font-weight: 800;
+    font-size: 0.9rem;
+    font-weight: 700;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    gap: 0.55rem;
+    gap: 0.45rem;
+    padding: 0.45rem 1rem;
     transition: all 0.2s;
-    box-shadow: 0 4px 20px rgba(13,148,136,0.35);
-    letter-spacing: 0.3px;
+    box-shadow: 0 3px 16px rgba(13,148,136,0.3);
+    letter-spacing: 0.2px;
 }
 .btn-pay-cta:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 28px rgba(13,148,136,0.45);
+    box-shadow: 0 5px 22px rgba(13,148,136,0.4);
 }
 .btn-pay-cta:active { transform: translateY(0); }
 .btn-pay-cta:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
@@ -1436,3 +1437,118 @@ textarea.pay-input {
         max-width: 230px !important;
     }
 }
+
+/* ================================================================
+   HEADER THEME & BELL BUTTONS (NẰM GỌN TRÊN HEADER, KHÔNG TRÔI NỔI ĐÈ CHỮ)
+   ================================================================ */
+.payment-page .app-brand-head {
+    position: relative !important;
+}
+.payment-page .app-brand-head #themeToggle,
+.payment-page .app-brand-head .bnav-theme-float {
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    right: 20px !important;
+    z-index: 1025 !important;
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+.payment-page .app-brand-head #pushBellToggle,
+.payment-page .app-brand-head .bnav-bell-float {
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    right: 74px !important;
+    z-index: 1025 !important;
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+@media (max-width: 575px) {
+    .payment-page .app-brand-head #themeToggle,
+    .payment-page .app-brand-head .bnav-theme-float {
+        right: 12px !important;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 0.95rem !important;
+    }
+    .payment-page .app-brand-head #pushBellToggle,
+    .payment-page .app-brand-head .bnav-bell-float {
+        right: 56px !important;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 0.95rem !important;
+    }
+}
+
+/* ================================================================
+   ẨN NÚT FLOATING "VỀ KÊNH QUẢN TRỊ" ĐỂ TRÁNH ĐÈ LÊN HÓA ĐƠN & NÚT ĐẶT CỌC
+   ================================================================ */
+.payment-page .owner-return-link,
+body.payment-page .owner-return-link,
+#ownerReturnLink {
+    display: none !important;
+}
+
+/* ================================================================
+   SỬA LỖI MÀU CHỮ DARK MODE CHO BANNER HỘI VIÊN & DÒNG GIẢM GIÁ
+   ================================================================ */
+[data-bs-theme="dark"] #memberVipBanner {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(56, 189, 248, 0.28)) !important;
+    border-left: 4px solid #38bdf8 !important;
+    color: #f0f9ff !important;
+}
+[data-bs-theme="dark"] #memberVipBanner #memberBannerText,
+[data-bs-theme="dark"] #memberVipBanner strong,
+[data-bs-theme="dark"] #memberVipBanner span {
+    color: #f0f9ff !important;
+}
+[data-bs-theme="dark"] #memberVipBanner #memberBannerPercent {
+    color: #fb7185 !important;
+}
+[data-bs-theme="dark"] #memberVipBanner #memberBannerIcon {
+    color: #38bdf8 !important;
+}
+[data-bs-theme="dark"] #prowMembership {
+    color: #38bdf8 !important;
+}
+[data-bs-theme="dark"] #prowMembership span {
+    color: #7dd3fc !important;
+}
+
+/* ================================================================
+   BẢO VỆ THANH ĐIỀU HƯỚNG DƯỚI (BOTTOM NAV) KHÔNG BỊ TRONG SUỐT HOẶC BỊ ĐÈ
+   ================================================================ */
+#godmintonBottomNav {
+    z-index: 1050 !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+[data-bs-theme="dark"] #godmintonBottomNav {
+    background: #0b1e24 !important;
+    background-color: #0b1e24 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Hạ z-index của cột tóm tắt đơn để không đè lên thanh menu dưới */
+.payment-page .sticky-top {
+    z-index: 1010 !important;
+}
+
+/* Đảm bảo toàn trang có đủ padding-bottom để cuộn thoáng qua thanh bottom nav */
+body.payment-page {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+

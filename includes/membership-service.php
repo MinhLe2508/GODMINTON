@@ -21,10 +21,26 @@ class MembershipError extends RuntimeException {
 }
 
 /**
+ * Tự động chuyển các gói hội viên đã qua 23h59p ngày kết thúc sang trạng thái 'expired'
+ */
+function membership_sync_expired(PDO $pdo): int {
+    $stmt = $pdo->prepare("
+        UPDATE user_memberships 
+        SET status = 'expired', updated_at = NOW() 
+        WHERE status = 'active' AND end_date < NOW()
+    ");
+    $stmt->execute();
+    return $stmt->rowCount();
+}
+
+/**
  * Lấy gói hội viên đang có hiệu lực của người dùng (nếu có)
  */
 function membership_get_active_for_user(PDO $pdo, int $userId): ?array {
     if ($userId <= 0) return null;
+
+    // Tự động đồng bộ trạng thái hết hạn sau 23h59p
+    membership_sync_expired($pdo);
 
     $stmt = $pdo->prepare("
         SELECT um.*, p.title AS package_title, p.slug AS package_slug, p.cover_image, p.benefits
@@ -169,13 +185,15 @@ function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymen
     $startDate = $now;
     $isExtend = ($active && $active['tier'] === $tier);
 
-    // Tính hạn dự kiến (sẽ được chốt chính xác khi Admin duyệt)
+    // Tính hạn dự kiến (sẽ được chốt chính xác khi Admin duyệt, hết hạn vào 23:59:59 ngày cuối cùng)
     if ($isExtend) {
         $currentEnd = strtotime($active['end_date']);
         $baseTime = ($currentEnd > time()) ? $currentEnd : time();
-        $endDate = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", $baseTime));
+        $targetDate = date('Y-m-d', strtotime("+{$durationDays} days", $baseTime));
+        $endDate = $targetDate . ' 23:59:59';
     } else {
-        $endDate = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", time()));
+        $targetDate = date('Y-m-d', strtotime("+{$durationDays} days", time()));
+        $endDate = $targetDate . ' 23:59:59';
     }
 
     // Tạo bản ghi user_memberships với status = 'pending'
@@ -249,17 +267,20 @@ function membership_approve(PDO $pdo, int $membershipId): array {
             // Gia hạn cùng hạng: cộng dồn thời hạn
             $curEnd = strtotime($active['end_date']);
             $baseTime = ($curEnd > time()) ? $curEnd : time();
-            $newEnd = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", $baseTime));
+            $targetDate = date('Y-m-d', strtotime("+{$durationDays} days", $baseTime));
+            $newEnd = $targetDate . ' 23:59:59';
             $newStart = $active['start_date'];
         } else {
             // Đổi hạng: hủy gói cũ, tính mới từ NOW()
             $pdo->prepare("UPDATE user_memberships SET status = 'cancelled' WHERE id = ?")->execute([$active['id']]);
             $newStart = $now;
-            $newEnd = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", time()));
+            $targetDate = date('Y-m-d', strtotime("+{$durationDays} days", time()));
+            $newEnd = $targetDate . ' 23:59:59';
         }
     } else {
         $newStart = $now;
-        $newEnd = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", time()));
+        $targetDate = date('Y-m-d', strtotime("+{$durationDays} days", time()));
+        $newEnd = $targetDate . ' 23:59:59';
     }
 
     $upd = $pdo->prepare("

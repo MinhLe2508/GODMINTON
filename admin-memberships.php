@@ -52,23 +52,99 @@ $currentUser = [
             color: #f1f5f9;
             border: 1px solid rgba(255,255,255,0.2);
         }
-        .stat-tier-group {
+        /* Segmented Tier Distribution KPI */
+        .stat-tier-segmented {
             display: flex;
             align-items: center;
-            flex-wrap: wrap;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 0.75rem;
+            padding: 0.35rem 0.5rem;
             gap: 0.35rem;
-            margin-bottom: 0.45rem;
+            margin-bottom: 0;
         }
-        .stat-tier-pill {
-            font-size: 0.74rem;
-            font-weight: 700;
-            padding: 0.28rem 0.58rem;
-            line-height: 1.15;
-            display: inline-flex;
+        [data-bs-theme="dark"] .stat-tier-segmented {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        .stat-tier-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            letter-spacing: 0.01em;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+            min-width: 0;
+            text-align: center;
+            padding: 0.1rem 0;
+        }
+        .stat-tier-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.08);
+            flex-shrink: 0;
+        }
+        [data-bs-theme="dark"] .stat-tier-divider {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .stat-tier-num {
+            font-size: 1.15rem;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+        .stat-tier-name {
+            font-size: 0.65rem;
+            font-weight: 700;
+            line-height: 1.2;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            margin-top: 0.15rem;
+            white-space: nowrap;
+        }
+        .stat-tier-name .tier-icon {
+            font-size: 0.6rem;
+        }
+        /* Tier colors */
+        .tier-col-silver .stat-tier-num,
+        .tier-col-silver .stat-tier-name {
+            color: #64748b;
+        }
+        .tier-col-gold .stat-tier-num,
+        .tier-col-gold .stat-tier-name {
+            color: #d97706;
+        }
+        .tier-col-platinum .stat-tier-num,
+        .tier-col-platinum .stat-tier-name {
+            color: #0d9488;
+        }
+        [data-bs-theme="dark"] .tier-col-silver .stat-tier-num,
+        [data-bs-theme="dark"] .tier-col-silver .stat-tier-name {
+            color: #94a3b8;
+        }
+        [data-bs-theme="dark"] .tier-col-gold .stat-tier-num,
+        [data-bs-theme="dark"] .tier-col-gold .stat-tier-name {
+            color: #fbbf24;
+        }
+        [data-bs-theme="dark"] .tier-col-platinum .stat-tier-num,
+        [data-bs-theme="dark"] .tier-col-platinum .stat-tier-name {
+            color: #2dd4bf;
+        }
+        @media (max-width: 576px) {
+            .stat-tier-segmented {
+                padding: 0.2rem 0.25rem;
+                gap: 0.15rem;
+            }
+            .stat-tier-num {
+                font-size: 0.95rem;
+            }
+            .stat-tier-name {
+                font-size: 0.6rem;
+                gap: 0.1rem;
+            }
+            .stat-tier-divider {
+                height: 18px;
+            }
         }
         .user-avatar-sm {
             width: 40px;
@@ -133,6 +209,13 @@ $currentUser = [
                 max-width: 100% !important;
                 padding-bottom: 0.35rem !important;
             }
+        .admin-table th.text-nowrap,
+        .admin-table td.text-nowrap {
+            white-space: nowrap !important;
+        }
+        .admin-table .btn-open-extend {
+            white-space: nowrap !important;
+            vertical-align: middle !important;
         }
         #grantUserResultsList {
             box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15) !important;
@@ -201,9 +284,9 @@ $currentUser = [
                         <div class="admin-stat-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
                             <i class="fa-solid fa-user-clock"></i>
                         </div>
-                        <div>
-                            <div class="admin-stat-value text-warning fw-extrabold" id="statPendingApproval">0</div>
-                            <div class="admin-stat-label">Chờ admin duyệt xác nhận</div>
+                        <div class="d-flex align-items-center gap-2 min-w-0">
+                            <span class="admin-stat-value text-warning fw-extrabold" id="statPendingApproval">0</span>
+                            <span class="admin-stat-label">Chờ admin duyệt xác nhận</span>
                         </div>
                     </div>
                 </div>
@@ -212,24 +295,37 @@ $currentUser = [
                         <div class="admin-stat-icon bg-teal-subtle text-teal">
                             <i class="fa-solid fa-crown text-warning"></i>
                         </div>
-                        <div>
-                            <div class="admin-stat-value text-teal" id="statActiveMembers">0</div>
-                            <div class="admin-stat-label">Hội viên đang hoạt động</div>
+                        <div class="d-flex align-items-center gap-2 min-w-0">
+                            <span class="admin-stat-value text-teal" id="statActiveMembers">0</span>
+                            <span class="admin-stat-label">Hội viên đang hoạt động</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-6 col-lg-3">
                     <div class="admin-stat-card">
-                        <div class="admin-stat-icon bg-secondary bg-opacity-10 text-secondary">
-                            <i class="fa-solid fa-layer-group"></i>
-                        </div>
-                        <div>
-                            <div class="stat-tier-group">
-                                <span class="badge stat-tier-pill tier-badge-silver rounded-pill" id="statCountSilver">Bạc: 0</span>
-                                <span class="badge stat-tier-pill tier-badge-gold rounded-pill" id="statCountGold">Vàng: 0</span>
-                                <span class="badge stat-tier-pill tier-badge-platinum rounded-pill" id="statCountPlatinum">B.Kim: 0</span>
+                        <div class="w-100 min-w-0">
+                            <div class="stat-tier-segmented">
+                                <div class="stat-tier-col tier-col-silver" title="Hội viên Bạc">
+                                    <span class="stat-tier-num" id="statCountSilver">0</span>
+                                    <span class="stat-tier-name">
+                                        <i class="fa-solid fa-medal tier-icon"></i>Bạc
+                                    </span>
+                                </div>
+                                <div class="stat-tier-divider"></div>
+                                <div class="stat-tier-col tier-col-gold" title="Hội viên Vàng">
+                                    <span class="stat-tier-num" id="statCountGold">0</span>
+                                    <span class="stat-tier-name">
+                                        <i class="fa-solid fa-crown tier-icon"></i>Vàng
+                                    </span>
+                                </div>
+                                <div class="stat-tier-divider"></div>
+                                <div class="stat-tier-col tier-col-platinum" title="Hội viên Bạch Kim">
+                                    <span class="stat-tier-num" id="statCountPlatinum">0</span>
+                                    <span class="stat-tier-name">
+                                        <i class="fa-solid fa-gem tier-icon"></i>B.Kim
+                                    </span>
+                                </div>
                             </div>
-                            <div class="admin-stat-label">Phân bố hạng thành viên</div>
                         </div>
                     </div>
                 </div>
@@ -284,7 +380,7 @@ $currentUser = [
                                     <th>Thời hạn gói</th>
                                     <th>Thanh toán</th>
                                     <th>Trạng thái</th>
-                                    <th class="text-end">Thao tác</th>
+                                    <th class="text-end text-nowrap">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody id="membershipTableBody">
@@ -456,6 +552,37 @@ $currentUser = [
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL: CHI TIẾT HÓA ĐƠN GÓI HỘI VIÊN ==================== -->
+<div class="modal fade" id="membershipInvoiceModal" tabindex="-1" aria-labelledby="modalInvoiceTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="modal-title fw-bold fs-5 mb-1" id="modalInvoiceTitle">
+                        <i class="fa-solid fa-file-invoice-dollar text-teal me-2"></i>Chi Tiết Hóa Đơn Hội Viên
+                    </h5>
+                    <div class="small text-muted" id="modalInvoiceSub">Mã đăng ký: #MB-000000</div>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <span id="modalInvoiceStatusBadge"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+            </div>
+            <div class="modal-body p-4" id="modalInvoiceBody">
+                <!-- Nội dung chi tiết hóa đơn render bằng JS -->
+            </div>
+            <div class="modal-footer border-top bg-light-subtle rounded-bottom-4 d-flex justify-content-between align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="window.print()">
+                    <i class="fa-solid fa-print me-1"></i> In hóa đơn
+                </button>
+                <div class="d-flex gap-2" id="modalInvoiceFooterActions">
+                    <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>

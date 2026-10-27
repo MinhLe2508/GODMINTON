@@ -218,7 +218,6 @@ $currentUser = [
                                 <option value="membership">Gói hội viên ưu đãi (Membership)</option>
                                 <option value="announcement">Thông báo (Announcement)</option>
                             </select>
-                            <div class="form-text" style="font-size: 0.72rem;">Các trường đặc thù bên dưới sẽ tự động thay đổi theo loại bài.</div>
                         </div>
 
                         <!-- Trạng thái bài -->
@@ -250,6 +249,16 @@ $currentUser = [
                         <div class="col-12">
                             <label for="formPostSummary" class="form-label fw-semibold small">Tóm tắt ngắn</label>
                             <textarea class="form-control" id="formPostSummary" rows="2" placeholder="Tóm tắt 1-2 câu hiển thị ở danh sách bài viết..."></textarea>
+                        </div>
+
+                        <!-- Mã giảm giá đính kèm (Tùy chọn) -->
+                        <div class="col-12">
+                            <label for="formPostVoucher" class="form-label fw-semibold small">
+                                <i class="fa-solid fa-ticket text-teal me-1"></i> Mã giảm giá đính kèm bài viết (Tùy chọn)
+                            </label>
+                            <select class="form-select" id="formPostVoucher">
+                                <option value="">-- Không đính kèm mã giảm giá --</option>
+                            </select>
                         </div>
 
                         <!-- ================= TRƯỜNG ĐẶC THÙ CHO SỰ KIỆN ================= -->
@@ -333,7 +342,7 @@ $currentUser = [
                         <div class="col-md-6">
                             <label for="formExpireAt" class="form-label fw-semibold small">Thời điểm hết hạn tự ẩn (Expire At)</label>
                             <input type="datetime-local" class="form-control" id="formExpireAt">
-                            <div class="form-text" style="font-size: 0.72rem;">Để trống nếu bài viết không bao giờ hết hạn.</div>
+                            <div class="form-text" style="font-size: 0.72rem;"><span class="text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Chú ý:</span> Bài viết sẽ <strong>tự động ẩn</strong> sau thời điểm này. <strong>Để trống</strong> nếu muốn bài luôn hiển thị.</div>
                         </div>
                     </div>
                 </div>

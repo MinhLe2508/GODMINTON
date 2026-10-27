@@ -21,6 +21,9 @@ try {
 
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
+    // Tự động chuyển các gói hội viên đã qua 23h59p ngày kết thúc sang trạng thái 'expired'
+    membership_sync_expired($pdo);
+
     // ==========================================
     // GET: Thống kê & Danh sách hội viên
     // ==========================================
@@ -295,13 +298,16 @@ try {
                     // Cộng dồn thời hạn
                     $curEnd = strtotime($active['end_date']);
                     $baseTime = ($curEnd > time()) ? $curEnd : time();
-                    $endDate = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", $baseTime));
+                    $targetDate = date('Y-m-d', strtotime("+{$durationDays} days", $baseTime));
+                    $endDate = $targetDate . ' 23:59:59';
                 } else {
-                    $endDate = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", time()));
+                    $targetDate = date('Y-m-d', strtotime("+{$durationDays} days", time()));
+                    $endDate = $targetDate . ' 23:59:59';
                     $pdo->prepare("UPDATE user_memberships SET status = 'cancelled' WHERE id = ?")->execute([$active['id']]);
                 }
             } else {
-                $endDate = date('Y-m-d H:i:s', strtotime("+{$durationDays} days", time()));
+                $targetDate = date('Y-m-d', strtotime("+{$durationDays} days", time()));
+                $endDate = $targetDate . ' 23:59:59';
             }
 
             $insStmt = $pdo->prepare("
@@ -352,7 +358,8 @@ try {
 
             $curEnd = strtotime($mem['end_date']);
             $baseTime = ($curEnd > time()) ? $curEnd : time();
-            $newEndDate = date('Y-m-d H:i:s', strtotime("+{$addDays} days", $baseTime));
+            $targetDate = date('Y-m-d', strtotime("+{$addDays} days", $baseTime));
+            $newEndDate = $targetDate . ' 23:59:59';
             $newDuration = (int)$mem['duration_days'] + $addDays;
 
             $upd = $pdo->prepare("

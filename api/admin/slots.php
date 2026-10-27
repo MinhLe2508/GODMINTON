@@ -49,15 +49,19 @@ function ensureSlotsSchema(PDO $pdo): void {
 
     try {
         $colStatus = $pdo->query("SHOW COLUMNS FROM time_slots LIKE 'status'")->fetch();
-        if ($colStatus && isset($colStatus['Type']) && strpos($colStatus['Type'], "'blocked'") === false) {
+        if ($colStatus && isset($colStatus['Type']) && (strpos($colStatus['Type'], "'blocked'") === false || strpos($colStatus['Type'], "'maintenance'") === false)) {
             $pdo->exec("
                 ALTER TABLE time_slots
-                MODIFY COLUMN status ENUM('available', 'holding', 'booked', 'blocked') NOT NULL DEFAULT 'available'
+                MODIFY COLUMN status ENUM('available', 'holding', 'booked', 'blocked', 'maintenance') NOT NULL DEFAULT 'available'
             ");
         }
         $colPrice = $pdo->query("SHOW COLUMNS FROM time_slots LIKE 'price'")->fetch();
         if (!$colPrice) {
             $pdo->exec("ALTER TABLE time_slots ADD COLUMN price DECIMAL(10,0) NULL AFTER end_time");
+        }
+        $colNote = $pdo->query("SHOW COLUMNS FROM time_slots LIKE 'note'")->fetch();
+        if (!$colNote) {
+            $pdo->exec("ALTER TABLE time_slots ADD COLUMN note VARCHAR(255) NULL AFTER status");
         }
     } catch (Throwable $e) {
         error_log('[admin/slots.php ensureSlotsSchema] ' . $e->getMessage());
@@ -104,10 +108,16 @@ function minutesToSqlTime(int $totalMinutes): string {
  */
 function fetchFormattedSlots(PDO $pdo, array $court, string $dateStr): array {
     $stmt = $pdo->prepare("
-        SELECT id, court_id, sub_court_name, slot_date, start_time, end_time, price, status, held_by, hold_expires_at
-        FROM time_slots
-        WHERE court_id = ? AND slot_date = ?
-        ORDER BY sub_court_name ASC, start_time ASC
+        SELECT ts.id, ts.court_id, ts.sub_court_name, ts.slot_date, ts.start_time, ts.end_time, ts.price, ts.status, ts.note,
+               ts.held_by, ts.hold_expires_at,
+               b.id AS booking_id, b.booking_code, b.status AS booking_status,
+               u.name AS customer_name, u.phone AS customer_phone
+        FROM time_slots ts
+        LEFT JOIN booking_slots bs ON bs.slot_id = ts.id
+        LEFT JOIN bookings b ON b.id = bs.booking_id AND b.status != 'cancelled'
+        LEFT JOIN users u ON u.id = b.user_id
+        WHERE ts.court_id = ? AND ts.slot_date = ?
+        ORDER BY ts.sub_court_name ASC, ts.start_time ASC
     ");
     $stmt->execute([(int)$court['id'], $dateStr]);
     $rows = $stmt->fetchAll();
@@ -142,9 +152,15 @@ function fetchFormattedSlots(PDO $pdo, array $court, string $dateStr): array {
             'price'           => $slotPrice,
             'price_formatted' => number_format($slotPrice, 0, '', '.') . ' đ',
             'status'          => $r['status'],
+            'note'            => $r['note'] ?? null,
             'held_by'         => $r['held_by'] ? (int)$r['held_by'] : null,
             'holding_user_id' => $r['held_by'] ? (int)$r['held_by'] : null,
             'hold_expires_at' => $r['hold_expires_at'],
+            'booking_id'      => $r['booking_id'] ? (int)$r['booking_id'] : null,
+            'booking_code'    => $r['booking_code'] ?? null,
+            'booking_status'  => $r['booking_status'] ?? null,
+            'customer_name'   => $r['customer_name'] ?? null,
+            'customer_phone'  => $r['customer_phone'] ?? null,
         ];
     }
 
@@ -161,11 +177,11 @@ if (!is_array($input)) {
 }
 
 // Hỗ trợ truyền action qua POST cho các môi trường chặn PATCH/DELETE
-if ($method === 'POST' && !empty($input['action'])) {
-    $act = strtolower(trim((string)$input['action']));
-    if (in_array($act, ['status', 'set_status', 'toggle_status'], true)) {
+$action = strtolower(trim((string)($input['action'] ?? '')));
+if ($method === 'POST' && !empty($action)) {
+    if (in_array($action, ['status', 'set_status', 'toggle_status', 'update'], true)) {
         $method = 'PATCH';
-    } elseif (in_array($act, ['delete', 'remove', 'clear_day'], true)) {
+    } elseif (in_array($action, ['delete', 'remove', 'clear_day'], true)) {
         $method = 'DELETE';
     }
 }
@@ -209,11 +225,147 @@ try {
     }
 
     // =====================================================================
-    // 2. POST — Tạo khung giờ hàng loạt (Bulk Generate)
+    // 2. POST — Xử lý các nghiệp vụ hàng loạt (Tạo khung, Bảo trì, Mở lại, Đổi giá)
     // =====================================================================
     if ($method === 'POST') {
-        $courtId     = (int)($input['court_id'] ?? 0);
-        $dateStr     = trim((string)($input['slot_date'] ?? $input['date'] ?? ''));
+        $courtId = (int)($input['court_id'] ?? 0);
+        $dateStr = trim((string)($input['slot_date'] ?? $input['date'] ?? ''));
+
+        // --- A. BẢO TRÌ HÀNG LOẠT (BULK MAINTENANCE) ---
+        if ($action === 'bulk_maintenance') {
+            if ($courtId <= 0 || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr)) {
+                jsonOut(422, ['status' => 'error', 'message' => 'Vui lòng chọn sân và ngày hợp lệ.']);
+            }
+            $court = assertCourtAccess($pdo, $courtId, $currentUserId, $currentRole);
+            $subCourt  = trim((string)($input['sub_court_name'] ?? 'all'));
+            $startTime = trim((string)($input['start_time'] ?? ''));
+            $endTime   = trim((string)($input['end_time'] ?? ''));
+            $statusReq = strtolower(trim((string)($input['status'] ?? 'maintenance')));
+            $status    = in_array($statusReq, ['maintenance', 'blocked'], true) ? $statusReq : 'maintenance';
+            $note      = trim((string)($input['note'] ?? 'Bảo trì hệ thống'));
+
+            if (!$pdo->inTransaction()) $pdo->beginTransaction();
+
+            $sql = "UPDATE time_slots 
+                       SET status = ?, note = ?, held_by = NULL, hold_expires_at = NULL 
+                     WHERE court_id = ? AND slot_date = ? AND status IN ('available', 'blocked', 'maintenance')";
+            $params = [$status, $note, $courtId, $dateStr];
+
+            if ($subCourt !== '' && $subCourt !== 'all') {
+                $sql .= " AND sub_court_name = ?";
+                $params[] = $subCourt;
+            }
+            if ($startTime !== '') {
+                $sql .= " AND start_time >= ?";
+                $params[] = strlen($startTime) === 5 ? "{$startTime}:00" : $startTime;
+            }
+            if ($endTime !== '') {
+                $sql .= " AND end_time <= ?";
+                $params[] = strlen($endTime) === 5 ? "{$endTime}:00" : $endTime;
+            }
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $affected = $stmt->rowCount();
+            $pdo->commit();
+
+            $allSlots = fetchFormattedSlots($pdo, $court, $dateStr);
+            jsonOut(200, [
+                'status'  => 'success',
+                'message' => "Đã chuyển {$affected} khung giờ sang chế độ {$status} thành công.",
+                'data'    => [
+                    'affected' => $affected,
+                    'slots'    => $allSlots
+                ]
+            ]);
+        }
+
+        // --- B. MỞ LẠI NHẬN KHÁCH HÀNG LOẠT (BULK REOPEN) ---
+        if ($action === 'bulk_reopen') {
+            if ($courtId <= 0 || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr)) {
+                jsonOut(422, ['status' => 'error', 'message' => 'Vui lòng chọn sân và ngày hợp lệ.']);
+            }
+            $court = assertCourtAccess($pdo, $courtId, $currentUserId, $currentRole);
+            $subCourt  = trim((string)($input['sub_court_name'] ?? 'all'));
+            $startTime = trim((string)($input['start_time'] ?? ''));
+            $endTime   = trim((string)($input['end_time'] ?? ''));
+
+            if (!$pdo->inTransaction()) $pdo->beginTransaction();
+
+            $sql = "UPDATE time_slots 
+                       SET status = 'available', note = NULL, held_by = NULL, hold_expires_at = NULL 
+                     WHERE court_id = ? AND slot_date = ? AND status IN ('blocked', 'maintenance')";
+            $params = [$courtId, $dateStr];
+
+            if ($subCourt !== '' && $subCourt !== 'all') {
+                $sql .= " AND sub_court_name = ?";
+                $params[] = $subCourt;
+            }
+            if ($startTime !== '') {
+                $sql .= " AND start_time >= ?";
+                $params[] = strlen($startTime) === 5 ? "{$startTime}:00" : $startTime;
+            }
+            if ($endTime !== '') {
+                $sql .= " AND end_time <= ?";
+                $params[] = strlen($endTime) === 5 ? "{$endTime}:00" : $endTime;
+            }
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $affected = $stmt->rowCount();
+            $pdo->commit();
+
+            $allSlots = fetchFormattedSlots($pdo, $court, $dateStr);
+            jsonOut(200, [
+                'status'  => 'success',
+                'message' => "Đã mở lại {$affected} khung giờ cho khách đặt.",
+                'data'    => [
+                    'affected' => $affected,
+                    'slots'    => $allSlots
+                ]
+            ]);
+        }
+
+        // --- C. ĐIỀU CHỈNH GIÁ HÀNG LOẠT (BULK PRICE) ---
+        if ($action === 'bulk_price') {
+            if ($courtId <= 0 || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr)) {
+                jsonOut(422, ['status' => 'error', 'message' => 'Vui lòng chọn sân và ngày hợp lệ.']);
+            }
+            $court = assertCourtAccess($pdo, $courtId, $currentUserId, $currentRole);
+            $subCourt = trim((string)($input['sub_court_name'] ?? 'all'));
+            $newPrice = isset($input['price']) && is_numeric($input['price']) ? max(0, (int)$input['price']) : null;
+
+            if ($newPrice === null) {
+                jsonOut(422, ['status' => 'error', 'message' => 'Vui lòng cung cấp mức giá hợp lệ.']);
+            }
+
+            if (!$pdo->inTransaction()) $pdo->beginTransaction();
+
+            $sql = "UPDATE time_slots SET price = ? WHERE court_id = ? AND slot_date = ? AND status != 'booked'";
+            $params = [$newPrice, $courtId, $dateStr];
+
+            if ($subCourt !== '' && $subCourt !== 'all') {
+                $sql .= " AND sub_court_name = ?";
+                $params[] = $subCourt;
+            }
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $affected = $stmt->rowCount();
+            $pdo->commit();
+
+            $allSlots = fetchFormattedSlots($pdo, $court, $dateStr);
+            jsonOut(200, [
+                'status'  => 'success',
+                'message' => "Đã cập nhật giá cho {$affected} khung giờ thành " . number_format($newPrice, 0, '', '.') . ' đ.',
+                'data'    => [
+                    'affected' => $affected,
+                    'slots'    => $allSlots
+                ]
+            ]);
+        }
+
+        // --- D. TẠO KHUNG GIỜ HÀNG LOẠT (BULK GENERATE) ---
         $startTime   = trim((string)($input['start_time'] ?? $input['startTime'] ?? '06:00'));
         $endTime     = trim((string)($input['end_time'] ?? $input['endTime'] ?? '22:00'));
         $durationMin = (int)($input['duration_min'] ?? $input['durationMin'] ?? 60);
@@ -251,7 +403,7 @@ try {
 
         if(!$pdo->inTransaction())$pdo->beginTransaction();
 
-        // Lấy các khung giờ đã tồn tại trong ngày của sân để tránh tạo trùng hoặc chồng lấn giờ
+        // Lấy các khung giờ đã tồn tại trong ngày của sân để kiểm tra trùng
         $existStmt = $pdo->prepare("
             SELECT sub_court_name, start_time, end_time
             FROM time_slots
@@ -270,8 +422,50 @@ try {
             ];
         }
 
+        // 1. Kiểm tra toàn bộ xem có khung giờ nào của thảm nào bị trùng/đã tồn tại trước không
+        $clashes = [];
+        $cursor = $startMin;
+        while ($cursor + $durationMin <= $endMin) {
+            $slotStartMin = $cursor;
+            $slotEndMin   = $cursor + $durationMin;
+            $previewStart = minutesToSqlTime($slotStartMin);
+            $previewEnd   = minutesToSqlTime($slotEndMin);
+            $startDisplay = substr($previewStart, 0, 5);
+            $endDisplay   = substr($previewEnd, 0, 5);
+
+            foreach ($subCourts as $subName) {
+                foreach ($existingBySub[$subName] ?? [] as $ex) {
+                    // Kiểm tra giao nhau: startA < endB && endA > startB
+                    if ($slotStartMin < $ex['end'] && $slotEndMin > $ex['start']) {
+                        $clashes[] = "{$subName} ({$startDisplay}-{$endDisplay})";
+                        break;
+                    }
+                }
+            }
+            $cursor += $durationMin;
+        }
+
+        if (!empty($clashes)) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $clashCount = count($clashes);
+            $preview = array_slice($clashes, 0, 4);
+            $msg = "Khung giờ hoặc thảm sau đã được tạo trước đó: " . implode(', ', $preview);
+            if ($clashCount > 4) {
+                $msg .= " và " . ($clashCount - 4) . " khung giờ khác.";
+            } else {
+                $msg .= ".";
+            }
+            $msg .= " Vui lòng kiểm tra lại hoặc xóa khung giờ cũ trước khi tạo!";
+            jsonOut(409, [
+                'status'  => 'error',
+                'message' => $msg,
+                'clashes' => $clashes,
+            ]);
+        }
+
+        // 2. Nếu không có khung giờ nào trùng, tiến hành tạo mới toàn bộ
         $insStmt = $pdo->prepare("
-            INSERT IGNORE INTO time_slots (court_id, sub_court_name, slot_date, start_time, end_time, price, status)
+            INSERT INTO time_slots (court_id, sub_court_name, slot_date, start_time, end_time, price, status)
             VALUES (?, ?, ?, ?, ?, ?, 'available')
         ");
 
@@ -284,21 +478,8 @@ try {
             $sqlEnd       = minutesToSqlTime($slotEndMin);
 
             foreach ($subCourts as $subName) {
-                $clash = false;
-                foreach ($existingBySub[$subName] ?? [] as $ex) {
-                    // Kiểm tra giao nhau: startA < endB && endA > startB
-                    if ($slotStartMin < $ex['end'] && $slotEndMin > $ex['start']) {
-                        $clash = true;
-                        break;
-                    }
-                }
-                if (!$clash) {
-                    $insStmt->execute([$courtId, $subName, $dateStr, $sqlStart, $sqlEnd, $slotPrice]);
-                    if ($insStmt->rowCount() > 0) {
-                        $createdCount++;
-                        $existingBySub[$subName][] = ['start' => $slotStartMin, 'end' => $slotEndMin];
-                    }
-                }
+                $insStmt->execute([$courtId, $subName, $dateStr, $sqlStart, $sqlEnd, $slotPrice]);
+                $createdCount++;
             }
             $cursor += $durationMin;
         }
@@ -308,9 +489,7 @@ try {
         $allSlots = fetchFormattedSlots($pdo, $court, $dateStr);
         jsonOut(200, [
             'status'  => 'success',
-            'message' => $createdCount > 0
-                ? "Đã tạo thêm {$createdCount} khung giờ mới."
-                : 'Tất cả khung giờ trong khoảng đã chọn đều đã tồn tại.',
+            'message' => "Đã tạo thành công {$createdCount} khung giờ mới.",
             'data'    => [
                 'createdCount' => $createdCount,
                 'total'        => count($allSlots),
@@ -320,14 +499,21 @@ try {
     }
 
     // =====================================================================
-    // 3. PATCH / PUT — Đổi trạng thái từng khung giờ (available ↔ blocked)
+    // 3. PATCH / PUT — Đổi trạng thái, lý do bảo trì, giá vé hoặc ghi chú nội bộ
     // =====================================================================
     if ($method === 'PATCH' || $method === 'PUT') {
         $slotId    = (int)($input['slot_id'] ?? $input['id'] ?? $_GET['id'] ?? 0);
-        $newStatus = strtolower(trim((string)($input['status'] ?? '')));
+        $newStatus = isset($input['status']) ? strtolower(trim((string)$input['status'])) : null;
+        $hasNote   = array_key_exists('note', $input);
+        $newNote   = $hasNote ? trim((string)$input['note']) : null;
+        $hasPrice  = array_key_exists('price', $input) && is_numeric($input['price']);
+        $newPrice  = $hasPrice ? max(0, (int)$input['price']) : null;
 
-        if ($slotId <= 0 || !in_array($newStatus, ['available', 'blocked'], true)) {
-            jsonOut(422, ['status' => 'error', 'message' => 'Tham số slot_id hoặc trạng thái không hợp lệ (chỉ hỗ trợ available / blocked).']);
+        if ($slotId <= 0) {
+            jsonOut(422, ['status' => 'error', 'message' => 'Thiếu tham số slot_id hợp lệ.']);
+        }
+        if ($newStatus !== null && !in_array($newStatus, ['available', 'blocked', 'maintenance'], true)) {
+            jsonOut(422, ['status' => 'error', 'message' => 'Trạng thái không hợp lệ (hỗ trợ: available, blocked, maintenance).']);
         }
 
         $stmt = $pdo->prepare("
@@ -346,29 +532,59 @@ try {
             jsonOut(403, ['status' => 'error', 'message' => 'Bạn không có quyền thay đổi khung giờ của sân này.']);
         }
 
+        // Nếu slot đã được đặt (booked):
         if ($slot['status'] === 'booked') {
-            jsonOut(409, ['status' => 'error', 'message' => 'Khung giờ đã có khách đặt — vui lòng xử lý ở mục "Quản lý đơn đặt".']);
+            if ($newStatus !== null && $newStatus !== 'booked') {
+                jsonOut(409, ['status' => 'error', 'message' => 'Khung giờ đã có khách đặt — không thể thay đổi trạng thái tại đây. Vui lòng xử lý ở mục "Quản lý đơn đặt".']);
+            }
+            // Cho phép cập nhật ghi chú nội bộ cho khung giờ booked
+            if ($hasNote) {
+                $upd = $pdo->prepare("UPDATE time_slots SET note = ? WHERE id = ?");
+                $upd->execute([$newNote !== '' ? $newNote : null, $slotId]);
+                $pdo->commit();
+                jsonOut(200, [
+                    'status'  => 'success',
+                    'message' => 'Đã lưu ghi chú nội bộ cho khung giờ.',
+                    'data'    => ['id' => $slotId, 'note' => $newNote]
+                ]);
+            }
+            jsonOut(409, ['status' => 'error', 'message' => 'Khung giờ đã có khách đặt.']);
         }
-        if ($slot['status'] === 'holding') {
+
+        if ($slot['status'] === 'holding' && $newStatus !== null) {
             jsonOut(409, ['status' => 'error', 'message' => 'Khung giờ đang được khách giữ chỗ tạm thời, chưa thể đổi trạng thái.']);
         }
 
+        // Cập nhật slot bình thường
+        $finalStatus = $newStatus !== null ? $newStatus : $slot['status'];
+        $finalNote = $hasNote ? ($newNote !== '' ? $newNote : null) : ($finalStatus === 'available' ? null : $slot['note']);
+        $finalPrice = $hasPrice ? $newPrice : $slot['price'];
+
         $upd = $pdo->prepare("
             UPDATE time_slots
-               SET status = ?, held_by = NULL, hold_expires_at = NULL
+               SET status = ?, note = ?, price = ?, held_by = NULL, hold_expires_at = NULL
              WHERE id = ?
         ");
-        $upd->execute([$newStatus, $slotId]);
+        $upd->execute([$finalStatus, $finalNote, $finalPrice, $slotId]);
         $pdo->commit();
+
+        $msg = 'Đã cập nhật thông tin khung giờ thành công.';
+        if ($newStatus === 'maintenance') {
+            $msg = 'Đã chuyển khung giờ sang chế độ bảo trì.';
+        } elseif ($newStatus === 'blocked') {
+            $msg = 'Đã tạm ngừng nhận đặt khung giờ.';
+        } elseif ($newStatus === 'available') {
+            $msg = 'Đã mở lại khung giờ cho khách đặt.';
+        }
 
         jsonOut(200, [
             'status'  => 'success',
-            'message' => $newStatus === 'blocked'
-                ? 'Đã tạm ngừng nhận đặt khung giờ.'
-                : 'Đã mở lại khung giờ cho khách đặt.',
+            'message' => $msg,
             'data'    => [
                 'id'     => $slotId,
-                'status' => $newStatus,
+                'status' => $finalStatus,
+                'note'   => $finalNote,
+                'price'  => $finalPrice,
             ],
         ]);
     }
@@ -378,35 +594,79 @@ try {
     // =====================================================================
     if ($method === 'DELETE') {
         $slotId   = (int)($_GET['id'] ?? $_GET['slot_id'] ?? $input['slot_id'] ?? $input['id'] ?? 0);
-        $clearDay = !empty($_GET['clear_day']) || !empty($input['clear_day']);
+        $isBulk = !empty($_GET['bulk_delete']) || !empty($input['bulk_delete']) || !empty($_GET['clear_day']) || !empty($input['clear_day']) || ($slotId <= 0 && (!empty($_GET['court_id']) || !empty($input['court_id'])));
 
-        // Xóa hàng loạt các slot chưa đặt (available / blocked) của 1 sân trong 1 ngày
-        if ($clearDay && $slotId <= 0) {
-            $courtId = (int)($_GET['court_id'] ?? $input['court_id'] ?? 0);
-            $dateStr = trim((string)($_GET['date'] ?? $input['slot_date'] ?? $input['date'] ?? ''));
+        // Xóa hàng loạt các slot chưa đặt (available / maintenance / blocked) theo thảm và khoảng thời gian
+        if ($isBulk) {
+            $courtId   = (int)($_GET['court_id'] ?? $input['court_id'] ?? 0);
+            $dateStr   = trim((string)($_GET['date'] ?? $input['slot_date'] ?? $input['date'] ?? ''));
+            $startTime = trim((string)($_GET['start_time'] ?? $input['start_time'] ?? ''));
+            $endTime   = trim((string)($_GET['end_time'] ?? $input['end_time'] ?? ''));
+            $subCourts = $_GET['sub_courts'] ?? $input['sub_courts'] ?? $input['subCourts'] ?? [];
+
+            if (is_string($subCourts)) {
+                $subCourts = array_filter(array_map('trim', explode(',', $subCourts)));
+            }
+            if (!is_array($subCourts)) {
+                $subCourts = [];
+            }
+            $subCourts = array_values(array_unique(array_filter(array_map('trim', $subCourts))));
+
             if ($courtId <= 0 || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr)) {
-                jsonOut(422, ['status' => 'error', 'message' => 'Thiếu court_id hoặc ngày cần xóa khung giờ.']);
+                jsonOut(422, ['status' => 'error', 'message' => 'Thiếu court_id hoặc ngày cần xóa khung giờ (YYYY-MM-DD).']);
             }
             assertCourtAccess($pdo, $courtId, $currentUserId, $currentRole);
 
-            if(!$pdo->inTransaction())$pdo->beginTransaction();
-            $pdo->prepare("
-                DELETE bs FROM booking_slots bs
-                JOIN time_slots ts ON ts.id = bs.slot_id
-                WHERE ts.court_id = ? AND ts.slot_date = ? AND ts.status IN ('available', 'blocked')
-            ")->execute([$courtId, $dateStr]);
+            $where = [
+                "court_id = ?",
+                "slot_date = ?",
+                "status IN ('available', 'maintenance', 'blocked')"
+            ];
+            $params = [$courtId, $dateStr];
 
-            $del = $pdo->prepare("
-                DELETE FROM time_slots
-                WHERE court_id = ? AND slot_date = ? AND status IN ('available', 'blocked')
-            ");
-            $del->execute([$courtId, $dateStr]);
-            $deletedCount = $del->rowCount();
+            if ($startTime !== '') {
+                $where[] = "start_time >= ?";
+                $params[] = strlen($startTime) === 5 ? "{$startTime}:00" : $startTime;
+            }
+            if ($endTime !== '') {
+                $where[] = "end_time <= ?";
+                $params[] = strlen($endTime) === 5 ? "{$endTime}:00" : $endTime;
+            }
+            if (!empty($subCourts)) {
+                $placeholders = implode(',', array_fill(0, count($subCourts), '?'));
+                $where[] = "sub_court_name IN ({$placeholders})";
+                foreach ($subCourts as $sc) {
+                    $params[] = $sc;
+                }
+            }
+
+            // Bảo vệ khung giờ đã có khách đặt
+            $where[] = "NOT EXISTS (SELECT 1 FROM booking_slots bs JOIN bookings b ON b.id = bs.booking_id WHERE bs.slot_id = time_slots.id AND b.status IN ('pending', 'confirmed', 'checked_in', 'completed'))";
+
+            $whereSql = implode(' AND ', $where);
+
+            if(!$pdo->inTransaction())$pdo->beginTransaction();
+
+            $findStmt = $pdo->prepare("SELECT id FROM time_slots WHERE {$whereSql} FOR UPDATE");
+            $findStmt->execute($params);
+            $targetSlotIds = $findStmt->fetchAll(PDO::FETCH_COLUMN, 0);
+
+            $deletedCount = 0;
+            if (!empty($targetSlotIds)) {
+                $idPlaceholders = implode(',', array_fill(0, count($targetSlotIds), '?'));
+                $pdo->prepare("DELETE FROM booking_slots WHERE slot_id IN ({$idPlaceholders})")->execute($targetSlotIds);
+                $del = $pdo->prepare("DELETE FROM time_slots WHERE id IN ({$idPlaceholders})");
+                $del->execute($targetSlotIds);
+                $deletedCount = $del->rowCount();
+            }
+
             $pdo->commit();
 
             jsonOut(200, [
                 'status'  => 'success',
-                'message' => "Đã xóa {$deletedCount} khung giờ chưa có khách đặt.",
+                'message' => $deletedCount > 0
+                    ? "Đã xóa {$deletedCount} khung giờ chưa có khách đặt thành công."
+                    : "Không tìm thấy khung giờ trống nào trong phạm vi đã chọn để xóa.",
                 'data'    => ['deletedCount' => $deletedCount],
             ]);
         }

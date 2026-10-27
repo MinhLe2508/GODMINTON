@@ -179,7 +179,7 @@ body {
     padding: 0 1rem;
 }
 
-/* Hai cánh vát thanh lịch lan tỏa sang hai bên */
+/* Hai cánh vát thanh lịch lan tỏa sang hai bên (khoảng cách an toàn không xuyên qua logo) */
 .app-brand-head .container::before,
 .app-brand-head .container::after {
     content: '';
@@ -187,7 +187,7 @@ body {
     height: 2px;
     display: block;
     border-radius: 2px;
-    margin: 0 1.5rem;
+    margin: 0 3.25rem;
     transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -560,7 +560,7 @@ body.admin-body {
     }
     .app-brand-head .container::before,
     .app-brand-head .container::after {
-        margin: 0 0.85rem;
+        margin: 0 2rem;
     }
     .app-brand-head .brand-logo-img {
         height: 78px;

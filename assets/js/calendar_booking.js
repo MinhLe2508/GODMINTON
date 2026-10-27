@@ -70,6 +70,16 @@ function formatMoney(amount) {
     return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
 }
 
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 /* -------- Convert Time to Slot Index -------- */
 function timeToSlotIdx(timeStr) {
     if (!timeStr) return -1;
@@ -161,6 +171,8 @@ function buildEventMapForCourt(courtIndex) {
         let type = 'available';
         if (s.status === 'booked') {
             type = 'booked';
+        } else if (s.status === 'maintenance') {
+            type = 'maintenance';
         } else if (s.status === 'blocked') {
             type = 'locked';
         } else if (s.status === 'holding') {
@@ -171,7 +183,7 @@ function buildEventMapForCourt(courtIndex) {
         let endIdx   = timeToSlotIdx(s.end_time);
         let mergedSlots = [s];
 
-        // Gộp các slot liền kề cùng loại (đã đặt, holding, khóa bảo trì)
+        // Gộp các slot liền kề cùng loại (đã đặt, bảo trì, holding, khóa tạm)
         let j = i + 1;
         while (j < slotsForCourt.length) {
             const next = slotsForCourt[j];
@@ -181,6 +193,8 @@ function buildEventMapForCourt(courtIndex) {
             let canMerge = false;
             if (nextStart === endIdx) {
                 if (type === 'booked' && next.status === 'booked') {
+                    canMerge = true;
+                } else if (type === 'maintenance' && next.status === 'maintenance') {
                     canMerge = true;
                 } else if (type === 'holding' && next.status === 'holding' && next.is_my_hold) {
                     canMerge = true;
@@ -213,6 +227,10 @@ function buildEventMapForCourt(courtIndex) {
             const durText = span === 1 ? '30p' : (span === 2 ? '1 tiếng' : (span === 3 ? '1h30p' : `${span * 0.5} tiếng`));
             label = span > 1 ? `Đã đặt (${durText})` : 'Đã đặt';
             sub = '';
+        } else if (type === 'maintenance') {
+            const durText = span === 1 ? '30p' : (span === 2 ? '1 tiếng' : (span === 3 ? '1h30p' : `${span * 0.5} tiếng`));
+            label = span > 1 ? `Bảo trì (${durText})` : 'Đang bảo trì';
+            sub = 'Tạm ngưng phục vụ';
         } else if (type === 'holding') {
             const totalSecs = Math.max(0, Math.min(300, s.hold_seconds_left || 0));
             const mins = Math.floor(totalSecs / 60);
@@ -309,14 +327,19 @@ function renderCalendar(visibleCourts) {
                 if (ev.startIdx === i) {
                     let tdClass = 'cal-td-slot ';
                     let blockClass = 'cal-slot-block ';
-                    if (ev.type === 'booked')   { tdClass += 'cal-td-booked';  blockClass += 'block-booked'; }
-                    if (ev.type === 'locked')   { tdClass += 'cal-td-locked';  blockClass += 'block-locked'; }
-                    if (ev.type === 'event')    { tdClass += 'cal-td-event';   blockClass += 'block-event'; }
-                    if (ev.type === 'holding')  { tdClass += 'cal-td-holding'; blockClass += 'block-holding'; }
+                    if (ev.type === 'booked')       { tdClass += 'cal-td-booked';      blockClass += 'block-booked'; }
+                    if (ev.type === 'maintenance')  { tdClass += 'cal-td-maintenance'; blockClass += 'block-maintenance'; }
+                    if (ev.type === 'locked')       { tdClass += 'cal-td-locked';      blockClass += 'block-locked'; }
+                    if (ev.type === 'event')        { tdClass += 'cal-td-event';       blockClass += 'block-event'; }
+                    if (ev.type === 'holding')      { tdClass += 'cal-td-holding';     blockClass += 'block-holding'; }
                     if (isHourStart) tdClass += ' hour-start';
 
                     const timeLabel = formatRangeShort(ev.startTime, ev.endTime);
-                    const icon = ev.type === 'booked' ? 'fa-ban' : ev.type === 'locked' ? 'fa-lock' : ev.type === 'event' ? 'fa-calendar-star' : 'fa-stopwatch';
+                    const icon = ev.type === 'booked' ? 'fa-ban' 
+                               : ev.type === 'maintenance' ? 'fa-screwdriver-wrench'
+                               : ev.type === 'locked' ? 'fa-lock' 
+                               : ev.type === 'event' ? 'fa-calendar-star' 
+                               : 'fa-stopwatch';
 
                     tbody += `<td class="${tdClass}" colspan="${ev.span}"
                                   onclick="handleSlotClick(${court.id}, ${i}, '${ev.type}', ${ev.slotId || 0})">
@@ -414,13 +437,28 @@ async function handleSlotClick(courtIndex, slotIdx, type, slotId) {
         return;
     }
 
-    if (type === 'booked' || type === 'locked') {
+    if (type === 'maintenance') {
         Swal.fire({
-            icon: type === 'locked' ? 'info' : 'error',
-            title: type === 'locked' ? 'Khung giờ đang có khách giữ' : 'Khung giờ đã được đặt',
-            text: type === 'locked'
-                ? 'Khung giờ này đang có khách khác giữ chỗ để thanh toán cọc (5 phút). Vui lòng chọn các ô trống khác.'
-                : 'Khung giờ này đã được thanh toán và chốt lịch. Vui lòng chọn các ô trống khác.',
+            icon: 'warning',
+            title: 'Sân đang bảo trì',
+            html: `<p class="mb-1">Khung giờ này đang được chủ sân tạm ngưng nhận khách để bảo trì & sửa chữa mặt thảm.</p><p class="mt-2 mb-0 fw-semibold text-teal small">Vui lòng chọn các khung giờ khả dụng khác!</p>`,
+            confirmButtonColor: '#ea580c',
+            confirmButtonText: 'Đã hiểu'
+        });
+        return;
+    }
+
+    if (type === 'booked' || type === 'locked') {
+        const slot = serverSlots.find(s => s.id === slotId);
+        const isBlocked = slot && slot.status === 'blocked';
+        Swal.fire({
+            icon: isBlocked ? 'info' : (type === 'locked' ? 'info' : 'error'),
+            title: isBlocked ? 'Khung giờ tạm khóa' : (type === 'locked' ? 'Khung giờ đang có khách giữ' : 'Khung giờ đã được đặt'),
+            text: isBlocked
+                ? 'Khung giờ này đang được chủ sân tạm khóa ngừng nhận đặt. Vui lòng chọn các khung giờ khác.'
+                : (type === 'locked'
+                    ? 'Khung giờ này đang có khách khác giữ chỗ để thanh toán cọc (5 phút). Vui lòng chọn các ô trống khác.'
+                    : 'Khung giờ này đã được thanh toán và chốt lịch. Vui lòng chọn các ô trống khác.'),
             confirmButtonColor: '#0d9488'
         });
         return;
@@ -576,6 +614,24 @@ async function confirmHoldSelectedSlots() {
     const slotIds = getSelectedDbSlotIds();
     if (slotIds.length === 0) {
         Swal.fire({ icon: 'warning', title: 'Chưa chọn khung giờ', text: 'Vui lòng chọn ít nhất 1 khung giờ (30 phút)!', confirmButtonColor: '#0d9488' });
+        return;
+    }
+
+    const hasInvalid = slotIds.some(id => {
+        const s = serverSlots.find(x => x.id === id);
+        return s && (s.status === 'maintenance' || s.status === 'blocked');
+    });
+    if (hasInvalid) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Khung giờ không khả dụng',
+            text: 'Một hoặc nhiều khung giờ bạn chọn đang trong thời gian bảo trì sân hoặc tạm khóa. Vui lòng chọn lại!',
+            confirmButtonColor: '#ea580c'
+        });
+        selectedCourtId = null;
+        selectedSlotIndices = [];
+        renderCalendar(getVisibleCourts());
+        updateSummaryBar();
         return;
     }
 

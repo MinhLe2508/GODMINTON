@@ -37,6 +37,22 @@ function cleanup_expired_holds(PDO $pdo): int
     return $stmt->rowCount();
 }
 
+/**
+ * Tự động chuyển các gói hội viên đã qua 23h59p ngày kết thúc sang trạng thái 'expired'.
+ *
+ * @return int số gói hội viên đã chuyển trạng thái hết hạn
+ */
+function cleanup_expired_memberships(PDO $pdo): int
+{
+    $stmt = $pdo->prepare(
+        "UPDATE user_memberships
+            SET status = 'expired', updated_at = NOW()
+          WHERE status = 'active' AND end_date < NOW()"
+    );
+    $stmt->execute();
+    return $stmt->rowCount();
+}
+
 // Chỉ chạy "chế độ script" khi file này được gọi trực tiếp (cron / trình duyệt),
 // không chạy khi bị require_once từ file khác.
 $__isDirect = isset($_SERVER['SCRIPT_FILENAME'])
@@ -45,7 +61,8 @@ $__isDirect = isset($_SERVER['SCRIPT_FILENAME'])
 if ($__isDirect) {
     try {
         $cleaned = cleanup_expired_holds($pdo);
-        $msg = "Đã dọn {$cleaned} slot hết hạn.";
+        $expiredMemberships = cleanup_expired_memberships($pdo);
+        $msg = "Đã dọn {$cleaned} slot hết hạn, cập nhật {$expiredMemberships} gói hội viên hết hạn.";
         if (PHP_SAPI === 'cli') {
             echo '[' . date('Y-m-d H:i:s') . "] {$msg}\n";
         } else {

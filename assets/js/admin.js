@@ -74,7 +74,7 @@ const AdminApp = (() => {
         if (Array.isArray(res.wards)) {
             cachedWards = res.wards;
         }
-        return { courts: cachedCourts, wards: cachedWards };
+        return { courts: cachedCourts, wards: cachedWards, owners: res.owners || [] };
     }
 
     async function createCourt(payload) {
@@ -132,9 +132,80 @@ const AdminApp = (() => {
         return res;
     }
 
+    async function updateSlotApi(slotId, data = {}) {
+        const payload = { slot_id: Number(slotId), ...data };
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        });
+        return res;
+    }
+
+    async function bulkMaintenanceSlotsApi(courtId, dateStr, opts = {}) {
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'bulk_maintenance',
+                court_id: Number(courtId),
+                slot_date: dateStr,
+                sub_court_name: opts.subCourtName || 'all',
+                start_time: opts.startTime || '',
+                end_time: opts.endTime || '',
+                status: opts.status || 'maintenance',
+                note: opts.note || ''
+            })
+        });
+        return res;
+    }
+
+    async function bulkReopenSlotsApi(courtId, dateStr, opts = {}) {
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'bulk_reopen',
+                court_id: Number(courtId),
+                slot_date: dateStr,
+                sub_court_name: opts.subCourtName || 'all',
+                start_time: opts.startTime || '',
+                end_time: opts.endTime || ''
+            })
+        });
+        return res;
+    }
+
+    async function bulkPriceSlotsApi(courtId, dateStr, opts = {}) {
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'bulk_price',
+                court_id: Number(courtId),
+                slot_date: dateStr,
+                sub_court_name: opts.subCourtName || 'all',
+                price: Number(opts.price)
+            })
+        });
+        return res;
+    }
+
     async function deleteSlotApi(slotId) {
         const res = await apiRequest(`api/admin/slots.php?id=${encodeURIComponent(slotId)}`, {
             method: 'DELETE'
+        });
+        return res;
+    }
+
+    async function bulkDeleteSlotsApi(courtId, dateStr, opts = {}) {
+        const body = {
+            bulk_delete: 1,
+            court_id: Number(courtId),
+            slot_date: dateStr,
+            start_time: opts.startTime || '',
+            end_time: opts.endTime || '',
+            sub_courts: opts.subCourts || []
+        };
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'DELETE',
+            body: JSON.stringify(body)
         });
         return res;
     }
@@ -270,7 +341,12 @@ const AdminApp = (() => {
         fetchSlots,
         generateSlotsApi,
         setSlotStatusApi,
+        updateSlotApi,
+        bulkMaintenanceSlotsApi,
+        bulkReopenSlotsApi,
+        bulkPriceSlotsApi,
         deleteSlotApi,
+        bulkDeleteSlotsApi,
         clearDaySlotsApi,
         fetchDashboard,
         renderShell,
@@ -321,42 +397,10 @@ function updateAdminThemeIcon(theme) {
     }
 }
 
-// Khởi tạo nút chuông thông báo trên Topbar Admin & nạp push-client.js
+// Loại bỏ nút chuông thông báo trên kênh Quản trị & Chủ sân
 function initAdminPushBell() {
-    let bellBtn = document.getElementById('pushBellToggle');
-    const themeBtn = document.getElementById('themeToggle');
-    const actionsContainer = document.querySelector('.admin-topbar-actions') || document.querySelector('.admin-topbar');
-
-    if (!bellBtn && actionsContainer) {
-        bellBtn = document.createElement('button');
-        bellBtn.id = 'pushBellToggle';
-        bellBtn.type = 'button';
-        bellBtn.className = (themeBtn && themeBtn.classList.contains('admin-icon-btn'))
-            ? 'admin-icon-btn bnav-bell-float'
-            : 'btn btn-outline-secondary rounded-circle bnav-bell-float';
-        bellBtn.title = 'Thông báo hệ thống & PWA';
-        bellBtn.setAttribute('aria-label', 'Thông báo hệ thống');
-        bellBtn.innerHTML = '<i class="fa-regular fa-bell"></i>';
-
-        if (themeBtn && themeBtn.parentNode) {
-            themeBtn.parentNode.insertBefore(bellBtn, themeBtn);
-        } else {
-            actionsContainer.prepend(bellBtn);
-        }
-    }
-
-    if (!window.PushClient) {
-        const script = document.createElement('script');
-        script.src = 'assets/js/push-client.js?v=' + Date.now();
-        script.onload = () => {
-            if (window.PushClient && typeof window.PushClient.initBellButton === 'function') {
-                window.PushClient.initBellButton();
-            }
-        };
-        document.head.appendChild(script);
-    } else if (typeof window.PushClient.initBellButton === 'function') {
-        window.PushClient.initBellButton();
-    }
+    const bellBtn = document.getElementById('pushBellToggle');
+    if (bellBtn) bellBtn.remove();
 }
 
 function initAdminComponents() {
