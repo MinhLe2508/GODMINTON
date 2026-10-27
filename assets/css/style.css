@@ -1540,3 +1540,47 @@ img, svg, video, canvas {
         padding: 0.85rem 1rem;
     }
 }
+
+/* Các phần hồ sơ cần chữ sáng trên nền tối; không đổi màu ở chế độ sáng. */
+[data-bs-theme="dark"] #profileMembershipActiveBox strong.text-dark {
+    color: #fde68a !important;
+}
+[data-bs-theme="dark"] #tabProfileVouchers .voucher-card .font-monospace.text-dark {
+    color: #f8fafc !important;
+}
+[data-bs-theme="dark"] #profileMembershipHistoryList .badge.bg-warning-subtle.text-dark {
+    color: #fde68a !important;
+}
+[data-bs-theme="dark"] #profileMembershipHistoryList .badge.bg-success-subtle {
+    color: #86efac !important;
+}
+[data-bs-theme="dark"] #profileMembershipHistoryList .badge.bg-danger-subtle {
+    color: #fda4af !important;
+}
+[data-bs-theme="dark"] #tabProfileVouchers .voucher-card .text-teal,
+[data-bs-theme="dark"] #tabProfileMembership .text-teal {
+    color: #5eead4 !important;
+}
+[data-bs-theme="dark"] #tabProfileVouchers .btn-outline-teal,
+[data-bs-theme="dark"] #tabProfileMembership .btn-outline-teal {
+    color: #5eead4;
+    border-color: #2dd4bf;
+}
+[data-bs-theme="dark"] #tabProfileVouchers .btn-outline-teal:hover,
+[data-bs-theme="dark"] #tabProfileVouchers .btn-outline-teal:focus-visible,
+[data-bs-theme="dark"] #tabProfileMembership .btn-outline-teal:hover,
+[data-bs-theme="dark"] #tabProfileMembership .btn-outline-teal:focus-visible {
+    color: #f0fdfa;
+    background-color: #115e59;
+    border-color: #5eead4;
+}
+[data-bs-theme="dark"] a.btn-outline-success[href="owner-application.php"] {
+    color: #86efac;
+    border-color: #34d399;
+}
+[data-bs-theme="dark"] a.btn-outline-success[href="owner-application.php"]:hover,
+[data-bs-theme="dark"] a.btn-outline-success[href="owner-application.php"]:focus-visible {
+    color: #dcfce7;
+    background-color: #064e3b;
+    border-color: #86efac;
+}

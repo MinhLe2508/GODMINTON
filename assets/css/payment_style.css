@@ -1552,3 +1552,54 @@ body.payment-page {
 }
 
 
+
+/* Tương phản cho cổng thanh toán, chỉ áp dụng ở chế độ tối. */
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-label {
+    color: #cbd5e1;
+}
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-value,
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-value.code-val {
+    color: #f8fafc;
+}
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-value.highlight-amount {
+    color: #5eead4;
+}
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-row {
+    border-bottom-color: #294550;
+}
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-copy-btn {
+    color: #5eead4;
+    background: #103b3b;
+    border-color: #2b7772;
+}
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-copy-btn:hover,
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-copy-btn:focus-visible {
+    color: #f0fdfa;
+    background: #115e59;
+    border-color: #5eead4;
+}
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-copy-btn:focus-visible {
+    outline: 2px solid #5eead4;
+    outline-offset: 2px;
+}
+[data-bs-theme="dark"] #gwCheckoutSub {
+    color: #ffffff !important;
+}
+[data-bs-theme="dark"] #gwPaymentStatusCard {
+    background: #10342f !important;
+    border-color: #2b7772 !important;
+    color: #e2e8f0;
+}
+[data-bs-theme="dark"] #gwPaymentStatusCard .text-teal {
+    color: #5eead4 !important;
+}
+[data-bs-theme="dark"] #gwPaymentStatusCard .text-success {
+    color: #86efac !important;
+}
+[data-bs-theme="dark"] #gwLiveStatusSub,
+[data-bs-theme="dark"] #checkoutGatewayModal .modal-body > .border-top .text-muted {
+    color: #cbd5e1 !important;
+}
+[data-bs-theme="dark"] #pmSummaryTitle {
+    color: #f8fafc !important;
+}
