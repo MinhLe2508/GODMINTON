@@ -183,7 +183,7 @@ function payment_fetch_by_booking(PDO $pdo, int $bookingId): ?array
 /** Tóm tắt booking để hiển thị (dùng khi trả lại đơn chờ thanh toán đã tồn tại). */
 function payment_booking_summary(PDO $pdo, int $bookingId): array
 {
-    $s = $pdo->prepare('SELECT b.*, c.name AS court_name FROM bookings b JOIN courts c ON c.id=b.court_id WHERE b.id=?');
+    $s = $pdo->prepare('SELECT b.*, c.name AS court_name, c.address AS court_address FROM bookings b JOIN courts c ON c.id=b.court_id WHERE b.id=?');
     $s->execute([$bookingId]);
     $b = $s->fetch();
     if (!$b) {
@@ -201,11 +201,13 @@ function payment_booking_summary(PDO $pdo, int $bookingId): array
         'booking_code'   => $b['booking_code'],
         'court_id'       => (int)$b['court_id'],
         'court_name'     => $b['court_name'],
+        'court_address'  => $b['court_address'] ?? '',
         'sub_court_name' => $first['sub_court_name'] ?? '',
         'booking_date'   => $first['slot_date'] ?? null,
         'start_time'     => $start,
         'end_time'       => $end,
         'time_range'     => $start . ' - ' . $end,
+        'slot_count'     => count($slots),
         'court_amount'   => (int)$b['court_amount'],
         'discount_amount'=> (int)$b['discount_amount'],
         'platform_fee'   => (int)$b['platform_fee'],
@@ -495,7 +497,7 @@ function payment_process_webhook(PDO $pdo, array $payload): array
     return $out;
 }
 
-/** Gửi email xác nhận đặt cọc thành công (lỗi chỉ ghi log, không ảnh hưởng thanh toán). */
+/** Gửi email hóa đơn xác nhận đặt cọc thành công (kèm logo GODMINTON đính kèm CID). */
 function payment_send_confirmation_email(PDO $pdo, int $bookingId): void
 {
     try {
@@ -504,42 +506,263 @@ function payment_send_confirmation_email(PDO $pdo, int $bookingId): void
         if (!$summary || $summary['booking_status'] !== 'confirmed') {
             return;
         }
-        $s = $pdo->prepare('SELECT u.name, u.email FROM bookings b JOIN users u ON u.id=b.user_id WHERE b.id=?');
+        $s = $pdo->prepare('SELECT u.name, u.email, u.phone FROM bookings b JOIN users u ON u.id=b.user_id WHERE b.id=?');
         $s->execute([$bookingId]);
         $user = $s->fetch();
         if (!$user || !filter_var($user['email'], FILTER_VALIDATE_EMAIL)) {
             return;
         }
-        $e = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+
+        $payment = payment_fetch_by_booking($pdo, $bookingId);
+        $paymentCode = $payment['payment_code'] ?? payment_code_for_booking($bookingId);
+        $paidAtStr = !empty($payment['paid_at'])
+            ? date('H:i · d/m/Y', strtotime((string)$payment['paid_at']))
+            : date('H:i · d/m/Y');
+
+        $e = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $money = static fn($n) => number_format((int)$n, 0, ',', '.') . ' đ';
-        $date = $summary['booking_date'] ? date('d/m/Y', strtotime($summary['booking_date'])) : '';
+
+        $dateStr = $summary['booking_date'] ? date('d/m/Y', strtotime((string)$summary['booking_date'])) : '';
+        $durationHours = max(0.5, ((int)($summary['slot_count'] ?? 1)) * 0.5);
+        $durationText = ($durationHours == (int)$durationHours ? (int)$durationHours : $durationHours) . ' giờ';
         $historyUrl = rtrim((string)getenv('APP_URL'), '/') . '/history.php';
+        $year = date('Y');
+
+        $logoPath = __DIR__ . '/../assets/img/logo.jpg';
+        $logoHtml = is_file($logoPath)
+            ? '<img src="cid:godminton-logo" width="175" height="118" alt="GODMINTON" style="display:block;width:175px;max-width:100%;height:auto;border:0;margin:0 auto;">'
+            : '<span style="font-size:26px;font-weight:800;color:#0d9488;letter-spacing:1px;">GODMINTON</span>';
+
+        $bookingCodeSafe = $e($summary['booking_code']);
+        $paymentCodeSafe = $e($paymentCode);
+        $userNameSafe    = $e($user['name']);
+        $userEmailSafe   = $e($user['email']);
+        $userPhoneSafe   = $e($user['phone'] ?? '—');
+        $courtNameSafe   = $e($summary['court_name']);
+        $courtAddrSafe   = $e($summary['court_address'] ?: 'Hệ thống sân cầu lông GODMINTON');
+        $subCourtSafe    = $e($summary['sub_court_name']);
+        $timeRangeSafe   = $e($summary['time_range'] . ' (' . $durationText . ')');
+        $methodSafe      = $e($summary['payment_method'] ?: 'Chuyển khoản VietQR 24/7 (SePay)');
+        $safeHistoryUrl  = $e($historyUrl);
+
+        $courtAmountTxt  = $e($money($summary['court_amount'] ?: $summary['total_price']));
+        $discountAmount  = (int)($summary['discount_amount'] ?? 0);
+        $platformFee     = (int)($summary['platform_fee'] ?? 0);
+        $platformFeeTxt  = $platformFee > 0 ? $e($money($platformFee)) : '0 đ (Miễn phí)';
+        $totalPriceTxt   = $e($money($summary['total_price']));
+        $depositTxt      = $e($money($summary['deposit_amount']));
+        $remainTxt       = $e($money($summary['remain_amount']));
+
+        $discountRowHtml = '';
+        if ($discountAmount > 0) {
+            $discountTxt = '- ' . $e($money($discountAmount));
+            $discountRowHtml = <<<HTML
+<tr>
+    <td style="padding:10px 14px;border-bottom:1px solid #e2f2ee;color:#0f766e;font-size:14px;">Ưu đãi / Giảm giá</td>
+    <td align="right" style="padding:10px 14px;border-bottom:1px solid #e2f2ee;color:#0f766e;font-weight:700;font-size:14px;">{$discountTxt}</td>
+</tr>
+HTML;
+        }
+
+        $html = <<<HTML
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hóa đơn đặt sân {$bookingCodeSafe} - GODMINTON</title>
+</head>
+<body style="margin:0;padding:0;background-color:#e5f5f1;background-image:linear-gradient(140deg,#d9f7ed 0%,#edf5ff 100%);font-family:'Plus Jakarta Sans','Segoe UI',Roboto,Arial,sans-serif;color:#193d42;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Hóa đơn điện tử &amp; Vé đặt sân {$bookingCodeSafe} — Đã nhận cọc {$depositTxt} tại {$courtNameSafe}.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#e5f5f1" style="background-image:linear-gradient(140deg,#d9f7ed 0%,#edf5ff 100%);font-family:'Plus Jakarta Sans','Segoe UI',Roboto,Arial,sans-serif;">
+<tr>
+<td align="center" style="padding:28px 12px;">
+    <table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:620px;border:1px solid #c8e7e0;border-radius:22px;box-shadow:0 18px 46px rgba(15,118,110,0.10);overflow:hidden;">
+
+        <!-- HEADER CÓ LOGO GODMINTON -->
+        <tr>
+            <td align="center" bgcolor="#0f766e" style="padding:28px 24px 22px;background-image:linear-gradient(125deg,#115e59 0%,#0d9488 60%,#0891b2 100%);border-radius:22px 22px 0 0;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,0.12);">
+                    <tr>
+                        <td align="center" style="padding:10px 18px;border-radius:16px;">{$logoHtml}</td>
+                    </tr>
+                </table>
+                <p style="font-size:11px;line-height:1.6;letter-spacing:1.2px;font-weight:700;color:#e3fffa;margin:16px 0 4px;text-transform:uppercase;">NỀN TẢNG ĐẶT SÂN CẦU LÔNG TRỰC TUYẾN</p>
+                <p style="font-size:13px;color:#ccfbf1;margin:0;font-weight:500;">HÓA ĐƠN ĐIỆN TỬ &amp; VÉ XÁC NHẬN ĐẶT SÂN</p>
+            </td>
+        </tr>
+        <tr>
+            <td height="5" bgcolor="#5eead4" style="height:5px;font-size:0;line-height:0;background-image:linear-gradient(90deg,#5eead4 0%,#67e8f9 100%);">&nbsp;</td>
+        </tr>
+
+        <!-- BODY -->
+        <tr>
+            <td style="padding:28px 26px 24px;">
+                <!-- Badge trạng thái -->
+                <div style="text-align:center;margin-bottom:18px;">
+                    <span style="display:inline-block;padding:6px 14px;border-radius:999px;background-color:#dcfce7;border:1px solid #86efac;font-size:12px;letter-spacing:0.4px;color:#15803d;font-weight:700;">
+                        &#10003; ĐÃ NHẬN TIỀN CỌC · XÁC NHẬN TỰ ĐỘNG 24/7
+                    </span>
+                </div>
+
+                <h1 style="font-size:22px;line-height:1.35;font-weight:800;margin:0 0 12px;color:#115e59;text-align:center;">
+                    Đặt cọc sân thành công!
+                </h1>
+                <p style="font-size:14.5px;line-height:1.7;color:#334155;margin:0 0 22px;text-align:center;">
+                    Xin chào <strong>{$userNameSafe}</strong>, hệ thống <strong>GODMINTON</strong> đã nhận được khoản thanh toán tiền cọc của bạn. Dưới đây là chi tiết vé đặt sân và hóa đơn điện tử của bạn:
+                </p>
+
+                <!-- THẺ VÉ ĐIỆN TỬ / MÃ CHECK-IN -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f0fdfa" style="border:2px dashed #14b8a6;border-radius:16px;margin-bottom:24px;">
+                    <tr>
+                        <td align="center" style="padding:18px 16px;">
+                            <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:1px;color:#0f766e;text-transform:uppercase;">MÃ ĐẶT SÂN (XUẤT TRÌNH KHI CHECK-IN)</p>
+                            <p style="margin:0 0 8px;font-size:24px;font-weight:800;letter-spacing:1px;color:#0f172a;">{$bookingCodeSafe}</p>
+                            <p style="margin:0;font-size:12.5px;color:#475569;">
+                                Mã GD: <strong>{$paymentCodeSafe}</strong> &nbsp;&bull;&nbsp; Thời gian xác nhận: <strong>{$paidAtStr}</strong>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- PHẦN 1: THÔNG TIN LỊCH ĐẶT SÂN & KHÁCH HÀNG -->
+                <p style="margin:0 0 10px;font-size:12px;font-weight:800;letter-spacing:0.6px;color:#0f766e;text-transform:uppercase;">
+                    1. Thông tin sân &amp; lịch thi đấu
+                </p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #d5ebe5;border-radius:12px;overflow:hidden;margin-bottom:22px;font-size:14px;">
+                    <tr bgcolor="#f8fafc">
+                        <td style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#64748b;width:38%;">Cụm sân cầu lông</td>
+                        <td align="right" style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-weight:700;">{$courtNameSafe}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#64748b;">Địa chỉ sân</td>
+                        <td align="right" style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#334155;font-size:13px;">{$courtAddrSafe}</td>
+                    </tr>
+                    <tr bgcolor="#f8fafc">
+                        <td style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#64748b;">Sân / Thảm thi đấu</td>
+                        <td align="right" style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#0d9488;font-weight:700;">{$subCourtSafe}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#64748b;">Ngày thi đấu</td>
+                        <td align="right" style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-weight:700;">{$dateStr}</td>
+                    </tr>
+                    <tr bgcolor="#f8fafc">
+                        <td style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#64748b;">Khung giờ chơi</td>
+                        <td align="right" style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-weight:700;">{$timeRangeSafe}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:11px 14px;color:#64748b;">Người đặt sân</td>
+                        <td align="right" style="padding:11px 14px;color:#334155;font-weight:600;">{$userNameSafe} ({$userPhoneSafe})</td>
+                    </tr>
+                </table>
+
+                <!-- PHẦN 2: CHI TIẾT HÓA ĐƠN THANH TOÁN -->
+                <p style="margin:0 0 10px;font-size:12px;font-weight:800;letter-spacing:0.6px;color:#0f766e;text-transform:uppercase;">
+                    2. Chi tiết hóa đơn thanh toán
+                </p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #cdece3;border-radius:12px;overflow:hidden;margin-bottom:24px;">
+                    <tr>
+                        <td style="padding:10px 14px;border-bottom:1px solid #e2f2ee;color:#64748b;font-size:14px;">Giá thuê sân</td>
+                        <td align="right" style="padding:10px 14px;border-bottom:1px solid #e2f2ee;color:#0f172a;font-weight:600;font-size:14px;">{$courtAmountTxt}</td>
+                    </tr>
+                    {$discountRowHtml}
+                    <tr>
+                        <td style="padding:10px 14px;border-bottom:1px solid #e2f2ee;color:#64748b;font-size:14px;">Phí dịch vụ</td>
+                        <td align="right" style="padding:10px 14px;border-bottom:1px solid #e2f2ee;color:#0f172a;font-weight:600;font-size:14px;">{$platformFeeTxt}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px 14px;border-bottom:1px solid #e2f2ee;color:#64748b;font-size:14px;">Phương thức thanh toán</td>
+                        <td align="right" style="padding:10px 14px;border-bottom:1px solid #e2f2ee;color:#334155;font-weight:600;font-size:13.5px;">{$methodSafe}</td>
+                    </tr>
+                    <tr bgcolor="#f8fafc">
+                        <td style="padding:12px 14px;border-bottom:1px solid #cdece3;color:#0f172a;font-weight:700;font-size:15px;">Tổng cộng tiền sân</td>
+                        <td align="right" style="padding:12px 14px;border-bottom:1px solid #cdece3;color:#0f172a;font-weight:800;font-size:16px;">{$totalPriceTxt}</td>
+                    </tr>
+                    <tr bgcolor="#ecfdf5">
+                        <td style="padding:12px 14px;border-bottom:1px solid #bbf7d0;color:#15803d;font-weight:700;font-size:14.5px;">
+                            &#10003; Đã đặt cọc (50%)
+                        </td>
+                        <td align="right" style="padding:12px 14px;border-bottom:1px solid #bbf7d0;color:#15803d;font-weight:800;font-size:16px;">
+                            {$depositTxt}
+                        </td>
+                    </tr>
+                    <tr bgcolor="#fffbeb">
+                        <td style="padding:12px 14px;color:#b45309;font-weight:700;font-size:14.5px;">
+                            Còn lại thanh toán tại sân
+                        </td>
+                        <td align="right" style="padding:12px 14px;color:#d97706;font-weight:800;font-size:16px;">
+                            {$remainTxt}
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- NÚT XEM LỊCH ĐẶT SÂN -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 22px;">
+                    <tr>
+                        <td align="center" bgcolor="#0d9488" style="border-radius:999px;background-image:linear-gradient(120deg,#0f766e 0%,#0891b2 100%);box-shadow:0 6px 16px rgba(13,148,136,0.25);">
+                            <a href="{$safeHistoryUrl}" style="display:inline-block;padding:13px 28px;font-size:14.5px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:999px;">
+                                Xem Vé Điện Tử &amp; Lịch Đặt Sân
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- LƯU Ý CHECK-IN -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8fafc" style="border:1px solid #e2e8f0;border-left:4px solid #0d9488;border-radius:10px;">
+                    <tr>
+                        <td style="padding:12px 16px;font-size:12.5px;line-height:1.65;color:#475569;">
+                            <strong style="color:#0f172a;">Lưu ý khi đến sân:</strong><br>
+                            &bull; Vui lòng có mặt trước giờ chơi <strong>10–15 phút</strong> và cung cấp mã đặt sân <strong>{$bookingCodeSafe}</strong> tại quầy lễ tân để nhận sân.<br>
+                            &bull; Khoản đặt cọc không hoàn lại nếu hủy trong vòng <strong>2 giờ</strong> trước giờ thi đấu (Hội viên áp dụng đặc quyền hủy trước 30 phút).
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+            <td align="center" bgcolor="#edf8f5" style="padding:18px 24px;border-top:1px solid #d5ebe5;border-radius:0 0 22px 22px;background-image:linear-gradient(110deg,#edf9f4 0%,#eef6ff 100%);">
+                <p style="margin:0;color:#58726e;font-size:12px;line-height:1.7;">
+                    &copy; {$year} <strong>GODMINTON</strong> &middot; Hệ thống Đặt Sân Cầu Lông Trực Tuyến<br>
+                    Hóa đơn điện tử được gửi tự động đến {$userEmailSafe}. Chúc bạn có những trận cầu thật bùng nổ!
+                </p>
+            </td>
+        </tr>
+    </table>
+</td>
+</tr>
+</table>
+</body>
+</html>
+HTML;
+
         $rows = [
-            'Mã đặt sân'   => $summary['booking_code'],
-            'Sân'          => $summary['court_name'] . ' · ' . $summary['sub_court_name'],
-            'Ngày chơi'    => $date,
-            'Khung giờ'    => $summary['time_range'],
-            'Tổng tiền'    => $money($summary['total_price']),
-            'Đã đặt cọc'   => $money($summary['deposit_amount']),
-            'Còn lại tại sân' => $money($summary['remain_amount']),
+            'Mã đặt sân'              => $summary['booking_code'],
+            'Mã giao dịch SePay'      => $paymentCode,
+            'Cụm sân'                 => $summary['court_name'] . ' · ' . $summary['sub_court_name'],
+            'Địa chỉ'                 => $summary['court_address'] ?: 'GODMINTON',
+            'Ngày chơi'               => $dateStr,
+            'Khung giờ'               => $summary['time_range'] . ' (' . $durationText . ')',
+            'Giá thuê sân'            => $money($summary['court_amount'] ?: $summary['total_price']),
+            'Tổng tiền'               => $money($summary['total_price']),
+            'Đã đặt cọc (50%)'        => $money($summary['deposit_amount']),
+            'Còn lại thanh toán sân'  => $money($summary['remain_amount']),
+            'Xem lịch đặt sân'        => $historyUrl,
         ];
-        $tr = '';
+        $text = "HÓA ĐƠN XÁC NHẬN ĐẶT SÂN - GODMINTON\n"
+              . "====================================\n"
+              . "Xin chào {$user['name']}, GODMINTON đã nhận được tiền cọc của bạn.\n\n";
         foreach ($rows as $k => $v) {
-            $tr .= '<tr><td style="padding:8px 0;color:#64748b">' . $e($k) . '</td><td style="padding:8px 0;text-align:right;font-weight:700;color:#0f172a">' . $e($v) . '</td></tr>';
+            $text .= "{$k}: {$v}\n";
         }
-        $html = '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:16px">'
-            . '<h2 style="color:#0d9488;margin:0 0 8px">Đặt cọc thành công!</h2>'
-            . '<p style="color:#334155">Xin chào ' . $e($user['name']) . ', GODMINTON đã nhận được tiền cọc của bạn qua chuyển khoản ngân hàng.</p>'
-            . '<table style="width:100%;border-collapse:collapse;font-size:14px">' . $tr . '</table>'
-            . '<p style="margin-top:20px"><a href="' . $e($historyUrl) . '" style="background:#0d9488;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:700">Xem lịch đặt sân</a></p>'
-            . '<p style="color:#94a3b8;font-size:12px">Khoản đặt cọc không hoàn lại nếu huỷ trong vòng 2 giờ trước giờ chơi.</p></div>';
-        $text = "Đặt cọc thành công!\n";
-        foreach ($rows as $k => $v) {
-            $text .= "$k: $v\n";
-        }
+
         $mail = god_auth_mailer();
+        if (is_file($logoPath)) {
+            $mail->addEmbeddedImage($logoPath, 'godminton-logo', 'godminton-logo.jpg', 'base64', 'image/jpeg');
+        }
         $mail->addAddress($user['email'], (string)$user['name']);
-        $mail->Subject = 'Xác nhận đặt cọc ' . $summary['booking_code'] . ' - GODMINTON';
+        $mail->Subject = 'Hóa đơn xác nhận đặt sân ' . $summary['booking_code'] . ' - GODMINTON';
         $mail->isHTML(true);
         $mail->Body = $html;
         $mail->AltBody = $text;
