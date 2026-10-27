@@ -118,7 +118,7 @@ try {
             u.phone AS user_phone,
             b.total_price,
             b.deposit_amount,
-            b.is_deposit_refunded,
+            " . (in_array('is_deposit_refunded', $bCols, true) ? 'b.is_deposit_refunded,' : '0 AS is_deposit_refunded,') . "
             {$voucherSelect}
             b.status AS booking_status,
             b.created_at,

@@ -140,7 +140,7 @@ function voucher_calculate_pricing(int $courtAmount, ?array $voucher = null, ?ar
     $afterDiscount = max(0, $courtAmount - $totalDiscount);
 
     // Phí sàn = 5% của tiền sân sau giảm
-    $platformFee = (int)round($afterDiscount * 0.05);
+    $platformFee = ($voucher !== null || $totalDiscount > 0) ? (int)round($afterDiscount * 0.05) : 0;
 
     // Tổng khách trả = tiền sau giảm + phí sàn
     $totalAmount = $afterDiscount + $platformFee;

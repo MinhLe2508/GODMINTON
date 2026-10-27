@@ -49,7 +49,7 @@ try {
    if($slot['status']!=='holding')throw new BookingError(409,'Khung giờ chưa được giữ hoặc đã được đặt.');
    if((int)$slot['held_by']!==$user['id'])throw new BookingError(403,'Khung giờ thuộc phiên giữ của tài khoản khác.');
    if(!$slot['hold_valid'])throw new BookingError(410,'Phiên giữ chỗ đã hết hạn.');
-   $h=(int)substr($slot['start_time'],0,2);$courtAmount+=(int)round($slot['price_per_hour']/2)+(($h>=17&&$h<=21)?7500:0);$previous=$slot['end_time'];
+   $h=(int)substr($slot['start_time'],0,2);$courtAmount+=(!empty($slot['price'])&&(float)$slot['price']>0)?(int)round((float)$slot['price']):((int)round($slot['price_per_hour']/2)+(($h>=17&&$h<=21)?7500:0));$previous=$slot['end_time'];
   }
 
   $activeMembership = membership_get_active_for_user($pdo, (int)$user['id']);
