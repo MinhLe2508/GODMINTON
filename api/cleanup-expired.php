@@ -1,8 +1,8 @@
 <?php
 /**
  * api/cleanup-expired.php
- * Task 8 & SePay — Dọn các slot giữ chỗ đã hết hạn, huỷ các đơn thanh toán pending quá hạn
- * và cập nhật các gói hội viên đã hết hạn.
+ * Task 8 & SePay — Dọn các slot giữ chỗ đã hết hạn, huỷ các đơn thanh toán pending quá hạn,
+ * cập nhật các gói hội viên đã hết hạn và quét nhắc lịch thi đấu tự động.
  *
  * 3 cách dùng:
  *   A. Cron: php /path/to/GODMINTON/api/cleanup-expired.php
@@ -11,11 +11,13 @@
  */
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/payment-service.php';
+require_once __DIR__ . '/../includes/web-push.php';
 
 /**
- * Trả các slot 'holding' đã hết hạn về 'available' và huỷ các giao dịch/booking quá hạn.
+ * Trả các slot 'holding' đã hết hạn về 'available', huỷ các giao dịch/booking quá hạn
+ * và kích hoạt gửi thông báo đẩy nhắc lịch cho các đơn sắp đến giờ chơi.
  *
- * @return array{cleaned_slots: int, expired_payments: int}
+ * @return array{cleaned_slots: int, expired_payments: int, reminders_sent: int}
  */
 function cleanup_expired_holds(PDO $pdo): array
 {
@@ -29,9 +31,18 @@ function cleanup_expired_holds(PDO $pdo): array
     $stmt->execute();
     $cleanedSlots = $stmt->rowCount();
 
+    $remindersSent = 0;
+    try {
+        $remResult = god_push_dispatch_due_reminders($pdo);
+        $remindersSent = (int)($remResult['sent'] ?? 0);
+    } catch (Throwable $e) {
+        error_log('[cleanup-expired reminder] ' . $e->getMessage());
+    }
+
     return [
         'cleaned_slots'    => $cleanedSlots,
         'expired_payments' => $expiredPayments,
+        'reminders_sent'   => $remindersSent,
     ];
 }
 
@@ -60,7 +71,7 @@ if ($__isDirect) {
         $expiredMemberships = cleanup_expired_memberships($pdo);
         $result['expired_memberships'] = $expiredMemberships;
         $result['cleaned'] = $result['cleaned_slots'];
-        $msg = "Đã dọn {$result['cleaned_slots']} slot, huỷ {$result['expired_payments']} đơn quá hạn và cập nhật {$expiredMemberships} gói hội viên hết hạn.";
+        $msg = "Đã dọn {$result['cleaned_slots']} slot, huỷ {$result['expired_payments']} đơn quá hạn, gửi {$result['reminders_sent']} nhắc lịch và cập nhật {$expiredMemberships} gói hội viên hết hạn.";
         if (PHP_SAPI === 'cli') {
             echo '[' . date('Y-m-d H:i:s') . "] {$msg}\n";
         } else {

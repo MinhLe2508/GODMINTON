@@ -116,3 +116,34 @@ CREATE TABLE IF NOT EXISTS `user_vouchers` (
   CONSTRAINT `fk_uv_post` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 5. Bảng Web Push Subscriptions & Nhắc lịch thi đấu tự động (push_reminder_dispatches)
+CREATE TABLE IF NOT EXISTS `push_subscriptions` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` INT UNSIGNED DEFAULT NULL,
+  `endpoint` VARCHAR(500) NOT NULL,
+  `p256dh` VARCHAR(255) NOT NULL,
+  `auth` VARCHAR(255) NOT NULL,
+  `user_agent` VARCHAR(255) DEFAULT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_push_endpoint` (`endpoint`),
+  KEY `idx_push_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `push_reminder_dispatches` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `booking_id` INT(10) UNSIGNED NOT NULL,
+  `reminder_type` VARCHAR(40) NOT NULL DEFAULT 'start_30_minutes',
+  `status` ENUM('pending','sent','failed') NOT NULL DEFAULT 'pending',
+  `attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `last_error` VARCHAR(500) DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `sent_at` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_push_reminder_booking_type` (`booking_id`, `reminder_type`),
+  KEY `idx_push_reminder_status` (`status`, `created_at`),
+  CONSTRAINT `fk_push_reminder_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+

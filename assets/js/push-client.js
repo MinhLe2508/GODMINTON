@@ -809,8 +809,64 @@ window.PushClient = (() => {
 
         try {
             await updateBellUI();
+            startReminderHeartbeat();
         } catch (_) {}
         return btn;
+    }
+
+    let reminderHeartbeatTimer = null;
+    async function checkDueReminders() {
+        if (!isSupported() || getPermissionState() !== 'granted') return;
+        try {
+            const sub = await getSubscription();
+            if (!sub) return;
+
+            // Đồng bộ user_id với subscription trên server mỗi phiên làm việc
+            if (!sessionStorage.getItem('godminton_push_synced')) {
+                const subJson = sub.toJSON();
+                if (subJson?.keys?.p256dh && subJson?.keys?.auth) {
+                    await postSubscription('subscribe', sub.endpoint, subJson.keys);
+                    sessionStorage.setItem('godminton_push_synced', '1');
+                }
+            }
+
+            const res = await fetch('api/push/send.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'X-GODMINTON-CSRF': await getCsrfToken() },
+                body: JSON.stringify({
+                    action: 'reminder',
+                    endpoint: sub.endpoint
+                })
+            });
+            const result = await safeJson(res);
+            const notifications = result?.data?.notifications || [];
+            if (Array.isArray(notifications) && notifications.length > 0) {
+                const reg = await ensureServiceWorker();
+                for (const item of notifications) {
+                    showInAppPushBanner(item);
+                    try {
+                        if (reg && reg.showNotification) {
+                            await reg.showNotification(item.title, {
+                                body: item.body,
+                                icon: item.icon || 'assets/img/icons/icon-192.png',
+                                badge: item.badge || 'assets/img/icons/badge-72.png',
+                                vibrate: [100, 50, 100],
+                                data: item.data || { url: 'history.php' },
+                                tag: 'godminton-booking-reminder-' + (item.data?.booking_id || Date.now()),
+                                renotify: true
+                            });
+                        }
+                    } catch (_) {}
+                }
+            }
+        } catch (_) {}
+    }
+
+    function startReminderHeartbeat() {
+        if (reminderHeartbeatTimer) return;
+        setTimeout(checkDueReminders, 2500);
+        reminderHeartbeatTimer = setInterval(checkDueReminders, 60000);
     }
 
     // Tự động khởi tạo khi DOM sẵn sàng nếu chưa được gọi
@@ -829,6 +885,7 @@ window.PushClient = (() => {
         subscribe,
         unsubscribe,
         sendTestNotification,
+        checkDueReminders,
         renderPushControls,
         initBellButton,
         updateBellUI,
