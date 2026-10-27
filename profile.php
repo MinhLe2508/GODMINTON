@@ -751,6 +751,35 @@ header('Cache-Control: no-store');
         </div>
     </div>
 
+    <!-- ==================== MODAL: CHI TIẾT HÓA ĐƠN GÓI HỘI VIÊN (USER) ==================== -->
+    <div class="modal fade" id="userMembershipInvoiceModal" tabindex="-1" aria-labelledby="modalUserInvoiceTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="modal-title fw-bold fs-5 mb-1" id="modalUserInvoiceTitle">
+                            <i class="fa-solid fa-file-invoice-dollar text-teal me-2"></i>Chi Tiết Hóa Đơn Hội Viên
+                        </h5>
+                        <div class="small text-muted" id="userModalInvoiceSub">Mã hóa đơn: #MB-000000</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 ms-auto">
+                        <span id="userModalInvoiceStatusBadge"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                </div>
+                <div class="modal-body p-4" id="userModalInvoiceBody">
+                    <!-- Nội dung hóa đơn render tự động bằng JS -->
+                </div>
+                <div class="modal-footer border-top bg-light-subtle rounded-bottom-4 d-flex justify-content-between align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="window.print()">
+                        <i class="fa-solid fa-print me-1"></i> In hóa đơn
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer-custom mt-5 pt-5 pb-4 border-top">
         <div class="container text-center small text-light">

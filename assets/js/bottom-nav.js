@@ -78,10 +78,10 @@
     #godmintonBottomNav {
         position: fixed;
         bottom: 0; left: 0; right: 0;
-        z-index: 1000;
+        z-index: 1050;
         height: calc(64px + env(safe-area-inset-bottom, 0px));
         padding-bottom: env(safe-area-inset-bottom, 0px);
-        background: var(--bg-body, #fff);
+        background: #ffffff;
         border-top: 1px solid rgba(0,0,0,0.07);
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
         display: flex;
@@ -120,7 +120,7 @@
 
     /* Dark mode adjustment */
     [data-bs-theme="dark"] #godmintonBottomNav {
-        background: #111827;
+        background: #0b1e24;
         border-top-color: rgba(255,255,255,0.07);
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
     }
@@ -521,6 +521,7 @@
        6. INJECT VÀO DOM
        ============================================================ */
     async function injectOwnerReturnLink() {
+        if (window.location.pathname.includes('payment.php')) return;
         try {
             // Read the current session; customer and guest pages keep their usual navigation.
             const response = await fetch('api/auth/me.php', {credentials:'same-origin', cache:'no-store'});

@@ -95,6 +95,7 @@ try {
                 'time_range' => "{$startShort} - {$endShort}",
                 'price' => $slotPrice,
                 'status' => $slot['status'],
+                'note' => null,
                 'is_past' => $isPast,
                 'held_by' => $slot['held_by'] ? (int)$slot['held_by'] : null,
                 'holding_user_id' => $slot['held_by'] ? (int)$slot['held_by'] : null,
@@ -163,7 +164,7 @@ try {
 
     // Truy vấn tất cả slots của ngày này (tính trực tiếp số giây còn lại bằng MySQL engine)
     $slotsStmt = $pdo->prepare("
-        SELECT id, court_id, sub_court_name, slot_date, start_time, end_time, status, held_by, hold_expires_at,
+        SELECT id, court_id, sub_court_name, slot_date, start_time, end_time, status, note, price, held_by, hold_expires_at,
                TIMESTAMPDIFF(SECOND, NOW(), hold_expires_at) AS sec_left
         FROM time_slots
         WHERE court_id = ? AND slot_date = ?
@@ -188,9 +189,9 @@ try {
         $endShort   = substr($s['end_time'], 0, 5);
         $startHour  = (int)substr($startShort, 0, 2);
 
-        $price = $baseSlotPrice;
-        if ($startHour >= 17 && $startHour <= 21) {
-            $price += 7500; // Phụ thu giờ cao điểm (7.500đ / 30 phút)
+        $price = (!empty($s['price']) && (float)$s['price'] > 0) ? (float)$s['price'] : $baseSlotPrice;
+        if ((empty($s['price']) || (float)$s['price'] <= 0) && ($startHour >= 17 && $startHour <= 21)) {
+            $price += 7500; // Phụ thu giờ cao điểm nếu không có giá riêng
         }
 
         $isMyHold = ($currentUserId && $s['status'] === 'holding' && (int)$s['held_by'] === $currentUserId && $secondsLeft > 0);
@@ -204,8 +205,9 @@ try {
             'start_time' => $startShort,
             'end_time' => $endShort,
             'time_range' => "{$startShort} - {$endShort}",
-            'price' => $price,
+            'price' => (float)$price,
             'status' => $s['status'],
+            'note' => null,
             'is_past' => $isPast,
             'held_by' => $s['held_by'] ? (int)$s['held_by'] : null,
             'holding_user_id' => $s['held_by'] ? (int)$s['held_by'] : null,

@@ -32,21 +32,25 @@ if ($currentUser !== null) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
     <link rel="stylesheet" href="assets/css/payment_style.css?v=<?= filemtime(__DIR__ . '/assets/css/payment_style.css') ?>">
     <script>
         window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
 </head>
-<body>
+<body class="payment-page">
 
-<!-- App Brand Header (Khung Cố Định) -->
+<!-- App Brand Header -->
 <header class="app-brand-head">
     <div class="container text-center">
         <a href="index.php" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
             <img src="assets/img/logo-teal.svg" alt="GODMINTON" class="brand-logo-img">
         </a>
     </div>
+    <button class="bnav-bell-float" id="pushBellToggle" type="button" aria-label="Bật / Tắt thông báo đặt sân" title="Bật / Tắt thông báo đặt sân">
+        <i class="fa-regular fa-bell"></i>
+    </button>
+    <button class="bnav-theme-float" id="themeToggle" type="button" aria-label="Chuyển chế độ Sáng / Tối" title="Chuyển chế độ Sáng / Tối"></button>
 </header>
 
 <!-- ===================== STEP BAR ===================== -->

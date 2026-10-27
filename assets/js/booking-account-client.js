@@ -39,8 +39,18 @@ window.BookingAccount = (() => {
         if (!window.Swal) return window.confirm(message);
         return (await Swal.fire({icon:'warning',title:message,showCancelButton:true,confirmButtonText:'Xác nhận',cancelButtonText:'Giữ nguyên'})).isConfirmed;
     }
-    const status = {pending:['bg-warning text-dark','Chờ xử lý'],confirmed:['bg-success','Đã xác nhận'],completed:['bg-primary','Hoàn thành'],cancelled:['bg-secondary','Đã hủy']};
-    function badge(value) {const s=status[value]||['bg-secondary','Không rõ'];return `<span class="badge ${s[0]}">${s[1]}</span>`;}
+    const status = {
+        pending: ['bg-warning text-dark', '<i class="fa-regular fa-clock me-1"></i>Chờ cọc'],
+        confirmed: ['bg-info-subtle text-info-emphasis border border-info-subtle', '<i class="fa-solid fa-circle-check me-1"></i>Đã cọc'],
+        checked_in: ['bg-primary text-white shadow-sm', '<i class="fa-solid fa-person-running me-1"></i>Đang chơi'],
+        completed: ['bg-success text-white fw-bold shadow-sm', '<i class="fa-solid fa-circle-check me-1"></i>Hoàn thành'],
+        no_show: ['bg-warning-subtle text-warning-emphasis border border-warning-subtle', '<i class="fa-solid fa-user-xmark me-1"></i>Bùng sân'],
+        cancelled: ['bg-danger text-white fw-bold shadow-sm', '<i class="fa-solid fa-ban me-1"></i>Đã hủy']
+    };
+    function badge(value) {
+        const s = status[value] || ['bg-secondary', escape(value) || 'Không rõ'];
+        return `<span class="badge ${s[0]} px-2 py-1 rounded-pill">${s[1]}</span>`;
+    }
     async function logout() {await request('api/auth/logout.php',{method:'POST',body:'{}'});location.href='auth.php';}
     return {request,identity,escape,money,notify,confirm,badge,logout};
 })();

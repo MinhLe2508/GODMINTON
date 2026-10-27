@@ -64,9 +64,6 @@ $currentUser = [
                 <button id="themeToggle" type="button" class="admin-icon-btn" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
                     <i class="fa-solid fa-moon"></i>
                 </button>
-                <a href="admin-bookings.php" class="btn btn-teal rounded-pill px-3 fw-semibold ms-1 d-none d-md-inline-flex">
-                    <i class="fa-solid fa-clipboard-list me-1"></i> Xem đơn đặt
-                </a>
             </div>
         </header>
 
@@ -186,9 +183,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const statusMap = {
             pending:   { badge: 'bg-warning text-dark', text: 'Chờ xác nhận' },
-            confirmed: { badge: 'bg-success', text: 'Đã xác nhận' },
-            completed: { badge: 'bg-primary', text: 'Hoàn thành' },
-            cancelled: { badge: 'bg-secondary', text: 'Đã hủy' }
+            confirmed: { badge: 'bg-info-subtle text-info-emphasis border border-info-subtle', text: 'Đã cọc' },
+            completed: { badge: 'bg-success text-white', text: 'Hoàn thành' },
+            cancelled: { badge: 'bg-danger text-white', text: 'Đã hủy' }
         };
 
         const body = document.getElementById('recentBookingsBody');

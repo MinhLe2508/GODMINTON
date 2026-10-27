@@ -161,6 +161,9 @@ function booking_text($value): string {return htmlspecialchars((string)$value,EN
                             <span class="legend-swatch" style="background:#ef4444;"></span>Đã đặt
                         </div>
                         <div class="legend-chip">
+                            <span class="legend-swatch" style="background:#ea580c;"></span>Bảo trì
+                        </div>
+                        <div class="legend-chip">
                             <span class="legend-swatch" style="background:#334155;"></span>Khoá / Đóng
                         </div>
                         <div class="legend-chip">

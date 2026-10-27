@@ -35,6 +35,7 @@ function renderExploreFeed() {
         const author = item.author_name || '';
         const initial = author ? escape(author.trim().charAt(0).toUpperCase()) : '<i class="fa-solid fa-newspaper" aria-hidden="true"></i>';
         const detailLink = item.slug ? `post-detail.php?slug=${encodeURIComponent(item.slug)}` : `news.php#news-${Number(item.id)}`;
+        const vBadge = item.voucher_code ? `<span class="badge bg-teal text-white rounded-pill ms-1" style="font-size:0.65rem;"><i class="fa-solid fa-gift me-1"></i>-${item.voucher_discount_percent}%</span>` : '';
         return `<div class="col-md-6 col-lg-4"><article class="feed-card">
             <div class="feed-media">
                 ${cover?`<img class="feed-card-img" src="${cover}" alt="${escape(item.title)}" loading="lazy">`:''}
@@ -44,7 +45,7 @@ function renderExploreFeed() {
                 <div class="feed-author-row">
                     <div class="feed-avatar">${initial}</div>
                     <div class="feed-author-info"><div class="feed-author-name">${escape(author || 'Ban quản trị')}</div><time class="feed-date">${escape(exploreDate(item.created_at || item.publish_at))}</time></div>
-                    <span class="feed-tag feed-category-${category}"><i class="fa-solid ${meta.icon}" aria-hidden="true"></i>${escape(meta.label)}</span>
+                    <span class="feed-tag feed-category-${category}"><i class="fa-solid ${meta.icon}" aria-hidden="true"></i>${escape(meta.label)}</span>${vBadge}
                 </div>
                 <h3 class="feed-title">${escape(item.title)}</h3>
                 <p class="feed-summary">${escape(item.summary || 'Xem nội dung đầy đủ trong bài viết.')}</p>

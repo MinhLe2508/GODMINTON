@@ -377,10 +377,20 @@ try {
         }
         unset($w);
 
+        $owners = [];
+        if ($currentRole === 'admin') {
+            $owners = $pdo->query("SELECT id, name, email FROM users WHERE role = 'owner' AND account_status = 'active' ORDER BY name ASC")->fetchAll();
+            foreach ($owners as &$o) {
+                $o['id'] = (int)$o['id'];
+            }
+            unset($o);
+        }
+
         jsonOut(200, [
             'status' => 'success',
             'data'   => $courts,
             'wards'  => $wards,
+            'owners' => $owners,
             'total'  => count($courts),
         ]);
     }
@@ -486,6 +496,15 @@ try {
         }
         if (array_key_exists('amenities', $input)) {
             syncCourtAmenities($pdo, $courtId, normalizeAmenityCodes($input['amenities']));
+        }
+
+        if ($currentRole === 'admin' && !empty($input['owner_id'])) {
+            $newOwnerId = (int)$input['owner_id'];
+            $chkOwner = $pdo->prepare("SELECT id FROM users WHERE id = ? AND role = 'owner'");
+            $chkOwner->execute([$newOwnerId]);
+            if ($chkOwner->fetchColumn()) {
+                $pdo->prepare("UPDATE courts SET owner_id = ? WHERE id = ?")->execute([$newOwnerId, $courtId]);
+            }
         }
 
         $pdo->prepare('UPDATE courts SET booking_open=? WHERE id=?')->execute([$status==='active'?1:0,$courtId]);

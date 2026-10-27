@@ -138,6 +138,10 @@ function doHold(PDO $pdo, int $userId, array $slotIds): array {
             if ($s['status'] === 'booked') {
                 throw new HoldError(409, "Khung giờ {$s['sub_court_name']} {$range} đã có khách hàng khác đặt thành công.");
             }
+            if ($s['status'] === 'maintenance') {
+                $reason = !empty($s['note']) ? " (Lý do: {$s['note']})" : '';
+                throw new HoldError(409, "Khung giờ {$s['sub_court_name']} {$range} đang được bảo trì sân{$reason}. Không thể đặt lúc này!");
+            }
             if ($s['status'] === 'blocked') {
                 throw new HoldError(409, "Khung giờ {$s['sub_court_name']} {$range} đang tạm ngừng nhận đặt.");
             }

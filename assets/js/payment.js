@@ -264,27 +264,28 @@ function calcPrices() {
         let iconClass = 'fa-solid fa-crown text-warning';
         let rowColor = '#0d9488';
 
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
         if (membership.tier === 'silver') {
             tierName = 'Bạc (Silver)';
-            bannerBg = 'linear-gradient(135deg, rgba(148,163,184,0.22), rgba(226,232,240,0.45))';
-            bannerBorder = '#64748b';
-            bannerTextColor = '#1e293b';
+            bannerBg = isDark ? 'linear-gradient(135deg, rgba(148,163,184,0.18), rgba(203,213,225,0.25))' : 'linear-gradient(135deg, rgba(148,163,184,0.22), rgba(226,232,240,0.45))';
+            bannerBorder = isDark ? '#94a3b8' : '#64748b';
+            bannerTextColor = isDark ? '#f1f5f9' : '#1e293b';
             iconClass = 'fa-solid fa-shield-halved text-secondary';
-            rowColor = '#475569';
+            rowColor = isDark ? '#cbd5e1' : '#475569';
         } else if (membership.tier === 'gold') {
             tierName = 'Vàng (Gold)';
-            bannerBg = 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(251,191,36,0.28))';
+            bannerBg = isDark ? 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(251,191,36,0.3))' : 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(251,191,36,0.28))';
             bannerBorder = '#f59e0b';
-            bannerTextColor = '#92400e';
+            bannerTextColor = isDark ? '#fef3c7' : '#92400e';
             iconClass = 'fa-solid fa-crown text-warning';
-            rowColor = '#d97706';
+            rowColor = isDark ? '#fbbf24' : '#d97706';
         } else if (membership.tier === 'platinum') {
             tierName = 'Bạch Kim (Platinum)';
-            bannerBg = 'linear-gradient(135deg, rgba(51,65,85,0.18), rgba(100,116,139,0.3))';
-            bannerBorder = '#334155';
-            bannerTextColor = '#0f172a';
-            iconClass = 'fa-solid fa-gem text-primary';
-            rowColor = '#1e293b';
+            bannerBg = isDark ? 'linear-gradient(135deg, rgba(14,165,233,0.18), rgba(56,189,248,0.28))' : 'linear-gradient(135deg, rgba(51,65,85,0.18), rgba(100,116,139,0.3))';
+            bannerBorder = isDark ? '#38bdf8' : '#0284c7';
+            bannerTextColor = isDark ? '#f0f9ff' : '#0369a1';
+            iconClass = 'fa-solid fa-gem text-info';
+            rowColor = isDark ? '#38bdf8' : '#0284c7';
         }
 
         if (bannerEl) {

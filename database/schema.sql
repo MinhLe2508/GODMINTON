@@ -213,6 +213,7 @@ CREATE TABLE `owner_requests` (
 CREATE TABLE `posts` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `type` enum('event','membership','announcement') NOT NULL COMMENT 'Loại bài: event (Sự kiện), membership (Gói hội viên), announcement (Thông báo)',
+  `voucher_id` int(10) unsigned DEFAULT NULL COMMENT 'ID mã giảm giá đính kèm bài viết',
   `title` varchar(255) NOT NULL COMMENT 'Tiêu đề bài viết',
   `slug` varchar(255) NOT NULL COMMENT 'Đường dẫn tĩnh thân thiện (duy nhất)',
   `summary` text DEFAULT NULL COMMENT 'Tóm tắt bài viết ngắn gọn',
@@ -237,7 +238,9 @@ CREATE TABLE `posts` (
   KEY `idx_posts_type_status_dates` (`type`,`status`,`publish_at`,`expire_at`),
   KEY `idx_posts_pinned` (`is_pinned`),
   KEY `idx_posts_created_by` (`created_by`),
-  CONSTRAINT `fk_posts_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`)
+  KEY `fk_posts_voucher` (`voucher_id`),
+  CONSTRAINT `fk_posts_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_posts_voucher` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `push_reminder_dispatches` (
@@ -348,6 +351,22 @@ CREATE TABLE `users` (
   `preferred_time` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `user_vouchers` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL COMMENT 'ID người dùng đã nhận mã',
+  `voucher_id` int(10) unsigned NOT NULL COMMENT 'ID mã giảm giá',
+  `post_id` int(10) unsigned DEFAULT NULL COMMENT 'ID bài viết nguồn mà người dùng bấm nhận mã',
+  `collected_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_user_voucher` (`user_id`, `voucher_id`),
+  KEY `idx_uv_user` (`user_id`),
+  KEY `idx_uv_voucher` (`voucher_id`),
+  KEY `idx_uv_post` (`post_id`),
+  CONSTRAINT `fk_uv_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_uv_voucher` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_uv_post` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `voucher_usages` (

@@ -42,6 +42,27 @@ $typeLabels = [
 ];
 
 $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type']] : ['label' => 'Bài viết', 'icon' => 'fa-newspaper', 'chip_class' => 'chip-announcement'];
+
+// Thông tin mã giảm giá tặng kèm bài viết (nếu có)
+$postVoucher = null;
+$userHasCollectedVoucher = false;
+if ($post && !empty($post['voucher_id']) && !empty($post['voucher_code']) && ($post['voucher_status'] ?? '') === 'active') {
+    $postVoucher = [
+        'id'               => (int)$post['voucher_id'],
+        'code'             => $post['voucher_code'],
+        'discount_percent' => (int)$post['voucher_discount_percent'],
+        'max_discount'     => $post['voucher_max_discount'] !== null ? (int)$post['voucher_max_discount'] : null,
+        'min_order'        => (int)$post['voucher_min_order'],
+        'end_at'           => $post['voucher_end_at'],
+        'court_name'       => $post['voucher_court_name'] ?: 'Áp dụng cho mọi sân'
+    ];
+
+    if ($currentUserId > 0) {
+        $chkStmt = $pdo->prepare('SELECT 1 FROM user_vouchers WHERE user_id = ? AND voucher_id = ?');
+        $chkStmt->execute([$currentUserId, (int)$post['voucher_id']]);
+        $userHasCollectedVoucher = (bool)$chkStmt->fetch();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
@@ -321,6 +342,64 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
                 <div class="small text-muted">
                     <strong class="text-body d-block">Thông báo chính thức từ Ban Quản Trị GODMINTON</strong>
                     Vui lòng theo dõi và tuân thủ các quy định để có trải nghiệm đặt sân tốt nhất.
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($postVoucher): ?>
+            <!-- ==================== KHỐI MÃ GIẢM GIÁ ĐÍNH KÈM BÀI VIẾT ==================== -->
+            <div class="voucher-reward-box p-4 mb-4 rounded-4 shadow-sm" style="background: linear-gradient(135deg, rgba(13,148,136,0.08) 0%, rgba(20,184,166,0.18) 100%); border: 2px dashed var(--brand-teal, #0d9488);">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-teal text-white rounded-pill px-3 py-1 fw-bold">
+                            <i class="fa-solid fa-gift me-1"></i> MÃ GIẢM GIÁ TẶNG KÈM
+                        </span>
+                        <span class="badge bg-danger text-white rounded-pill px-3 py-1 fw-bold">
+                            <i class="fa-solid fa-bolt me-1"></i> GIẢM <?= (int)$postVoucher['discount_percent'] ?>%
+                        </span>
+                    </div>
+                    <div class="small text-muted">
+                        <i class="fa-regular fa-clock me-1 text-teal"></i> Hạn dùng: <?= date('d/m/Y', strtotime($postVoucher['end_at'])) ?>
+                    </div>
+                </div>
+
+                <div class="row align-items-center g-3">
+                    <div class="col-md-7">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div class="fs-4 fw-extrabold text-teal font-monospace tracking-wide text-uppercase" id="displayVoucherCode"><?= htmlspecialchars($postVoucher['code']) ?></div>
+                            <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-2 py-0 copy-code-btn" data-code="<?= htmlspecialchars($postVoucher['code']) ?>" title="Sao chép mã">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="small text-muted">
+                            <div><i class="fa-solid fa-shield-halved text-teal me-1"></i> <?= $postVoucher['max_discount'] ? 'Tối đa ' . number_format($postVoucher['max_discount'], 0, ',', '.') . 'đ' : 'Không giới hạn mức giảm' ?> · <?= $postVoucher['min_order'] > 0 ? 'Đơn từ ' . number_format($postVoucher['min_order'], 0, ',', '.') . 'đ' : 'Mọi giá trị đơn' ?></div>
+                            <div><i class="fa-solid fa-location-dot text-teal me-1"></i> <?= htmlspecialchars($postVoucher['court_name']) ?></div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5 text-md-end text-start">
+                        <div id="voucherCollectActionWrap">
+                            <?php if (!$currentUserId): ?>
+                                <a href="auth.php?redirect=<?= urlencode('post-detail.php?slug=' . $post['slug']) ?>" class="btn btn-teal rounded-pill px-4 py-2 fw-bold shadow-sm">
+                                    <i class="fa-solid fa-right-to-bracket me-1"></i> Đăng nhập để nhận mã
+                                </a>
+                            <?php elseif ($userHasCollectedVoucher): ?>
+                                <button type="button" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm" disabled>
+                                    <i class="fa-solid fa-circle-check me-1"></i> Đã lưu vào kho mã
+                                </button>
+                                <div class="mt-2">
+                                    <a href="profile.php?tab=vouchers" class="small text-teal text-decoration-none fw-semibold">
+                                        Xem trong kho của bạn <i class="fa-solid fa-arrow-right"></i>
+                                    </a>
+                                </div>
+                            <?php else: ?>
+                                <button type="button" class="btn btn-teal rounded-pill px-4 py-2 fw-bold shadow-sm btn-collect-voucher" data-voucher-id="<?= (int)$postVoucher['id'] ?>" data-post-id="<?= (int)$post['id'] ?>">
+                                    <span class="spinner-border spinner-border-sm me-1 collect-spinner" style="display:none;"></span>
+                                    <i class="fa-solid fa-gift me-1 collect-icon"></i> <span class="collect-text">Bấm nhận mã vào kho</span>
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
             </div>
             <?php endif; ?>
@@ -619,6 +698,114 @@ $typeMeta = $post && isset($typeLabels[$post['type']]) ? $typeLabels[$post['type
             spinner.style.display = 'none';
         }
     }
+    </script>
+    <?php endif; ?>
+
+    <?php if ($postVoucher): ?>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Sao chép mã giảm giá
+        document.querySelectorAll('.copy-code-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const code = btn.dataset.code;
+                if (!code) return;
+                try {
+                    await navigator.clipboard.writeText(code);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Đã sao chép mã!',
+                        text: `Mã "${code}" đã được lưu vào bộ nhớ tạm.`,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } catch(e) {
+                    prompt('Mã giảm giá của bạn:', code);
+                }
+            });
+        });
+
+        // Bấm nhận mã vào kho
+        document.querySelectorAll('.btn-collect-voucher').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const voucherId = btn.dataset.voucherId;
+                const postId = btn.dataset.postId;
+                const spinner = btn.querySelector('.collect-spinner');
+                const icon = btn.querySelector('.collect-icon');
+                const text = btn.querySelector('.collect-text');
+
+                btn.disabled = true;
+                if (spinner) spinner.style.display = 'inline-block';
+                if (icon) icon.style.display = 'none';
+                if (text) text.textContent = 'Đang nhận mã...';
+
+                try {
+                    const res = await fetch('api/vouchers/collect.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ voucher_id: Number(voucherId), post_id: Number(postId) })
+                    });
+                    const json = await res.json();
+
+                    if (res.ok && json.status === 'success') {
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Nhận Mã Thành Công!',
+                            html: `Mã ưu đãi <strong>${json.data.voucher_code}</strong> đã được lưu thành công vào <strong>Kho Mã Giảm Giá &amp; Ưu Đãi</strong> trong trang cá nhân của bạn.<br><br>Bạn có thể dùng mã này khi thanh toán đặt sân!`,
+                            confirmButtonText: 'Đã hiểu',
+                            confirmButtonColor: '#0d9488'
+                        });
+
+                        const wrap = document.getElementById('voucherCollectActionWrap');
+                        if (wrap) {
+                            wrap.innerHTML = `
+                                <button type="button" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm" disabled>
+                                    <i class="fa-solid fa-circle-check me-1"></i> Đã lưu vào kho mã
+                                </button>
+                                <div class="mt-2">
+                                    <a href="profile.php?tab=vouchers" class="small text-teal text-decoration-none fw-semibold">
+                                        Xem trong kho của bạn <i class="fa-solid fa-arrow-right"></i>
+                                    </a>
+                                </div>
+                            `;
+                        }
+                    } else if (res.status === 409) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Mã đã có trong kho',
+                            text: json.message || 'Bạn đã lưu mã này vào kho của bạn rồi!',
+                            confirmButtonColor: '#0d9488'
+                        });
+                        const wrap = document.getElementById('voucherCollectActionWrap');
+                        if (wrap) {
+                            wrap.innerHTML = `
+                                <button type="button" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm" disabled>
+                                    <i class="fa-solid fa-circle-check me-1"></i> Đã lưu vào kho mã
+                                </button>
+                                <div class="mt-2">
+                                    <a href="profile.php?tab=vouchers" class="small text-teal text-decoration-none fw-semibold">
+                                        Xem trong kho của bạn <i class="fa-solid fa-arrow-right"></i>
+                                    </a>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        throw new Error(json.message || 'Không thể nhận mã lúc này.');
+                    }
+                } catch(err) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Chưa thể nhận mã',
+                        text: err.message,
+                        confirmButtonColor: '#0d9488'
+                    });
+                    btn.disabled = false;
+                    if (spinner) spinner.style.display = 'none';
+                    if (icon) icon.style.display = 'inline-block';
+                    if (text) text.textContent = 'Bấm nhận mã vào kho';
+                }
+            });
+        });
+    });
     </script>
     <?php endif; ?>
 </body>

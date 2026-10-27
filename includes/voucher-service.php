@@ -167,6 +167,7 @@ function voucher_calculate_pricing(int $courtAmount, ?array $voucher = null, ?ar
         'membership_discount_percent' => $memberPercent,
         'court_amount'                => $courtAmount,
         'discount_amount'             => $totalDiscount,
+        'voucher_discount_amount'     => $voucherDiscount,
         'discount_funded_by'          => $fundedBy,
         'platform_fee'                => $platformFee,
         'total_amount'                => $totalAmount,
@@ -292,6 +293,17 @@ function voucher_validate_and_get(
 
         if ($userUsages >= $perUserLimit) {
             throw new VoucherError(422, 'VOUCHER_ALREADY_USED', 'Bạn đã sử dụng mã này rồi.');
+        }
+
+        // 8.1. Nếu voucher được phát hành qua bài viết, khách cần bấm nhận mã vào kho trước khi sử dụng
+        $postVoucherStmt = $pdo->prepare('SELECT 1 FROM posts WHERE voucher_id = ? LIMIT 1');
+        $postVoucherStmt->execute([(int)$voucher['id']]);
+        if ($postVoucherStmt->fetch()) {
+            $hasCollectedStmt = $pdo->prepare('SELECT 1 FROM user_vouchers WHERE user_id = ? AND voucher_id = ?');
+            $hasCollectedStmt->execute([$userId, (int)$voucher['id']]);
+            if (!$hasCollectedStmt->fetch()) {
+                throw new VoucherError(422, 'VOUCHER_NOT_COLLECTED', 'Bạn chưa lưu mã này vào kho. Vui lòng vào bài viết để bấm "Nhận mã" trước khi sử dụng.');
+            }
         }
 
         // 9. Kiểm tra mã chỉ dành cho đơn đầu tiên
