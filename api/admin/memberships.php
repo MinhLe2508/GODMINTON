@@ -22,6 +22,9 @@ try {
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
     // Tự động chuyển các gói hội viên đã qua 23h59p ngày kết thúc sang trạng thái 'expired'
+    // & hủy các phiên chờ thanh toán VietQR đã quá hạn 20 phút mà khách chưa chuyển tiền
+    payment_ensure_schema($pdo);
+    payment_expire_overdue($pdo, 20);
     membership_sync_expired($pdo);
 
     // ==========================================
@@ -110,17 +113,24 @@ try {
         $countStmt->execute($params);
         $totalRecords = (int)$countStmt->fetchColumn();
 
-        // Lấy danh sách chi tiết
+        // Lấy danh sách chi tiết kèm trạng thái thanh toán SePay thực tế
         $listStmt = $pdo->prepare("
             SELECT um.*,
                    u.name AS user_name,
                    u.email AS user_email,
                    u.phone AS user_phone,
                    p.title AS package_title,
-                   p.slug AS package_slug
+                   p.slug AS package_slug,
+                   pay.status AS payment_status,
+                   pay.paid_amount AS payment_paid_amount,
+                   pay.payment_code AS payment_code,
+                   pay.paid_at AS payment_paid_at
             FROM user_memberships um
             JOIN users u ON u.id = um.user_id
             JOIN posts p ON p.id = um.post_id
+            LEFT JOIN payments pay ON pay.id = (
+                SELECT p2.id FROM payments p2 WHERE p2.membership_id = um.id ORDER BY p2.id DESC LIMIT 1
+            )
             WHERE {$whereSql}
             ORDER BY um.id DESC
             LIMIT {$limit} OFFSET {$offset}
@@ -138,6 +148,14 @@ try {
             if ($effectiveStatus === 'active' && $isExpired) {
                 $effectiveStatus = 'expired';
             }
+
+            $payStatus = $item['payment_status'] ?? null;
+            // Một gói chỉ được coi là ĐÃ THANH TOÁN nếu cổng SePay xác nhận 'paid' HOẶC gói do Admin cấp trực tiếp (không qua bảng payments và đã active/expired)
+            $isPaid = ($payStatus === 'paid') || ($payStatus === null && in_array($item['status'], ['active', 'expired'], true));
+            // Chỉ cho phép kích hoạt lại nếu gói ĐÃ THANH TOÁN, bị Admin tạm hủy ('cancelled') và vẫn còn hạn sử dụng
+            $canReactivate = ($item['status'] === 'cancelled' && $isPaid && !$isExpired);
+            // Chỉ cho phép gia hạn nếu gói ĐÃ THANH TOÁN và đang ở trạng thái active hoặc expired
+            $canExtend = ($isPaid && in_array($item['status'], ['active', 'expired'], true));
 
             return [
                 'id'               => (int)$item['id'],
@@ -166,6 +184,11 @@ try {
                 'status'           => $item['status'],
                 'effective_status' => $effectiveStatus,
                 'payment_method'   => $item['payment_method'] ?? 'VietQR',
+                'payment_status'   => $payStatus,
+                'payment_code'     => $item['payment_code'] ?? null,
+                'is_paid'          => $isPaid,
+                'can_reactivate'   => $canReactivate,
+                'can_extend'       => $canExtend,
                 'created_at'       => $item['created_at']
             ];
         }, $rawItems);
@@ -356,6 +379,12 @@ try {
                 booking_account_out(404, null, 'Không tìm thấy gói hội viên.');
             }
 
+            $payRow = payment_fetch_by_membership($pdo, $membershipId);
+            $isPaid = ($payRow && $payRow['status'] === 'paid') || (!$payRow && in_array($mem['status'], ['active', 'expired'], true));
+            if (!$isPaid || in_array($mem['status'], ['pending', 'rejected'], true)) {
+                booking_account_out(422, null, 'Không thể gia hạn cho đơn đăng ký chưa thanh toán hoặc đã bị từ chối.');
+            }
+
             $curEnd = strtotime($mem['end_date']);
             $baseTime = ($curEnd > time()) ? $curEnd : time();
             $targetDate = date('Y-m-d', strtotime("+{$addDays} days", $baseTime));
@@ -385,6 +414,24 @@ try {
 
             if ($membershipId <= 0 || !in_array($newStatus, ['active', 'expired', 'cancelled'], true)) {
                 booking_account_out(422, null, 'Trạng thái không hợp lệ.');
+            }
+
+            $memStmt = $pdo->prepare("SELECT * FROM user_memberships WHERE id = ?");
+            $memStmt->execute([$membershipId]);
+            $mem = $memStmt->fetch();
+            if (!$mem) {
+                booking_account_out(404, null, 'Không tìm thấy gói hội viên.');
+            }
+
+            if ($newStatus === 'active') {
+                $payRow = payment_fetch_by_membership($pdo, $membershipId);
+                $isPaid = ($payRow && $payRow['status'] === 'paid') || (!$payRow && in_array($mem['status'], ['active', 'expired'], true));
+                if ($mem['status'] === 'rejected' || !$isPaid) {
+                    booking_account_out(422, null, 'Không thể kích hoạt lại gói chưa thanh toán hoặc đã bị từ chối. Vui lòng yêu cầu khách tạo mã QR mới hoặc dùng chức năng Cấp gói hội viên.');
+                }
+                if (strtotime((string)$mem['end_date']) < time()) {
+                    booking_account_out(422, null, 'Gói hội viên này đã hết hạn thời gian. Vui lòng sử dụng chức năng Gia hạn.');
+                }
             }
 
             $upd = $pdo->prepare("UPDATE user_memberships SET status = ?, updated_at = NOW() WHERE id = ?");

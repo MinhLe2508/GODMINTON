@@ -916,7 +916,8 @@ function payment_send_membership_confirmation_email(PDO $pdo, int $membershipId)
         $money = static fn($n) => number_format((int)round((float)$n), 0, ',', '.') . ' đ';
 
         $membershipCode = 'MB-' . str_pad((string)$membershipId, 6, '0', STR_PAD_LEFT);
-        $tierLabel = match ((string)$mem['tier']) {
+        $tierKey = strtolower((string)($mem['tier'] ?? 'silver'));
+        $tierLabel = match ($tierKey) {
             'platinum' => 'Hội Viên Bạch Kim (Platinum VIP)',
             'gold'     => 'Hội Viên Vàng (Golden Racket)',
             default    => 'Hội Viên Bạc (Silver Member)',
@@ -929,6 +930,124 @@ function payment_send_membership_confirmation_email(PDO $pdo, int $membershipId)
         $profileUrl      = rtrim((string)getenv('APP_URL'), '/') . '/profile.php?tab=membership';
         $courtsUrl       = rtrim((string)getenv('APP_URL'), '/') . '/courts.php';
         $year            = date('Y');
+
+        // Bảng màu giao diện Email tương ứng từng hạng Gói Hội Viên (Bạch Kim / Vàng / Bạc)
+        $theme = match ($tierKey) {
+            'platinum' => [
+                'outerBgColor'    => '#e2e8f0',
+                'outerBgGradient' => 'linear-gradient(140deg,#cbd5e1 0%,#e2e8f0 50%,#e0f2fe 100%)',
+                'cardBorder'      => '#94a3b8',
+                'cardShadow'      => '0 20px 50px rgba(15,23,42,0.18)',
+                'headerBgColor'   => '#0f172a',
+                'headerGradient'  => 'linear-gradient(135deg,#090d16 0%,#1e293b 55%,#334155 100%)',
+                'headerSub1Color' => '#cbd5e1',
+                'headerSub2Color' => '#38bdf8',
+                'headerSub2Text'  => 'HÓA ĐƠN ĐIỆN TỬ &amp; CHỨNG NHẬN THẺ HỘI VIÊN BẠCH KIM',
+                'accentBarBg'     => '#38bdf8',
+                'accentGradient'  => 'linear-gradient(90deg,#38bdf8 0%,#818cf8 50%,#e2e8f0 100%)',
+                'badgeBg'         => '#0f172a',
+                'badgeBorder'     => '#38bdf8',
+                'badgeTextColor'  => '#f8fafc',
+                'badgeLabel'      => '&#9830; HẠNG BẠCH KIM (PLATINUM VIP) · KÍCH HOẠT TỰ ĐỘNG 24/7',
+                'headingColor'    => '#0f172a',
+                'certBgColor'     => '#f1f5f9',
+                'certBgGradient'  => 'linear-gradient(135deg,#f8fafc 0%,#e2e8f0 55%,#e0f2fe 100%)',
+                'certBorder'      => '#334155',
+                'certLabelColor'  => '#334155',
+                'certCodeColor'   => '#0f172a',
+                'certTierColor'   => '#0284c7',
+                'sectionColor'    => '#0f172a',
+                'tableBorder'     => '#cbd5e1',
+                'rowAltBg'        => '#f8fafc',
+                'discountColor'   => '#0284c7',
+                'totalRowBg'      => '#0f172a',
+                'totalRowText'    => '#38bdf8',
+                'btnBgColor'      => '#0f172a',
+                'btnGradient'     => 'linear-gradient(120deg,#0f172a 0%,#1e293b 55%,#0284c7 100%)',
+                'btnShadow'       => '0 8px 20px rgba(15,23,42,0.28)',
+                'linkColor'       => '#0284c7',
+                'footerBg'        => '#f1f5f9',
+                'footerGradient'  => 'linear-gradient(110deg,#f1f5f9 0%,#e2e8f0 100%)',
+                'footerBorder'    => '#cbd5e1',
+                'footerText'      => '#334155',
+            ],
+            'gold' => [
+                'outerBgColor'    => '#fef3c7',
+                'outerBgGradient' => 'linear-gradient(140deg,#fde68a 0%,#fef3c7 50%,#fffbeb 100%)',
+                'cardBorder'      => '#f59e0b',
+                'cardShadow'      => '0 20px 50px rgba(180,83,9,0.16)',
+                'headerBgColor'   => '#92400e',
+                'headerGradient'  => 'linear-gradient(135deg,#78350f 0%,#b45309 55%,#d97706 100%)',
+                'headerSub1Color' => '#fef3c7',
+                'headerSub2Color' => '#fde68a',
+                'headerSub2Text'  => 'HÓA ĐƠN ĐIỆN TỬ &amp; CHỨNG NHẬN THẺ HỘI VIÊN VÀNG',
+                'accentBarBg'     => '#fbbf24',
+                'accentGradient'  => 'linear-gradient(90deg,#fbbf24 0%,#f59e0b 50%,#fde68a 100%)',
+                'badgeBg'         => '#fef3c7',
+                'badgeBorder'     => '#f59e0b',
+                'badgeTextColor'  => '#92400e',
+                'badgeLabel'      => '&#9733; HẠNG VÀNG (GOLDEN RACKET) · KÍCH HOẠT TỰ ĐỘNG 24/7',
+                'headingColor'    => '#92400e',
+                'certBgColor'     => '#fffbeb',
+                'certBgGradient'  => 'linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%)',
+                'certBorder'      => '#d97706',
+                'certLabelColor'  => '#b45309',
+                'certCodeColor'   => '#78350f',
+                'certTierColor'   => '#b45309',
+                'sectionColor'    => '#92400e',
+                'tableBorder'     => '#fcd34d',
+                'rowAltBg'        => '#fffbeb',
+                'discountColor'   => '#b45309',
+                'totalRowBg'      => '#fef3c7',
+                'totalRowText'    => '#92400e',
+                'btnBgColor'      => '#b45309',
+                'btnGradient'     => 'linear-gradient(120deg,#92400e 0%,#d97706 60%,#f59e0b 100%)',
+                'btnShadow'       => '0 8px 20px rgba(180,83,9,0.28)',
+                'linkColor'       => '#b45309',
+                'footerBg'        => '#fffbeb',
+                'footerGradient'  => 'linear-gradient(110deg,#fffbeb 0%,#fef3c7 100%)',
+                'footerBorder'    => '#fcd34d',
+                'footerText'      => '#92400e',
+            ],
+            default => [
+                'outerBgColor'    => '#e2e8f0',
+                'outerBgGradient' => 'linear-gradient(140deg,#cbd5e1 0%,#f1f5f9 55%,#f8fafc 100%)',
+                'cardBorder'      => '#94a3b8',
+                'cardShadow'      => '0 20px 50px rgba(71,85,105,0.15)',
+                'headerBgColor'   => '#475569',
+                'headerGradient'  => 'linear-gradient(135deg,#334155 0%,#475569 55%,#64748b 100%)',
+                'headerSub1Color' => '#e2e8f0',
+                'headerSub2Color' => '#f8fafc',
+                'headerSub2Text'  => 'HÓA ĐƠN ĐIỆN TỬ &amp; CHỨNG NHẬN THẺ HỘI VIÊN BẠC',
+                'accentBarBg'     => '#94a3b8',
+                'accentGradient'  => 'linear-gradient(90deg,#64748b 0%,#cbd5e1 50%,#94a3b8 100%)',
+                'badgeBg'         => '#f1f5f9',
+                'badgeBorder'     => '#94a3b8',
+                'badgeTextColor'  => '#334155',
+                'badgeLabel'      => '&#10022; HẠNG BẠC (SILVER MEMBER) · KÍCH HOẠT TỰ ĐỘNG 24/7',
+                'headingColor'    => '#334155',
+                'certBgColor'     => '#f8fafc',
+                'certBgGradient'  => 'linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%)',
+                'certBorder'      => '#64748b',
+                'certLabelColor'  => '#475569',
+                'certCodeColor'   => '#1e293b',
+                'certTierColor'   => '#334155',
+                'sectionColor'    => '#334155',
+                'tableBorder'     => '#cbd5e1',
+                'rowAltBg'        => '#f8fafc',
+                'discountColor'   => '#334155',
+                'totalRowBg'      => '#e2e8f0',
+                'totalRowText'    => '#1e293b',
+                'btnBgColor'      => '#475569',
+                'btnGradient'     => 'linear-gradient(120deg,#334155 0%,#475569 60%,#64748b 100%)',
+                'btnShadow'       => '0 8px 20px rgba(71,85,105,0.25)',
+                'linkColor'       => '#475569',
+                'footerBg'        => '#f1f5f9',
+                'footerGradient'  => 'linear-gradient(110deg,#f8fafc 0%,#e2e8f0 100%)',
+                'footerBorder'    => '#cbd5e1',
+                'footerText'      => '#475569',
+            ],
+        };
 
         $logoPath = __DIR__ . '/../assets/img/logo.jpg';
         $logoHtml = is_file($logoPath)
@@ -953,52 +1072,52 @@ function payment_send_membership_confirmation_email(PDO $pdo, int $membershipId)
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hóa đơn kích hoạt Gói Hội Viên {$memCodeSafe} - GODMINTON</title>
 </head>
-<body style="margin:0;padding:0;background-color:#e5f5f1;background-image:linear-gradient(140deg,#d9f7ed 0%,#edf5ff 100%);font-family:'Plus Jakarta Sans','Segoe UI',Roboto,Arial,sans-serif;color:#193d42;">
+<body style="margin:0;padding:0;background-color:{$theme['outerBgColor']};background-image:{$theme['outerBgGradient']};font-family:'Plus Jakarta Sans','Segoe UI',Roboto,Arial,sans-serif;color:#1e293b;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Đã kích hoạt {$packageTitleSafe} ({$memCodeSafe}) — Giảm {$discountPercent}% tiền sân tự động!</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#e5f5f1" style="background-image:linear-gradient(140deg,#d9f7ed 0%,#edf5ff 100%);font-family:'Plus Jakarta Sans','Segoe UI',Roboto,Arial,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{$theme['outerBgColor']}" style="background-image:{$theme['outerBgGradient']};font-family:'Plus Jakarta Sans','Segoe UI',Roboto,Arial,sans-serif;">
 <tr>
 <td align="center" style="padding:28px 12px;">
-    <table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:620px;border:1px solid #c8e7e0;border-radius:22px;box-shadow:0 18px 46px rgba(15,118,110,0.10);overflow:hidden;">
+    <table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:620px;border:1px solid {$theme['cardBorder']};border-radius:22px;box-shadow:{$theme['cardShadow']};overflow:hidden;">
 
-        <!-- HEADER CÓ LOGO GODMINTON -->
+        <!-- HEADER CÓ LOGO GODMINTON THEO MÀU HẠNG HỘI VIÊN -->
         <tr>
-            <td align="center" bgcolor="#0f766e" style="padding:28px 24px 22px;background-image:linear-gradient(125deg,#115e59 0%,#0d9488 60%,#0891b2 100%);border-radius:22px 22px 0 0;">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,0.12);">
+            <td align="center" bgcolor="{$theme['headerBgColor']}" style="padding:28px 24px 22px;background-image:{$theme['headerGradient']};border-radius:22px 22px 0 0;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,0.18);">
                     <tr>
                         <td align="center" style="padding:10px 18px;border-radius:16px;">{$logoHtml}</td>
                     </tr>
                 </table>
-                <p style="font-size:11px;line-height:1.6;letter-spacing:1.2px;font-weight:700;color:#e3fffa;margin:16px 0 4px;text-transform:uppercase;">NỀN TẢNG ĐẶT SÂN CẦU LÔNG TRỰC TUYẾN</p>
-                <p style="font-size:13px;color:#fde68a;margin:0;font-weight:700;">HÓA ĐƠN ĐIỆN TỬ &amp; CHỨNG NHẬN THẺ HỘI VIÊN VIP</p>
+                <p style="font-size:11px;line-height:1.6;letter-spacing:1.2px;font-weight:700;color:{$theme['headerSub1Color']};margin:16px 0 4px;text-transform:uppercase;">NỀN TẢNG ĐẶT SÂN CẦU LÔNG TRỰC TUYẾN</p>
+                <p style="font-size:13px;color:{$theme['headerSub2Color']};margin:0;font-weight:800;letter-spacing:0.4px;">{$theme['headerSub2Text']}</p>
             </td>
         </tr>
         <tr>
-            <td height="5" bgcolor="#f59e0b" style="height:5px;font-size:0;line-height:0;background-image:linear-gradient(90deg,#f59e0b 0%,#5eead4 100%);">&nbsp;</td>
+            <td height="5" bgcolor="{$theme['accentBarBg']}" style="height:5px;font-size:0;line-height:0;background-image:{$theme['accentGradient']};">&nbsp;</td>
         </tr>
 
         <!-- BODY -->
         <tr>
             <td style="padding:28px 26px 24px;">
                 <div style="text-align:center;margin-bottom:18px;">
-                    <span style="display:inline-block;padding:6px 14px;border-radius:999px;background-color:#fef3c7;border:1px solid #f59e0b;font-size:12px;letter-spacing:0.4px;color:#b45309;font-weight:800;">
-                        &#9733; ĐÃ THANH TOÁN &amp; KÍCH HOẠT TỰ ĐỘNG 24/7
+                    <span style="display:inline-block;padding:6px 14px;border-radius:999px;background-color:{$theme['badgeBg']};border:1px solid {$theme['badgeBorder']};font-size:11.5px;letter-spacing:0.5px;color:{$theme['badgeTextColor']};font-weight:800;">
+                        {$theme['badgeLabel']}
                     </span>
                 </div>
 
-                <h1 style="font-size:22px;line-height:1.35;font-weight:800;margin:0 0 12px;color:#115e59;text-align:center;">
-                    Kích hoạt Gói Hội Viên thành công!
+                <h1 style="font-size:22px;line-height:1.35;font-weight:800;margin:0 0 12px;color:{$theme['headingColor']};text-align:center;">
+                    Kích hoạt {$tierLabelSafe} thành công!
                 </h1>
                 <p style="font-size:14.5px;line-height:1.7;color:#334155;margin:0 0 22px;text-align:center;">
                     Xin chào <strong>{$userNameSafe}</strong>, hệ thống <strong>GODMINTON</strong> đã nhận đủ thanh toán và kích hoạt ngay đặc quyền <strong>Giảm {$discountPercent}% tiền sân</strong> cho tài khoản của bạn.
                 </p>
 
-                <!-- THẺ HỘI VIÊN ĐIỆN TỬ -->
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#fffbeb" style="border:2px dashed #f59e0b;border-radius:16px;margin-bottom:24px;">
+                <!-- THẺ HỘI VIÊN ĐIỆN TỬ THEO HẠNG -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{$theme['certBgColor']}" style="background-image:{$theme['certBgGradient']};border:2px dashed {$theme['certBorder']};border-radius:16px;margin-bottom:24px;">
                     <tr>
                         <td align="center" style="padding:18px 16px;">
-                            <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:1px;color:#b45309;text-transform:uppercase;">MÃ HÓA ĐƠN HỘI VIÊN VIP</p>
-                            <p style="margin:0 0 6px;font-size:24px;font-weight:800;letter-spacing:1px;color:#0f172a;">#{$memCodeSafe}</p>
-                            <p style="margin:0 0 6px;font-size:14px;font-weight:800;color:#0d9488;">{$tierLabelSafe} · Giảm {$discountPercent}% Tiền Sân</p>
+                            <p style="margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:1px;color:{$theme['certLabelColor']};text-transform:uppercase;">MÃ HÓA ĐƠN HỘI VIÊN VIP</p>
+                            <p style="margin:0 0 6px;font-size:24px;font-weight:800;letter-spacing:1px;color:{$theme['certCodeColor']};">#{$memCodeSafe}</p>
+                            <p style="margin:0 0 6px;font-size:14px;font-weight:800;color:{$theme['certTierColor']};">{$tierLabelSafe} · Giảm {$discountPercent}% Tiền Sân</p>
                             <p style="margin:0;font-size:12.5px;color:#475569;">
                                 Mã GD SePay: <strong>{$payCodeSafe}</strong> &nbsp;&bull;&nbsp; Xác nhận lúc: <strong>{$paidAtStr}</strong>
                             </p>
@@ -1007,19 +1126,19 @@ function payment_send_membership_confirmation_email(PDO $pdo, int $membershipId)
                 </table>
 
                 <!-- CHI TIẾT GÓI & HÓA ĐƠN -->
-                <p style="margin:0 0 10px;font-size:12px;font-weight:800;letter-spacing:0.6px;color:#0f766e;text-transform:uppercase;">
+                <p style="margin:0 0 10px;font-size:12px;font-weight:800;letter-spacing:0.6px;color:{$theme['sectionColor']};text-transform:uppercase;">
                     Thông tin gói hội viên &amp; thanh toán
                 </p>
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #d5ebe5;border-radius:12px;overflow:hidden;margin-bottom:24px;font-size:14px;">
-                    <tr bgcolor="#f8fafc">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid {$theme['tableBorder']};border-radius:12px;overflow:hidden;margin-bottom:24px;font-size:14px;">
+                    <tr bgcolor="{$theme['rowAltBg']}">
                         <td style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#64748b;width:38%;">Gói đăng ký</td>
                         <td align="right" style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-weight:700;">{$packageTitleSafe}</td>
                     </tr>
                     <tr>
                         <td style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#64748b;">Đặc quyền chiết khấu</td>
-                        <td align="right" style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#15803d;font-weight:800;">Tự động giảm {$discountPercent}% mọi lượt đặt sân</td>
+                        <td align="right" style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:{$theme['discountColor']};font-weight:800;">Tự động giảm {$discountPercent}% mọi lượt đặt sân</td>
                     </tr>
-                    <tr bgcolor="#f8fafc">
+                    <tr bgcolor="{$theme['rowAltBg']}">
                         <td style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#64748b;">Thời hạn hiệu lực</td>
                         <td align="right" style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#0f172a;font-weight:700;">{$startStr} – {$endStr} ({$durationDays} ngày)</td>
                     </tr>
@@ -1027,20 +1146,20 @@ function payment_send_membership_confirmation_email(PDO $pdo, int $membershipId)
                         <td style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#64748b;">Thành viên sở hữu</td>
                         <td align="right" style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#334155;font-weight:600;">{$userNameSafe} ({$userPhoneSafe})</td>
                     </tr>
-                    <tr bgcolor="#f8fafc">
+                    <tr bgcolor="{$theme['rowAltBg']}">
                         <td style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#64748b;">Phương thức thanh toán</td>
                         <td align="right" style="padding:11px 14px;border-bottom:1px solid #e2e8f0;color:#334155;font-weight:600;">Chuyển khoản VietQR 24/7 (SePay)</td>
                     </tr>
-                    <tr bgcolor="#ecfdf5">
-                        <td style="padding:13px 14px;color:#15803d;font-weight:800;font-size:15px;">&#10003; Đã thanh toán (100%)</td>
-                        <td align="right" style="padding:13px 14px;color:#15803d;font-weight:800;font-size:17px;">{$priceTxt}</td>
+                    <tr bgcolor="{$theme['totalRowBg']}">
+                        <td style="padding:13px 14px;color:{$theme['totalRowText']};font-weight:800;font-size:15px;">&#10003; Đã thanh toán (100%)</td>
+                        <td align="right" style="padding:13px 14px;color:{$theme['totalRowText']};font-weight:800;font-size:17px;">{$priceTxt}</td>
                     </tr>
                 </table>
 
-                <!-- NÚT HÀNH ĐỘNG -->
+                <!-- NÚT HÀNH ĐỘNG THEO MÀU HẠNG -->
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 16px;">
                     <tr>
-                        <td align="center" bgcolor="#0d9488" style="border-radius:999px;background-image:linear-gradient(120deg,#0f766e 0%,#0891b2 100%);box-shadow:0 6px 16px rgba(13,148,136,0.25);">
+                        <td align="center" bgcolor="{$theme['btnBgColor']}" style="border-radius:999px;background-image:{$theme['btnGradient']};box-shadow:{$theme['btnShadow']};">
                             <a href="{$safeCourtsUrl}" style="display:inline-block;padding:13px 28px;font-size:14.5px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:999px;">
                                 Đặt Sân Với Ưu Đãi -{$discountPercent}% Ngay
                             </a>
@@ -1048,15 +1167,15 @@ function payment_send_membership_confirmation_email(PDO $pdo, int $membershipId)
                     </tr>
                 </table>
                 <p style="text-align:center;margin:0;font-size:13px;">
-                    <a href="{$safeProfileUrl}" style="color:#0d9488;font-weight:700;text-decoration:none;">Quản lý Thẻ Hội Viên tại Trang Cá Nhân &rarr;</a>
+                    <a href="{$safeProfileUrl}" style="color:{$theme['linkColor']};font-weight:700;text-decoration:none;">Quản lý Thẻ Hội Viên tại Trang Cá Nhân &rarr;</a>
                 </p>
             </td>
         </tr>
 
         <!-- FOOTER -->
         <tr>
-            <td align="center" bgcolor="#edf8f5" style="padding:18px 24px;border-top:1px solid #d5ebe5;border-radius:0 0 22px 22px;background-image:linear-gradient(110deg,#edf9f4 0%,#eef6ff 100%);">
-                <p style="margin:0;color:#58726e;font-size:12px;line-height:1.7;">
+            <td align="center" bgcolor="{$theme['footerBg']}" style="padding:18px 24px;border-top:1px solid {$theme['footerBorder']};border-radius:0 0 22px 22px;background-image:{$theme['footerGradient']};">
+                <p style="margin:0;color:{$theme['footerText']};font-size:12px;line-height:1.7;">
                     &copy; {$year} <strong>GODMINTON</strong> &middot; Hệ thống Đặt Sân Cầu Lông Trực Tuyến<br>
                     Hóa đơn điện tử được gửi tự động đến {$userEmailSafe}.
                 </p>

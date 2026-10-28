@@ -130,30 +130,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Trạng thái badge
                 let statusBadgeHtml = '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">Đã hết hạn</span>';
                 const isPending = item.status === 'pending';
+                const isPaid = Boolean(item.is_paid);
 
                 if (isPending) {
-                    statusBadgeHtml = '<span class="badge bg-warning text-dark border border-warning rounded-pill fw-bold"><i class="fa-solid fa-clock-rotate-left me-1"></i>Chờ xác nhận</span>';
+                    statusBadgeHtml = '<span class="badge bg-warning text-dark border border-warning rounded-pill fw-bold"><i class="fa-solid fa-clock-rotate-left me-1"></i>Chờ thanh toán QR</span>';
                 } else if (item.status === 'active' && !item.is_expired) {
                     statusBadgeHtml = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-bold"><i class="fa-solid fa-circle-check me-1"></i>Đang kích hoạt</span>';
                 } else if (item.status === 'rejected') {
                     statusBadgeHtml = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Đã từ chối</span>';
                 } else if (item.status === 'cancelled') {
-                    statusBadgeHtml = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Đã hủy / đổi gói</span>';
+                    statusBadgeHtml = isPaid
+                        ? '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Đã hủy / đổi gói</span>'
+                        : '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">Hủy (Chưa TT)</span>';
                 }
 
-                // Cột Thời hạn gói: Chỉ hiển thị badge màu vàng (hoặc badge tương ứng Còn X ngày), bỏ hẳn ngày tháng và (X ngày)
+                // Cột Thời hạn gói
                 let durationBadgeHtml = '';
                 if (isPending) {
-                    durationBadgeHtml = `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning rounded-pill px-3 py-1 fw-bold">Chờ duyệt</span>`;
+                    durationBadgeHtml = `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning rounded-pill px-3 py-1 fw-bold">Chờ thanh toán</span>`;
                 } else if (item.status === 'active' && !item.is_expired) {
                     const badgeColor = item.days_left <= 7 ? 'bg-danger text-white' : 'bg-warning text-dark';
                     durationBadgeHtml = `<span class="badge ${badgeColor} rounded-pill px-3 py-1 fw-bold" style="font-size:0.8rem;">Còn ${item.days_left} ngày</span>`;
                 } else if (item.status === 'rejected') {
                     durationBadgeHtml = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 fw-medium">Đã từ chối</span>`;
                 } else if (item.status === 'cancelled') {
-                    durationBadgeHtml = `<span class="badge bg-secondary-subtle text-muted rounded-pill px-3 py-1 fw-medium">Đã hủy gói</span>`;
+                    durationBadgeHtml = isPaid
+                        ? `<span class="badge bg-secondary-subtle text-muted rounded-pill px-3 py-1 fw-medium">Đã hủy gói</span>`
+                        : `<span class="badge bg-secondary-subtle text-muted rounded-pill px-3 py-1 fw-medium">Chưa kích hoạt</span>`;
                 } else {
                     durationBadgeHtml = `<span class="badge bg-secondary text-white rounded-pill px-3 py-1 fw-bold">Đã hết hạn</span>`;
+                }
+
+                // Cột Thanh toán: Phân biệt rõ Đã thanh toán vs Chờ quét QR vs Chưa thanh toán
+                let paymentColHtml = '';
+                if (isPaid) {
+                    paymentColHtml = `
+                        <div class="fw-bold text-teal">${AdminApp.formatVND(item.price_paid || 0)}</div>
+                        <div class="small text-success fw-semibold" style="font-size:0.74rem;"><i class="fa-solid fa-check me-1"></i>Đã thanh toán · ${AdminApp.escapeHTML(item.payment_method || 'VietQR')}</div>
+                    `;
+                } else if (isPending) {
+                    paymentColHtml = `
+                        <div class="fw-bold text-warning-emphasis">${AdminApp.formatVND(item.price_paid || 0)}</div>
+                        <div class="small text-warning-emphasis" style="font-size:0.74rem;"><i class="fa-regular fa-clock me-1"></i>Chưa chuyển khoản</div>
+                    `;
+                } else {
+                    paymentColHtml = `
+                        <div class="fw-semibold text-muted text-decoration-line-through" style="font-size:0.85rem;">${AdminApp.formatVND(item.price_paid || 0)}</div>
+                        <div class="small text-danger fw-semibold" style="font-size:0.74rem;"><i class="fa-solid fa-xmark me-1"></i>Chưa thanh toán (0 đ)</div>
+                    `;
                 }
 
                 // Avatar / Initial
@@ -162,28 +186,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     ? `<img src="${AdminApp.escapeHTML(item.user_avatar)}" class="user-avatar-sm" alt="Avatar">`
                     : `<div class="user-avatar-sm">${initial}</div>`;
 
-                // Cột thao tác: Dropdown Chọn thao tác (đồng bộ phong cách quản lý đơn đặt)
+                // Cột thao tác: Chặn tuyệt đối Kích hoạt lại / Gia hạn đối với đơn chưa thanh toán hoặc đã từ chối
                 let itemsHtml = '';
                 if (isPending) {
                     itemsHtml = `
-                        <li><button type="button" class="dropdown-item action-gradient-item action-checkin btn-approve-row" data-id="${item.id}" data-name="${AdminApp.escapeHTML(item.user_name)}" data-pkg="${AdminApp.escapeHTML(item.package_title)}">Duyệt kích hoạt gói</button></li>
-                        <li><button type="button" class="dropdown-item action-gradient-item action-view btn-view-invoice" data-id="${item.id}">Chi tiết hóa đơn</button></li>
-                        <li><button type="button" class="dropdown-item action-gradient-item action-cancel btn-reject-row" data-id="${item.id}" data-name="${AdminApp.escapeHTML(item.user_name)}">Từ chối yêu cầu</button></li>
+                        <li><button type="button" class="dropdown-item action-gradient-item action-checkin btn-approve-row" data-id="${item.id}" data-name="${AdminApp.escapeHTML(item.user_name)}" data-pkg="${AdminApp.escapeHTML(item.package_title)}">Xác nhận đã thu tiền &amp; Kích hoạt</button></li>
+                        <li><button type="button" class="dropdown-item action-gradient-item action-view btn-view-invoice" data-id="${item.id}">Chi tiết đơn đăng ký</button></li>
+                        <li><button type="button" class="dropdown-item action-gradient-item action-cancel btn-reject-row" data-id="${item.id}" data-name="${AdminApp.escapeHTML(item.user_name)}">Từ chối / Hủy yêu cầu</button></li>
                     `;
                 } else {
                     const isCurrentlyActive = (item.status === 'active' && !item.is_expired);
+                    const canExtend = Boolean(item.can_extend);
+                    const canReactivate = Boolean(item.can_reactivate);
+
                     itemsHtml = `
-                        <li><button type="button" class="dropdown-item action-gradient-item action-extend btn-open-extend" 
-                                data-id="${item.id}" 
-                                data-name="${AdminApp.escapeHTML(item.user_name)}" 
-                                data-pkg="${AdminApp.escapeHTML(item.package_title)}" 
-                                data-end="${endDate}">Gia hạn gói hội viên</button></li>
+                        ${canExtend ? `
+                            <li><button type="button" class="dropdown-item action-gradient-item action-extend btn-open-extend" 
+                                    data-id="${item.id}" 
+                                    data-name="${AdminApp.escapeHTML(item.user_name)}" 
+                                    data-pkg="${AdminApp.escapeHTML(item.package_title)}" 
+                                    data-end="${endDate}">Gia hạn gói hội viên</button></li>
+                        ` : ''}
                         ${isCurrentlyActive ? `
                             <li><button type="button" class="dropdown-item action-gradient-item action-cancel btn-cancel-membership" data-id="${item.id}" data-name="${AdminApp.escapeHTML(item.user_name)}">Hủy gói hội viên</button></li>
-                        ` : `
+                        ` : ''}
+                        ${canReactivate ? `
                             <li><button type="button" class="dropdown-item action-gradient-item action-checkin btn-update-status" data-id="${item.id}" data-status="active">Kích hoạt lại gói</button></li>
-                        `}
+                        ` : ''}
                         <li><button type="button" class="dropdown-item action-gradient-item action-view btn-view-invoice" data-id="${item.id}">Chi tiết hóa đơn</button></li>
+                        ${!isPaid ? `
+                            <li><button type="button" class="dropdown-item action-gradient-item action-cancel btn-delete-membership" data-id="${item.id}">Xóa bản ghi chưa TT</button></li>
+                        ` : ''}
                     `;
                 }
 
@@ -223,8 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${durationBadgeHtml}
                         </td>
                         <td>
-                            <div class="fw-bold text-teal">${AdminApp.formatVND(item.price_paid || 0)}</div>
-                            <div class="small text-muted" style="font-size:0.75rem;">${AdminApp.escapeHTML(item.payment_method || 'VietQR')}</div>
+                            ${paymentColHtml}
                         </td>
                         <td>
                             ${statusBadgeHtml}
@@ -410,13 +442,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                             <div class="d-flex justify-content-between py-1 border-bottom small">
                                 <span class="text-secondary">Trạng thái thanh toán:</span>
-                                <span class="fw-bold ${item.status === 'pending' ? 'text-warning' : 'text-success'}">
-                                    ${item.status === 'pending' ? 'Chờ xác nhận duyệt' : 'Đã thanh toán thành công'}
+                                <span class="fw-bold ${item.is_paid ? 'text-success' : (item.status === 'pending' ? 'text-warning' : 'text-danger')}">
+                                    ${item.is_paid ? 'Đã thanh toán thành công' : (item.status === 'pending' ? 'Chưa thanh toán (Chờ khách quét QR)' : 'Chưa thanh toán (Đã từ chối / Hủy)')}
                                 </span>
                             </div>
                             <div class="d-flex justify-content-between pt-2">
-                                <span class="fw-bold text-dark">Tổng tiền thanh toán:</span>
-                                <span class="fs-5 fw-extrabold text-teal">${AdminApp.formatVND(item.price_paid || 0)}</span>
+                                <span class="fw-bold text-dark">${item.is_paid ? 'Tổng tiền đã thanh toán:' : 'Số tiền yêu cầu:'}</span>
+                                <span class="fs-5 fw-extrabold ${item.is_paid ? 'text-teal' : 'text-muted'}">${AdminApp.formatVND(item.price_paid || 0)}</span>
                             </div>
                         </div>
                     </div>
@@ -427,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const footerEl = document.getElementById('modalInvoiceFooterActions');
         if (footerEl) {
             let extraBtn = '';
-            if (item.status === 'active' && !item.is_expired) {
+            if (item.status === 'active' && !item.is_expired && item.is_paid) {
                 extraBtn = `
                     <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 btn-invoice-cancel" data-id="${item.id}">
                         <i class="fa-solid fa-ban me-1"></i> Hủy gói
@@ -479,8 +511,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const pkg = btn.getAttribute('data-pkg');
 
                 const ok = await AdminApp.confirmAction(
-                    'Duyệt & kích hoạt gói hội viên?',
-                    `Bạn có chắc chắn muốn duyệt và kích hoạt gói "${pkg}" cho thành viên "${name}"?`
+                    'Xác nhận đã thu tiền & kích hoạt gói?',
+                    `Đơn này chưa được SePay tự động xác nhận. Bạn chỉ nên duyệt tay khi đã kiểm tra sao kê ngân hàng hoặc đã nhận tiền mặt cho gói "${pkg}" của "${name}". Tiếp tục kích hoạt?`
                 );
                 if (!ok) return;
 

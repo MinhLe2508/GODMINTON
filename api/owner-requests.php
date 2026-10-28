@@ -5,8 +5,7 @@ try {
  if($method==='GET'){
   if(isset($_GET['id'])){$r=wf_request(booking_account_id($_GET['id']));if((int)$r['user_id']!==$user['id'])wf_fail(403,'Bạn chỉ được xem hồ sơ của mình.');booking_account_out(200,wf_request_detail($r));}
   $s=$pdo->prepare('SELECT id,kind,court_id,status,review_note,revision,submitted_at,updated_at,payload FROM owner_requests WHERE user_id=? ORDER BY id DESC LIMIT 100');$s->execute([$user['id']]);$rows=$s->fetchAll();foreach($rows as &$r)$r['payload']=json_decode($r['payload'],true);unset($r);
-  $n=$pdo->prepare('SELECT id,title,message,request_id,created_at,email_sent_at FROM account_notifications WHERE user_id=? ORDER BY id DESC LIMIT 15');$n->execute([$user['id']]);
-  booking_account_out(200,['requests'=>$rows,'wards'=>$pdo->query('SELECT * FROM wards ORDER BY name')->fetchAll(),'amenities'=>$pdo->query('SELECT code,label FROM amenities ORDER BY id')->fetchAll(),'notifications'=>$n->fetchAll()]);
+  booking_account_out(200,['requests'=>$rows,'wards'=>$pdo->query('SELECT * FROM wards ORDER BY name')->fetchAll(),'amenities'=>$pdo->query('SELECT code,label FROM amenities ORDER BY id')->fetchAll(),'notifications'=>[]]);
  }
  if($user['role']==='admin')wf_fail(403,'Admin xét duyệt hồ sơ, không tự đăng ký quyền chủ sân cho mình.');
  $in=wf_post();$action=wf_text($in,'action',30);if(!in_array($action,['save','submit','withdraw'],true))wf_fail(422,'Thao tác không hợp lệ.');

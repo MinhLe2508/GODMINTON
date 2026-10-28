@@ -80,7 +80,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     selectType.addEventListener('change', updateTypeFields);
 
-    // 3. Xử lý xem trước ảnh và upload file ảnh
+    // 3. Xử lý xem trước ảnh và upload file ảnh (tách biệt rõ ràng giữa Tải tệp & Nhập URL online)
+    let uploadedCoverPath = '';
+
     function updatePreview(url) {
         if (url && url.trim()) {
             coverPreviewImg.src = url.trim();
@@ -91,7 +93,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    coverUrlInput?.addEventListener('input', () => updatePreview(coverUrlInput.value));
+    coverUrlInput?.addEventListener('input', () => {
+        const typedUrl = coverUrlInput.value.trim();
+        if (typedUrl !== '') {
+            // Khi người dùng chủ động nhập URL online -> xóa tệp đã chọn
+            uploadedCoverPath = '';
+            if (coverFileInput) coverFileInput.value = '';
+            updatePreview(typedUrl);
+        } else {
+            updatePreview(uploadedCoverPath || '');
+        }
+    });
 
     coverFileInput?.addEventListener('change', async () => {
         const file = coverFileInput.files[0];
@@ -122,7 +134,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             const uploadedUrl = json.data.url;
-            coverUrlInput.value = uploadedUrl;
+            uploadedCoverPath = uploadedUrl;
+            if (coverUrlInput) coverUrlInput.value = ''; // Giữ trống ô URL vì người dùng đang tải tệp lên
             updatePreview(uploadedUrl);
             AdminApp.toast('success', 'Tải ảnh lên thành công!');
         } catch (err) {
@@ -329,6 +342,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 8. Mở Modal Thêm mới
     btnAdd?.addEventListener('click', () => {
         form.reset();
+        uploadedCoverPath = '';
+        if (coverUrlInput) coverUrlInput.value = '';
+        if (coverFileInput) coverFileInput.value = '';
         document.getElementById('formPostId').value = '';
         document.getElementById('postModalTitle').textContent = 'Viết bài mới';
         const vSelect = document.getElementById('formPostVoucher');
@@ -346,6 +362,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!post) throw new Error('Không thể tải bài viết.');
 
             form.reset();
+            if (coverFileInput) coverFileInput.value = '';
             document.getElementById('formPostId').value = post.id;
             document.getElementById('postModalTitle').textContent = `Chỉnh sửa: ${post.title}`;
 
@@ -357,7 +374,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('formPostTitle').value = post.title || '';
             document.getElementById('formPostSummary').value = post.summary || '';
             document.getElementById('formPostContent').value = post.content || '';
-            coverUrlInput.value = post.cover_image || '';
+
+            const existingCover = (post.cover_image || '').trim();
+            if (/^https?:\/\//i.test(existingCover)) {
+                // Ảnh online -> hiển thị trong ô URL
+                coverUrlInput.value = existingCover;
+                uploadedCoverPath = '';
+            } else {
+                // Ảnh tệp tải lên máy chủ -> giữ trống ô URL, lưu đường dẫn ngầm
+                coverUrlInput.value = '';
+                uploadedCoverPath = existingCover;
+            }
 
             // Trường sự kiện
             document.getElementById('formEventStart').value = toInputDateTime(post.event_start);
@@ -376,7 +403,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('formExpireAt').value = toInputDateTime(post.expire_at);
 
             updateTypeFields();
-            updatePreview(post.cover_image || '');
+            updatePreview(existingCover);
 
             modal.show();
         } catch (err) {
@@ -400,13 +427,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const discVal = document.getElementById('formMemDiscountPercent')?.value;
         const voucherSelectVal = document.getElementById('formPostVoucher')?.value;
+        const finalCoverImage = (coverUrlInput?.value.trim() || '') || uploadedCoverPath || '';
         const payload = {
             type,
             voucher_id: voucherSelectVal ? parseInt(voucherSelectVal, 10) : null,
             title,
             summary: document.getElementById('formPostSummary').value.trim(),
             content,
-            cover_image: coverUrlInput.value.trim(),
+            cover_image: finalCoverImage,
             status: document.getElementById('formPostStatus').value,
             is_pinned: document.getElementById('formPostPinned').checked ? 1 : 0,
             publish_at: document.getElementById('formPublishAt').value ? document.getElementById('formPublishAt').value.replace('T', ' ') + ':00' : null,
