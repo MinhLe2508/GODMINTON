@@ -1490,3 +1490,93 @@ body.admin-body #godmintonBottomNav,
 .modal-footer-btn:active {
     transform: translateY(0);
 }
+
+
+/* ==========================================================
+   KHUNG DANH SÁCH ĐƠN ĐẶT SÂN & THANH CÔNG CỤ LỌC (ADMIN / CHỦ SÂN)
+   ========================================================== */
+.booking-filter-toolbar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: nowrap !important;
+    gap: 0.5rem !important;
+}
+
+.booking-filter-toolbar .form-control,
+.booking-filter-toolbar .form-select,
+.booking-filter-toolbar .btn {
+    display: inline-block !important;
+    margin-bottom: 0 !important;
+    height: 36px !important;
+    font-size: 0.825rem !important;
+}
+
+.booking-filter-toolbar #searchBooking {
+    width: 240px !important;
+    min-width: 190px !important;
+    max-width: 240px !important;
+    flex: 0 0 240px !important;
+}
+
+.booking-filter-toolbar #filterStatus {
+    width: 175px !important;
+    min-width: 150px !important;
+    max-width: 175px !important;
+    flex: 0 0 175px !important;
+}
+
+.booking-filter-toolbar #btnResetBookingFilters {
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+[data-bs-theme="dark"] .booking-filter-toolbar .form-control,
+[data-bs-theme="dark"] .booking-filter-toolbar .form-select {
+    background-color: #071c22 !important;
+    border: 1px solid #1a424e !important;
+    color: #f8fafc !important;
+}
+
+/* Đảm bảo bảng danh sách đơn đặt không tạo thanh cuộn dọc nhỏ hoặc che khuất dòng khi mở menu thao tác */
+.booking-list-panel {
+    overflow: visible !important;
+}
+
+.booking-table-wrap {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    border-bottom-left-radius: var(--radius-xl);
+    border-bottom-right-radius: var(--radius-xl);
+}
+
+.booking-table-wrap .admin-table th,
+.booking-table-wrap .admin-table td {
+    padding-top: 0.85rem !important;
+    padding-bottom: 0.85rem !important;
+    vertical-align: middle !important;
+}
+
+@media (max-width: 767.98px) {
+    .booking-filter-toolbar {
+        flex-wrap: wrap !important;
+        width: 100% !important;
+        justify-content: stretch !important;
+    }
+    .booking-filter-toolbar #searchBooking {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .booking-filter-toolbar #filterStatus {
+        flex: 1 1 calc(100% - 44px) !important;
+        width: auto !important;
+        max-width: none !important;
+    }
+}

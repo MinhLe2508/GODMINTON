@@ -79,12 +79,43 @@ try {
         $params[':ward_id'] = (int) $_GET['ward_id'];
     }
 
-    // ---- Lọc theo giá tối đa ----
-    if (!empty($_GET['max_price'])) {
-        $sql .= " AND c.price_per_hour <= :max_price";
-        $params[':max_price'] = (int) $_GET['max_price'];
+    // ---- Lọc theo mức giá ----
+    $priceRange = trim($_GET['price_range'] ?? '');
+    if (empty($priceRange) && !empty($_GET['max_price']) && strpos((string)$_GET['max_price'], '-') !== false) {
+        $priceRange = trim((string)$_GET['max_price']);
     }
 
+    if (!empty($priceRange)) {
+        if ($priceRange === '0-80000') {
+            $sql .= " AND c.price_per_hour <= 80000";
+        } elseif ($priceRange === '80000-100000') {
+            $sql .= " AND c.price_per_hour >= 80000 AND c.price_per_hour <= 100000";
+        } elseif ($priceRange === '100000-150000') {
+            $sql .= " AND c.price_per_hour >= 100000 AND c.price_per_hour <= 150000";
+        } elseif ($priceRange === '150000-up' || $priceRange === '150000+') {
+            $sql .= " AND c.price_per_hour >= 150000";
+        } elseif (preg_match('/^(\d+)-(\d+)$/', $priceRange, $m)) {
+            $minP = (int) $m[1];
+            $maxP = (int) $m[2];
+            if ($minP > 0) {
+                $sql .= " AND c.price_per_hour >= :min_range_price";
+                $params[':min_range_price'] = $minP;
+            }
+            if ($maxP > 0) {
+                $sql .= " AND c.price_per_hour <= :max_range_price";
+                $params[':max_range_price'] = $maxP;
+            }
+        }
+    } else {
+        if (!empty($_GET['min_price'])) {
+            $sql .= " AND c.price_per_hour >= :min_price";
+            $params[':min_price'] = (int) $_GET['min_price'];
+        }
+        if (!empty($_GET['max_price'])) {
+            $sql .= " AND c.price_per_hour <= :max_price";
+            $params[':max_price'] = (int) $_GET['max_price'];
+        }
+    }
     // ---- Lọc theo tiện ích (phải có TẤT CẢ các tiện ích được chọn) ----
     if (!empty($_GET['amenities'])) {
         $amenityCodes = array_filter(explode(',', $_GET['amenities']));

@@ -134,11 +134,10 @@ require_once __DIR__ . '/config/db.php';
             </div>
             <select class="drawer-select" id="filterPrice">
                 <option value="">Tất cả mức giá</option>
-                <option value="80000">Dưới 80.000 đ/giờ</option>
-                <option value="90000">Dưới 90.000 đ/giờ</option>
-                <option value="100000">Dưới 100.000 đ/giờ</option>
-                <option value="120000">Dưới 120.000 đ/giờ</option>
-                <option value="150000">Dưới 150.000 đ/giờ</option>
+                <option value="0-80000">Dưới 80.000 đ/h</option>
+                <option value="80000-100000">80.000 - 100.000 đ/h</option>
+                <option value="100000-150000">100.000 - 150.000 đ/h</option>
+                <option value="150000-up">Trên 150.000 đ/h</option>
             </select>
         </div>
 

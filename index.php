@@ -288,9 +288,10 @@
                     <label class="form-label fw-bold small text-muted"><i class="fa-solid fa-tag text-teal me-1"></i> Mức Giá Thuê</label>
                     <select id="homeMaxPrice" class="form-select form-select-lg rounded-3 fs-6">
                         <option value="">Tất cả mức giá</option>
-                        <option value="80000">Dưới 80.000 đ/h</option>
-                        <option value="100000">Dưới 100.000 đ/h</option>
-                        <option value="150000">Dưới 150.000 đ/h</option>
+                        <option value="0-80000">Dưới 80.000 đ/h</option>
+                        <option value="80000-100000">80.000 - 100.000 đ/h</option>
+                        <option value="100000-150000">100.000 - 150.000 đ/h</option>
+                        <option value="150000-up">Trên 150.000 đ/h</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -561,7 +562,7 @@
             const price   = document.getElementById('homeMaxPrice').value;
             const amenity = document.getElementById('homeAmenity').value;
             if (ward)    params.set('ward_id', ward);
-            if (price)   params.set('max_price', price);
+            if (price)   params.set('price_range', price);
             if (amenity) params.set('amenity', amenity);
             window.location.href = `courts.php?${params.toString()}`;
         });

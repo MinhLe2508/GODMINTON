@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const actionHtml = `
                     <div class="dropdown d-inline-block text-end">
-                        <button class="btn btn-sm booking-action-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
+                        <button class="btn btn-sm booking-action-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-config='{"strategy":"fixed"}' aria-expanded="false">
                             Chọn thao tác
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm booking-action-menu">

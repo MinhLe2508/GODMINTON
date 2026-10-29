@@ -108,7 +108,15 @@ function updateActiveTagsStrip() {
         const label = sel.options[sel.selectedIndex]?.textContent || state.ward_id;
         tags.push({ label: label, clear: () => { state.ward_id = ''; document.getElementById('filterDistrict').value = ''; } });
     }
-    if (state.price) tags.push({ label: `≤ ${parseInt(state.price)/1000}k/h`, clear: () => { state.price = ''; document.getElementById('filterPrice').value = ''; } });
+    if (state.price) {
+        let priceLabel = '';
+        if (state.price === '0-80000') priceLabel = 'Dưới 80k/h';
+        else if (state.price === '80000-100000') priceLabel = '80k - 100k/h';
+        else if (state.price === '100000-150000') priceLabel = '100k - 150k/h';
+        else if (state.price === '150000-up' || state.price === '150000+') priceLabel = 'Trên 150k/h';
+        else priceLabel = `≤ ${parseInt(state.price)/1000}k/h`;
+        tags.push({ label: priceLabel, clear: () => { state.price = ''; document.getElementById('filterPrice').value = ''; } });
+    }
     state.amenities.forEach(a => tags.push({ label: a.label, clear: () => {
         state.amenities = state.amenities.filter(x => x.value !== a.value);
         document.querySelectorAll(`.amenity-chip[data-value="${a.value}"]`).forEach(c => c.classList.remove('selected'));
@@ -253,7 +261,13 @@ async function fetchCourts() {
 
     if (state.search)   params.set('search', state.search);
     if (state.ward_id)  params.set('ward_id', state.ward_id);
-    if (state.price)    params.set('max_price', state.price);
+    if (state.price) {
+        if (state.price.includes('-')) {
+            params.set('price_range', state.price);
+        } else {
+            params.set('max_price', state.price);
+        }
+    }
 
     // Gom amenity codes thành chuỗi phân cách dấu phẩy
     if (state.amenities.length > 0) {
@@ -457,7 +471,11 @@ document.addEventListener('DOMContentLoaded', () => {
         state.search = p.get('q').toLowerCase();
         searchInput.value = p.get('q');
     }
-    if (p.get('max_price')) {
+    if (p.get('price_range')) {
+        state.price = p.get('price_range');
+        const priceSelect = document.getElementById('filterPrice');
+        if (priceSelect) priceSelect.value = state.price;
+    } else if (p.get('max_price')) {
         state.price = p.get('max_price');
         const priceSelect = document.getElementById('filterPrice');
         if (priceSelect) priceSelect.value = state.price;

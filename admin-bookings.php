@@ -66,27 +66,31 @@ $currentUser = [
         </header>
 
         <main class="admin-content">
-            <div class="admin-panel">
+            <div class="admin-panel booking-list-panel">
                 <div class="admin-panel-head">
                     <h2><i class="fa-solid fa-clipboard-list text-teal me-2"></i>Danh sách đơn đặt sân</h2>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <input type="search" id="searchBooking" class="form-control form-control-sm rounded-pill" placeholder="Tìm mã đơn / khách hàng..." style="min-width:200px;">
-                        <select id="filterStatus" class="form-select form-select-sm rounded-pill" style="min-width:160px;">
+                    <div class="booking-filter-toolbar">
+                        <input type="search" id="searchBooking" class="form-control form-control-sm rounded-pill" placeholder="Tìm mã đơn, tên, SĐT...">
+                        <select id="filterStatus" class="form-select form-select-sm rounded-pill">
                             <option value="">Tất cả trạng thái</option>
                             <option value="confirmed">Đã cọc</option>
                             <option value="completed">Hoàn thành</option>
                             <option value="no_show">Bùng sân</option>
                             <option value="cancelled">Đã hủy</option>
                         </select>
+                        <button class="btn btn-sm btn-outline-secondary rounded-circle" id="btnResetBookingFilters" type="button" title="Làm mới bộ lọc">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="admin-panel-body p-0">
-                    <div class="table-responsive">
+                    <div class="table-responsive booking-table-wrap">
                         <table class="table admin-table align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th>Mã đơn</th>
+                                    <th class="ps-3">Mã đơn</th>
                                     <th>Sân &amp; Thảm</th>
+                                    <th>Lịch chơi</th>
                                     <th>Khách hàng</th>
                                     <th>Đã cọc / Thu tại quầy</th>
                                     <th>Trạng thái</th>
@@ -97,7 +101,7 @@ $currentUser = [
                         </table>
                     </div>
                     <div id="bookingsEmpty" class="text-center text-muted py-5" style="display:none;">
-                        <i class="fa-regular fa-folder-open fs-2 d-block mb-2"></i> Không có đơn đặt nào phù hợp.
+                        <i class="fa-regular fa-folder-open fs-2 d-block mb-2 text-teal"></i> Không có đơn đặt nào phù hợp.
                     </div>
                 </div>
             </div>

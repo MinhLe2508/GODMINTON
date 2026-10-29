@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         return `
             <div class="dropdown d-inline-block text-end">
-                <button class="btn btn-sm booking-action-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
+                <button class="btn btn-sm booking-action-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-config='{"strategy":"fixed"}' aria-expanded="false">
                     Chọn thao tác
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm booking-action-menu">
@@ -136,20 +136,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 return `
                     <tr class="${b.booking_status === 'checked_in' ? 'table-success-subtle' : ''}">
-                        <td>
+                        <td class="ps-3">
                             <strong class="font-monospace text-dark">${BookingAccount.escape(b.booking_code)}</strong>
                         </td>
                         <td>
-                            <div class="fw-bold">${BookingAccount.escape(b.court_name)}</div>
+                            <div class="fw-bold admin-text-primary">${BookingAccount.escape(b.court_name)}</div>
                             <div class="small text-teal fw-semibold"><i class="fa-solid fa-layer-group me-1"></i>${BookingAccount.escape(b.sub_court_name)}</div>
                         </td>
+                        <td class="text-nowrap">
+                            <div class="fw-semibold admin-text-primary"><i class="fa-regular fa-calendar me-1 text-teal"></i>${BookingAccount.escape(b.booking_date || '')}</div>
+                            <div class="small text-muted fw-medium"><i class="fa-regular fa-clock me-1"></i>${BookingAccount.escape(b.time_range || '')}</div>
+                        </td>
                         <td>
-                            <div class="fw-semibold">${BookingAccount.escape(b.user_name)}</div>
+                            <div class="fw-semibold admin-text-primary">${BookingAccount.escape(b.user_name)}</div>
                             <div class="small text-muted"><i class="fa-solid fa-phone me-1"></i>${BookingAccount.escape(b.user_phone)}</div>
                         </td>
-                        <td>${paymentColHtml}</td>
-                        <td>${BookingAccount.badge(b.booking_status)}</td>
-                        <td class="text-end pe-3">${renderRowActions(b)}</td>
+                        <td class="text-nowrap">${paymentColHtml}</td>
+                        <td class="text-nowrap">${BookingAccount.badge(b.booking_status)}</td>
+                        <td class="text-end pe-3 text-nowrap">${renderRowActions(b)}</td>
                     </tr>`;
             }).join('');
         } catch (e) {
@@ -457,6 +461,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const filterEl = document.getElementById('filterStatus');
     if (filterEl) {
         filterEl.addEventListener('change', load);
+    }
+
+    const resetBtn = document.getElementById('btnResetBookingFilters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            if (searchEl) searchEl.value = '';
+            if (filterEl) filterEl.value = '';
+            load();
+        });
     }
 
     load();
