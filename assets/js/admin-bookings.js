@@ -39,6 +39,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <li><button type="button" class="dropdown-item action-gradient-item action-noshow" data-action="noshow" data-id="${id}">Báo bùng sân</button></li>
                 <li><button type="button" class="dropdown-item action-gradient-item action-cancel" data-action="cancel" data-id="${id}">Hủy đơn</button></li>
             `;
+        } else if (b.booking_status === 'pending') {
+            itemsHtml = `
+                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}">Xem chi tiết đơn</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-cancel" data-action="cancel" data-id="${id}">Hủy đơn</button></li>
+            `;
         } else if (b.booking_status === 'checked_in') {
             itemsHtml = `
                 <li><button type="button" class="dropdown-item action-gradient-item action-complete" data-action="complete" data-id="${id}">Thu tiền &amp; Hoàn tất</button></li>
@@ -47,6 +52,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (b.booking_status === 'completed') {
             itemsHtml = `
                 <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}">Xem chi tiết hóa đơn</button></li>
+            `;
+        } else if (b.can_refund) {
+            itemsHtml = `
+                <li><button type="button" class="dropdown-item action-gradient-item action-complete" data-action="refund" data-id="${id}">Xác nhận đã hoàn cọc</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}">Xem chi tiết đơn</button></li>
             `;
         } else {
             itemsHtml = `
@@ -98,32 +108,60 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>`;
                 } else if (b.booking_status === 'no_show') {
                     if (b.is_deposit_refunded) {
-                        paymentColHtml = `
-                            <div>
-                                <div class="small text-success fw-bold"><i class="fa-solid fa-gift me-1"></i>Hội viên: Hoàn cọc</div>
-                                <div class="small text-muted" title="${BookingAccount.escape(b.refund_note || '')}">Lượt cứu cọc</div>
-                            </div>`;
+                        if (b.payment_status === 'refunded') {
+                            paymentColHtml = `
+                                <div>
+                                    <div class="small text-success fw-bold"><i class="fa-solid fa-circle-check me-1"></i>Đã hoàn cọc: ${depositPaid}</div>
+                                    <div class="small text-muted" title="${BookingAccount.escape(b.refund_note || '')}">Cứu cọc Hội viên</div>
+                                </div>`;
+                        } else {
+                            paymentColHtml = `
+                                <div>
+                                    <div class="small text-warning fw-bold"><i class="fa-solid fa-clock-rotate-left me-1"></i>Chờ hoàn cọc: ${depositPaid}</div>
+                                    <div class="small text-danger fw-semibold" title="${BookingAccount.escape(b.refund_note || '')}">Cần CK trả khách</div>
+                                </div>`;
+                        }
                     } else {
                         paymentColHtml = `
                             <div>
                                 <div class="small text-warning fw-bold">Giữ cọc: ${depositPaid}</div>
-                                <div class="small text-muted text-decoration-line-through">Còn lại: ${remainingDue}</div>
+                                <div class="small text-muted">Khách bùng sân</div>
                             </div>`;
                     }
                 } else if (b.booking_status === 'cancelled') {
-                    if (b.is_deposit_refunded) {
+                    if (b.payment_status === 'unpaid') {
                         paymentColHtml = `
                             <div>
-                                <div class="small text-teal fw-semibold">Đã hoàn cọc: ${depositPaid}</div>
-                                <div class="small text-muted">Đã hủy đơn</div>
+                                <div class="small text-muted">Chưa đặt cọc</div>
+                                <div class="small text-muted">Hủy trước khi TT</div>
                             </div>`;
+                    } else if (b.is_deposit_refunded) {
+                        if (b.payment_status === 'refunded') {
+                            paymentColHtml = `
+                                <div>
+                                    <div class="small text-success fw-bold"><i class="fa-solid fa-circle-check me-1"></i>Đã hoàn cọc: ${depositPaid}</div>
+                                    <div class="small text-muted">Đã CK trả khách</div>
+                                </div>`;
+                        } else {
+                            paymentColHtml = `
+                                <div>
+                                    <div class="small text-warning fw-bold"><i class="fa-solid fa-clock-rotate-left me-1"></i>Chờ hoàn cọc: ${depositPaid}</div>
+                                    <div class="small text-danger fw-semibold">Cần CK trả khách</div>
+                                </div>`;
+                        }
                     } else {
                         paymentColHtml = `
                             <div>
-                                <div class="small text-muted">Cọc: ${depositPaid}</div>
-                                <div class="small text-muted text-decoration-line-through">Đã hủy</div>
+                                <div class="small text-warning fw-bold">Giữ cọc: ${depositPaid}</div>
+                                <div class="small text-muted">Khách hủy sát giờ</div>
                             </div>`;
                     }
+                } else if (b.booking_status === 'pending') {
+                    paymentColHtml = `
+                        <div>
+                            <div class="small text-warning fw-semibold">Chờ cọc: ${depositPaid}</div>
+                            <div class="small text-muted">Đang chờ chuyển khoản</div>
+                        </div>`;
                 } else {
                     paymentColHtml = `
                         <div>
@@ -296,23 +334,69 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
 
                 <div class="col-sm-6">
-                    <div class="p-3 rounded-4 border h-100 ${remainingVal > 0 && !isCompleted ? 'bg-danger-subtle border-danger-subtle' : 'bg-success-subtle border-success-subtle'} d-flex flex-column justify-content-between">
-                        <div>
-                            <div class="modal-card-title fw-bold text-uppercase mb-1 ${remainingVal > 0 && !isCompleted ? 'text-danger-emphasis' : 'text-success-emphasis'}">
-                                ${isCompleted ? 'Thực thu tại quầy' : 'Thu tại quầy'}
+                    ${(() => {
+                        if (b.booking_status === 'cancelled' || b.booking_status === 'no_show') {
+                            if (b.payment_status === 'unpaid') {
+                                return `
+                                <div class="p-3 rounded-4 border h-100 bg-secondary-subtle border-secondary-subtle d-flex flex-column justify-content-between">
+                                    <div>
+                                        <div class="modal-card-title fw-bold text-uppercase mb-1 text-secondary">Trạng thái tiền cọc</div>
+                                        <div class="fw-bold my-2 text-secondary" style="font-size: 1.45rem; line-height: 1.2;">Chưa đóng cọc</div>
+                                    </div>
+                                    <div class="modal-info-row text-secondary fw-medium">Đơn đã hủy trước khi khách chuyển khoản cọc.</div>
+                                </div>`;
+                            }
+                            if (b.is_deposit_refunded) {
+                                const isDone = b.payment_status === 'refunded';
+                                return `
+                                <div class="p-3 rounded-4 border h-100 ${isDone ? 'bg-success-subtle border-success-subtle' : 'bg-warning-subtle border-warning-subtle'} d-flex flex-column justify-content-between">
+                                    <div>
+                                        <div class="modal-card-title fw-bold text-uppercase mb-1 ${isDone ? 'text-success-emphasis' : 'text-warning-emphasis'}">
+                                            ${isDone ? 'Đã hoàn trả cọc' : 'Cần hoàn trả cọc cho khách'}
+                                        </div>
+                                        <div class="fw-bold my-2 ${isDone ? 'text-success' : 'text-warning-emphasis'}" style="font-size: 1.55rem; line-height: 1.2;">
+                                            ${BookingAccount.money(b.deposit_amount)}
+                                        </div>
+                                    </div>
+                                    <div class="modal-info-row ${isDone ? 'text-success' : 'text-warning-emphasis'} fw-medium">
+                                        ${isDone
+                                            ? 'Đã chuyển khoản hoàn 100% tiền cọc cho khách.'
+                                            : 'Vui lòng chuyển khoản trả cọc theo SĐT khách rồi bấm "Xác nhận đã hoàn cọc".'}
+                                    </div>
+                                </div>`;
+                            }
+                            return `
+                            <div class="p-3 rounded-4 border h-100 bg-warning-subtle border-warning-subtle d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="modal-card-title fw-bold text-uppercase mb-1 text-warning-emphasis">Chủ sân giữ cọc (100%)</div>
+                                    <div class="fw-bold my-2 text-warning-emphasis" style="font-size: 1.55rem; line-height: 1.2;">
+                                        ${BookingAccount.money(b.deposit_amount)}
+                                    </div>
+                                </div>
+                                <div class="modal-info-row text-warning-emphasis fw-medium">
+                                    Đơn hủy sát giờ / bùng sân — Tiền cọc được giữ lại bù doanh thu cho sân.
+                                </div>
+                            </div>`;
+                        }
+                        return `
+                        <div class="p-3 rounded-4 border h-100 ${remainingVal > 0 && !isCompleted ? 'bg-danger-subtle border-danger-subtle' : 'bg-success-subtle border-success-subtle'} d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="modal-card-title fw-bold text-uppercase mb-1 ${remainingVal > 0 && !isCompleted ? 'text-danger-emphasis' : 'text-success-emphasis'}">
+                                    ${isCompleted ? 'Thực thu tại quầy' : 'Thu tại quầy'}
+                                </div>
+                                <div class="fw-bold my-2 ${remainingVal > 0 && !isCompleted ? 'text-danger' : 'text-success'}" style="font-size: 1.55rem; line-height: 1.2;">
+                                    ${isCompleted ? BookingAccount.money(b.remaining_paid || b.remaining_amount) : BookingAccount.money(b.remaining_amount)}
+                                </div>
                             </div>
-                            <div class="fw-bold my-2 ${remainingVal > 0 && !isCompleted ? 'text-danger' : 'text-success'}" style="font-size: 1.55rem; line-height: 1.2;">
-                                ${isCompleted ? BookingAccount.money(b.remaining_paid || b.remaining_amount) : BookingAccount.money(b.remaining_amount)}
+                            <div class="modal-info-row ${remainingVal > 0 && !isCompleted ? 'text-danger' : 'text-success'} fw-medium">
+                                ${isCompleted 
+                                    ? 'Đã thu đủ 100% tiền sân.' 
+                                    : (remainingVal > 0 
+                                        ? 'Thu trực tiếp tại quầy khi trả sân.' 
+                                        : 'Khách đã thanh toán đủ.')}
                             </div>
-                        </div>
-                        <div class="modal-info-row ${remainingVal > 0 && !isCompleted ? 'text-danger' : 'text-success'} fw-medium">
-                            ${isCompleted 
-                                ? 'Đã thu đủ 100% tiền sân.' 
-                                : (remainingVal > 0 
-                                    ? 'Thu trực tiếp tại quầy khi trả sân.' 
-                                    : 'Khách đã thanh toán đủ.')}
-                        </div>
-                    </div>
+                        </div>`;
+                    })()}
                 </div>
             </div>
             ${b.refund_note ? `
@@ -334,6 +418,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </button>
                 <button type="button" class="btn btn-success modal-footer-btn" data-modal-action="complete" data-id="${id}">
                     Thu tiền &amp; Hoàn thành
+                </button>
+            `;
+        } else if (b.can_refund) {
+            actionsContainer.innerHTML = `
+                <button type="button" class="btn btn-outline-secondary modal-footer-btn" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-success modal-footer-btn" data-modal-action="refund" data-id="${id}">
+                    <i class="fa-solid fa-hand-holding-dollar me-1"></i>Xác nhận đã hoàn cọc
                 </button>
             `;
         } else {
@@ -364,9 +455,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             confirmBtnText = 'Xác nhận bùng sân';
             confirmBtnColor = '#f59e0b';
         } else if (targetStatus === 'cancel') {
-            confirmMsg = `Xác nhận hủy đơn ${code} và giải phóng khung giờ trên lịch?`;
+            confirmMsg = `Xác nhận chủ sân / quản trị viên chủ động hủy đơn ${code} và giải phóng khung giờ? Khách hàng sẽ được hoàn lại 100% tiền cọc.`;
             confirmBtnText = 'Hủy đơn';
             confirmBtnColor = '#ef4444';
+        } else if (targetStatus === 'refund') {
+            const dep = b ? BookingAccount.money(b.deposit_amount) : '';
+            const cust = b ? `${b.user_name} (${b.user_phone || ''})` : 'khách hàng';
+            confirmMsg = `Xác nhận bạn đã chuyển khoản hoàn trả ${dep} tiền cọc cho ${cust} của đơn ${code}?`;
+            confirmBtnText = 'Đã hoàn cọc';
+            confirmBtnColor = '#10b981';
         }
 
         const confirmed = await BookingAccount.confirm(confirmMsg);
@@ -376,7 +473,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             checkin: 'checked_in',
             complete: 'completed',
             noshow: 'no_show',
-            cancel: 'cancelled'
+            cancel: 'cancelled',
+            refund: 'refunded'
         };
         const statusVal = targetMap[targetStatus] || targetStatus;
 

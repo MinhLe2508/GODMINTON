@@ -37,6 +37,7 @@ function booking_list(array $user,bool $admin=false):array{
  $b['booking_date']=$first['slot_date']??null;$b['start_time']=$first?substr($first['start_time'],0,5):'';$b['end_time']=$last?substr($last['end_time'],0,5):'';$b['time_range']=$b['start_time'].' - '.$b['end_time'];$b['sub_court_name']=implode(', ',array_unique(array_column($slots,'sub_court_name')));
  
  // Quyền thao tác theo luồng vận hành chuyên nghiệp (Option 2)
+ $b['payment_status'] = $b['payment_status'] ?? ($b['status'] === 'pending' ? 'unpaid' : 'deposit_paid');
  $b['is_deposit_refunded'] = (int)($b['is_deposit_refunded'] ?? 0);
  $b['refund_note'] = $b['refund_note'] ?? null;
  $earliestSlotTs = null;
@@ -46,15 +47,49 @@ function booking_list(array $user,bool $admin=false):array{
          $earliestSlotTs = $ts;
      }
  }
- $diffMin = $earliestSlotTs ? ($earliestSlotTs - time()) / 60 : 0;
+ $nowTs = time();
+ $diffMin = $earliestSlotTs ? ($earliestSlotTs - $nowTs) / 60 : 0;
+ $createdTs = !empty($b['created_at']) ? strtotime((string)$b['created_at']) : 0;
+ $sinceCreatedMin = $createdTs ? max(0, ($nowTs - $createdTs) / 60) : 9999;
  $hasMemberTier = !empty($b['membership_tier']) || !empty($b['user_membership_id']);
+ $isGrace15m = ($sinceCreatedMin <= 15 && $diffMin >= 60);
  $cancelThreshold = $hasMemberTier ? 30 : 120;
  $b['is_member'] = $hasMemberTier;
  $b['cancel_threshold_minutes'] = $cancelThreshold;
+ $b['minutes_until_start'] = (int)round($diffMin);
+ $b['minutes_since_created'] = (int)round($sinceCreatedMin);
+
+ $canCustomerCancel = false;
+ if (!$admin && count($slots) > 0) {
+     if ($b['status'] === 'pending') {
+         $canCustomerCancel = ($diffMin > 0);
+     } elseif ($b['status'] === 'confirmed') {
+         $canCustomerCancel = $hasMemberTier ? ($diffMin >= 30) : ($isGrace15m || $diffMin >= 120);
+     }
+ }
+
+ if ($b['status'] === 'pending' || $b['payment_status'] === 'unpaid') {
+     $b['will_refund_deposit'] = false;
+     $b['cancel_policy_type'] = 'unpaid';
+ } elseif ($hasMemberTier) {
+     $b['will_refund_deposit'] = ($diffMin >= 30);
+     $b['cancel_policy_type'] = 'member_free';
+ } elseif ($isGrace15m) {
+     $b['will_refund_deposit'] = true;
+     $b['cancel_policy_type'] = 'grace_15m';
+ } elseif ($diffMin >= 360) {
+     $b['will_refund_deposit'] = true;
+     $b['cancel_policy_type'] = 'early_6h';
+ } else {
+     $b['will_refund_deposit'] = false;
+     $b['cancel_policy_type'] = 'late_forfeit';
+ }
+
  $b['can_checkin']=$admin && $b['status']==='confirmed';
  $b['can_complete']=$admin && ($b['status']==='checked_in' || $b['status']==='confirmed');
  $b['can_noshow']=$admin && $b['status']==='confirmed';
- $b['can_cancel']=($admin && in_array($b['status'],['pending','confirmed'],true)) || (!$admin && in_array($b['status'],['pending','confirmed'],true)&&count($slots)>0&&$diffMin>=$cancelThreshold);
+ $b['can_cancel']=($admin && in_array($b['status'],['pending','confirmed'],true)) || $canCustomerCancel;
+ $b['can_refund']=$admin && in_array($b['status'],['cancelled','no_show'],true) && $b['is_deposit_refunded']===1 && $b['payment_status']!=='refunded' && $b['deposit_amount']>0;
 
  $b['slots']=array_map(fn($s)=>['id'=>(int)$s['id'],'court_id'=>(int)$s['court_id'],'sub_court_name'=>$s['sub_court_name'],'slot_date'=>$s['slot_date'],'start_time'=>substr($s['start_time'],0,5),'end_time'=>substr($s['end_time'],0,5)],$slots);
  }unset($b);return $rows;
@@ -129,14 +164,15 @@ function booking_transition(int $id,string $target,array $user,bool $admin=false
       }
   }
 
-  $pdo->prepare('UPDATE bookings SET status=?, is_deposit_refunded=?, refund_note=? WHERE id=?')
-      ->execute(['no_show', $isRefunded, $refundNote, $id]);
+  $paidStatus = ((int)$b['deposit_amount'] > 0) ? 'deposit_paid' : ($b['payment_status'] ?? 'unpaid');
+  $pdo->prepare('UPDATE bookings SET status=?, payment_status=?, is_deposit_refunded=?, refund_note=? WHERE id=?')
+      ->execute(['no_show', $paidStatus, $isRefunded, $refundNote, $id]);
 
   // Khách bùng sân: Tự động giải phóng khung giờ cho khách vãng lai
   $s=$pdo->prepare('SELECT bs.slot_id FROM booking_slots bs WHERE bs.booking_id=? FOR UPDATE');$s->execute([$id]);
   $slotIds=$s->fetchAll(PDO::FETCH_COLUMN,0);
   if($slotIds){
-   $q=$pdo->prepare("UPDATE time_slots s SET s.status='available',s.held_by=NULL,s.hold_expires_at=NULL WHERE s.id=? AND s.status='booked' AND NOT EXISTS(SELECT 1 FROM booking_slots bs JOIN bookings b ON b.id=bs.booking_id WHERE bs.slot_id=s.id AND b.status IN ('pending','confirmed','checked_in','completed'))");
+   $q=$pdo->prepare("UPDATE time_slots s SET s.status='available',s.held_by=NULL,s.hold_expires_at=NULL WHERE s.id=? AND s.status IN ('booked','holding') AND NOT EXISTS(SELECT 1 FROM booking_slots bs JOIN bookings b ON b.id=bs.booking_id WHERE bs.slot_id=s.id AND b.status IN ('pending','confirmed','checked_in','completed'))");
    foreach($slotIds as $sid)$q->execute([$sid]);
   }
  }
@@ -172,47 +208,74 @@ function booking_transition(int $id,string $target,array $user,bool $admin=false
   $isMember = (bool)$member;
   $now = time();
   $diffMinutes = $earliestTs ? ($earliestTs - $now) / 60 : 0;
+  $createdTs = !empty($b['created_at']) ? strtotime((string)$b['created_at']) : 0;
+  $sinceCreatedMinutes = $createdTs ? max(0, ($now - $createdTs) / 60) : 9999;
+  $wasUnpaid = ($b['status'] === 'pending' || ($b['payment_status'] ?? '') === 'unpaid');
 
   $isRefunded = 0;
+  $newPaymentStatus = $wasUnpaid ? 'unpaid' : (((int)$b['deposit_amount'] > 0) ? 'deposit_paid' : 'unpaid');
   $refundNote = null;
   $returnMessage = 'Đã hủy đơn đặt sân và giải phóng khung giờ.';
 
-  if (!$admin) {
-      // KÍCH HOẠT OPTION 4: Hội viên được hủy trước 30 phút và hoàn 100% cọc
+  if ($wasUnpaid) {
+      $isRefunded = 0;
+      $refundNote = 'Đơn hủy khi chưa thanh toán tiền cọc.';
+      $returnMessage = 'Đã hủy đơn chờ thanh toán và giải phóng khung giờ.';
+      try {
+          $pdo->prepare("UPDATE payments SET status='cancelled' WHERE booking_id=? AND status='pending'")->execute([$id]);
+      } catch (Throwable $e) {}
+  } elseif (!$admin) {
       if ($isMember) {
+          // Hội viên VIP: Được hủy khẩn cấp trước 30 phút và hoàn 100% cọc
           if ($diffMinutes < 30) {
               throw new BookingError(409, 'Đặc quyền hủy khẩn cấp của Hội viên chỉ áp dụng trước giờ bắt đầu ít nhất 30 phút. Trận đấu sắp diễn ra, vui lòng liên hệ hotline chủ sân!');
           }
           $isRefunded = 1;
           $tier = strtoupper($member['tier'] ?? 'SILVER');
-          $refundNote = "Đặc quyền Hội viên {$tier}: Hủy khẩn cấp 1 chạm (>30p trước giờ đấu) - Hoàn cọc 100%.";
-          $returnMessage = "Đã hủy đơn theo đặc quyền Hội viên ({$tier}) trước 30 phút. Tiền cọc được bảo đảm hoàn 100% và khung giờ đã được mở lại!";
+          $refundNote = "Đặc quyền Hội viên {$tier}: Hủy khẩn cấp (>30p trước giờ đấu) — Hoàn cọc 100%.";
+          $returnMessage = "Đã hủy đơn theo đặc quyền Hội viên ({$tier}) trước 30 phút. Bạn được hoàn 100% tiền cọc, chủ sân sẽ sớm chuyển khoản hoàn trả cho bạn!";
       } else {
-          // Khách thường: Phải hủy trước ít nhất 120 phút (2 giờ)
-          if ($diffMinutes < 120) {
-              throw new BookingError(409, 'Khách thường chỉ được hủy trước giờ bắt đầu ít nhất 2 tiếng (120 phút). Vui lòng liên hệ chủ sân để được hỗ trợ.');
+          // Khách thường đã đặt cọc:
+          // 1. Ân hạn 15 phút đầu sau khi đặt (hỗ trợ đặt sân trong ngày bị nhầm giờ/nhầm sân), miễn cách giờ đấu >= 60 phút
+          if ($sinceCreatedMinutes <= 15 && $diffMinutes >= 60) {
+              $isRefunded = 1;
+              $refundNote = 'Khách hủy trong 15 phút ân hạn sau khi đặt (trước giờ đấu >= 1h) — Hoàn cọc 100%.';
+              $returnMessage = 'Đã hủy đơn trong 15 phút ân hạn sau khi đặt. Bạn được hoàn 100% tiền cọc, chủ sân sẽ sớm chuyển khoản hoàn trả cho bạn!';
           }
-          $isRefunded = 0;
-          $refundNote = 'Khách thường hủy đơn: Tiền cọc được xử lý theo quy định của sân.';
-          $returnMessage = 'Đã hủy đơn đặt sân và mở lại khung giờ. Tiền cọc sẽ được xử lý theo quy định của sân.';
+          // 2. Hủy sớm trước giờ thi đấu >= 6 tiếng (360 phút)
+          elseif ($diffMinutes >= 360) {
+              $isRefunded = 1;
+              $refundNote = 'Khách hủy sớm (trước giờ thi đấu >= 6 tiếng) — Hoàn cọc 100%.';
+              $returnMessage = 'Đã hủy đơn trước giờ thi đấu trên 6 tiếng. Bạn được hoàn 100% tiền cọc, chủ sân sẽ sớm chuyển khoản hoàn trả cho bạn!';
+          }
+          // 3. Hủy sát giờ từ 2 tiếng đến dưới 6 tiếng trước giờ đấu: Cho phép hủy trả sân nhưng mất cọc (chủ sân giữ cọc)
+          elseif ($diffMinutes >= 120) {
+              $isRefunded = 0;
+              $refundNote = 'Khách thường hủy sát giờ (dưới 6 tiếng trước giờ đấu) — Giữ 100% tiền cọc bù rủi ro trống sân.';
+              $returnMessage = 'Đã hủy đơn đặt sân và mở lại khung giờ. Do hủy dưới 6 tiếng trước giờ thi đấu (và đã qua 15 phút ân hạn), tiền cọc được giữ lại theo quy định của sân.';
+          }
+          // 4. Dưới 2 tiếng trước giờ đấu: Chặn tự hủy trên web
+          else {
+              throw new BookingError(409, 'Khách thường chỉ được hủy trước giờ bắt đầu ít nhất 2 tiếng (hoặc trong 15 phút đầu sau khi đặt nếu cách giờ chơi >= 1 tiếng). Vui lòng liên hệ chủ sân để được hỗ trợ.');
+          }
       }
   } else {
-      // Admin / Chủ sân hủy
+      // Admin / Chủ sân chủ động hủy đơn đã cọc
       $isRefunded = 1;
-      $refundNote = 'Chủ sân / Quản trị viên hủy đơn: Hoàn tiền cọc.';
-      $returnMessage = 'Chủ sân / Quản trị viên đã hủy đơn đặt sân và giải phóng khung giờ.';
+      $refundNote = 'Chủ sân / Quản trị viên hủy đơn — Hoàn 100% tiền cọc cho khách.';
+      $returnMessage = 'Chủ sân / Quản trị viên đã hủy đơn đặt sân và giải phóng khung giờ. Đơn chuyển sang trạng thái Chờ hoàn cọc.';
   }
 
-  $pdo->prepare('UPDATE bookings SET status=?, is_deposit_refunded=?, refund_note=? WHERE id=?')
-      ->execute(['cancelled', $isRefunded, $refundNote, $id]);
+  $pdo->prepare('UPDATE bookings SET status=?, payment_status=?, is_deposit_refunded=?, refund_note=? WHERE id=?')
+      ->execute(['cancelled', $newPaymentStatus, $isRefunded, $refundNote, $id]);
 
-  // Giải phóng khung giờ
-  $q=$pdo->prepare("UPDATE time_slots s SET s.status='available',s.held_by=NULL,s.hold_expires_at=NULL WHERE s.id=? AND s.status='booked' AND NOT EXISTS(SELECT 1 FROM booking_slots bs JOIN bookings b ON b.id=bs.booking_id WHERE bs.slot_id=s.id AND b.status IN ('pending','confirmed','checked_in','completed'))");
+  // Giải phóng khung giờ (cả booked và holding)
+  $q=$pdo->prepare("UPDATE time_slots s SET s.status='available',s.held_by=NULL,s.hold_expires_at=NULL WHERE s.id=? AND s.status IN ('booked','holding') AND NOT EXISTS(SELECT 1 FROM booking_slots bs JOIN bookings b ON b.id=bs.booking_id WHERE bs.slot_id=s.id AND b.status IN ('pending','confirmed','checked_in','completed'))");
   foreach($slots as $slot)$q->execute([$slot['id']]);
 
-  // Hoàn lại voucher nếu hủy trước 24h
+  // Hoàn lại voucher nếu đơn chưa thanh toán, hoặc thuộc diện được hoàn cọc 100%, hoặc hủy trước 24h
   $isOver24h = $earliestTs && ($earliestTs - $now) >= 86400;
-  if($isOver24h && !empty($b['voucher_id'])){
+  if(($wasUnpaid || $isRefunded === 1 || $isOver24h) && !empty($b['voucher_id'])){
    $vuStmt=$pdo->prepare('SELECT id,voucher_id FROM voucher_usages WHERE booking_id=? AND released_at IS NULL FOR UPDATE');
    $vuStmt->execute([$id]);
    $vu=$vuStmt->fetch();
@@ -221,9 +284,30 @@ function booking_transition(int $id,string $target,array $user,bool $admin=false
     $pdo->prepare('UPDATE vouchers SET used_count=GREATEST(0,used_count-1) WHERE id=?')->execute([$vu['voucher_id']]);
    }
   }
+ }
+ elseif($target==='refunded'){
+  if(!$admin)throw new BookingError(403,'Chỉ chủ sân hoặc quản trị viên được xác nhận hoàn cọc.');
+  if(!in_array($b['status'],['cancelled','no_show'],true) || (int)($b['is_deposit_refunded'] ?? 0) !== 1){
+   throw new BookingError(409,'Chỉ đơn đã hủy hoặc được cứu cọc thuộc diện hoàn tiền mới có thể xác nhận hoàn cọc.');
+  }
+  if(($b['payment_status'] ?? '') === 'refunded'){
+   return ['booking_id'=>$id,'booking_status'=>$b['status'],'payment_status'=>'refunded','is_deposit_refunded'=>1,'refund_note'=>$b['refund_note']??null,'message'=>'Đơn này đã được xác nhận hoàn cọc trước đó.'];
+  }
+  $actorLabel = ($user['role'] ?? '') === 'admin' ? 'Quản trị viên' : 'Chủ sân';
+  $stamp = date('H:i d/m/Y');
+  $refundNote = trim(($b['refund_note'] ?? '') . " | {$actorLabel} đã hoàn trả tiền cọc lúc {$stamp}.", ' |');
+  $pdo->prepare("UPDATE bookings SET payment_status='refunded', refund_note=? WHERE id=?")
+      ->execute([$refundNote, $id]);
+  try {
+      $pdo->prepare("UPDATE payments SET status='refunded' WHERE booking_id=? AND status IN ('paid','late_paid')")
+          ->execute([$id]);
+  } catch (Throwable $e) {}
+  $returnMessage = 'Đã xác nhận hoàn trả 100% tiền cọc cho khách hàng thành công.';
+  $isRefunded = 1;
+  $target = $b['status'];
  } else {
   throw new BookingError(422,'Trạng thái đích không hợp lệ.');
  }
 
- return ['booking_id'=>$id,'booking_status'=>$target,'is_deposit_refunded'=>$isRefunded??0,'refund_note'=>$refundNote??null,'message'=>$returnMessage??null];});
+ return ['booking_id'=>$id,'booking_status'=>$target,'payment_status'=>$b['payment_status']??null,'is_deposit_refunded'=>$isRefunded??0,'refund_note'=>$refundNote??null,'message'=>$returnMessage??null];});
 }

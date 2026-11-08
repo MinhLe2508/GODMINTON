@@ -119,6 +119,7 @@ try {
             b.total_price,
             b.deposit_amount,
             " . (in_array('is_deposit_refunded', $bCols, true) ? 'b.is_deposit_refunded,' : '0 AS is_deposit_refunded,') . "
+            " . (in_array('payment_status', $bCols, true) ? 'b.payment_status,' : "'deposit_paid' AS payment_status,") . "
             {$voucherSelect}
             b.status AS booking_status,
             b.created_at,
@@ -189,6 +190,14 @@ try {
             // Khi khách bùng sân: Tiền cọc giữ lại nếu không được hoàn cọc
             $isDepositRefunded = (int)($rb['is_deposit_refunded'] ?? 0);
             if (!$isDepositRefunded) {
+                $depositAmt = (int)round((float)($rb['deposit_amount'] ?? 0));
+                $revenue += $depositAmt;
+            }
+        } elseif ($status === 'cancelled') {
+            // Khi khách đã đóng cọc nhưng hủy sát giờ (không thuộc diện hoàn cọc): Tiền cọc giữ lại cho sân
+            $isDepositRefunded = (int)($rb['is_deposit_refunded'] ?? 0);
+            $payStatus = $rb['payment_status'] ?? 'unpaid';
+            if (!$isDepositRefunded && $payStatus === 'deposit_paid') {
                 $depositAmt = (int)round((float)($rb['deposit_amount'] ?? 0));
                 $revenue += $depositAmt;
             }
