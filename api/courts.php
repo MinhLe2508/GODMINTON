@@ -15,6 +15,7 @@
  * Người phụ trách: Minh (Tuần 1)
  */
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/image-url.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 header('Access-Control-Allow-Origin: *');
@@ -177,7 +178,7 @@ try {
             'ward_id'         => (int) $row['ward_id'],
             'ward_name'       => $row['ward_name'],
             'old_area_label'  => $row['old_area_label'],
-            'image_url'       => $row['image_url'] ?: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop',
+            'image_url'       => godminton_hires_image($row['image_url'] ?: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop', 800),
             'amenities'       => $amenities,
             'amenity_codes'   => $amenityCodes,
         ];

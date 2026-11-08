@@ -12,6 +12,7 @@
  * Người phụ trách: Minh (Tuần 1)
  */
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/image-url.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, max-age=0');
 header('Access-Control-Allow-Origin: *');
@@ -108,12 +109,12 @@ try {
         'owner_phone'     => $court['owner_phone'],
         'images'          => array_map(function ($img) {
             return [
-                'url'        => $img['image_url'],
+                'url'        => godminton_hires_image($img['image_url'], 1600),
                 'sort_order' => (int) $img['sort_order']
             ];
         }, $images),
-        'image_url'       => !empty($images) ? $images[0]['image_url']
-                             : 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop',
+        'image_url'       => godminton_hires_image(!empty($images) ? $images[0]['image_url']
+                             : 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1600&auto=format&fit=crop', 1600),
         'amenities'       => array_map(function ($a) {
             return [
                 'code'  => $a['code'],
