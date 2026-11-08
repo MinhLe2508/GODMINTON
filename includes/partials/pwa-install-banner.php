@@ -23,7 +23,8 @@
     bottom: calc(76px + env(safe-area-inset-bottom, 0px));
     left: 16px;
     right: 16px;
-    z-index: 1045;
+    z-index: 1100; /* cao hơn #godmintonBottomNav (1050) để không bị che */
+    pointer-events: none;
     max-width: 480px;
     margin: 0 auto;
     display: none;
@@ -36,10 +37,13 @@
     .pwa-install-banner {
         right: auto;
         left: 24px;
-        bottom: 24px;
+        /* Bottom nav hiển thị ở mọi cỡ màn hình nên vẫn phải chừa chỗ phía trên nav */
+        bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+        width: 480px;
     }
 }
 .pwa-install-card {
+    pointer-events: auto;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -49,6 +53,7 @@
     box-shadow: 0 16px 36px -10px rgba(13, 148, 136, 0.28), 0 0 1px 1px rgba(0,0,0,0.04);
 }
 [data-bs-theme="dark"] .pwa-install-card {
+    pointer-events: auto;
     background: rgba(17, 24, 39, 0.95);
     border-color: rgba(45, 212, 191, 0.28);
     box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.5);
@@ -80,6 +85,16 @@
 .pwa-close-btn {
     padding: 0.4rem;
     font-size: 0.75rem;
+}
+#btnBannerInstall {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.pwa-install-card .flex-grow-1 {
+    min-width: 0;
+}
+.pwa-close-btn {
+    flex-shrink: 0;
 }
 @keyframes pwaSlideUp {
     from { transform: translateY(30px); opacity: 0; }
