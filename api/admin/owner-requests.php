@@ -24,7 +24,7 @@ try {
    $pdo->query('SELECT id FROM courts ORDER BY id FOR UPDATE')->fetchAll();$p=wf_payload($p,true);
    $duplicates=wf_duplicates($p);if($duplicates && ($in['duplicate_confirmed']??false)!==true)wf_fail(409,'Có sân cùng tên/địa chỉ hoặc vị trí gần nhau. Kiểm tra trùng và xác nhận rõ trước khi duyệt.');
    if($action==='transfer_approve')wf_fail(422,'Chuyển giao chỉ áp dụng cho sân đã tồn tại.');
-   $pdo->prepare("INSERT INTO courts(owner_id,ward_id,name,address,latitude,longitude,price_per_hour,total_sub_courts,opening_time,closing_time,description,status,approval_status,booking_open) VALUES(?,?,?,?,?,?,?,?,?,?,?,'inactive','approved',0)")->execute([$applicant['id'],$p['ward_id'],$p['name'],$p['address'],$p['latitude'],$p['longitude'],$p['price_per_hour'],$p['total_sub_courts'],$p['opening_time'],$p['closing_time'],$p['description']]);$courtId=(int)$pdo->lastInsertId();
+   $pdo->prepare("INSERT INTO courts(owner_id,ward_id,name,address,latitude,longitude,price_per_hour,total_sub_courts,opening_time,closing_time,description,status,approval_status,booking_open) VALUES(?,?,?,?,?,?,?,?,?,?,?,'active','approved',1)")->execute([$applicant['id'],$p['ward_id'],$p['name'],$p['address'],$p['latitude'],$p['longitude'],$p['price_per_hour'],$p['total_sub_courts'],$p['opening_time'],$p['closing_time'],$p['description']]);$courtId=(int)$pdo->lastInsertId();
    $pdo->prepare('INSERT INTO court_images(court_id,image_url,sort_order) VALUES(?,?,0)')->execute([$courtId,$p['image_url']]);
    $a=$pdo->prepare('INSERT INTO court_amenities(court_id,amenity_id) SELECT ?,id FROM amenities WHERE code=?');foreach($p['amenities'] as $code)$a->execute([$courtId,$code]);
   }else{

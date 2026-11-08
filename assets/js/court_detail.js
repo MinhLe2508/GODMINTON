@@ -130,6 +130,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <span class="badge bg-teal-subtle text-teal fs-6 px-3 py-2 rounded-pill">
                                 <i class="fa-solid fa-location-dot me-1"></i>${court.ward_name} (${court.old_area_label})
                             </span>
+                            ${(court.status !== 'active' || String(court.booking_open) === '0') ? `
+                            <span class="badge bg-secondary fs-6 px-3 py-2 rounded-pill">
+                                <i class="fa-solid fa-pause me-1"></i>Tạm ngưng nhận đặt
+                            </span>
+                            ` : `
+                            <span class="badge bg-success-subtle text-success fs-6 px-3 py-2 rounded-pill">
+                                <i class="fa-solid fa-circle-check me-1"></i>Đang hoạt động
+                            </span>
+                            `}
                         </div>
 
                         <h2 class="fw-extrabold mb-3">${court.name}</h2>
@@ -208,6 +217,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>
                     </div>
 
+                    ${(court.status !== 'active' || String(court.booking_open) === '0') ? `
+                    <div class="alert alert-warning d-flex align-items-center rounded-3 mb-3 p-3">
+                        <i class="fa-solid fa-triangle-exclamation fs-4 me-3 text-warning"></i>
+                        <div>
+                            <div class="fw-bold">Sân hiện đang tạm ngưng nhận đặt</div>
+                            <div class="small text-muted">Sân này đang tạm ngừng nhận đơn mới. Quý khách vui lòng chọn sân khác hoặc quay lại sau.</div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-secondary btn-lg rounded-pill fw-bold shadow opacity-75" disabled>
+                            <i class="fa-solid fa-ban me-2"></i>Sân Đang Tạm Ngưng
+                        </button>
+                        <a href="courts.php" class="btn btn-outline-teal rounded-pill">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Quay lại tìm sân khác
+                        </a>
+                    </div>
+                    ` : `
                     <div class="d-grid gap-2">
                         <a href="booking.php?court_id=${court.id}" class="btn btn-teal btn-lg rounded-pill fw-bold shadow">
                             <i class="fa-solid fa-calendar-check me-2"></i>Chọn Giờ Đặt Sân Ngay
@@ -216,6 +242,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <i class="fa-solid fa-arrow-left me-1"></i> Quay lại tìm sân khác
                         </a>
                     </div>
+                    `}
                 </div>
             </div>
         </div>`;

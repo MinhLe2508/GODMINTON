@@ -286,6 +286,7 @@ function renderCourtsTable() {
         const ownerSub = (currentUser.role === 'admin' && c.owner_name)
             ? `<div class="small text-teal"><i class="fa-regular fa-user me-1"></i>Chủ sân: ${AdminApp.escapeHTML(c.owner_name)}</div>`
             : '';
+        const isActive = c.status === 'active';
         return `
         <tr>
             <td>
@@ -302,11 +303,13 @@ function renderCourtsTable() {
             <td>${AdminApp.formatVND(c.price_per_hour)}</td>
             <td>${c.total_sub_courts || 6}</td>
             <td>${c.opening_time || '06:00'} - ${c.closing_time || '22:00'}</td>
-            <td><span class="badge ${c.status === 'active' ? 'bg-success' : 'bg-secondary'}">${c.status === 'active' ? 'Hoạt động' : 'Tạm ngưng'}</span></td>
+            <td><span class="badge ${isActive ? 'bg-success' : 'bg-secondary'}">${isActive ? 'Hoạt động' : 'Tạm ngưng'}</span></td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-teal rounded-pill me-1" onclick="openCourtModal(${c.id})" title="Chỉnh sửa sân"><i class="fa-solid fa-pen"></i></button>
                 <a class="btn btn-sm btn-outline-secondary rounded-pill me-1" href="admin-slots.php?court=${c.id}" title="Quản lý khung giờ"><i class="fa-solid fa-clock"></i></a>
-                <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="deleteCourt(${c.id})" title="Tạm ngừng nhận đặt"><i class="fa-solid fa-power-off"></i></button>
+                <button class="btn btn-sm ${isActive ? 'btn-outline-danger' : 'btn-outline-success'} rounded-pill" onclick="toggleCourtStatus(${c.id}, '${isActive ? 'inactive' : 'active'}')" title="${isActive ? 'Tạm ngưng nhận đặt' : 'Mở hoạt động lại'}">
+                    <i class="fa-solid ${isActive ? 'fa-power-off' : 'fa-play'}"></i>
+                </button>
             </td>
         </tr>`;
     }).join('');
@@ -351,6 +354,7 @@ function openCourtModal(courtId) {
     } else {
         document.getElementById('courtModalTitle').textContent = 'Thêm sân mới';
         document.getElementById('courtId').value = '';
+        document.getElementById('courtStatus').value = 'active';
     }
     modalInstance.show();
 }
@@ -416,22 +420,29 @@ async function handleSaveCourt(e) {
     }
 }
 
-async function deleteCourt(courtId) {
+async function toggleCourtStatus(courtId, targetStatus) {
     const court = myCourts.find(c => Number(c.id) === Number(courtId));
     if (!court) return;
-    const ok = await AdminApp.confirmAction(
-        'Tạm ngừng sân này?',
-        `"${court.name}" sẽ tạm ngừng nhận đơn mới. Lịch sử giao dịch và các đơn hiện có vẫn được giữ nguyên.`
-    );
+    const isActivating = targetStatus === 'active';
+    const title = isActivating ? 'Kích hoạt sân hoạt động?' : 'Tạm ngừng nhận đặt sân này?';
+    const message = isActivating
+        ? `"${court.name}" sẽ mở nhận lịch đặt sân trở lại cho khách hàng.`
+        : `"${court.name}" sẽ tạm ngừng nhận đơn mới. Lịch sử giao dịch và các đơn hiện có vẫn được giữ nguyên.`;
+
+    const ok = await AdminApp.confirmAction(title, message);
     if (!ok) return;
 
     try {
-        await AdminApp.deleteCourtApi(courtId);
-        AdminApp.toast('success', 'Đã tạm ngừng sân');
+        await AdminApp.setCourtStatusApi(courtId, targetStatus);
+        AdminApp.toast('success', isActivating ? 'Đã kích hoạt sân hoạt động' : 'Đã tạm ngưng nhận đặt');
         await loadCourtsFromServer();
     } catch (err) {
-        AdminApp.toast('error', err.message || 'Không thể tạm ngừng sân.');
+        AdminApp.toast('error', err.message || (isActivating ? 'Không thể kích hoạt sân.' : 'Không thể tạm ngưng sân.'));
     }
+}
+
+function deleteCourt(courtId) {
+    return toggleCourtStatus(courtId, 'inactive');
 }
 </script>
 </body>

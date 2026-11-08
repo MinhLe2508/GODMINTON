@@ -340,13 +340,12 @@ try {
     if(!in_array($workflowActor['role'],['owner','admin'],true))wf_fail(403,'Bạn chưa được duyệt quyền chủ sân.');
     if($method!=='GET'){
         booking_account_csrf();
-        if($method==='POST')wf_fail(409,'Sân mới phải được gửi qua trang Đăng ký sân và xét duyệt.');
+        if($method==='POST' && $currentRole!=='admin')wf_fail(409,'Chủ sân gửi yêu cầu tạo sân mới qua trang Đăng ký sân.');
         if($method==='DELETE')wf_fail(409,'Hãy tạm ngừng nhận đặt thay vì xóa sân để giữ lịch sử giao dịch.');
-        if($currentRole==='admin'){
+        if($currentRole==='admin' && !empty($input['admin_password'])){
             wf_admin_password($workflowActor,$input);
-            $workflowReason=wf_text($input,'admin_reason',1000);
-            if(mb_strlen($workflowReason)<5)wf_fail(422,'Nhập lý do quản trị ít nhất 5 ký tự.');
         }
+        $workflowReason = !empty($input['admin_reason']) ? wf_text($input,'admin_reason',1000) : 'Quản trị viên cập nhật sân';
     }
     // =====================================================================
     // 1. GET — Lấy danh sách sân (hoặc 1 sân theo ?id=) theo phân quyền
@@ -396,8 +395,76 @@ try {
     }
 
     // =====================================================================
-    // 2. POST — Thêm sân mới
+    // 2. POST — Thêm sân mới (Quyền Admin)
     // =====================================================================
+    if ($method === 'POST') {
+        if ($currentRole !== 'admin') {
+            jsonOut(403, ['status' => 'error', 'message' => 'Chủ sân gửi yêu cầu tạo sân mới qua trang Đăng ký sân.']);
+        }
+        $name        = trim((string)($input['name'] ?? ''));
+        $address     = trim((string)($input['address'] ?? ''));
+        $price       = isset($input['price_per_hour']) ? (int)$input['price_per_hour'] : -1;
+        $subCount    = isset($input['total_sub_courts']) ? max(1, (int)$input['total_sub_courts']) : 6;
+        $status      = in_array($input['status'] ?? 'active', ['active', 'inactive'], true) ? $input['status'] : 'active';
+        $openTime    = trim((string)($input['opening_time'] ?? '06:00')) ?: '06:00';
+        $closeTime   = trim((string)($input['closing_time'] ?? '22:00')) ?: '22:00';
+        $latitude    = isset($input['latitude']) && is_numeric($input['latitude']) ? (float)$input['latitude'] : 10.7769000;
+        $longitude   = isset($input['longitude']) && is_numeric($input['longitude']) ? (float)$input['longitude'] : 106.7009000;
+        $description = trim((string)($input['description'] ?? ''));
+        $imageUrl    = trim((string)($input['image_url'] ?? ''));
+        $amenities   = normalizeAmenityCodes($input['amenities'] ?? []);
+
+        if ($name === '' || $address === '' || $price < 0) {
+            jsonOut(422, ['status' => 'error', 'message' => 'Vui lòng nhập đầy đủ tên sân, địa chỉ và giá thuê hợp lệ.']);
+        }
+
+        $ownerId = !empty($input['owner_id']) ? (int)$input['owner_id'] : $currentUserId;
+        $wardId  = resolveWardId($pdo, $input, null);
+
+        $pdo->beginTransaction();
+        $ins = $pdo->prepare("
+            INSERT INTO courts (
+                owner_id, ward_id, name, address, latitude, longitude,
+                price_per_hour, total_sub_courts, opening_time, closing_time,
+                description, status, approval_status, booking_open
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?,
+                ?, ?, 'approved', ?
+            )
+        ");
+        $ins->execute([
+            $ownerId,
+            $wardId,
+            $name,
+            $address,
+            $latitude,
+            $longitude,
+            $price,
+            $subCount,
+            strlen($openTime) === 5 ? $openTime . ':00' : $openTime,
+            strlen($closeTime) === 5 ? $closeTime . ':00' : $closeTime,
+            $description,
+            $status,
+            $status === 'active' ? 1 : 0
+        ]);
+        $newId = (int)$pdo->lastInsertId();
+
+        if ($imageUrl !== '') {
+            syncCourtPrimaryImage($pdo, $newId, $imageUrl);
+        }
+        if (!empty($amenities)) {
+            syncCourtAmenities($pdo, $newId, $amenities);
+        }
+        $pdo->commit();
+
+        $created = fetchFormattedCourts($pdo, 'admin', $currentUserId, $newId);
+        jsonOut(201, [
+            'status'  => 'success',
+            'message' => 'Đã thêm sân mới thành công.',
+            'data'    => $created[0] ?? ['id' => $newId],
+        ]);
+    }
     // =====================================================================
     // 3. PUT / PATCH — Cập nhật thông tin sân
     // =====================================================================
@@ -458,7 +525,7 @@ try {
             $unchanged=fetchFormattedCourts($pdo,'admin',$currentUserId,$courtId);$result=$unchanged[0];$result['review_pending']=true;
             jsonOut(202,['status'=>'success','message'=>'Thông tin hiện tại được giữ nguyên. Yêu cầu thay đổi đã gửi Admin duyệt.','data'=>$result]);
         }
-        if($status==='active' && ($existing['status']!=='active'||!(int)$existing['booking_open']))wf_court_ready($pdo,$courtId);
+        if($status==='active' && ($existing['status']!=='active'||!(int)$existing['booking_open'])){ if($currentRole!=='admin')wf_court_ready($pdo,$courtId); }
 
 
         $upd = $pdo->prepare("

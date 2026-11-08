@@ -116,13 +116,13 @@ try {
     if (!$parsed || $parsed->format('Y-m-d') !== $dateStr) { http_response_code(422); echo json_encode(['status'=>'error','message'=>'Ngày không hợp lệ.']); exit; }
 
     // Lấy thông tin sân
-    $courtStmt = $pdo->prepare("SELECT id, name, address, price_per_hour FROM courts WHERE id = ? AND status='active'");
+    $courtStmt = $pdo->prepare("SELECT id, name, address, price_per_hour FROM courts WHERE id = ? AND status='active' AND booking_open=1");
     $courtStmt->execute([$courtId]);
     $court = $courtStmt->fetch();
 
     if (!$court) {
         http_response_code(404);
-        echo json_encode(['status' => 'error', 'message' => 'Không tìm thấy sân cầu lông.'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['status' => 'error', 'message' => 'Sân không hoạt động hoặc đang tạm ngưng nhận đặt.'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 

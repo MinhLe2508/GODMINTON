@@ -93,11 +93,16 @@ const AdminApp = (() => {
         return res.data;
     }
 
-    async function deleteCourtApi(id) {
+    async function setCourtStatusApi(id, status) {
         const res = await apiRequest('api/admin/courts.php', {
-            method: 'PATCH', body:JSON.stringify({id:Number(id),status:'inactive'})
+            method: 'PATCH',
+            body: JSON.stringify({ id: Number(id), status: status })
         });
         return res;
+    }
+
+    async function deleteCourtApi(id) {
+        return setCourtStatusApi(id, 'inactive');
     }
 
     /* ================= SLOTS API (Task 14) ================= */
@@ -337,6 +342,7 @@ const AdminApp = (() => {
         fetchCourts,
         createCourt,
         updateCourt,
+        setCourtStatusApi,
         deleteCourtApi,
         fetchSlots,
         generateSlotsApi,

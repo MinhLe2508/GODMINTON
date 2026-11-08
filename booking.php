@@ -32,7 +32,7 @@ $requestedCourt = (int)$requestedCourt;
 $resolvedCourt = court_rebooking_target($pdo, $requestedCourt);
 if ($resolvedCourt === null) {
     http_response_code(404);
-    echo '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sân không còn nhận đặt | GODMINTON</title><body style="margin:0;background:#f0fdfa;font:16px/1.6 system-ui;color:#134e4a"><main style="max-width:520px;margin:15vh auto;padding:28px;background:white;border-radius:20px"><h1 style="font-size:24px">Sân không còn nhận đặt</h1><p>Địa điểm này không tồn tại hoặc đã ngừng nhận đặt. Lịch sử đơn cũ vẫn được giữ nguyên.</p><a href="courts.php">Chọn sân khác</a> · <a href="history.php">Về lịch sử đặt sân</a></main></body></html>';
+    echo '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sân đang tạm ngưng nhận đặt | GODMINTON</title><body style="margin:0;background:#f0fdfa;font:16px/1.6 system-ui;color:#134e4a"><main style="max-width:520px;margin:15vh auto;padding:32px 28px;background:white;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.06);text-align:center"><div style="font-size:48px;margin-bottom:12px">🏸⏸️</div><h1 style="font-size:22px;margin:0 0 12px;color:#0f766e">Sân đang tạm ngưng nhận đặt</h1><p style="color:#64748b;margin:0 0 24px">Sân này hiện đang tạm ngừng hoạt động hoặc ngừng nhận lịch đặt mới. Quý khách vui lòng chọn sân khác để tiếp tục.</p><a href="courts.php" style="display:inline-block;background:#0d9488;color:white;padding:12px 28px;border-radius:999px;text-decoration:none;font-weight:700">Xem danh sách sân khác</a></main></body></html>';
     exit;
 }
 if ($resolvedCourt !== $requestedCourt) {
@@ -42,7 +42,7 @@ if ($resolvedCourt !== $requestedCourt) {
 }
 $courtStmt=$pdo->prepare('SELECT id,name,address,opening_time,closing_time FROM courts WHERE id=?');
 $courtStmt->execute([$resolvedCourt]);$bookingCourt=$courtStmt->fetch();
-$switchCourts=$pdo->query("SELECT id,name FROM courts WHERE status='active' ORDER BY name")->fetchAll();
+$switchCourts=$pdo->query("SELECT id,name FROM courts WHERE status='active' AND booking_open=1 ORDER BY name")->fetchAll();
 function booking_text($value): string {return htmlspecialchars((string)$value,ENT_QUOTES,'UTF-8');}
 ?>
 <!DOCTYPE html>

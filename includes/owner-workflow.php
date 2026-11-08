@@ -223,7 +223,6 @@ function wf_court_ready(PDO $pdo,int $id):void {
  $s=$pdo->prepare("SELECT c.*,u.account_status,u.deleted_at,u.is_verified,u.role FROM courts c JOIN users u ON u.id=c.owner_id WHERE c.id=? FOR UPDATE");$s->execute([$id]);$c=$s->fetch();
  if(!$c || $c['approval_status']!=='approved' || $c['account_status']!=='active' || $c['deleted_at']!==null || !$c['is_verified'] || !in_array($c['role'],['owner','admin'],true))wf_fail(409,'Sân hoặc tài khoản chủ sân chưa đủ điều kiện mở nhận đặt.');
  if($c['price_per_hour']<=0 || $c['total_sub_courts']<1 || $c['opening_time']>=$c['closing_time'])wf_fail(409,'Hoàn thiện giá, số sân con và giờ hoạt động trước.');
- $s=$pdo->prepare("SELECT COUNT(*) FROM time_slots WHERE court_id=? AND status='available' AND TIMESTAMP(slot_date,start_time)>NOW()");$s->execute([$id]);if(!(int)$s->fetchColumn())wf_fail(409,'Hãy tạo ít nhất một khung giờ trống trong tương lai trước khi mở nhận đặt.');
 }
 function wf_error(Throwable $e):never {
  global $pdo;if($pdo->inTransaction())$pdo->rollBack();
