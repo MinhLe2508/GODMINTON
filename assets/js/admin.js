@@ -285,10 +285,13 @@ const AdminApp = (() => {
 
         const userBoxEl = document.getElementById('adminUserBox');
         if (userBoxEl) {
+            const avatarInner = user.avatar_url
+                ? `<img src="${escapeShell(user.avatar_url)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.remove()">`
+                : initial;
             userBoxEl.innerHTML = `
             <div class="dropdown w-100">
                 <button class="btn w-100 d-flex align-items-center gap-2 border-0 text-start px-2" type="button" data-bs-toggle="dropdown" style="background:rgba(255,255,255,.04); border-radius:.75rem; color:#e2e8f0;">
-                    <div class="avatar-sm rounded-circle bg-teal text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0">${initial}</div>
+                    <div class="avatar-sm rounded-circle bg-teal text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0 overflow-hidden" id="adminSidebarAvatarBox">${avatarInner}</div>
                     <div class="flex-grow-1 min-w-0">
                         <div class="fw-semibold small text-truncate" style="color:#f1f5f9;">${escapeShell(user.name)}</div>
                         <div class="text-truncate" style="font-size:.72rem; color:#94a3b8;">${roleLabel}</div>
@@ -303,6 +306,17 @@ const AdminApp = (() => {
                     <li><a class="dropdown-item py-2 text-danger fw-semibold" href="#" id="adminLogoutBtn"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất tài khoản</a></li>
                 </ul>
             </div>`;
+            if (!user.avatar_url) {
+                fetch('api/auth/me.php', { credentials: 'same-origin', cache: 'no-store' })
+                    .then(r => r.json())
+                    .then(res => {
+                        const url = res?.data?.user?.avatar_url;
+                        const box = document.getElementById('adminSidebarAvatarBox');
+                        if (url && box) {
+                            box.innerHTML = `<img src="${escapeShell(url)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.parentElement.textContent='${initial}'">`;
+                        }
+                    }).catch(() => {});
+            }
         }
 
         document.getElementById('adminLogoutBtn')?.addEventListener('click', async (e) => {

@@ -326,8 +326,11 @@ function initReviews(courtId) {
         const mine = state.viewer.my_review;
         if (mine && !editing) {
             return `<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 border rounded-3 p-3 bg-body-tertiary">
-                <span class="small"><i class="fa-solid fa-circle-check text-teal me-2" aria-hidden="true"></i>Bạn đã đánh giá sân này. Bạn có thể sửa lại bất cứ lúc nào.</span>
-                <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3" data-review-edit><i class="fa-solid fa-pen me-1"></i>Sửa đánh giá</button>
+                <span class="small"><i class="fa-solid fa-circle-check text-teal me-2" aria-hidden="true"></i>Bạn đã đánh giá sân này. Bạn có thể sửa hoặc xóa lại bất cứ lúc nào.</span>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3" data-review-edit><i class="fa-solid fa-pen me-1"></i>Sửa đánh giá</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" data-review-delete="${mine.id}"><i class="fa-regular fa-trash-can me-1"></i>Xóa bình luận</button>
+                </div>
             </div>`;
         }
         const text = mine ? mine.comment : '';
@@ -341,6 +344,7 @@ function initReviews(courtId) {
             <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
                 <span class="small text-muted"><span id="reviewCount">${text.length}</span>/1000</span>
                 <div class="d-flex gap-2">
+                    ${mine ? `<button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" data-review-delete="${mine.id}"><i class="fa-regular fa-trash-can me-1"></i>Xóa</button>` : ''}
                     ${mine ? '<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-review-cancel>Hủy</button>' : ''}
                     <button type="submit" class="btn btn-sm btn-teal rounded-pill px-4 fw-semibold" id="reviewSubmit">${mine ? 'Cập nhật đánh giá' : 'Gửi đánh giá'}</button>
                 </div>
@@ -356,7 +360,7 @@ function initReviews(courtId) {
                 <a href="${loginUrl}" class="btn btn-sm btn-teal rounded-pill px-3 fw-semibold"><i class="fa-solid fa-right-to-bracket me-1"></i>Đăng nhập để đánh giá</a>
             </div>`;
         }
-        if (!v.can_review) {
+        if (!v.can_review && !v.my_review) {
             return `<div class="d-flex align-items-start gap-2 border rounded-3 p-3 bg-body-tertiary small text-muted">
                 <i class="fa-solid fa-circle-info text-teal mt-1" aria-hidden="true"></i>
                 <span>Chỉ khách đã từng đặt sân này mới có thể đánh giá. <a class="text-teal fw-semibold" href="booking.php?court_id=${courtId}">Đặt sân ngay</a></span>
@@ -365,17 +369,34 @@ function initReviews(courtId) {
         return formHtml();
     }
 
+    function renderReviewAvatar(r) {
+        if (r.avatar_url) {
+            return `<span class="review-avatar flex-shrink-0 overflow-hidden p-0" style="position:relative;">
+                <img src="${esc(r.avatar_url)}" alt="${esc(r.name)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.remove()">
+                ${initial(r.name)}
+            </span>`;
+        }
+        return `<span class="review-avatar flex-shrink-0">${initial(r.name)}</span>`;
+    }
+
     function listHtml() {
         if (!state.reviews.length) return '';
         return `<div class="d-flex flex-column gap-3">${state.reviews.map(r => `
             <article class="d-flex gap-3 ${r.is_mine ? 'review-mine' : ''}">
-                <span class="review-avatar flex-shrink-0">${initial(r.name)}</span>
+                ${renderReviewAvatar(r)}
                 <div class="flex-grow-1" style="min-width:0">
-                    <div class="d-flex align-items-center flex-wrap gap-2">
-                        <strong>${esc(r.name)}</strong>
-                        ${r.is_mine ? '<span class="badge bg-teal-subtle text-teal rounded-pill">Của bạn</span>' : ''}
-                        <span>${stars(r.rating)}</span>
-                        <span class="small text-muted">${fmtDate(r.created_at)}${r.edited ? ' · đã chỉnh sửa' : ''}</span>
+                    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <strong>${esc(r.name)}</strong>
+                            ${r.is_mine ? '<span class="badge bg-teal-subtle text-teal rounded-pill">Của bạn</span>' : ''}
+                            <span>${stars(r.rating)}</span>
+                            <span class="small text-muted">${fmtDate(r.created_at)}${r.edited ? ' · đã chỉnh sửa' : ''}</span>
+                        </div>
+                        ${(r.is_mine || state.viewer?.is_admin) ? `
+                        <div class="d-flex align-items-center gap-2">
+                            ${r.is_mine ? `<button type="button" class="btn btn-sm btn-link text-teal text-decoration-none p-0 small" data-review-edit title="Sửa bình luận"><i class="fa-solid fa-pen me-1"></i>Sửa</button>` : ''}
+                            <button type="button" class="btn btn-sm btn-link text-danger text-decoration-none p-0 small" data-review-delete="${r.id}" title="Xóa bình luận"><i class="fa-regular fa-trash-can me-1"></i>Xóa</button>
+                        </div>` : ''}
                     </div>
                     <p class="mb-0 mt-1 text-body-secondary" style="white-space:pre-line;overflow-wrap:anywhere">${esc(r.comment)}</p>
                 </div>
@@ -413,9 +434,29 @@ function initReviews(courtId) {
         }
     }
 
+    async function deleteReview(reviewId) {
+        const ok = await api.confirm('Bạn có chắc chắn muốn xóa bình luận đánh giá này không?');
+        if (!ok) return;
+        try {
+            const data = await api.request('api/reviews.php', {
+                method: 'POST',
+                body: JSON.stringify({ action: 'delete', court_id: courtId, review_id: Number(reviewId) || 0 })
+            });
+            state = data;
+            editing = false;
+            draftRating = data.viewer.my_review ? data.viewer.my_review.rating : 0;
+            render();
+            await api.notify('Đã xóa bình luận đánh giá.');
+        } catch (e) {
+            await api.notify(e.message || 'Không thể xóa bình luận.', true);
+        }
+    }
+
     box.addEventListener('click', e => {
         const star = e.target.closest('[data-star]');
         if (star) { draftRating = +star.dataset.star; paintStars(); return; }
+        const delBtn = e.target.closest('[data-review-delete]');
+        if (delBtn) { deleteReview(delBtn.dataset.reviewDelete); return; }
         if (e.target.closest('[data-review-edit]')) { editing = true; draftRating = state.viewer.my_review.rating; render(); box.querySelector('#reviewComment')?.focus(); return; }
         if (e.target.closest('[data-review-cancel]')) { editing = false; render(); }
     });

@@ -62,10 +62,13 @@ async function renderNavbarUser() {
         if (!response.ok || result.status !== 'success') throw new Error('Không tải được tài khoản.');
         const user = result.data.user;
         if (!user) { area.innerHTML = '<a class="btn btn-light rounded-pill" href="auth.php">Đăng nhập / Đăng ký</a>'; return; }
+        const avatarIcon = user.avatar_url
+            ? `<img src="${esc(user.avatar_url)}" alt="" class="rounded-circle me-1 flex-shrink-0" style="width:20px;height:20px;object-fit:cover;vertical-align:text-bottom;" onerror="this.outerHTML='<i class=\\'fa-regular fa-circle-user me-1 text-teal\\'></i>'">`
+            : `<i class="fa-regular fa-circle-user me-1 text-teal"></i>`;
         area.innerHTML = `
             <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
-                <a class="btn btn-sm btn-light rounded-pill px-3 fw-semibold shadow-sm text-truncate" style="max-width: 170px;" href="profile.php">
-                    <i class="fa-regular fa-circle-user me-1 text-teal"></i>${esc(user.name)}
+                <a class="btn btn-sm btn-light rounded-pill px-3 fw-semibold shadow-sm text-truncate d-inline-flex align-items-center" style="max-width: 185px;" href="profile.php">
+                    ${avatarIcon}<span class="text-truncate">${esc(user.name)}</span>
                 </a>
                 ${['admin', 'owner'].includes(user.role) ? '<a class="btn btn-warning btn-sm rounded-pill px-3 fw-semibold" href="admin-bookings.php"><i class="fa-solid fa-gauge-high me-1"></i> Quản lý</a>' : ''}
                 <a href="auth.php" class="btn btn-sm btn-switch-account rounded-pill px-3 fw-semibold" title="Đổi tài khoản khác">

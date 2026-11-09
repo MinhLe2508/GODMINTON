@@ -458,8 +458,8 @@ function god_auth_user(PDO $pdo): ?array {
     $_SESSION['auth_version'] = (int)($_SESSION['auth_version'] ?? 0);
     $_SESSION['last_activity'] = $now;
     $_SESSION['authenticated_at'] ??= $now;
-    foreach (['name', 'email', 'phone', 'role'] as $key) {
-        $_SESSION[$key] = $u[$key];
+    foreach (['name', 'email', 'phone', 'role', 'avatar_url'] as $key) {
+        $_SESSION[$key] = $u[$key] ?? '';
     }
     unset($u['session_version'], $u['is_verified'], $u['deleted_at']);
     $u['id'] = (int)$u['id'];
@@ -472,7 +472,7 @@ function god_auth_login(array $user, ?PDO $pdo = null, bool $remember = false): 
     $_SESSION['auth_version'] = (int)$user['session_version'];
     $_SESSION['authenticated_at'] = $_SESSION['last_activity'] = time();
     $_SESSION['remember_me'] = $remember;
-    foreach (['name', 'email', 'phone', 'role'] as $key) {
+    foreach (['name', 'email', 'phone', 'role', 'avatar_url'] as $key) {
         $_SESSION[$key] = $user[$key] ?? '';
     }
     if ($remember && $pdo instanceof PDO) {

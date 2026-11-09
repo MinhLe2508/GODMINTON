@@ -397,6 +397,9 @@ async function handleUploadCourtImage(e) {
         label.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang tải...';
     }
     try {
+        const ctxRes = await fetch('api/auth/context.php', { credentials: 'same-origin', cache: 'no-store' });
+        const ctxJson = await ctxRes.json();
+        const csrfToken = ctxJson?.data?.csrf_token || '';
         const fd = new FormData();
         fd.append('image', file);
         const res = await fetch('api/upload-image.php?type=court', {
@@ -404,7 +407,7 @@ async function handleUploadCourtImage(e) {
             credentials: 'same-origin',
             headers: {
                 'Accept': 'application/json',
-                'X-GODMINTON-CSRF': window.__GODMINTON_ADMIN__?.csrf_token || ''
+                'X-GODMINTON-CSRF': csrfToken
             },
             body: fd
         });
