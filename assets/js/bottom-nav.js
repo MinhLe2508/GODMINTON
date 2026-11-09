@@ -343,6 +343,172 @@
     .bnav-bell-float.active {
         color: #2dd4bf;
     }
+
+    /* ---- Huy hiệu số bài viết mới trên tab Khám phá & Nút Chuông ---- */
+    .bnav-icon-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .bnav-unread-badge, .bell-unread-badge {
+        position: absolute;
+        top: -6px;
+        right: -10px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #ef4444 0%, #f43f5e 100%);
+        color: #ffffff !important;
+        font-size: 0.62rem !important;
+        font-weight: 800 !important;
+        line-height: 15px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1.5px solid #ffffff;
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.45);
+        pointer-events: none;
+        animation: bnavBadgePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    [data-bs-theme="dark"] .bnav-unread-badge,
+    [data-bs-theme="dark"] .bell-unread-badge {
+        border-color: #0b1e24;
+    }
+    .bell-unread-badge {
+        top: -4px;
+        right: -4px;
+    }
+    @keyframes bnavBadgePop {
+        0% { transform: scale(0); }
+        100% { transform: scale(1); }
+    }
+
+    /* ---- Thẻ nổi nhắc bài viết mới (Floating Post Notification Card) ---- */
+    .godminton-post-notify-card {
+        position: fixed;
+        left: 16px;
+        bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+        z-index: 1055;
+        width: min(370px, calc(100vw - 32px));
+        background: #ffffff;
+        border: 1.5px solid rgba(13, 148, 136, 0.35);
+        border-radius: 1rem;
+        box-shadow: 0 14px 36px rgba(15, 23, 42, 0.18), 0 0 0 4px rgba(13, 148, 136, 0.08);
+        padding: 0.85rem 0.95rem;
+        transform: translateY(24px);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .godminton-post-notify-card.show {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+    [data-bs-theme="dark"] .godminton-post-notify-card {
+        background: #0f172a;
+        border-color: rgba(20, 184, 166, 0.45);
+        color: #f1f5f9;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+    }
+    .gpn-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 0.5rem;
+    }
+    .gpn-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        text-transform: uppercase;
+        letter-spacing: 0.2px;
+    }
+    .gpn-chip-event { background: rgba(139, 92, 246, 0.14); color: #7c3aed; }
+    .gpn-chip-membership { background: rgba(245, 158, 11, 0.15); color: #d97706; }
+    .gpn-chip-announcement { background: rgba(244, 63, 94, 0.14); color: #e11d48; }
+    [data-bs-theme="dark"] .gpn-chip-event { color: #c4b5fd; }
+    [data-bs-theme="dark"] .gpn-chip-membership { color: #fcd34d; }
+    [data-bs-theme="dark"] .gpn-chip-announcement { color: #fda4af; }
+    .gpn-close {
+        border: none;
+        background: transparent;
+        color: #94a3b8;
+        font-size: 1.15rem;
+        line-height: 1;
+        padding: 2px 6px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .gpn-close:hover { background: rgba(148, 163, 184, 0.15); color: #ef4444; }
+    .gpn-body {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+    .gpn-thumb {
+        width: 56px;
+        height: 56px;
+        border-radius: 0.65rem;
+        object-fit: cover;
+        flex-shrink: 0;
+        background: rgba(13, 148, 136, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #0d9488;
+        font-size: 1.35rem;
+    }
+    .gpn-title {
+        font-size: 0.88rem;
+        font-weight: 800;
+        line-height: 1.35;
+        margin-bottom: 0.2rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        color: inherit;
+    }
+    .gpn-sub {
+        font-size: 0.75rem;
+        color: #64748b;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    [data-bs-theme="dark"] .gpn-sub { color: #94a3b8; }
+    .gpn-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 0.6rem;
+        padding-top: 0.5rem;
+        border-top: 1px dashed rgba(148, 163, 184, 0.25);
+    }
+    .gpn-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.76rem;
+        font-weight: 800;
+        color: #ffffff !important;
+        background: linear-gradient(135deg, #0d9488, #14b8a6);
+        padding: 0.32rem 0.85rem;
+        border-radius: 999px;
+        text-decoration: none !important;
+        box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+    }
+    .gpn-cta:hover { filter: brightness(1.06); }
     `;
 
     const styleEl = document.createElement('style');
@@ -372,7 +538,9 @@
             return `
             <a href="${tab.href}" class="bnav-item${active}"
                aria-label="${tab.label}" data-bnav-id="${tab.id}"${logoutAttr}>
-                <i class="fa-solid ${tab.icon}" aria-hidden="true"></i>
+                <span class="bnav-icon-wrap">
+                    <i class="fa-solid ${tab.icon}" aria-hidden="true"></i>
+                </span>
                 <span>${tab.label}</span>
             </a>`;
         }).join('');
@@ -586,6 +754,9 @@
 
         /* ---- Kích hoạt hiệu ứng Slide trượt chuyển trang ---- */
         initPageSlideTransition(nav);
+
+        /* ---- Khởi chạy bộ kiểm tra và nhắc thông báo bài viết mới trên Khám phá ---- */
+        initNewPostNotifications();
     }
 
     /* ============================================================
@@ -743,6 +914,269 @@
             });
         }
     });
+
+    /* ============================================================
+       7B. HỆ THỐNG NHẮC THÔNG BÁO BÀI VIẾT MỚI TRÊN KHÁM PHÁ
+       ============================================================ */
+    const SEEN_POSTS_KEY = 'godminton_seen_post_tokens_v1';
+    const TOASTED_POSTS_KEY = 'godminton_toasted_post_tokens_v1';
+    let latestExplorePosts = [];
+    let postPollTimer = null;
+
+    function escapeHtmlSafe(str) {
+        return String(str ?? '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+
+    function getStoredTokens(key) {
+        try {
+            const raw = localStorage.getItem(key);
+            const arr = raw ? JSON.parse(raw) : [];
+            return Array.isArray(arr) ? arr : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function saveStoredTokens(key, tokens) {
+        try {
+            const trimmed = Array.from(new Set(tokens)).slice(-60);
+            localStorage.setItem(key, JSON.stringify(trimmed));
+        } catch (_) {}
+    }
+
+    function getPostToken(post) {
+        if (!post || !post.id) return '';
+        const ts = Number(post.notify_ts || post.updated_ts || post.published_ts || 0);
+        return `${post.id}:${ts}`;
+    }
+
+    function isPostUnread(post) {
+        const token = getPostToken(post);
+        if (!token) return false;
+        const seen = getStoredTokens(SEEN_POSTS_KEY);
+        return !seen.includes(token);
+    }
+
+    function markPostSeen(postOrId) {
+        const seen = getStoredTokens(SEEN_POSTS_KEY);
+        const toasted = getStoredTokens(TOASTED_POSTS_KEY);
+        if (typeof postOrId === 'object' && postOrId !== null) {
+            const tok = getPostToken(postOrId);
+            if (tok) {
+                seen.push(tok);
+                toasted.push(tok);
+            }
+        } else {
+            const target = latestExplorePosts.find(p => Number(p.id) === Number(postOrId) || String(p.slug) === String(postOrId));
+            if (target) {
+                const tok = getPostToken(target);
+                if (tok) {
+                    seen.push(tok);
+                    toasted.push(tok);
+                }
+            }
+        }
+        saveStoredTokens(SEEN_POSTS_KEY, seen);
+        saveStoredTokens(TOASTED_POSTS_KEY, toasted);
+        updateUnreadPostBadges();
+    }
+
+    function markAllPostsSeen() {
+        const seen = getStoredTokens(SEEN_POSTS_KEY);
+        const toasted = getStoredTokens(TOASTED_POSTS_KEY);
+        latestExplorePosts.forEach(p => {
+            const tok = getPostToken(p);
+            if (tok) {
+                seen.push(tok);
+                toasted.push(tok);
+            }
+        });
+        saveStoredTokens(SEEN_POSTS_KEY, seen);
+        saveStoredTokens(TOASTED_POSTS_KEY, toasted);
+        updateUnreadPostBadges();
+    }
+
+    function updateUnreadPostBadges() {
+        const unreadList = latestExplorePosts.filter(isPostUnread);
+        const unreadCount = unreadList.length;
+
+        // 1. Huy hiệu trên tab Khám phá của Bottom Nav
+        const newsTabWrap = document.querySelector('#godmintonBottomNav [data-bnav-id="news"] .bnav-icon-wrap');
+        if (newsTabWrap) {
+            let badge = newsTabWrap.querySelector('.bnav-unread-badge');
+            if (unreadCount > 0) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'bnav-unread-badge';
+                    newsTabWrap.appendChild(badge);
+                }
+                badge.textContent = unreadCount > 9 ? '9+' : String(unreadCount);
+            } else if (badge) {
+                badge.remove();
+            }
+        }
+
+        // 2. Huy hiệu trên nút Chuông thông báo (#pushBellToggle)
+        const bellBtn = document.getElementById('pushBellToggle');
+        if (bellBtn) {
+            let bellBadge = bellBtn.querySelector('.bell-unread-badge');
+            if (unreadCount > 0) {
+                if (!bellBadge) {
+                    bellBadge = document.createElement('span');
+                    bellBadge.className = 'bell-unread-badge';
+                    bellBtn.appendChild(bellBadge);
+                }
+                bellBadge.textContent = unreadCount > 9 ? '9+' : String(unreadCount);
+            } else if (bellBadge) {
+                bellBadge.remove();
+            }
+        }
+
+        // 3. Đồng bộ với menu dropdown của chuông nếu đang mở
+        if (window.PushClient && typeof window.PushClient.refreshPostFeed === 'function') {
+            window.PushClient.refreshPostFeed();
+        }
+    }
+
+    function showFloatingPostCard(post) {
+        if (!post || !post.id) return;
+        if (currentPage === 'payment.php' || currentPage === 'confirm.php') return;
+
+        let card = document.getElementById('godmintonPostNotifyCard');
+        if (!card) {
+            card = document.createElement('div');
+            card.id = 'godmintonPostNotifyCard';
+            card.className = 'godminton-post-notify-card';
+            card.setAttribute('role', 'status');
+            card.setAttribute('aria-live', 'polite');
+            document.body.appendChild(card);
+        }
+
+        const type = post.type || 'announcement';
+        const chipConfig = {
+            event: { cls: 'gpn-chip-event', icon: 'fa-trophy', label: 'Sự kiện mới' },
+            membership: { cls: 'gpn-chip-membership', icon: 'fa-crown', label: 'Gói hội viên mới' },
+            announcement: { cls: 'gpn-chip-announcement', icon: 'fa-bullhorn', label: 'Thông báo mới' }
+        }[type] || { cls: 'gpn-chip-announcement', icon: 'fa-bell', label: 'Bản tin mới' };
+
+        const detailUrl = `post-detail.php?slug=${encodeURIComponent(post.slug || '')}`;
+        const voucherBadge = post.voucher_code
+            ? `<span class="badge bg-teal text-white rounded-pill px-2 py-1" style="font-size:0.65rem;"><i class="fa-solid fa-gift me-1"></i>Tặng mã -${escapeHtmlSafe(post.voucher_discount_percent)}%</span>`
+            : `<span class="small text-muted" style="font-size:0.7rem;"><i class="fa-regular fa-compass me-1 text-teal"></i>Mục Khám phá</span>`;
+
+        const thumbHtml = post.cover_image
+            ? `<img src="${escapeHtmlSafe(post.cover_image)}" class="gpn-thumb" alt="">`
+            : `<div class="gpn-thumb"><i class="fa-solid ${chipConfig.icon}"></i></div>`;
+
+        card.innerHTML = `
+            <div class="gpn-head">
+                <span class="gpn-chip ${chipConfig.cls}">
+                    <i class="fa-solid ${chipConfig.icon}"></i> ${chipConfig.label}
+                </span>
+                <button type="button" class="gpn-close" aria-label="Đóng thông báo">&times;</button>
+            </div>
+            <div class="gpn-body">
+                ${thumbHtml}
+                <div class="flex-grow-1" style="min-width:0; max-width:100%; overflow:hidden;">
+                    <div class="gpn-title">${escapeHtmlSafe(post.title)}</div>
+                    <div class="gpn-sub">${escapeHtmlSafe(post.summary || 'Admin vừa đăng bài viết mới trên chuyên mục Khám phá.')}</div>
+                </div>
+            </div>
+            <div class="gpn-foot">
+                ${voucherBadge}
+                <a href="${detailUrl}" class="gpn-cta" data-gpn-open="1">
+                    Xem ngay <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+        `;
+
+        const token = getPostToken(post);
+        const toasted = getStoredTokens(TOASTED_POSTS_KEY);
+        if (token && !toasted.includes(token)) {
+            toasted.push(token);
+            saveStoredTokens(TOASTED_POSTS_KEY, toasted);
+        }
+
+        const closeCard = () => {
+            card.classList.remove('show');
+        };
+
+        card.querySelector('.gpn-close')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeCard();
+        });
+
+        card.querySelector('[data-gpn-open]')?.addEventListener('click', () => {
+            markPostSeen(post);
+            closeCard();
+        });
+
+        requestAnimationFrame(() => {
+            card.classList.add('show');
+        });
+
+        clearTimeout(card._hideTimer);
+        card._hideTimer = setTimeout(closeCard, 10000);
+    }
+
+    async function checkLatestPosts() {
+        try {
+            const res = await fetch('api/posts.php?latest_check=1&limit=5', {
+                credentials: 'same-origin',
+                cache: 'no-store'
+            });
+            if (!res.ok) return;
+            const json = await res.json();
+            const items = Array.isArray(json?.data?.items) ? json.data.items : [];
+            latestExplorePosts = items;
+
+            // Nếu đang ở trang post-detail.php -> đánh dấu bài đang đọc là đã xem
+            if (currentPage === 'post-detail.php') {
+                const slugParam = new URLSearchParams(window.location.search).get('slug');
+                if (slugParam) markPostSeen(slugParam);
+            }
+
+            updateUnreadPostBadges();
+
+            // Nếu đang ở trang explore.php -> sau 2.5s tự động đánh dấu đã xem để tắt chấm đỏ
+            if (currentPage === 'explore.php') {
+                setTimeout(() => markAllPostsSeen(), 2500);
+                return;
+            }
+
+            // Kiểm tra bài viết mới chưa từng hiện thẻ nhắc nổi
+            const toasted = getStoredTokens(TOASTED_POSTS_KEY);
+            const newestUntoasted = items.find(p => {
+                const tok = getPostToken(p);
+                return tok && isPostUnread(p) && !toasted.includes(tok);
+            });
+
+            if (newestUntoasted) {
+                setTimeout(() => showFloatingPostCard(newestUntoasted), 900);
+            }
+        } catch (_) {}
+    }
+
+    function initNewPostNotifications() {
+        window.GodmintonPostNotify = {
+            getLatestPosts: () => latestExplorePosts.slice(),
+            isPostUnread,
+            markPostSeen,
+            markAllPostsSeen,
+            refresh: checkLatestPosts
+        };
+
+        checkLatestPosts();
+        if (!postPollTimer) {
+            postPollTimer = setInterval(() => {
+                if (document.visibilityState === 'visible') {
+                    checkLatestPosts();
+                }
+            }, 30000);
+        }
+    }
 
     /* ============================================================
        8. KHỞI CHẠY

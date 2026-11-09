@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tableBody = document.getElementById('postsTableBody');
     const emptyEl = document.getElementById('postsEmpty');
     const modalEl = document.getElementById('postModal');
-    const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+    const modal = modalEl ? new bootstrap.Modal(modalEl, { focus: false }) : null;
     const form = document.getElementById('postForm');
     const btnAdd = document.getElementById('btnAddPost');
     const searchInput = document.getElementById('searchPost');
@@ -277,7 +277,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="small text-nowrap"><i class="fa-regular fa-clock me-1 text-muted"></i>${formatDateTime(p.publish_at || p.created_at)}</div>
                         ${p.expire_at ? `<div class="small text-muted text-nowrap"><i class="fa-solid fa-hourglass-end me-1 text-warning"></i>Hết hạn: ${formatDateTime(p.expire_at)}</div>` : ''}
                     </td>
-                    <td class="text-end">
+                    <td class="text-end text-nowrap">
+                        ${p.status === 'published' ? `
+                        <button class="btn btn-sm btn-outline-warning rounded-circle me-1 btn-notify-post" data-id="${p.id}" data-title="${BookingAccount.escape(p.title)}" title="Phát thông báo nhắc bài mới đến người dùng">
+                            <i class="fa-solid fa-bell"></i>
+                        </button>
+                        ` : ''}
                         <button class="btn btn-sm btn-outline-teal rounded-circle me-1 btn-edit-post" data-id="${p.id}" title="Chỉnh sửa">
                             <i class="fa-solid fa-pen"></i>
                         </button>
@@ -290,6 +295,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }).join('');
 
         // Gắn sự kiện các nút hành động trong bảng
+        tableBody.querySelectorAll('.btn-notify-post').forEach(btn => {
+            btn.addEventListener('click', () => notifyPost(parseInt(btn.dataset.id, 10), btn.dataset.title));
+        });
+
         tableBody.querySelectorAll('.btn-edit-post').forEach(btn => {
             btn.addEventListener('click', () => openEditModal(parseInt(btn.dataset.id, 10)));
         });
@@ -349,6 +358,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('postModalTitle').textContent = 'Viết bài mới';
         const vSelect = document.getElementById('formPostVoucher');
         if (vSelect) vSelect.value = '';
+        const notifyChk = document.getElementById('formPostNotify');
+        if (notifyChk) notifyChk.checked = true;
         selectType.value = 'event';
         updateTypeFields();
         updatePreview('');
@@ -371,6 +382,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (vSelect) vSelect.value = post.voucher_id || '';
             document.getElementById('formPostStatus').value = post.status;
             document.getElementById('formPostPinned').checked = Number(post.is_pinned) === 1;
+            const notifyChk = document.getElementById('formPostNotify');
+            if (notifyChk) notifyChk.checked = (post.status !== 'published');
             document.getElementById('formPostTitle').value = post.title || '';
             document.getElementById('formPostSummary').value = post.summary || '';
             document.getElementById('formPostContent').value = post.content || '';
@@ -445,7 +458,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             price: document.getElementById('formMemPrice').value !== '' ? parseFloat(document.getElementById('formMemPrice').value) : null,
             duration_days: document.getElementById('formMemDuration').value !== '' ? parseInt(document.getElementById('formMemDuration').value, 10) : null,
             discount_percent: (discVal !== undefined && discVal !== '') ? parseInt(discVal, 10) : 0,
-            benefits: document.getElementById('formMemBenefits').value.trim()
+            benefits: document.getElementById('formMemBenefits').value.trim(),
+            notify_users: document.getElementById('formPostNotify')?.checked ? 1 : 0
         };
 
         if (id) {
@@ -518,7 +532,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // 13. Xóa bài viết
+    // 13. Phát thông báo nhắc bài viết đến toàn bộ người dùng
+    async function notifyPost(id, title) {
+        const confirmed = await AdminApp.confirmAction(
+            'Phát thông báo nhắc bài viết?',
+            `Hệ thống sẽ gửi thông báo đẩy (Web Push) và bật thẻ nhắc bài mới "${title}" trên trang khách cho toàn bộ người dùng.`
+        );
+        if (!confirmed) return;
+
+        try {
+            await BookingAccount.request('api/admin/posts.php', {
+                method: 'PATCH',
+                body: JSON.stringify({ id, action: 'notify' })
+            });
+            AdminApp.toast('success', 'Đã phát thông báo nhắc bài viết mới đến người dùng!');
+            loadPosts();
+        } catch (err) {
+            AdminApp.toast('error', err.message || 'Không thể phát thông báo.');
+        }
+    }
+
+    // 14. Xóa bài viết
     async function deletePost(id, title) {
         const confirmed = await AdminApp.confirmAction(
             'Xác nhận xóa bài viết?',

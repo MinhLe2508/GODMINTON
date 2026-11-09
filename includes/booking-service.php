@@ -1,6 +1,47 @@
 <?php
 require_once __DIR__.'/booking-account-api.php';
 require_once __DIR__.'/court-resolver.php';
+require_once __DIR__.'/payment-service.php';
+
+function booking_encode_refund_bank(?string $note, array $extra): ?string {
+ $bank = preg_replace('/[^A-Za-z0-9_-]/', '', trim((string)($extra['refund_bank'] ?? '')));
+ $acc  = preg_replace('/[^A-Za-z0-9]/', '', trim((string)($extra['refund_account_number'] ?? '')));
+ $name = str_replace(['|', '[', ']'], ' ', mb_substr(trim((string)($extra['refund_account_name'] ?? '')), 0, 80));
+ $clean = preg_replace('/\s*\[REFUND_BANK:[^\]]*\]\s*/u', ' ', (string)($note ?? ''));
+ $clean = trim($clean, " \t\n\r\0\x0B|");
+ if ($bank !== '' && $acc !== '') {
+  $tag = "[REFUND_BANK:{$bank}|{$acc}|{$name}]";
+  return $clean !== '' ? ($clean . ' ' . $tag) : $tag;
+ }
+ return $clean !== '' ? $clean : null;
+}
+
+function booking_parse_refund_meta(?string $rawNote, int $bookingId, int $depositAmount): array {
+ $bank = '';
+ $acc  = '';
+ $name = '';
+ $clean = (string)($rawNote ?? '');
+ if (preg_match('/\[REFUND_BANK:([^|\]]*)\|([^|\]]*)\|([^\]]*)\]/u', $clean, $m)) {
+  $bank = trim($m[1]);
+  $acc  = trim($m[2]);
+  $name = trim($m[3]);
+  $clean = trim(str_replace($m[0], '', $clean), " \t\n\r\0\x0B|");
+ }
+ $payCode = payment_code_for_booking($bookingId);
+ $transferCode = 'HOAN ' . $payCode;
+ $qrUrl = ($bank !== '' && $acc !== '' && $depositAmount > 0)
+  ? payment_refund_qr_url($bank, $acc, $depositAmount, $payCode)
+  : null;
+ return [
+  'clean_note'            => $clean !== '' ? $clean : null,
+  'refund_bank'           => $bank ?: null,
+  'refund_account_number' => $acc ?: null,
+  'refund_account_name'   => $name ?: null,
+  'refund_transfer_code'  => $transferCode,
+  'refund_qr_url'         => $qrUrl,
+ ];
+}
+
 function booking_code(array $b,?string $date=null):string{return $b['booking_code']?:'GDM-'.str_replace('-','',substr($date?:$b['created_at'],0,10)).'-'.str_pad((string)$b['id'],4,'0',STR_PAD_LEFT);}
 function booking_list(array $user,bool $admin=false):array{
  global $pdo;$where=[];$args=[];
@@ -39,7 +80,13 @@ function booking_list(array $user,bool $admin=false):array{
  // Quyền thao tác theo luồng vận hành chuyên nghiệp (Option 2)
  $b['payment_status'] = $b['payment_status'] ?? ($b['status'] === 'pending' ? 'unpaid' : 'deposit_paid');
  $b['is_deposit_refunded'] = (int)($b['is_deposit_refunded'] ?? 0);
- $b['refund_note'] = $b['refund_note'] ?? null;
+ $refundMeta = booking_parse_refund_meta($b['refund_note'] ?? null, (int)$b['id'], (int)$b['deposit_amount']);
+ $b['refund_note'] = $refundMeta['clean_note'];
+ $b['refund_bank'] = $refundMeta['refund_bank'];
+ $b['refund_account_number'] = $refundMeta['refund_account_number'];
+ $b['refund_account_name'] = $refundMeta['refund_account_name'];
+ $b['refund_transfer_code'] = $refundMeta['refund_transfer_code'];
+ $b['refund_qr_url'] = $refundMeta['refund_qr_url'];
  $earliestSlotTs = null;
  foreach($slots as $s) {
      $ts = strtotime($s['slot_date'] . ' ' . $s['start_time']);
@@ -94,8 +141,8 @@ function booking_list(array $user,bool $admin=false):array{
  $b['slots']=array_map(fn($s)=>['id'=>(int)$s['id'],'court_id'=>(int)$s['court_id'],'sub_court_name'=>$s['sub_court_name'],'slot_date'=>$s['slot_date'],'start_time'=>substr($s['start_time'],0,5),'end_time'=>substr($s['end_time'],0,5)],$slots);
  }unset($b);return $rows;
 }
-function booking_transition(int $id,string $target,array $user,bool $admin=false):array{
- global $pdo;return booking_account_transaction(function()use($pdo,$id,$target,$user,$admin){
+function booking_transition(int $id,string $target,array $user,bool $admin=false,array $extra=[]):array{
+ global $pdo;return booking_account_transaction(function()use($pdo,$id,$target,$user,$admin,$extra){
  $sql='SELECT b.*,c.owner_id FROM bookings b JOIN courts c ON c.id=b.court_id WHERE b.id=?';$args=[$id];if(!$admin){$sql.=' AND b.user_id=?';$args[]=$user['id'];}elseif($user['role']==='owner'){$sql.=' AND c.owner_id=?';$args[]=$user['id'];}
  $s=$pdo->prepare($sql.' FOR UPDATE');$s->execute($args);$b=$s->fetch();if(!$b)throw new BookingError(404,'Không tìm thấy đơn thuộc phạm vi quản lý.');if($b['status']===$target)return ['booking_id'=>$id,'booking_status'=>$target];
 
@@ -266,6 +313,10 @@ function booking_transition(int $id,string $target,array $user,bool $admin=false
       $returnMessage = 'Chủ sân / Quản trị viên đã hủy đơn đặt sân và giải phóng khung giờ. Đơn chuyển sang trạng thái Chờ hoàn cọc.';
   }
 
+  if ($isRefunded === 1 && !empty($extra)) {
+      $refundNote = booking_encode_refund_bank($refundNote, $extra);
+  }
+
   $pdo->prepare('UPDATE bookings SET status=?, payment_status=?, is_deposit_refunded=?, refund_note=? WHERE id=?')
       ->execute(['cancelled', $newPaymentStatus, $isRefunded, $refundNote, $id]);
 
@@ -303,6 +354,21 @@ function booking_transition(int $id,string $target,array $user,bool $admin=false
           ->execute([$id]);
   } catch (Throwable $e) {}
   $returnMessage = 'Đã xác nhận hoàn trả 100% tiền cọc cho khách hàng thành công.';
+  $isRefunded = 1;
+  $target = $b['status'];
+ }
+ elseif($target==='save_refund_bank'){
+  if(!in_array($b['status'],['cancelled','no_show'],true) || (int)($b['is_deposit_refunded'] ?? 0) !== 1){
+   throw new BookingError(409,'Chỉ đơn thuộc diện hoàn cọc mới cần cập nhật tài khoản nhận hoàn tiền.');
+  }
+  $bank = trim((string)($extra['refund_bank'] ?? ''));
+  $acc  = trim((string)($extra['refund_account_number'] ?? ''));
+  if ($bank === '' || $acc === '') {
+   throw new BookingError(422,'Vui lòng chọn ngân hàng và nhập số tài khoản nhận hoàn tiền.');
+  }
+  $refundNote = booking_encode_refund_bank($b['refund_note'] ?? null, $extra);
+  $pdo->prepare('UPDATE bookings SET refund_note=? WHERE id=?')->execute([$refundNote, $id]);
+  $returnMessage = 'Đã lưu thông tin tài khoản nhận hoàn cọc và tạo mã QR SePay.';
   $isRefunded = 1;
   $target = $b['status'];
  } else {

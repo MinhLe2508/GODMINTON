@@ -58,19 +58,9 @@ function sepay_extract_api_key(): string
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $txCount = 0;
-    $lastTx = null;
-    if ($pdo && payment_tables_ready($pdo)) {
-        $txCount = (int)$pdo->query('SELECT COUNT(*) FROM sepay_transactions')->fetchColumn();
-        $lastTx = $pdo->query('SELECT sepay_id, transfer_amount, content, code, result, note, created_at FROM sepay_transactions ORDER BY id DESC LIMIT 5')->fetchAll(PDO::FETCH_ASSOC);
-    }
     sepay_out(200, [
-        'status'              => 'ready',
-        'message'             => 'SePay Webhook endpoint đang hoạt động.',
-        'bank'                => payment_public_bank(),
-        'prefix'              => payment_config()['prefix'],
-        'total_webhooks_seen' => $txCount,
-        'recent_webhooks'     => $lastTx,
+        'status' => 'ready',
+        'message' => 'SePay Webhook endpoint đang hoạt động.',
     ]);
 }
 

@@ -36,12 +36,23 @@ flowchart TD
     
     D -- "Khách thường hủy < 2h<br/>(Hội viên < 30p)" --> G["Chặn hủy (HTTP 409)<br/>Báo khách gọi Hotline chủ sân"]
 
-    E --> H["Bảng Quản lý đơn (Chủ sân / Admin):<br/>Hiện màu cam: CHỜ HOÀN CỌC: 45.000 đ (Cần CK trả khách)"]
-    H --> I["Chủ sân chuyển khoản trả tiền cọc cho khách<br/>rồi bấm nút: XÁC NHẬN ĐÃ HOÀN CỌC"]
-    I --> J["Cập nhật payment_status = 'refunded'<br/>Hiển thị màu xanh: ĐÃ HOÀN CỌC: 45.000 đ"]
+    E --> H["Khách nhập Ngân hàng + STK nhận hoàn cọc<br/>Hệ thống tự sinh mã QR VietQR (nội dung: HOAN GDM000003)"]
+    H --> I["Chủ sân mở Chi tiết đơn -> Quét mã QR VietQR bằng App Ngân hàng<br/>SePay bắn Webhook Tiền Ra (transferType = 'out')"]
+    I --> J["SePay tự động cập nhật payment_status = 'refunded'<br/>Hiển thị màu xanh: ĐÃ HOÀN CỌC: 45.000 đ"]
 
     F --> K["Bảng Quản lý đơn (Chủ sân / Admin):<br/>Hiện rõ: GIỮ CỌC: 45.000 đ (Khách hủy sát giờ)<br/>Cộng 45.000 đ vào Doanh thu thực nhận của sân"]
 ```
+
+---
+
+## 2.1. Cấu hình SePay Để Tự Động Nhận Diện Giao Dịch Hoàn Tiền (`transferType = "out"`)
+
+1. Đăng nhập vào **[my.sepay.vn](https://my.sepay.vn)** $\rightarrow$ vào mục **Tích hợp Webhooks**.
+2. Bấm **Chỉnh sửa** Webhook của `https://godminton.top/api/payments/sepay-webhook.php`.
+3. Ở mục **Sự kiện kích hoạt (Loại giao dịch)**, chọn **"Tất cả (Cả tiền vào và tiền ra)"** (thay vì chỉ "Tiền vào").
+4. Khi Chủ sân mở chi tiết đơn trên trang Quản lý và dùng App Ngân hàng quét **Mã QR VietQR Hoàn Cọc** của khách (đã điền sẵn số tiền cọc và nội dung `HOAN GDM000003`), ngay khi ngân hàng trừ tiền:
+   * SePay bắn Webhook với `transferType = "out"` và `content = "HOAN GDM000003"`.
+   * Hàm `payment_process_webhook()` trong [`includes/payment-service.php`](file:///d:/xampp/htdocs/GODMINTON/includes/payment-service.php) tự động đối soát mã đơn + số tiền và chuyển `bookings.payment_status = 'refunded'`, `payments.status = 'refunded'`.
 
 ---
 

@@ -184,6 +184,33 @@ function post_get_public_list(PDO $pdo, array $filters = []): array {
 }
 
 /**
+ * Lấy danh sách các bài viết xuất bản mới nhất (không ưu tiên ghim cũ) để hiển thị thông báo bài mới cho khách hàng.
+ */
+function post_get_latest_notifications(PDO $pdo, int $limit = 5): array {
+    $limit = max(1, min(15, $limit));
+    $sql = "
+        SELECT p.id, p.type, p.voucher_id, p.title, p.slug, p.summary, p.cover_image,
+               p.publish_at, p.expire_at, p.is_pinned, p.created_at, p.updated_at,
+               UNIX_TIMESTAMP(COALESCE(p.publish_at, p.created_at)) AS published_ts,
+               UNIX_TIMESTAMP(COALESCE(p.updated_at, p.created_at)) AS updated_ts,
+               UNIX_TIMESTAMP(GREATEST(COALESCE(p.publish_at, p.created_at), COALESCE(p.updated_at, p.created_at))) AS notify_ts,
+               u.name AS author_name,
+               v.code AS voucher_code,
+               v.discount_percent AS voucher_discount_percent
+        FROM posts p
+        LEFT JOIN users u ON u.id = p.created_by
+        LEFT JOIN vouchers v ON v.id = p.voucher_id
+        WHERE p.status = 'published'
+          AND (p.publish_at IS NULL OR p.publish_at <= NOW())
+          AND (p.expire_at IS NULL OR p.expire_at > NOW())
+        ORDER BY GREATEST(COALESCE(p.publish_at, p.created_at), COALESCE(p.updated_at, p.created_at)) DESC, p.id DESC
+        LIMIT " . (int)$limit;
+
+    $stmt = $pdo->query($sql);
+    return $stmt ? $stmt->fetchAll() : [];
+}
+
+/**
  * Lấy chi tiết bài viết công khai theo slug (Quy tắc hiển thị Mục 2.4).
  * Nếu không đủ điều kiện (bài nháp, bài đã ẩn, chưa tới giờ đăng, quá hạn) -> trả về null để caller phản hồi 404.
  */

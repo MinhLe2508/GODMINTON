@@ -56,14 +56,47 @@ function resetProfileForm(isManualReset = false) {
         });
     }
 }
+function renderAvatarDisplay(user) {
+    const initial = (user?.name ? user.name.charAt(0).toUpperCase() : 'U');
+    const avatarUrl = (user?.avatar_url || '').trim();
+    const heroInitial = document.getElementById('profileAvatarInitial');
+    const heroImg = document.getElementById('profileAvatarImg');
+    const formInitial = document.getElementById('formAvatarInitial');
+    const formImg = document.getElementById('formAvatarImg');
+
+    if (heroInitial) heroInitial.textContent = initial;
+    if (formInitial) formInitial.textContent = initial;
+
+    if (avatarUrl) {
+        if (heroImg) { heroImg.src = avatarUrl; heroImg.style.display = 'block'; }
+        if (heroInitial) heroInitial.style.display = 'none';
+        if (formImg) { formImg.src = avatarUrl; formImg.style.display = 'block'; }
+        if (formInitial) formInitial.style.display = 'none';
+    } else {
+        if (heroImg) { heroImg.src = ''; heroImg.style.display = 'none'; }
+        if (heroInitial) heroInitial.style.display = '';
+        if (formImg) { formImg.src = ''; formImg.style.display = 'none'; }
+        if (formInitial) formInitial.style.display = '';
+    }
+}
+
 function showProfile(user) {
     savedProfile=user;resetProfileForm();
     const memberSince=document.getElementById('profileMemberSince');
     if(memberSince) memberSince.textContent=user.created_at ? 'Thành viên từ '+user.created_at : 'Chưa cập nhật ngày tham gia';
     document.getElementById('profileHeaderName').textContent=user.name;
     document.getElementById('profileHeaderEmail').textContent=user.email;
-    document.getElementById('profileAvatarInitial').textContent=user.name.charAt(0).toUpperCase();
+    renderAvatarDisplay(user);
     const role=document.getElementById('profileRoleLabel');if(role)role.textContent={customer:'Khách hàng',owner:'Chủ sân',admin:'Quản trị viên'}[user.role]||user.role;
+    const ownerAppLink = document.getElementById('sidebarOwnerAppLink');
+    const ownerAppText = document.getElementById('sidebarOwnerAppText');
+    const adminReturnBtn = document.getElementById('sidebarAdminReturnBtn');
+    const adminReturnBtnText = document.getElementById('sidebarAdminReturnBtnText');
+    const isStaff = user.role === 'owner' || user.role === 'admin';
+    if (ownerAppLink) ownerAppLink.classList.toggle('d-none', user.role === 'admin');
+    if (ownerAppText) ownerAppText.textContent = user.role === 'owner' ? 'Hồ sơ đăng ký sân' : 'Đăng ký / Hồ sơ chủ sân';
+    if (adminReturnBtn) adminReturnBtn.classList.toggle('d-none', !isStaff);
+    if (adminReturnBtnText) adminReturnBtnText.textContent = user.role === 'admin' ? 'Về kênh quản trị' : 'Về kênh chủ sân';
 }
 document.addEventListener('DOMContentLoaded', async () => {
     const update=document.getElementById('formUpdateProfile');
@@ -100,6 +133,53 @@ document.addEventListener('DOMContentLoaded', async () => {
         catch(e){await BookingAccount.notify(e.message,true);}finally{button.disabled=false;}
     });
     document.getElementById('profileLogout')?.addEventListener('click',async()=>{try{await BookingAccount.logout();}catch(e){await BookingAccount.notify(e.message,true);}});
+
+    const avatarInput = document.getElementById('profileAvatarInput');
+    if (avatarInput && avatarInput.dataset.boundAvatar !== '1') {
+        avatarInput.dataset.boundAvatar = '1';
+        const triggerAvatarPick = (e) => {
+            if (e.target === avatarInput) return;
+            avatarInput?.click();
+        };
+        (document.getElementById('profileAvatarContainer') || document.getElementById('profileAvatarWrapper'))?.addEventListener('click', triggerAvatarPick);
+        document.getElementById('btnChooseAvatarBtn')?.addEventListener('click', () => avatarInput?.click());
+        avatarInput.addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const chooseBtn = document.getElementById('btnChooseAvatarBtn');
+            const oldHtml = chooseBtn ? chooseBtn.innerHTML : '';
+            if (chooseBtn) {
+                chooseBtn.disabled = true;
+                chooseBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang tải lên...';
+            }
+            try {
+                const fd = new FormData();
+                fd.append('image', file);
+                const data = await BookingAccount.request('api/upload-image.php?type=avatar', {
+                    method: 'POST',
+                    body: fd
+                });
+                if (savedProfile && data?.url) {
+                    savedProfile.avatar_url = data.url;
+                    renderAvatarDisplay(savedProfile);
+                }
+                const cur = getCurrentUser();
+                if (cur && data?.url) {
+                    cur.avatar_url = data.url;
+                    setCurrentUser(cur);
+                }
+                await BookingAccount.notify('Đã cập nhật ảnh đại diện thành công!');
+            } catch (err) {
+                await BookingAccount.notify(err.message || 'Không thể tải ảnh đại diện lên.', true);
+            } finally {
+                avatarInput.value = '';
+                if (chooseBtn) {
+                    chooseBtn.disabled = false;
+                    chooseBtn.innerHTML = oldHtml;
+                }
+            }
+        });
+    }
 });
 
 

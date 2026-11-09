@@ -23,6 +23,13 @@
         hideClass: { popup: 'swal2-hide', backdrop: 'swal2-backdrop-hide', icon: 'swal2-icon-hide' }
     });
 
+    // Ngăn Bootstrap 5 Modal FocusTrap cướp focus của các ô input/textarea bên trong SweetAlert2
+    document.addEventListener('focusin', function (e) {
+        if (e.target && typeof e.target.closest === 'function' && e.target.closest('.swal2-container')) {
+            e.stopImmediatePropagation();
+        }
+    }, true);
+
     const originalFire = BrandedSwal.fire.bind(BrandedSwal);
 
     BrandedSwal.fire = function (...args) {
@@ -38,6 +45,33 @@
         // Tự động gán iconHtml chuẩn vector nếu chưa có iconHtml riêng
         if (opts.icon && iconHtmlMap[opts.icon] && !opts.iconHtml) {
             opts.iconHtml = iconHtmlMap[opts.icon];
+        }
+
+        if (!opts.toast) {
+            const userDidOpen = opts.didOpen;
+            const userDidClose = opts.didClose;
+            opts.didOpen = function (popup) {
+                if (window.bootstrap && window.bootstrap.Modal) {
+                    document.querySelectorAll('.modal.show').forEach(function (m) {
+                        const inst = window.bootstrap.Modal.getInstance(m);
+                        if (inst && inst._focustrap && typeof inst._focustrap.deactivate === 'function') {
+                            inst._focustrap.deactivate();
+                        }
+                    });
+                }
+                if (typeof userDidOpen === 'function') userDidOpen(popup);
+            };
+            opts.didClose = function () {
+                if (window.bootstrap && window.bootstrap.Modal) {
+                    document.querySelectorAll('.modal.show').forEach(function (m) {
+                        const inst = window.bootstrap.Modal.getInstance(m);
+                        if (inst && inst._focustrap && typeof inst._focustrap.activate === 'function') {
+                            inst._focustrap.activate();
+                        }
+                    });
+                }
+                if (typeof userDidClose === 'function') userDidClose();
+            };
         }
 
         return originalFire(opts);

@@ -15,10 +15,10 @@ try {
     $in = booking_account_input();
     $id = booking_account_id($in['booking_id'] ?? null);
     $target = $in['status'] ?? null;
-    if (!in_array($target, ['checked_in', 'completed', 'no_show', 'cancelled', 'refunded'], true)) {
+    if (!in_array($target, ['checked_in', 'completed', 'no_show', 'cancelled', 'refunded', 'save_refund_bank'], true)) {
         booking_account_out(422, null, 'Trạng thái cập nhật không hợp lệ.');
     }
-    $res = booking_transition($id, $target, $user, true);
+    $res = booking_transition($id, $target, $user, true, $in);
     $messages = [
         'checked_in' => 'Đã check-in nhận sân cho khách. Đồng hồ tính giờ chơi bắt đầu!',
         'completed'  => 'Đã xác nhận thu đủ tiền tại quầy và hoàn thành lượt chơi.',

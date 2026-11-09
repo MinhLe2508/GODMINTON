@@ -40,7 +40,18 @@ const AdminApp = (() => {
             defaultHeaders['X-GODMINTON-CSRF']=identity.data.csrf_token;
             if(url.startsWith('api/admin/courts.php') && ['PUT','PATCH'].includes(method) && window.__GODMINTON_USER__?.role==='admin'){
                 const body=JSON.parse(options.body||'{}');
-                const auth=await Swal.fire({titleText:'Xác nhận thay đổi sân',html:'<label class="d-block text-start">Lý do quản trị<textarea id="courtAdminReason" class="form-control mt-2" rows="3" maxlength="1000"></textarea></label><label class="d-block text-start mt-3">Mật khẩu Admin<input id="courtAdminPassword" class="form-control mt-2" type="password" autocomplete="current-password"></label>',showCancelButton:true,confirmButtonText:'Lưu thay đổi',cancelButtonText:'Hủy',preConfirm:()=>{const reason=document.getElementById('courtAdminReason').value.trim(),password=document.getElementById('courtAdminPassword').value;if(reason.length<5||!password){Swal.showValidationMessage('Nhập lý do ít nhất 5 ký tự và mật khẩu Admin.');return false;}return {admin_reason:reason,admin_password:password};}});
+                const auth=await Swal.fire({
+                    titleText:'Xác nhận thay đổi sân',
+                    html:'<label class="d-block text-start">Lý do quản trị<textarea id="courtAdminReason" class="form-control mt-2" rows="3" maxlength="1000"></textarea></label><label class="d-block text-start mt-3">Mật khẩu Admin<input id="courtAdminPassword" class="form-control mt-2" type="password" autocomplete="current-password"></label>',
+                    showCancelButton:true,
+                    confirmButtonText:'Lưu thay đổi',
+                    cancelButtonText:'Hủy',
+                    didOpen:(popup)=>{
+                        document.querySelectorAll('.modal.show').forEach(m=>window.bootstrap?.Modal?.getInstance(m)?._focustrap?.deactivate());
+                        setTimeout(()=>popup.querySelector('#courtAdminReason')?.focus(), 50);
+                    },
+                    preConfirm:()=>{const reason=document.getElementById('courtAdminReason').value.trim(),password=document.getElementById('courtAdminPassword').value;if(reason.length<5||!password){Swal.showValidationMessage('Nhập lý do ít nhất 5 ký tự và mật khẩu Admin.');return false;}return {admin_reason:reason,admin_password:password};}
+                });
                 if(!auth.isConfirmed)throw new Error('Đã hủy thay đổi.');options={...options,body:JSON.stringify({...body,...auth.value})};
             }
         }

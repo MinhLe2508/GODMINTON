@@ -273,3 +273,57 @@ function god_push_dispatch_due_reminders(PDO $pdo, ?int $onlyUserId = null, bool
         'notifications' => $userNotifications,
     ];
 }
+
+/**
+ * Phát thông báo Web Push cho toàn bộ thiết bị đăng ký khi Admin đăng bài viết mới lên phần Khám phá.
+ */
+function god_push_broadcast_new_post(PDO $pdo, array $post): array {
+    god_push_ensure_schema($pdo);
+
+    try {
+        $rows = $pdo->query('SELECT endpoint, p256dh, auth FROM push_subscriptions ORDER BY id DESC LIMIT 500')->fetchAll();
+    } catch (\Throwable $e) {
+        return ['accepted' => 0, 'expired' => 0, 'failed' => 0];
+    }
+
+    if (!$rows) {
+        return ['accepted' => 0, 'expired' => 0, 'failed' => 0];
+    }
+
+    $type = (string)($post['type'] ?? 'announcement');
+    $typePrefix = match ($type) {
+        'event'      => '🏆 Sự kiện mới',
+        'membership' => '👑 Ưu đãi Hội viên',
+        default      => '🔔 Thông báo mới',
+    };
+
+    $title = 'GODMINTON · ' . $typePrefix;
+    $voucherHint = !empty($post['voucher_code'])
+        ? sprintf(' (🎁 Tặng mã %s giảm %d%%)', $post['voucher_code'], (int)($post['voucher_discount_percent'] ?? 0))
+        : '';
+
+    $summary = trim((string)($post['summary'] ?? ''));
+    $bodyText = (string)($post['title'] ?? 'Bài viết mới trên Khám phá') . $voucherHint;
+    if ($summary !== '') {
+        $bodyText .= ' — ' . mb_strimwidth($summary, 0, 90, '...', 'UTF-8');
+    }
+
+    $slug = (string)($post['slug'] ?? '');
+    $targetUrl = $slug !== '' ? ('post-detail.php?slug=' . rawurlencode($slug)) : 'explore.php';
+
+    $payload = [
+        'title' => $title,
+        'body'  => $bodyText,
+        'icon'  => !empty($post['cover_image']) ? (string)$post['cover_image'] : 'assets/img/icons/icon-192.png',
+        'badge' => 'assets/img/icons/badge-72.png',
+        'data'  => [
+            'url'       => $targetUrl,
+            'post_id'   => (int)($post['id'] ?? 0),
+            'post_slug' => $slug,
+            'post_type' => $type,
+            'timestamp' => time(),
+        ],
+    ];
+
+    return god_push_dispatch($pdo, $rows, $payload);
+}

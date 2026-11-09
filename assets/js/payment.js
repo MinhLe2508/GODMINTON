@@ -723,9 +723,20 @@ async function handlePaymentCta() {
     if (!agree) {
         Swal.fire({
             icon: 'info',
-            title: 'Điều khoản đặt sân',
-            text: 'Vui lòng đánh dấu đồng ý với Điều khoản đặt sân của GODMINTON.',
+            title: 'Điều khoản đặt sân & Hoàn cọc',
+            text: 'Vui lòng đánh dấu đồng ý với Điều khoản đặt sân & Chính sách hoàn cọc của GODMINTON trước khi thanh toán.',
+            showCancelButton: true,
+            confirmButtonText: 'Đồng ý & Tiếp tục',
+            cancelButtonText: 'Xem chi tiết điều khoản',
             confirmButtonColor: '#0d9488'
+        }).then(res => {
+            if (res.isConfirmed) {
+                const chk = document.getElementById('agreeTerms');
+                if (chk) chk.checked = true;
+                handlePaymentCta();
+            } else if (res.dismiss === Swal.DismissReason.cancel) {
+                openBookingTermsModal();
+            }
         });
         return;
     }
@@ -1053,5 +1064,61 @@ function setPaymentButtons(disabled) {
     ['btnPayMobile', 'btnPayDesktop'].forEach(id => {
         const button = document.getElementById(id);
         if (button) button.disabled = disabled;
+    });
+}
+
+/* ---- Hiển thị chi tiết Điều khoản đặt sân & Chính sách hoàn cọc ---- */
+function openBookingTermsModal(e) {
+    if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+    }
+    if (typeof Swal === 'undefined') return;
+
+    Swal.fire({
+        title: 'Điều khoản đặt sân & Chính sách hoàn cọc',
+        width: 620,
+        html: `
+            <div class="text-start small" style="line-height:1.6; color:var(--text-primary,#1e293b);">
+                <div class="p-3 rounded-3 mb-2 border" style="background:rgba(13,148,136,0.06); border-color:rgba(13,148,136,0.25) !important;">
+                    <div class="fw-bold text-teal mb-1"><i class="fa-solid fa-qrcode me-1"></i>1. Đặt cọc giữ sân (50% giá trị đơn)</div>
+                    <div class="text-muted">Khách hàng thanh toán trước <strong>50% tiền cọc</strong> qua mã VietQR / SePay trong thời gian giữ chỗ. <strong>50% còn lại</strong> thanh toán trực tiếp tại sân khi đến nhận sân (Check-in).</div>
+                </div>
+
+                <div class="p-3 rounded-3 mb-2 border" style="background:rgba(16,185,129,0.06); border-color:rgba(16,185,129,0.25) !important;">
+                    <div class="fw-bold text-success mb-1"><i class="fa-solid fa-circle-check me-1"></i>2. Trường hợp được hoàn 100% tiền cọc</div>
+                    <ul class="mb-0 ps-3 text-muted">
+                        <li><strong>Ân hạn 15 phút đầu sau khi đặt:</strong> Nếu đặt nhầm ca hoặc đổi ý trong vòng <strong>15 phút</strong> kể từ lúc tạo đơn (miễn thời điểm hủy còn cách giờ vào sân tối thiểu <strong>1 giờ</strong>).</li>
+                        <li><strong>Hủy sớm trước giờ thi đấu &ge; 6 giờ:</strong> Chủ động hủy đơn trước giờ bắt đầu ca chơi từ <strong>6 giờ trở lên</strong>.</li>
+                    </ul>
+                </div>
+
+                <div class="p-3 rounded-3 mb-2 border" style="background:rgba(245,158,11,0.08); border-color:rgba(245,158,11,0.3) !important;">
+                    <div class="fw-bold text-warning mb-1"><i class="fa-solid fa-triangle-exclamation me-1"></i>3. Trường hợp giữ cọc &amp; Khóa hủy đơn</div>
+                    <ul class="mb-0 ps-3 text-muted">
+                        <li><strong>Hủy muộn (từ 2 giờ đến dưới 6 giờ trước giờ chơi):</strong> Đơn vẫn được hủy để giải phóng sân, nhưng khoản cọc 50% <strong>không hoàn lại</strong> nhằm bù chi phí trống sân sát giờ.</li>
+                        <li><strong>Dưới 2 giờ trước giờ thi đấu:</strong> Hệ thống khóa chức năng hủy đơn đối với khách thường.</li>
+                    </ul>
+                </div>
+
+                <div class="p-3 rounded-3 mb-2 border" style="background:rgba(139,92,246,0.07); border-color:rgba(139,92,246,0.28) !important;">
+                    <div class="fw-bold mb-1" style="color:#7c3aed;"><i class="fa-solid fa-crown me-1"></i>4. Đặc quyền Hội viên VIP (Silver / Gold / Platinum)</div>
+                    <div class="text-muted">Hội viên đang có gói hiệu lực được ưu tiên hủy đơn và <strong>hoàn 100% tiền cọc</strong> đến trước giờ thi đấu <strong>30 phút</strong>.</div>
+                </div>
+
+                <div class="p-3 rounded-3 border" style="background:rgba(148,163,184,0.08);">
+                    <div class="fw-bold mb-1"><i class="fa-solid fa-building-columns me-1 text-teal"></i>5. Quy trình nhận tiền hoàn cọc tự động qua SePay</div>
+                    <div class="text-muted">Khi hủy đơn đủ điều kiện hoàn cọc, bạn chỉ cần nhập <strong>Ngân hàng &amp; Số tài khoản nhận tiền</strong>. Hệ thống tự tạo mã VietQR để Chủ sân/Admin chuyển khoản hoàn cọc và tự động cập nhật trạng thái <strong>"Đã hoàn cọc"</strong> ngay khi giao dịch hoàn tất.</div>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-check me-1"></i> Tôi đã hiểu & Đồng ý',
+        cancelButtonText: 'Đóng',
+        confirmButtonColor: '#0d9488'
+    }).then(res => {
+        if (res.isConfirmed) {
+            const chk = document.getElementById('agreeTerms');
+            if (chk) chk.checked = true;
+        }
     });
 }

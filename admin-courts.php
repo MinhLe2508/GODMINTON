@@ -163,8 +163,18 @@ $currentUser = ['id' => (int)$_SESSION['user_id'], 'name' => $_SESSION['name'] ?
                         </div>
 
                         <div class="col-12">
-                            <label class="form-label fw-semibold small">Ảnh đại diện (URL)</label>
-                            <input type="url" class="form-control" id="courtImage" placeholder="https://...">
+                            <label class="form-label fw-semibold small">Ảnh đại diện sân (Tải ảnh lên hoặc nhập URL)</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="courtImage" placeholder="https://... hoặc bấm Chọn ảnh để tải lên">
+                                <label class="btn btn-outline-teal fw-semibold mb-0 d-inline-flex align-items-center" for="courtImageFile" id="courtImageUploadLabel" style="cursor:pointer;">
+                                    <i class="fa-solid fa-cloud-arrow-up me-1"></i>Chọn ảnh
+                                </label>
+                                <input type="file" id="courtImageFile" class="d-none" accept="image/jpeg,image/png,image/webp">
+                            </div>
+                            <div class="form-text small">Hỗ trợ JPG, PNG, WEBP (tối đa 5MB) hoặc dán đường dẫn ảnh trực tiếp.</div>
+                            <div id="courtImagePreviewWrap" class="mt-2 d-none">
+                                <img id="courtImagePreview" src="" alt="Xem trước ảnh sân" class="rounded-3 border object-fit-cover" style="height:96px;width:160px;">
+                            </div>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold small">Mô tả</label>
@@ -217,11 +227,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    modalInstance = new bootstrap.Modal(document.getElementById('courtModal'));
+    modalInstance = new bootstrap.Modal(document.getElementById('courtModal'), { focus: false });
 
     document.getElementById('btnAddCourt').addEventListener('click', () => {location.href=currentUser.role==='admin'?'admin-owner-requests.php':'owner-application.php';});
     document.getElementById('searchCourt').addEventListener('input', () => renderCourtsTable());
     document.getElementById('courtForm').addEventListener('submit', handleSaveCourt);
+    document.getElementById('courtImage').addEventListener('input', (e) => updateCourtImagePreview(e.target.value));
+    document.getElementById('courtImageFile').addEventListener('change', handleUploadCourtImage);
 
     await loadCourtsFromServer();
     const editId=Number(new URLSearchParams(location.search).get('edit'));if(editId && myCourts.some(c=>Number(c.id)===editId))openCourtModal(editId);
@@ -342,6 +354,7 @@ function openCourtModal(courtId) {
         document.getElementById('courtOpen').value = court.opening_time || '06:00';
         document.getElementById('courtClose').value = court.closing_time || '22:00';
         document.getElementById('courtImage').value = court.image_url || '';
+        updateCourtImagePreview(court.image_url || '');
         document.getElementById('courtDesc').value = court.description || '';
         document.getElementById('courtLatitude').value = (court.latitude !== undefined && court.latitude !== null && court.latitude !== 0) ? court.latitude : '';
         document.getElementById('courtLongitude').value = (court.longitude !== undefined && court.longitude !== null && court.longitude !== 0) ? court.longitude : '';
@@ -355,8 +368,63 @@ function openCourtModal(courtId) {
         document.getElementById('courtModalTitle').textContent = 'Thêm sân mới';
         document.getElementById('courtId').value = '';
         document.getElementById('courtStatus').value = 'active';
+        updateCourtImagePreview('');
     }
     modalInstance.show();
+}
+
+function updateCourtImagePreview(url) {
+    const wrap = document.getElementById('courtImagePreviewWrap');
+    const img = document.getElementById('courtImagePreview');
+    if (!wrap || !img) return;
+    const clean = String(url || '').trim();
+    if (clean) {
+        img.src = clean;
+        wrap.classList.remove('d-none');
+    } else {
+        img.removeAttribute('src');
+        wrap.classList.add('d-none');
+    }
+}
+
+async function handleUploadCourtImage(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const label = document.getElementById('courtImageUploadLabel');
+    const oldHtml = label ? label.innerHTML : '';
+    if (label) {
+        label.classList.add('disabled');
+        label.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang tải...';
+    }
+    try {
+        const fd = new FormData();
+        fd.append('image', file);
+        const res = await fetch('api/upload-image.php?type=court', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'X-GODMINTON-CSRF': window.__GODMINTON_ADMIN__?.csrf_token || ''
+            },
+            body: fd
+        });
+        const json = await res.json();
+        if (!res.ok || json.status !== 'success') {
+            throw new Error(json.message || 'Không thể tải ảnh lên.');
+        }
+        const url = json.data?.url || '';
+        document.getElementById('courtImage').value = url;
+        updateCourtImagePreview(url);
+        AdminApp.toast('success', 'Đã tải ảnh đại diện sân lên thành công.');
+    } catch (err) {
+        AdminApp.toast('error', err.message || 'Lỗi tải ảnh lên.');
+    } finally {
+        e.target.value = '';
+        if (label) {
+            label.classList.remove('disabled');
+            label.innerHTML = oldHtml;
+        }
+    }
 }
 
 async function handleSaveCourt(e) {

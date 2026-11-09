@@ -8,7 +8,21 @@ document.addEventListener('DOMContentLoaded',async()=>{
  if(window.L){map=L.map('ownerPinMap').setView([10.7769,106.7009],12);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',maxZoom:19}).addTo(map);pin=L.marker([10.7769,106.7009],{draggable:true}).addTo(map);const set=latlng=>{form.elements.latitude.value=latlng.lat.toFixed(7);form.elements.longitude.value=latlng.lng.toFixed(7);};map.on('click',event=>{pin.setLatLng(event.latlng);set(event.latlng);});pin.on('dragend',()=>set(pin.getLatLng()));}
  else document.getElementById('ownerPinMap').innerHTML='<p class="p-3">Không tải được bản đồ. Bạn vẫn có thể nhập tọa độ bên dưới.</p>';
  form.elements.kind.onchange=kind;form.elements.latitude.onchange=syncPin;form.elements.longitude.onchange=syncPin;
- function reset(){form.reset();form.elements.id.value='';form.elements.revision.value='';form.elements.representative_name.value=window.__GODMINTON_USER__.name||'';form.elements.representative_phone.value=window.__GODMINTON_USER__.phone||'';document.getElementById('applicationTitle').textContent='Hồ sơ đăng ký sân';document.getElementById('applicationMessage').textContent='';kind();}
+ function syncImagePreview(url){const wrap=document.getElementById('applicationImagePreviewWrap'),img=document.getElementById('applicationImagePreview');if(!wrap||!img)return;const clean=String(url||'').trim();if(clean){img.src=clean;wrap.classList.remove('d-none');}else{img.removeAttribute('src');wrap.classList.add('d-none');}}
+ form.elements.image_url?.addEventListener('input',e=>syncImagePreview(e.target.value));
+ document.getElementById('applicationImageFile')?.addEventListener('change',async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  const label=document.getElementById('applicationImageUploadLabel'),oldHtml=label?label.innerHTML:'';
+  if(label){label.classList.add('disabled');label.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Đang tải...';}
+  try{
+   const fd=new FormData();fd.append('image',file);
+   const data=await BookingAccount.request('api/upload-image.php?type=court',{method:'POST',body:fd});
+   if(data?.url){form.elements.image_url.value=data.url;syncImagePreview(data.url);}
+   await BookingAccount.notify('Đã tải ảnh đại diện sân lên thành công!');
+  }catch(err){await BookingAccount.notify(err.message||'Không thể tải ảnh lên.',true);}
+  finally{e.target.value='';if(label){label.classList.remove('disabled');label.innerHTML=oldHtml;}}
+ });
+ function reset(){form.reset();form.elements.id.value='';form.elements.revision.value='';form.elements.representative_name.value=window.__GODMINTON_USER__.name||'';form.elements.representative_phone.value=window.__GODMINTON_USER__.phone||'';document.getElementById('applicationTitle').textContent='Hồ sơ đăng ký sân';document.getElementById('applicationMessage').textContent='';syncImagePreview('');kind();}
  async function load(){
   const data=await U.request('api/owner-requests.php');rows=data.requests;
   const ward=value('ward_id');document.getElementById('applicationWard').innerHTML='<option value="0">Chọn phường</option>'+data.wards.map(w=>`<option value="${U.e(w.id)}">${U.e(w.name)}${w.old_area_label?' · '+U.e(w.old_area_label):''}</option>`).join('');if(ward)form.elements.ward_id.value=ward;
@@ -19,7 +33,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   document.querySelectorAll('[data-withdraw]').forEach(b=>b.onclick=async()=>{try{const r=rows.find(x=>String(x.id)===b.dataset.withdraw);if(!await BookingAccount.confirm('Rút hồ sơ này?'))return;await U.request('api/owner-requests.php',{id:r.id,revision:r.revision,action:'withdraw'});await load();}catch(error){BookingAccount.notify(error.message,true);}});
  }
  async function detail(id){try{const r=await U.request('api/owner-requests.php?id='+id);const el=document.getElementById('myApplicationDetail');el.hidden=false;el.innerHTML=`<h2 class="h5">Hồ sơ #${U.e(r.id)}</h2>${U.requestInfo(r)}`;el.scrollIntoView({behavior:'smooth',block:'start'});}catch(error){BookingAccount.notify(error.message,true);}}
- async function edit(id){try{const r=await U.request('api/owner-requests.php?id='+id);reset();for(const key of ['id','revision','kind','representative_name','representative_phone','evidence_note','evidence_url'])form.elements[key].value=r[key]??'';for(const [key,val]of Object.entries(r.payload||{}))if(key!=='amenities'&&form.elements[key])form.elements[key].value=val??'';form.querySelectorAll('[name="amenities"]').forEach(c=>c.checked=(r.payload?.amenities||[]).includes(c.value));if(r.kind==='claim'){document.getElementById('claimCourt').innerHTML=`<option value="${U.e(r.court_id)}">#${U.e(r.court_id)} · ${U.e(r.payload.name)}</option>`;}document.getElementById('applicationTitle').textContent='Chỉnh sửa hồ sơ #'+id;kind();syncPin();form.scrollIntoView({behavior:'smooth'});}catch(error){BookingAccount.notify(error.message,true);}}
+ async function edit(id){try{const r=await U.request('api/owner-requests.php?id='+id);reset();for(const key of ['id','revision','kind','representative_name','representative_phone','evidence_note','evidence_url'])form.elements[key].value=r[key]??'';for(const [key,val]of Object.entries(r.payload||{}))if(key!=='amenities'&&form.elements[key])form.elements[key].value=val??'';syncImagePreview(r.payload?.image_url||'');form.querySelectorAll('[name="amenities"]').forEach(c=>c.checked=(r.payload?.amenities||[]).includes(c.value));if(r.kind==='claim'){document.getElementById('claimCourt').innerHTML=`<option value="${U.e(r.court_id)}">#${U.e(r.court_id)} · ${U.e(r.payload.name)}</option>`;}document.getElementById('applicationTitle').textContent='Chỉnh sửa hồ sơ #'+id;kind();syncPin();form.scrollIntoView({behavior:'smooth'});}catch(error){BookingAccount.notify(error.message,true);}}
  async function save(action){
   const buttons=[document.getElementById('saveApplication'),document.getElementById('submitApplication')];buttons.forEach(b=>b.disabled=true);
   try{

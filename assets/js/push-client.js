@@ -442,6 +442,49 @@ window.PushClient = (() => {
         }
     }
 
+    function escapeHtml(str) {
+        return String(str ?? '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[c]));
+    }
+
+    function refreshPostFeed() {
+        const feedBox = document.getElementById('bellExploreFeedList');
+        if (!feedBox) return;
+        const api = window.GodmintonPostNotify;
+        const posts = (api && typeof api.getLatestPosts === 'function') ? api.getLatestPosts().slice(0, 3) : [];
+        if (!posts.length) {
+            feedBox.innerHTML = '<div class="px-3 py-2 small text-muted">Chưa có bài viết mới.</div>';
+            return;
+        }
+        feedBox.innerHTML = posts.map(p => {
+            const unread = api && typeof api.isPostUnread === 'function' ? api.isPostUnread(p) : false;
+            const icon = p.type === 'event' ? 'fa-trophy text-purple' : (p.type === 'membership' ? 'fa-crown text-warning' : 'fa-bullhorn text-danger');
+            const url = `post-detail.php?slug=${encodeURIComponent(p.slug || '')}`;
+            return `
+                <a href="${url}" class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none border-bottom bell-post-item" data-post-id="${p.id}" style="color:inherit; font-size:0.8rem; max-width:100%; overflow:hidden;">
+                    <i class="fa-solid ${icon} mt-1 flex-shrink-0"></i>
+                    <div class="flex-grow-1" style="min-width:0; max-width:100%; overflow:hidden;">
+                        <div class="fw-bold" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</div>
+                        <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                            ${unread ? '<span class="badge bg-danger text-white rounded-pill" style="font-size:0.6rem;">MỚI</span>' : '<span class="text-muted" style="font-size:0.68rem;">Đã xem</span>'}
+                            ${p.voucher_code ? `<span class="badge bg-teal text-white rounded-pill" style="font-size:0.6rem;">🎁 -${escapeHtml(p.voucher_discount_percent)}%</span>` : ''}
+                        </div>
+                    </div>
+                </a>
+            `;
+        }).join('');
+
+        feedBox.querySelectorAll('.bell-post-item').forEach(link => {
+            link.addEventListener('click', () => {
+                if (api && typeof api.markPostSeen === 'function') {
+                    api.markPostSeen(Number(link.dataset.postId));
+                }
+                closeBellDropdown();
+            });
+        });
+    }
+
     // Tạo YouTube Notification Dropdown nếu chưa tồn tại
     function ensureBellDropdown() {
         let dropdown = document.getElementById('pushBellDropdown');
@@ -450,12 +493,21 @@ window.PushClient = (() => {
         dropdown = document.createElement('div');
         dropdown.id = 'pushBellDropdown';
         dropdown.className = 'yt-bell-dropdown';
+        dropdown.style.setProperty('width', 'min(310px, calc(100vw - 24px))', 'important');
+        dropdown.style.setProperty('max-width', 'calc(100vw - 24px)', 'important');
+        dropdown.style.setProperty('overflow', 'hidden', 'important');
         dropdown.setAttribute('role', 'menu');
         dropdown.setAttribute('aria-label', 'Tùy chọn thông báo');
         dropdown.innerHTML = `
+            <div class="px-3 py-2 d-flex align-items-center justify-content-between border-bottom gap-2" style="overflow:hidden;">
+                <span class="fw-extrabold small text-teal text-nowrap"><i class="fa-solid fa-compass me-1"></i>Bản tin Khám phá mới</span>
+                <a href="explore.php" class="small fw-bold text-teal text-decoration-none text-nowrap" style="font-size:0.74rem;">Xem tất cả &rarr;</a>
+            </div>
+            <div id="bellExploreFeedList"></div>
+            <div class="yt-bell-divider"></div>
             <div class="yt-bell-item" data-action="enable" role="menuitem" tabindex="0">
                 <span class="yt-bell-icon"><i class="fa-solid fa-bell"></i></span>
-                <span class="yt-bell-label">Bật thông báo</span>
+                <span class="yt-bell-label">Bật thông báo đẩy</span>
                 <span class="yt-bell-check"><i class="fa-solid fa-check"></i></span>
             </div>
             <div class="yt-bell-item" data-action="none" role="menuitem" tabindex="0">
@@ -466,12 +518,13 @@ window.PushClient = (() => {
             <div class="yt-bell-divider"></div>
             <div class="yt-bell-item yt-bell-test" data-action="test" role="menuitem" tabindex="0">
                 <span class="yt-bell-icon"><i class="fa-solid fa-paper-plane"></i></span>
-                <span class="yt-bell-label">Gửi thông báo</span>
+                <span class="yt-bell-label">Gửi thử nhắc lịch sân</span>
                 <span class="yt-bell-check"></span>
             </div>
         `;
 
         document.body.appendChild(dropdown);
+        refreshPostFeed();
 
         // Xử lý sự kiện click trên từng item
         dropdown.querySelectorAll('.yt-bell-item').forEach(item => {
@@ -542,6 +595,7 @@ window.PushClient = (() => {
 
     function openBellDropdown() {
         const dropdown = ensureBellDropdown();
+        refreshPostFeed();
         positionDropdown();
         syncDropdownActiveState();
         dropdown.classList.add('show');
@@ -694,7 +748,9 @@ window.PushClient = (() => {
         if (!btn) return;
 
         const isSbBtn = btn.classList.contains('sb-btn') || !!btn.closest('.sb-actions');
-        const lblHtml = isSbBtn ? '<span class="sb-lbl">Thông báo</span>' : '';
+        const existingBadge = btn.querySelector('.bell-unread-badge');
+        const badgeHtml = existingBadge ? existingBadge.outerHTML : '';
+        const lblHtml = (isSbBtn ? '<span class="sb-lbl">Thông báo</span>' : '') + badgeHtml;
 
         if (!isSupported()) {
             btn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>' + lblHtml;
@@ -889,6 +945,7 @@ window.PushClient = (() => {
         renderPushControls,
         initBellButton,
         updateBellUI,
-        handleBellClick
+        handleBellClick,
+        refreshPostFeed
     };
 })();

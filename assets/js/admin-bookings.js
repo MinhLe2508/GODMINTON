@@ -403,6 +403,40 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="alert ${b.is_deposit_refunded ? 'alert-success border-success-subtle' : 'alert-warning border-warning-subtle'} rounded-3 p-2 mt-3 mb-0 small">
                 <strong><i class="${b.is_deposit_refunded ? 'fa-solid fa-gift' : 'fa-solid fa-shield-halved'} me-1"></i>Chính sách hoàn/giữ cọc:</strong> ${BookingAccount.escape(b.refund_note)}
             </div>` : ''}
+            ${b.is_deposit_refunded && b.payment_status !== 'unpaid' && b.deposit_amount > 0 ? `
+            <div class="card p-3 rounded-4 border mt-3 ${b.payment_status === 'refunded' ? 'bg-success-subtle border-success-subtle' : 'bg-body-tertiary'}">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                    <div class="fw-bold text-uppercase small ${b.payment_status === 'refunded' ? 'text-success-emphasis' : 'text-teal'}">
+                        <i class="fa-solid fa-qrcode me-1"></i>Hoàn cọc tự động qua SePay / VietQR
+                    </div>
+                    ${b.payment_status !== 'refunded' ? `
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill py-0 px-2" data-modal-action="edit_refund_bank" data-id="${b.id}">
+                        <i class="fa-solid fa-building-columns me-1"></i>${b.refund_account_number ? 'Đổi STK khách' : 'Nhập STK khách để tạo QR'}
+                    </button>` : '<span class="badge bg-success">Đã hoàn tất</span>'}
+                </div>
+                ${b.refund_qr_url && b.payment_status !== 'refunded' ? `
+                <div class="row g-3 align-items-center">
+                    <div class="col-sm-5 text-center">
+                        <img src="${BookingAccount.escape(b.refund_qr_url)}" alt="QR Hoàn Cọc SePay" class="img-fluid rounded-3 border bg-white p-2 shadow-sm" style="max-width: 185px;">
+                        <div class="small text-muted mt-1">Quét bằng App Ngân hàng</div>
+                    </div>
+                    <div class="col-sm-7 small">
+                        <div class="py-1 border-bottom d-flex justify-content-between"><span class="text-secondary">Ngân hàng nhận:</span><strong>${BookingAccount.escape(b.refund_bank)}</strong></div>
+                        <div class="py-1 border-bottom d-flex justify-content-between"><span class="text-secondary">Số tài khoản:</span><strong class="font-monospace text-teal">${BookingAccount.escape(b.refund_account_number)}</strong></div>
+                        <div class="py-1 border-bottom d-flex justify-content-between"><span class="text-secondary">Chủ tài khoản:</span><strong>${BookingAccount.escape(b.refund_account_name || b.user_name)}</strong></div>
+                        <div class="py-1 border-bottom d-flex justify-content-between"><span class="text-secondary">Số tiền hoàn:</span><strong class="text-danger">${BookingAccount.money(b.deposit_amount)}</strong></div>
+                        <div class="py-1 d-flex justify-content-between"><span class="text-secondary">Nội dung CK (SePay):</span><code class="fw-bold text-danger">${BookingAccount.escape(b.refund_transfer_code || '')}</code></div>
+                        <div class="text-muted mt-2" style="font-size:0.78rem;">
+                            <i class="fa-solid fa-bolt text-warning me-1"></i>Khi chuyển khoản từ TK liên kết SePay với nội dung <strong>${BookingAccount.escape(b.refund_transfer_code || '')}</strong>, SePay sẽ tự động chuyển đơn sang <strong>Đã hoàn cọc</strong>.
+                        </div>
+                    </div>
+                </div>` : `
+                <div class="small text-secondary">
+                    ${b.refund_account_number
+                        ? `Tài khoản nhận của khách: <strong>${BookingAccount.escape(b.refund_bank)} - ${BookingAccount.escape(b.refund_account_number)}</strong> (${BookingAccount.escape(b.refund_account_name || b.user_name)}) · Mã đối soát SePay: <code>${BookingAccount.escape(b.refund_transfer_code || '')}</code>`
+                        : `Khách chưa nhập số tài khoản nhận hoàn tiền. Bấm <strong>"Nhập STK khách để tạo QR"</strong> hoặc chuyển khoản kèm nội dung <code>${BookingAccount.escape(b.refund_transfer_code || '')}</code> để SePay tự động xác nhận hoàn cọc.`}
+                </div>`}
+            </div>` : ''}
         `;
 
         // Render nút hành động dưới chân Modal
@@ -436,8 +470,98 @@ document.addEventListener('DOMContentLoaded', async () => {
         modal.show();
     }
 
+    const BANK_OPTIONS = [
+        { code: 'MBBank', label: 'MBBank - Ngân hàng Quân Đội' },
+        { code: 'Vietcombank', label: 'Vietcombank - Ngoại thương VN' },
+        { code: 'Techcombank', label: 'Techcombank - Kỹ thương VN' },
+        { code: 'ACB', label: 'ACB - Ngân hàng Á Châu' },
+        { code: 'BIDV', label: 'BIDV - Đầu tư & Phát triển VN' },
+        { code: 'VietinBank', label: 'VietinBank - Công thương VN' },
+        { code: 'VPBank', label: 'VPBank - Việt Nam Thịnh Vượng' },
+        { code: 'TPBank', label: 'TPBank - Tiên Phong' },
+        { code: 'Sacombank', label: 'Sacombank - Sài Gòn Thương Tín' },
+        { code: 'VIB', label: 'VIB - Quốc Tế' },
+        { code: 'MSB', label: 'MSB - Hàng Hải VN' },
+        { code: 'SHB', label: 'SHB - Sài Gòn - Hà Nội' },
+        { code: 'HDBank', label: 'HDBank - Phát triển TP.HCM' },
+        { code: 'OCB', label: 'OCB - Phương Đông' },
+        { code: 'Agribank', label: 'Agribank - NN & PT Nông thôn' },
+        { code: 'LPBank', label: 'LPBank - Lộc Phát VN' },
+        { code: 'Eximbank', label: 'Eximbank - Xuất Nhập Khẩu' },
+        { code: 'SeABank', label: 'SeABank - Đông Nam Á' }
+    ];
+
+    async function handleEditRefundBank(bookingId) {
+        const b = currentBookings.find(x => x.id === bookingId);
+        if (!b || !window.Swal) return;
+        if (modal) modal.hide();
+        const curBank = b.refund_bank || 'MBBank';
+        const curAcc = b.refund_account_number || '';
+        const curName = b.refund_account_name || b.user_name || '';
+        const optionsHtml = BANK_OPTIONS.map(o => `<option value="${o.code}" ${o.code === curBank ? 'selected' : ''}>${o.label}</option>`).join('');
+
+        const res = await Swal.fire({
+            title: `Tạo QR Hoàn Cọc (${b.booking_code})`,
+            html: `
+                <div class="text-start">
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold mb-1">Ngân hàng của khách *</label>
+                        <select id="adminRefundBank" class="form-select form-select-sm">${optionsHtml}</select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold mb-1">Số tài khoản của khách *</label>
+                        <input id="adminRefundAccNo" type="text" class="form-control form-control-sm" placeholder="VD: 0987654321" value="${BookingAccount.escape(curAcc)}">
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label small fw-bold mb-1">Tên chủ tài khoản</label>
+                        <input id="adminRefundAccName" type="text" class="form-control form-control-sm text-uppercase" value="${BookingAccount.escape(curName)}">
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Tạo mã VietQR',
+            cancelButtonText: 'Hủy',
+            confirmButtonColor: '#0d9488',
+            preConfirm: () => {
+                const bank = document.getElementById('adminRefundBank')?.value?.trim() || '';
+                const acc = document.getElementById('adminRefundAccNo')?.value?.replace(/\s+/g, '') || '';
+                const name = document.getElementById('adminRefundAccName')?.value?.trim().toUpperCase() || '';
+                if (!bank || !/^[A-Za-z0-9]{5,25}$/.test(acc)) {
+                    Swal.showValidationMessage('Vui lòng nhập số tài khoản hợp lệ (5–25 ký tự).');
+                    return false;
+                }
+                return { refund_bank: bank, refund_account_number: acc, refund_account_name: name };
+            }
+        });
+
+        if (!res.isConfirmed || !res.value) {
+            openOperationalModal(b);
+            return;
+        }
+
+        try {
+            await BookingAccount.request('api/admin/bookings.php', {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    booking_id: Number(bookingId),
+                    status: 'save_refund_bank',
+                    ...res.value
+                })
+            });
+            await load();
+            const updated = currentBookings.find(x => x.id === bookingId);
+            if (updated) openOperationalModal(updated);
+        } catch (e) {
+            await BookingAccount.notify(e.message, true);
+        }
+    }
+
     // Xử lý chuyển đổi trạng thái nghiệp vụ (Option 2)
     async function handleTransition(bookingId, targetStatus) {
+        if (targetStatus === 'edit_refund_bank') {
+            await handleEditRefundBank(bookingId);
+            return;
+        }
         const b = currentBookings.find(x => x.id === bookingId);
         const code = b ? b.booking_code : `#${bookingId}`;
 

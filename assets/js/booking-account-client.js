@@ -11,12 +11,16 @@ window.BookingAccount = (() => {
         if (body !== undefined && body !== null && typeof body === 'object' && !(body instanceof FormData)) {
             body = JSON.stringify(body);
         }
+        const isFormData = body instanceof FormData;
+        const defaultHeaders = method !== 'GET'
+            ? (isFormData ? {'X-GODMINTON-CSRF':token} : {'Content-Type':'application/json','X-GODMINTON-CSRF':token})
+            : {};
         const response = await fetch(url, {
             ...options,
             body,
             credentials: 'same-origin',
             cache: 'no-store',
-            headers: {'Accept':'application/json', ...(method !== 'GET' ? {'Content-Type':'application/json','X-GODMINTON-CSRF':token} : {}), ...options.headers}
+            headers: {'Accept':'application/json', ...defaultHeaders, ...options.headers}
         });
         let result;
         try { result = await response.json(); } catch { throw new Error('Máy chủ không trả JSON. Kiểm tra log PHP và migration DB.'); }

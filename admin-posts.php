@@ -170,7 +170,7 @@ $currentUser = [
                                     <th>Ghim</th>
                                     <th>Trạng thái</th>
                                     <th>Thời hạn hiển thị</th>
-                                    <th class="text-end" style="width: 130px;">Thao tác</th>
+                                    <th class="text-end" style="width: 155px;">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody id="postsTableBody">
@@ -343,6 +343,17 @@ $currentUser = [
                             <label for="formExpireAt" class="form-label fw-semibold small">Thời điểm hết hạn tự ẩn (Expire At)</label>
                             <input type="datetime-local" class="form-control" id="formExpireAt">
                             <div class="form-text" style="font-size: 0.72rem;"><span class="text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Chú ý:</span> Bài viết sẽ <strong>tự động ẩn</strong> sau thời điểm này. <strong>Để trống</strong> nếu muốn bài luôn hiển thị.</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="p-3 rounded-4 border bg-teal-subtle d-flex align-items-center justify-content-between gap-3">
+                                <div>
+                                    <div class="fw-bold small text-teal"><i class="fa-solid fa-bell me-1"></i> Gửi thông báo nhắc bài viết mới đến người dùng</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">Tự động đẩy thông báo Web Push, bật chấm đỏ trên mục <strong>Khám phá</strong> và hiện thẻ nhắc bài mới trên trang khách khi bài được xuất bản.</div>
+                                </div>
+                                <div class="form-check form-switch fs-5 mb-0">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="formPostNotify" checked style="cursor:pointer;">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

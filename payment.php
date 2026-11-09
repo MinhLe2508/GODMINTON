@@ -206,14 +206,21 @@ if ($currentUser !== null) {
 
         </div>
 
-        <!-- 3. Điều khoản -->
-        <div class="d-flex align-items-start gap-2 mb-4">
-            <input class="form-check-input mt-1 flex-shrink-0" type="checkbox" id="agreeTerms" required style="min-width:16px;">
-            <label for="agreeTerms" style="font-size:0.82rem; cursor:pointer; color:var(--text-secondary); line-height:1.5;">
-                Tôi đã đọc và đồng ý với
-                <a href="#" style="color:var(--brand-teal); text-decoration:none;">Điều khoản đặt sân</a>
-                của GODMINTON. Khoản đặt cọc <strong>không hoàn lại</strong> nếu huỷ trước 2 giờ thi đấu.
-            </label>
+        <!-- 3. Điều khoản đặt sân & Chính sách hoàn cọc -->
+        <div class="p-3 rounded-4 mb-4 border" style="background:var(--bg-surface, #f8fafc); border-color:var(--border-color, #e2e8f0);">
+            <div class="d-flex align-items-start gap-2">
+                <input class="form-check-input mt-1 flex-shrink-0" type="checkbox" id="agreeTerms" required style="min-width:16px; cursor:pointer;">
+                <label for="agreeTerms" style="font-size:0.83rem; cursor:pointer; color:var(--text-primary); line-height:1.55;">
+                    Tôi đã đọc và đồng ý với
+                    <a href="#terms" onclick="openBookingTermsModal(event)" class="fw-bold" style="color:var(--brand-teal); text-decoration:underline;">Điều khoản đặt sân &amp; Chính sách hoàn cọc</a>
+                    của GODMINTON.
+                </label>
+            </div>
+            <div class="mt-2 ps-4 d-flex flex-column gap-1" style="font-size:0.76rem; color:var(--text-secondary); line-height:1.45;">
+                <div><i class="fa-solid fa-circle-check text-success me-1"></i><strong>Hoàn 100% tiền cọc (50%):</strong> Hủy trong <strong>15 phút đầu</strong> sau khi đặt (cách giờ chơi &ge; 1h) hoặc hủy sớm <strong>trước giờ thi đấu &ge; 6 giờ</strong>.</div>
+                <div><i class="fa-solid fa-triangle-exclamation text-warning me-1"></i><strong>Không hoàn cọc (Giữ cọc):</strong> Hủy muộn trong khoảng <strong>từ 2 giờ đến dưới 6 giờ</strong> trước giờ thi đấu (khóa hủy khi còn dưới 2 giờ).</div>
+                <div><i class="fa-solid fa-crown text-teal me-1"></i><strong>Đặc quyền Hội viên VIP:</strong> Được hủy đơn và <strong>hoàn 100% cọc</strong> đến trước giờ thi đấu <strong>30 phút</strong>.</div>
+            </div>
         </div>
 
         <!-- Mobile: CTA button (bên dưới form trên mobile) -->

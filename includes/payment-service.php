@@ -63,6 +63,18 @@ function payment_qr_url(string $paymentCode, int $amount): string
     ]);
 }
 
+/** Ảnh VietQR động để Chủ sân / Admin quét chuyển khoản hoàn tiền cọc cho khách hàng. */
+function payment_refund_qr_url(string $bankCode, string $accountNumber, int $amount, string $paymentCode): string
+{
+    return 'https://qr.sepay.vn/img?' . http_build_query([
+        'acc'      => preg_replace('/\s+/', '', $accountNumber),
+        'bank'     => trim($bankCode),
+        'amount'   => max(0, $amount),
+        'des'      => 'HOAN ' . $paymentCode,
+        'template' => 'compact',
+    ]);
+}
+
 /** Thông tin ngân hàng công khai cho frontend (không chứa khoá bí mật). */
 function payment_public_bank(): array
 {
@@ -331,6 +343,10 @@ function payment_extract_code(array $payload): ?string
         if ($value === '') {
             continue;
         }
+        // Khớp mã đơn đầy đủ dạng GDM-20261109-0003 trước tiên
+        if (preg_match('/' . $prefix . '-\d{8}-0*(\d{1,9})/i', $value, $mFull) && (int)$mFull[1] > 0) {
+            return payment_code_for_booking((int)$mFull[1]);
+        }
         // Khớp cả GDM000123, GDM800001, GDM 000123, GDM-123, GDM123
         if (preg_match('/' . $prefix . '[-_\s]*0*(\d{1,9})/i', $value, $m) && (int)$m[1] > 0) {
             return payment_code_for_booking((int)$m[1]);
@@ -505,8 +521,87 @@ function payment_process_webhook(PDO $pdo, array $payload): array
             ->execute([$result, $paymentId, $note, $sepayId]);
     };
 
-    // 2. Chỉ quan tâm tiền vào, đúng tài khoản nhận
-    if (strtolower((string)$str('transferType', 5)) !== 'in') {
+    // 2. Xử lý giao dịch TIỀN RA (transferType = 'out') -> Tự động xác nhận hoàn cọc cho khách
+    $txType = strtolower((string)$str('transferType', 5));
+    if ($txType === 'out') {
+        if ($amount <= 0) {
+            $mark('ignored_out', null, 'Số tiền giao dịch tiền ra không hợp lệ.');
+            $out['result'] = 'ignored_out';
+            return $out;
+        }
+        $outCode = payment_extract_code($payload);
+        $targetBookingId = null;
+        if ($outCode !== null && preg_match('/0*(\d{1,9})$/', $outCode, $mId)) {
+            $targetBookingId = (int)$mId[1];
+        }
+        if ($targetBookingId === null) {
+            // Dự phòng: Nếu nội dung chuyển khoản hoàn tiền không ghi mã nhưng có ĐÚNG 1 đơn đang chờ hoàn cọc khớp số tiền
+            $sRefFallback = $pdo->prepare("SELECT id FROM bookings WHERE status IN ('cancelled','no_show') AND is_deposit_refunded=1 AND payment_status='deposit_paid' AND deposit_amount=? LIMIT 2");
+            $sRefFallback->execute([$amount]);
+            $refCandidates = $sRefFallback->fetchAll(PDO::FETCH_COLUMN);
+            if (count($refCandidates) === 1) {
+                $targetBookingId = (int)$refCandidates[0];
+            }
+        }
+        if ($targetBookingId === null) {
+            $mark('ignored_out', null, 'Giao dịch tiền ra không khớp đơn chờ hoàn cọc nào.');
+            $out['result'] = 'ignored_out';
+            return $out;
+        }
+
+        $pdo->beginTransaction();
+        try {
+            $sb = $pdo->prepare('SELECT * FROM bookings WHERE id=? FOR UPDATE');
+            $sb->execute([$targetBookingId]);
+            $bRow = $sb->fetch();
+
+            $sp = $pdo->prepare('SELECT * FROM payments WHERE booking_id=? FOR UPDATE');
+            $sp->execute([$targetBookingId]);
+            $pRow = $sp->fetch();
+            $payId = $pRow ? (int)$pRow['id'] : null;
+
+            if (!$bRow || !in_array($bRow['status'], ['cancelled', 'no_show'], true)) {
+                $mark('ignored_out', $payId, 'Đơn #' . $targetBookingId . ' không ở trạng thái đã hủy / chờ hoàn cọc.');
+                $pdo->commit();
+                $out['result'] = 'ignored_out';
+                return $out;
+            }
+            $expectedDeposit = (int)$bRow['deposit_amount'];
+            if ($expectedDeposit > 0 && $amount < $expectedDeposit) {
+                $mark('underpaid_refund', $payId, 'Số tiền hoàn ra (' . $amount . 'đ) nhỏ hơn tiền cọc (' . $expectedDeposit . 'đ).');
+                $pdo->commit();
+                $out['result'] = 'underpaid_refund';
+                return $out;
+            }
+
+            $stamp = date('H:i d/m/Y');
+            $amtFormatted = number_format($amount, 0, ',', '.') . ' đ';
+            $curNote = (string)($bRow['refund_note'] ?? '');
+            if (strpos($curNote, 'SePay tự động xác nhận hoàn cọc') === false) {
+                $curNote = trim($curNote . " | SePay tự động xác nhận hoàn cọc ({$amtFormatted}) lúc {$stamp}.", ' |');
+            }
+            $pdo->prepare("UPDATE bookings SET payment_status='refunded', is_deposit_refunded=1, refund_note=? WHERE id=?")
+                ->execute([$curNote, $targetBookingId]);
+            if ($payId !== null) {
+                $pdo->prepare("UPDATE payments SET status='refunded' WHERE id=?")->execute([$payId]);
+            }
+            $mark('refunded_out', $payId, 'Đã tự động xác nhận hoàn cọc qua SePay cho đơn #' . $targetBookingId);
+            $pdo->commit();
+
+            $out['result'] = 'refunded_out';
+            $out['payment_id'] = $payId;
+            $out['booking_id'] = $targetBookingId;
+            $out['confirmed'] = true;
+            return $out;
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    if ($txType !== 'in') {
         $mark('ignored_out');
         $out['result'] = 'ignored_out';
         return $out;

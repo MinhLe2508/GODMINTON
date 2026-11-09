@@ -139,6 +139,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const detailUrl = `post-detail.php?slug=${encodeURIComponent(item.slug || '')}`;
+            const pubDateObj = new Date((item.publish_at || item.created_at || '').replace(' ', 'T'));
+            const isRecent48h = !isNaN(pubDateObj.getTime()) && ((Date.now() - pubDateObj.getTime()) <= 48 * 3600 * 1000);
+            const isUnread = window.GodmintonPostNotify && typeof window.GodmintonPostNotify.isPostUnread === 'function'
+                ? window.GodmintonPostNotify.isPostUnread(item)
+                : false;
+            const newBadge = (isRecent48h || isUnread) ? `
+                <span class="badge bg-danger text-white rounded-pill px-2 py-1" style="font-size:0.65rem; font-weight:800;">
+                    <i class="fa-solid fa-sparkles me-1"></i>MỚI
+                </span>
+            ` : '';
             const voucherBadge = item.voucher_code ? `
                 <span class="badge bg-teal text-white rounded-pill px-2 py-1" style="font-size:0.68rem; font-weight:700;">
                     <i class="fa-solid fa-gift me-1"></i>Tặng mã -${item.voucher_discount_percent}%
@@ -160,6 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="post-card-body">
                             <div class="mb-2 d-flex align-items-center justify-content-between flex-wrap gap-1">
                                 <div class="d-flex align-items-center gap-1 flex-wrap">
+                                    ${newBadge}
                                     ${chipHtml}
                                     ${voucherBadge}
                                 </div>

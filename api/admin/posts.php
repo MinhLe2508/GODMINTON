@@ -7,6 +7,7 @@
 
 require_once __DIR__ . '/../../includes/booking-account-api.php';
 require_once __DIR__ . '/../../includes/post-service.php';
+require_once __DIR__ . '/../../includes/web-push.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -59,7 +60,16 @@ try {
     // ==========================================
     if ($method === 'POST') {
         $newId = post_create($pdo, (int)$user['id'], $input);
-        booking_account_out(201, ['id' => $newId], 'Tạo bài viết thành công.');
+        $notifyUsers = !isset($input['notify_users']) || !empty($input['notify_users']);
+        $pushResult = null;
+        if ($notifyUsers) {
+            $createdPost = post_get_by_id($pdo, $newId);
+            if ($createdPost && ($createdPost['status'] ?? '') === 'published'
+                && (empty($createdPost['publish_at']) || strtotime((string)$createdPost['publish_at']) <= time())) {
+                $pushResult = god_push_broadcast_new_post($pdo, $createdPost);
+            }
+        }
+        booking_account_out(201, ['id' => $newId, 'push_broadcast' => $pushResult], 'Tạo bài viết thành công.');
     }
 
     // ==========================================
@@ -70,12 +80,20 @@ try {
         if ($id <= 0) {
             booking_account_out(422, null, 'ID bài viết không hợp lệ.');
         }
+        $oldPost = post_get_by_id($pdo, $id);
         post_update($pdo, $id, $input);
-        booking_account_out(200, ['id' => $id], 'Cập nhật bài viết thành công.');
+        $updatedPost = post_get_by_id($pdo, $id);
+        $notifyUsers = !empty($input['notify_users']) || (($oldPost['status'] ?? '') !== 'published' && ($updatedPost['status'] ?? '') === 'published');
+        $pushResult = null;
+        if ($notifyUsers && $updatedPost && ($updatedPost['status'] ?? '') === 'published'
+            && (empty($updatedPost['publish_at']) || strtotime((string)$updatedPost['publish_at']) <= time())) {
+            $pushResult = god_push_broadcast_new_post($pdo, $updatedPost);
+        }
+        booking_account_out(200, ['id' => $id, 'push_broadcast' => $pushResult], 'Cập nhật bài viết thành công.');
     }
 
     // ==========================================
-    // PATCH: Đổi nhanh trạng thái hoặc ghim bài
+    // PATCH: Đổi nhanh trạng thái, ghim bài hoặc phát lại thông báo nhắc bài mới
     // ==========================================
     if ($method === 'PATCH') {
         $id = (int)($input['id'] ?? 0);
@@ -83,9 +101,27 @@ try {
             booking_account_out(422, null, 'ID bài viết không hợp lệ.');
         }
 
+        if (($input['action'] ?? '') === 'notify') {
+            $pdo->prepare('UPDATE posts SET updated_at = NOW() WHERE id = ?')->execute([$id]);
+            $post = post_get_by_id($pdo, $id);
+            if (!$post || ($post['status'] ?? '') !== 'published') {
+                booking_account_out(422, null, 'Chỉ có thể gửi thông báo nhắc cho bài viết đang ở trạng thái Đã xuất bản.');
+            }
+            $pushResult = god_push_broadcast_new_post($pdo, $post);
+            booking_account_out(200, ['push_broadcast' => $pushResult], 'Đã phát thông báo nhắc bài viết mới đến người dùng.');
+        }
+
         if (isset($input['status'])) {
-            post_toggle_status($pdo, $id, trim((string)$input['status']));
-            booking_account_out(200, null, 'Đã cập nhật trạng thái bài viết.');
+            $newStatus = trim((string)$input['status']);
+            post_toggle_status($pdo, $id, $newStatus);
+            $pushResult = null;
+            if ($newStatus === 'published') {
+                $post = post_get_by_id($pdo, $id);
+                if ($post && (empty($post['publish_at']) || strtotime((string)$post['publish_at']) <= time())) {
+                    $pushResult = god_push_broadcast_new_post($pdo, $post);
+                }
+            }
+            booking_account_out(200, ['push_broadcast' => $pushResult], 'Đã cập nhật trạng thái bài viết.');
         }
 
         if (isset($input['is_pinned'])) {

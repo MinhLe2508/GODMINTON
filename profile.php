@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth-check.php';
 header('Cache-Control: no-store');
+$sessionRole = $_SESSION['role'] ?? 'customer';
 ?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
@@ -45,10 +46,16 @@ header('Cache-Control: no-store');
             border-radius: 50%;
             pointer-events: none;
         }
-        .profile-avatar-wrapper {
+        .profile-avatar-container {
             position: relative;
             width: 96px;
             height: 96px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .profile-avatar-wrapper {
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
             border: 4px solid rgba(255, 255, 255, 0.3);
             background: #0d9488;
@@ -59,23 +66,41 @@ header('Cache-Control: no-store');
             font-weight: 800;
             color: #fff;
             box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .profile-avatar-img-overlay {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            object-fit: cover;
+            display: none;
+            z-index: 2;
+            background: #0d9488;
         }
         .profile-avatar-edit {
             position: absolute;
             bottom: 0;
             right: 0;
-            width: 28px;
-            height: 28px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             background: #f59e0b;
             color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             cursor: pointer;
             border: 2px solid #fff;
+            z-index: 3;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            transition: transform 0.15s ease;
+        }
+        .profile-avatar-container:hover .profile-avatar-edit {
+            transform: scale(1.1);
         }
         .profile-stat-box {
             background: rgba(255, 255, 255, 0.1);
@@ -216,6 +241,9 @@ header('Cache-Control: no-store');
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.4; transform: scale(0.85); }
         }
+        #ownerReturnLink {
+            display: none !important;
+        }
         .sepay-wait-dot {
             display: inline-block;
             width: 8px;
@@ -262,6 +290,7 @@ header('Cache-Control: no-store');
                 border-radius: 1.15rem;
                 margin-bottom: 1.25rem;
             }
+            .profile-avatar-container,
             .profile-avatar-wrapper {
                 width: 68px !important;
                 height: 68px !important;
@@ -284,6 +313,7 @@ header('Cache-Control: no-store');
             .profile-hero {
                 padding: 1.15rem 0.75rem !important;
             }
+            .profile-avatar-container,
             .profile-avatar-wrapper {
                 width: 54px !important;
                 height: 54px !important;
@@ -334,11 +364,15 @@ header('Cache-Control: no-store');
                 <div class="row align-items-center g-4">
                     <div class="col-md-7">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="profile-avatar-wrapper" id="profileAvatarInitial">
-                                A
-                                <span class="profile-avatar-edit" title="Đổi ảnh đại diện">
+                            <div class="profile-avatar-container" id="profileAvatarContainer" title="Nhấn để tải ảnh đại diện lên">
+                                <div class="profile-avatar-wrapper" id="profileAvatarWrapper">
+                                    <span id="profileAvatarInitial">A</span>
+                                </div>
+                                <img id="profileAvatarImg" class="profile-avatar-img-overlay" src="" alt="Ảnh đại diện">
+                                <span class="profile-avatar-edit" id="btnTriggerAvatarUpload" title="Đổi ảnh đại diện">
                                     <i class="fa-solid fa-camera"></i>
                                 </span>
+                                <input type="file" id="profileAvatarInput" accept="image/jpeg,image/png,image/webp" class="d-none">
                             </div>
                             <div>
                                 <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
@@ -407,12 +441,18 @@ header('Cache-Control: no-store');
                             <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#tabProfileSecurity" type="button" role="tab">
                                 <i class="fa-solid fa-shield-halved"></i> Mật khẩu & Bảo mật
                             </button>
+                            <a href="owner-application.php" id="sidebarOwnerAppLink" class="nav-link text-start text-decoration-none<?= $sessionRole === 'admin' ? ' d-none' : '' ?>">
+                                <i class="fa-solid fa-building-shield text-teal"></i> <span id="sidebarOwnerAppText"><?= $sessionRole === 'owner' ? 'Hồ sơ đăng ký sân' : 'Đăng ký / Hồ sơ chủ sân' ?></span>
+                            </a>
                         </div>
 
                         <hr class="my-3 border-secondary opacity-25">
 
                         <!-- Quick actions -->
                         <div class="profile-card-actions d-flex flex-column gap-2">
+                            <a href="admin-dashboard.php" id="sidebarAdminReturnBtn" class="btn btn-switch-account rounded-pill w-100 fw-bold text-center justify-content-center py-2<?= in_array($sessionRole, ['owner', 'admin'], true) ? '' : ' d-none' ?>">
+                                <i class="fa-solid fa-gauge-high me-2"></i> <span id="sidebarAdminReturnBtnText"><?= $sessionRole === 'admin' ? 'Về kênh quản trị' : 'Về kênh chủ sân' ?></span>
+                            </a>
                             <a href="courts.php" class="btn btn-teal rounded-pill w-100 fw-bold py-2">
                                 <i class="fa-solid fa-plus me-1"></i> Đặt sân mới
                             </a>
@@ -428,8 +468,7 @@ header('Cache-Control: no-store');
 
                 <!-- Right Content Area -->
                 <div class="col-lg-9">
-                    <div class="mb-3"><a href="owner-application.php" class="btn btn-outline-success rounded-pill"><i class="fa-solid fa-building-shield me-2"></i>Đăng ký / Theo dõi hồ sơ sân</a></div>
-<div class="tab-content" id="profileTabContent">
+                    <div class="tab-content" id="profileTabContent">
 
                         <!-- TAB 1: THÔNG TIN CÁ NHÂN -->
                         <div class="tab-pane fade show active" id="tabProfileInfo" role="tabpanel">
@@ -444,6 +483,23 @@ header('Cache-Control: no-store');
 
                                 <form id="formUpdateProfile">
                                     <div class="row g-3">
+                                        <div class="col-12">
+                                            <div class="p-3 rounded-4 border d-flex align-items-center justify-content-between flex-wrap gap-3" style="background:var(--bg-surface, #f8fafc);">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="rounded-circle bg-teal text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0 overflow-hidden" style="width:52px; height:52px; font-size:1.25rem;" id="formAvatarPreviewBox">
+                                                        <span id="formAvatarInitial">A</span>
+                                                        <img id="formAvatarImg" src="" alt="" style="display:none; width:100%; height:100%; object-fit:cover;">
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold small">Ảnh đại diện tài khoản</div>
+                                                        <div class="text-muted" style="font-size:0.75rem;">Hỗ trợ JPG, PNG, WEBP tối đa 5 MiB. Bấm vào ảnh tròn phía trên hoặc nút bên cạnh để tải ảnh lên.</div>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn btn-outline-teal btn-sm rounded-pill px-3 fw-bold" id="btnChooseAvatarBtn">
+                                                    <i class="fa-solid fa-cloud-arrow-up me-1"></i> Chọn ảnh đại diện
+                                                </button>
+                                            </div>
+                                        </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-bold small">Họ và tên <span class="text-danger">*</span></label>
                                             <div class="input-group">
@@ -580,10 +636,6 @@ header('Cache-Control: no-store');
                                         <i class="fa-solid fa-key me-1"></i> Cập nhật mật khẩu
                                     </button>
                                 </form>
-<section class="mt-4 pt-4 border-top" aria-labelledby="ownerApplicationTitle">
-<h6 id="ownerApplicationTitle" class="fw-bold">Đăng ký sân trên GODMINTON</h6>
-<p class="text-muted small">Gửi hồ sơ sân mới hoặc yêu cầu nhận quản lý sân có sẵn. Quyền chủ sân được cấp sau khi Admin xét duyệt.</p>
-<a href="owner-application.php" class="btn btn-outline-success rounded-pill px-4">Đăng ký / Theo dõi hồ sơ chủ sân</a></section>
 <section class="mt-4 pt-4 border-top" aria-labelledby="deleteAccountTitle">
     <h6 id="deleteAccountTitle" class="text-danger fw-bold">Xóa tài khoản</h6>
     <p class="text-muted small">Nếu không còn sử dụng GODMINTON, bạn có thể yêu cầu xóa tài khoản. Thông tin hồ sơ sẽ được ẩn danh; lịch sử giao dịch được giữ để đối soát.</p>
@@ -873,6 +925,83 @@ window.resetProfileForm = function(isManualReset = false) {
         });
     }
 };
+
+// Bảo đảm tính năng upload & hiển thị avatar luôn hoạt động kể cả khi trình duyệt còn giữ cache profile.js cũ
+document.addEventListener('DOMContentLoaded', () => {
+    const avatarInput = document.getElementById('profileAvatarInput');
+    const avatarContainer = document.getElementById('profileAvatarContainer');
+    const chooseBtn = document.getElementById('btnChooseAvatarBtn');
+    if (!avatarInput || avatarInput.dataset.boundAvatar === '1') return;
+    avatarInput.dataset.boundAvatar = '1';
+
+    const syncAvatarUI = (url, name) => {
+        const initial = String(name || document.getElementById('profileHeaderName')?.textContent || 'U').trim().charAt(0).toUpperCase();
+        const heroImg = document.getElementById('profileAvatarImg');
+        const formInitial = document.getElementById('formAvatarInitial');
+        const formImg = document.getElementById('formAvatarImg');
+        if (formInitial) formInitial.textContent = initial;
+        if (url) {
+            if (heroImg) { heroImg.src = url; heroImg.style.display = 'block'; }
+            if (formImg) { formImg.src = url; formImg.style.display = 'block'; }
+            if (formInitial) formInitial.style.display = 'none';
+        } else {
+            if (heroImg) { heroImg.removeAttribute('src'); heroImg.style.display = 'none'; }
+            if (formImg) { formImg.removeAttribute('src'); formImg.style.display = 'none'; }
+            if (formInitial) formInitial.style.display = '';
+        }
+    };
+
+    // Lấy avatar hiện tại nếu profile.js cũ chưa gọi renderAvatarDisplay
+    BookingAccount.request('api/profile.php').then(res => {
+        if (res?.user) syncAvatarUI(res.user.avatar_url || '', res.user.name || '');
+    }).catch(() => {});
+
+    avatarContainer?.addEventListener('click', (e) => {
+        if (e.target === avatarInput) return;
+        avatarInput.click();
+    });
+    chooseBtn?.addEventListener('click', () => avatarInput.click());
+
+    avatarInput.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const oldHtml = chooseBtn ? chooseBtn.innerHTML : '';
+        if (chooseBtn) {
+            chooseBtn.disabled = true;
+            chooseBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang tải lên...';
+        }
+        try {
+            const me = await BookingAccount.identity();
+            const fd = new FormData();
+            fd.append('image', file);
+            const resp = await fetch('api/upload-image.php?type=avatar', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-GODMINTON-CSRF': me?.csrf_token || ''
+                },
+                body: fd
+            });
+            const json = await resp.json();
+            if (!resp.ok || json.status !== 'success') {
+                throw new Error(json.message || 'Không thể tải ảnh đại diện lên.');
+            }
+            const url = json.data?.url || '';
+            if (typeof savedProfile !== 'undefined' && savedProfile) savedProfile.avatar_url = url;
+            syncAvatarUI(url, savedProfile?.name);
+            await BookingAccount.notify('Đã cập nhật ảnh đại diện thành công!');
+        } catch (err) {
+            await BookingAccount.notify(err.message || 'Lỗi tải ảnh đại diện.', true);
+        } finally {
+            avatarInput.value = '';
+            if (chooseBtn) {
+                chooseBtn.disabled = false;
+                chooseBtn.innerHTML = oldHtml;
+            }
+        }
+    });
+});
 </script>
 </body>
 </html>
