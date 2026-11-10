@@ -17,9 +17,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
 }
 
 try {
-    // 0. Nếu có tham số latest_check -> Trả về 5 bài viết xuất bản mới nhất cho hệ thống thông báo
+    // 0. Nếu có tham số latest_check -> Trả về danh sách bài viết xuất bản mới nhất cho hệ thống thông báo
     if (!empty($_GET['latest_check'])) {
-        $limit = min(10, max(1, (int)($_GET['limit'] ?? 5)));
+        $limit = min(15, max(1, (int)($_GET['limit'] ?? 10)));
         $items = post_get_latest_notifications($pdo, $limit);
         booking_account_out(200, [
             'items' => $items,

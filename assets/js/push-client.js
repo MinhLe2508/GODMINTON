@@ -452,7 +452,7 @@ window.PushClient = (() => {
         const feedBox = document.getElementById('bellExploreFeedList');
         if (!feedBox) return;
         const api = window.GodmintonPostNotify;
-        const posts = (api && typeof api.getLatestPosts === 'function') ? api.getLatestPosts().slice(0, 3) : [];
+        const posts = (api && typeof api.getLatestPosts === 'function') ? api.getLatestPosts() : [];
         if (!posts.length) {
             feedBox.innerHTML = '<div class="px-3 py-2 small text-muted">Chưa có bài viết mới.</div>';
             return;
@@ -503,18 +503,17 @@ window.PushClient = (() => {
                 <span class="fw-extrabold small text-teal text-nowrap"><i class="fa-solid fa-compass me-1"></i>Bản tin Khám phá mới</span>
                 <a href="explore.php" class="small fw-bold text-teal text-decoration-none text-nowrap" style="font-size:0.74rem;">Xem tất cả &rarr;</a>
             </div>
-            <div id="bellExploreFeedList"></div>
+            <div id="bellExploreFeedList" class="bell-explore-feed-scroll" style="max-height:192px; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain;"></div>
             <div class="yt-bell-divider"></div>
-            <div class="yt-bell-item" data-action="enable" role="menuitem" tabindex="0">
-                <span class="yt-bell-icon"><i class="fa-solid fa-bell"></i></span>
-                <span class="yt-bell-label">Bật thông báo đẩy</span>
-                <span class="yt-bell-check"><i class="fa-solid fa-check"></i></span>
-            </div>
-            <div class="yt-bell-item" data-action="none" role="menuitem" tabindex="0">
-                <span class="yt-bell-icon"><i class="fa-solid fa-bell-slash"></i></span>
-                <span class="yt-bell-label">Không nhận thông báo</span>
-                <span class="yt-bell-check"><i class="fa-solid fa-check"></i></span>
-            </div>
+            <label class="yt-bell-item d-flex align-items-center justify-content-between m-0" for="bellPushSwitchInput" id="bellPushSwitchRow" style="cursor:pointer;">
+                <div class="d-flex align-items-center flex-grow-1" style="min-width:0;">
+                    <span class="yt-bell-icon flex-shrink-0" id="bellPushSwitchIcon"><i class="fa-solid fa-bell text-teal"></i></span>
+                    <span class="yt-bell-label fw-semibold" id="bellPushSwitchLabel">Thông báo</span>
+                </div>
+                <div class="form-check form-switch m-0 ps-2 d-flex align-items-center flex-shrink-0">
+                    <input class="form-check-input m-0 bell-push-switch" type="checkbox" role="switch" id="bellPushSwitchInput" aria-label="Bật hoặc tắt Thông báo" style="width:2.4rem; height:1.25rem; cursor:pointer;">
+                </div>
+            </label>
             <div class="yt-bell-divider"></div>
             <div class="yt-bell-item yt-bell-test" data-action="test" role="menuitem" tabindex="0">
                 <span class="yt-bell-icon"><i class="fa-solid fa-paper-plane"></i></span>
@@ -526,12 +525,32 @@ window.PushClient = (() => {
         document.body.appendChild(dropdown);
         refreshPostFeed();
 
-        // Xử lý sự kiện click trên từng item
-        dropdown.querySelectorAll('.yt-bell-item').forEach(item => {
+        const switchInput = dropdown.querySelector('#bellPushSwitchInput');
+        if (switchInput) {
+            switchInput.addEventListener('click', (e) => e.stopPropagation());
+            switchInput.addEventListener('change', async (e) => {
+                e.stopPropagation();
+                switchInput.disabled = true;
+                try {
+                    await handleDropdownAction(switchInput.checked ? 'enable' : 'none', false);
+                } finally {
+                    switchInput.disabled = false;
+                    await syncDropdownActiveState();
+                }
+            });
+        }
+
+        const switchRow = dropdown.querySelector('#bellPushSwitchRow');
+        if (switchRow) {
+            switchRow.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        // Xử lý sự kiện click trên từng item có data-action
+        dropdown.querySelectorAll('.yt-bell-item[data-action]').forEach(item => {
             item.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const action = item.getAttribute('data-action');
-                await handleDropdownAction(action);
+                await handleDropdownAction(action, true);
             });
         });
 
@@ -625,21 +644,20 @@ window.PushClient = (() => {
         if (!mode) {
             mode = (isSubscribed && permission === 'granted') ? 'enabled' : 'none';
         }
+        const isEnabled = (mode === 'enabled' || mode === 'all' || mode === 'personalized') && permission === 'granted' && isSubscribed;
 
-        dropdown.querySelectorAll('.yt-bell-item').forEach(item => {
-            const action = item.getAttribute('data-action');
-            if (action === 'enable' && (mode === 'enabled' || mode === 'all' || mode === 'personalized') && permission === 'granted' && isSubscribed) {
-                item.classList.add('active');
-            } else if (action === 'none' && (mode === 'none' || mode === 'unsubscribed' || !isSubscribed || permission !== 'granted')) {
-                item.classList.add('active');
-            } else {
-                item.classList.remove('active');
-            }
-        });
+        const switchInput = dropdown.querySelector('#bellPushSwitchInput');
+        const switchIcon = dropdown.querySelector('#bellPushSwitchIcon');
+        if (switchInput) switchInput.checked = isEnabled;
+        if (switchIcon) {
+            switchIcon.innerHTML = isEnabled
+                ? '<i class="fa-solid fa-bell text-teal"></i>'
+                : '<i class="fa-solid fa-bell-slash text-muted"></i>';
+        }
     }
 
-    async function handleDropdownAction(action) {
-        closeBellDropdown();
+    async function handleDropdownAction(action, closeMenu = true) {
+        if (closeMenu) closeBellDropdown();
 
         if (action === 'test') {
             if (window.Swal) {

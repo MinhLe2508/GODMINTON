@@ -1123,7 +1123,7 @@
 
     async function checkLatestPosts() {
         try {
-            const res = await fetch('api/posts.php?latest_check=1&limit=5', {
+            const res = await fetch('api/posts.php?latest_check=1&limit=10', {
                 credentials: 'same-origin',
                 cache: 'no-store'
             });
