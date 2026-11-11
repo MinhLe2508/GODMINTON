@@ -83,68 +83,116 @@ document.addEventListener('DOMContentLoaded', () => {
         return ok ? {} : null;
     }
 
+    function renderBookingsList(bookings, isOffline = false, updatedAt = null) {
+        if (!bookings.length) {
+            container.innerHTML = '<div class="card p-5 text-center rounded-4 border shadow-sm"><h5>Bạn chưa có đơn đặt sân</h5><a href="courts.php" class="btn btn-teal rounded-pill px-4 mt-2 fw-bold">Tìm sân để đặt</a></div>';
+            return;
+        }
+
+        const updatedStr = updatedAt ? new Date(updatedAt).toLocaleString('vi-VN') : 'Phiên trước';
+        const offlineBanner = isOffline ? `
+            <div class="alert alert-warning py-3 px-3 rounded-4 shadow-sm mb-4 border-warning-subtle">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-warning text-dark px-2 py-1 fw-bold rounded-pill"><i class="fa-solid fa-wifi-slash me-1"></i>Chế độ ngoại tuyến</span>
+                        <span class="small text-dark fw-semibold">Đang hiển thị bản sao lịch thi đấu đã lưu trên máy (lần cuối: ${updatedStr}).</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold" onclick="location.reload()"><i class="fa-solid fa-rotate-right me-1"></i>Thử tải lại</button>
+                </div>
+            </div>
+        ` : '';
+
+        const cardsHtml = bookings.map(b => {
+            const depositStr = BookingAccount.money(b.deposit_amount);
+            const refundBankLine = b.refund_account_number
+                ? `<div class="mt-1 small"><strong>TK nhận hoàn cọc:</strong> ${BookingAccount.escape(b.refund_bank)} · <span class="font-monospace fw-bold">${BookingAccount.escape(b.refund_account_number)}</span> ${b.refund_account_name ? `(${BookingAccount.escape(b.refund_account_name)})` : ''} · Mã đối soát SePay: <code>${BookingAccount.escape(b.refund_transfer_code || '')}</code></div>`
+                : `<div class="mt-1 small text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Bạn chưa cung cấp số tài khoản nhận hoàn cọc. Vui lòng bấm <strong>"Nhập STK nhận hoàn cọc"</strong> bên dưới.</div>`;
+
+            let statusAlert = '';
+            if (b.booking_status === 'checked_in') {
+                statusAlert = `<div class="alert alert-success py-2 px-3 small my-2"><i class="fa-solid fa-person-running me-1"></i>Bạn đã nhận sân và đang thi đấu tại <strong>${BookingAccount.escape(b.sub_court_name)}</strong>. Vui lòng thanh toán số tiền còn lại (${BookingAccount.money(b.remaining_amount)}) tại quầy khi trả sân.</div>`;
+            } else if (b.booking_status === 'no_show') {
+                if (b.is_deposit_refunded) {
+                    if (b.payment_status === 'refunded') {
+                        statusAlert = `<div class="alert alert-success py-2 px-3 small my-2"><i class="fa-solid fa-circle-check me-1"></i><strong>Đã hoàn cọc 100% (${depositStr}):</strong> Chủ sân đã hoàn trả tiền cọc theo đặc quyền Grace Pass Hội viên.${b.refund_note ? `<div class="mt-1 text-muted">${BookingAccount.escape(b.refund_note)}</div>` : ''}</div>`;
+                    } else {
+                        statusAlert = `<div class="alert alert-info py-2 px-3 small my-2"><i class="fa-solid fa-gift me-1"></i><strong>Đặc quyền Hội viên (Chờ hoàn cọc ${depositStr}):</strong> Đơn đã kích hoạt Grace Pass cứu cọc. Chủ sân đang xử lý chuyển khoản hoàn tiền qua SePay.${refundBankLine}</div>`;
+                    }
+                } else {
+                    statusAlert = `<div class="alert alert-warning py-2 px-3 small my-2"><i class="fa-solid fa-user-xmark me-1"></i>Đơn đặt ghi nhận vắng mặt. Tiền cọc (${depositStr}) được giữ lại theo quy định sân.</div>`;
+                }
+            } else if (b.booking_status === 'cancelled') {
+                if (b.payment_status === 'unpaid') {
+                    statusAlert = `<div class="alert alert-light border py-2 px-3 small my-2 text-muted"><i class="fa-solid fa-ban text-secondary me-1"></i>Đơn đặt sân đã hủy khi chưa thanh toán tiền cọc.</div>`;
+                } else if (b.is_deposit_refunded) {
+                    if (b.payment_status === 'refunded') {
+                        statusAlert = `<div class="alert alert-success py-2 px-3 small my-2"><i class="fa-solid fa-circle-check me-1"></i><strong>Đã hoàn cọc 100% (${depositStr}):</strong> Chủ sân đã chuyển khoản hoàn trả tiền cọc cho bạn.${b.refund_note ? `<div class="mt-1 text-muted">${BookingAccount.escape(b.refund_note)}</div>` : ''}</div>`;
+                    } else {
+                        statusAlert = `<div class="alert alert-info py-2 px-3 small my-2"><i class="fa-solid fa-clock-rotate-left text-teal me-1"></i><strong>Chờ hoàn cọc 100% (${depositStr}):</strong> Đơn hủy hợp lệ được bảo đảm hoàn cọc qua SePay.${b.refund_note ? `<div class="mt-1 text-muted">${BookingAccount.escape(b.refund_note)}</div>` : ''}${refundBankLine}</div>`;
+                    }
+                } else {
+                    statusAlert = `<div class="alert alert-warning py-2 px-3 small my-2"><i class="fa-solid fa-shield-halved me-1"></i><strong>Khách hủy sát giờ (Giữ cọc ${depositStr}):</strong> Do hủy dưới 6 tiếng trước giờ thi đấu (ngoài 15 phút ân hạn), tiền cọc được giữ lại bù rủi ro trống sân.</div>`;
+                }
+            } else if (b.booking_status === 'completed') {
+                statusAlert = `<div class="alert alert-light border py-2 px-3 small my-2 text-muted"><i class="fa-solid fa-circle-check text-success me-1"></i>Lượt chơi đã kết thúc thành công. Cảm ơn bạn đã thi đấu tại GODMINTON!</div>`;
+            }
+
+            const cancelBtnLabel = b.is_member
+                ? 'Hủy khẩn cấp (Hội viên)'
+                : (b.will_refund_deposit ? 'Hủy đơn (Hoàn cọc 100%)' : (b.payment_status === 'unpaid' ? 'Hủy đơn' : 'Hủy đơn (Mất cọc)'));
+
+            const showUpdateBankBtn = ['cancelled', 'no_show'].includes(b.booking_status) && b.is_deposit_refunded && b.payment_status !== 'refunded' && b.deposit_amount > 0;
+
+            const actionsHtml = isOffline
+                ? `<span class="badge bg-secondary-subtle text-secondary small py-2 px-3 rounded-pill"><i class="fa-solid fa-shield-halved me-1"></i>Chế độ xem ngoại tuyến (Cần Internet để hủy / sửa đơn)</span>`
+                : `
+                    ${b.can_cancel ? `<button class="btn btn-outline-danger btn-sm rounded-pill" data-cancel="${b.id}"><i class="fa-solid fa-ban me-1"></i>${cancelBtnLabel}</button>` : (b.can_rebook === false ? '<span class="small text-muted">Sân đã ngừng nhận đặt</span>' : `<a class="btn btn-outline-secondary btn-sm rounded-pill" href="booking.php?court_id=${Number(b.rebook_court_id || b.court_id)}"><i class="fa-solid fa-rotate-right me-1"></i>Đặt lại</a>`)}
+                    ${showUpdateBankBtn ? `<button class="btn btn-teal btn-sm rounded-pill text-white" style="background:#0d9488;" data-update-bank="${b.id}"><i class="fa-solid fa-building-columns me-1"></i>${b.refund_account_number ? 'Đổi STK nhận hoàn cọc' : 'Nhập STK nhận hoàn cọc'}</button>` : ''}
+                `;
+
+            return `<div class="card border rounded-4 p-4 mb-3 shadow-sm ${b.booking_status === 'checked_in' ? 'border-success' : ''}">
+                <div class="d-flex justify-content-between flex-wrap gap-2"><strong>${BookingAccount.escape(b.booking_code)}</strong>${BookingAccount.badge(b.booking_status)}</div>
+                <h5 class="mt-3 mb-1">${BookingAccount.escape(b.court_name)}</h5>
+                <p class="text-muted small mb-2">${BookingAccount.escape(b.court_address)}</p>
+                <p class="mb-2"><strong class="text-teal">${BookingAccount.escape(b.sub_court_name)}</strong> · ${BookingAccount.escape(b.booking_date)} · <span class="fw-bold">${BookingAccount.escape(b.time_range)}</span></p>
+                <p class="mb-2">Tổng tiền: <strong>${BookingAccount.money(b.total_amount)}</strong> · Tiền cọc: <strong class="text-teal">${depositStr}</strong> ${b.remaining_amount > 0 && !['completed','cancelled','no_show'].includes(b.booking_status) ? `· Còn thu tại quầy: <strong class="text-danger">${BookingAccount.money(b.remaining_amount)}</strong>` : ''}</p>
+                <p class="small text-muted mb-2">Phương thức: ${BookingAccount.escape(b.payment_method || 'VietQR')}<br>Ghi chú: ${BookingAccount.escape(b.notes || '—')}</p>
+                ${statusAlert}
+                <div class="mt-2 d-flex flex-wrap gap-2">
+                    ${actionsHtml}
+                </div>
+            </div>`;
+        }).join('');
+
+        container.innerHTML = offlineBanner + cardsHtml;
+    }
+
     async function load() {
         container.textContent = 'Đang tải lịch sử từ MySQL...';
         try {
             const bookings = await BookingAccount.request('api/bookings.php');
             currentBookings = Array.isArray(bookings) ? bookings : [];
-            if (!currentBookings.length) {container.innerHTML='<div class="card p-5 text-center"><h5>Bạn chưa có đơn đặt sân</h5><a href="courts.php">Tìm sân để đặt</a></div>';return;}
-            container.innerHTML = currentBookings.map(b => {
-                const depositStr = BookingAccount.money(b.deposit_amount);
-                const refundBankLine = b.refund_account_number
-                    ? `<div class="mt-1 small"><strong>TK nhận hoàn cọc:</strong> ${BookingAccount.escape(b.refund_bank)} · <span class="font-monospace fw-bold">${BookingAccount.escape(b.refund_account_number)}</span> ${b.refund_account_name ? `(${BookingAccount.escape(b.refund_account_name)})` : ''} · Mã đối soát SePay: <code>${BookingAccount.escape(b.refund_transfer_code || '')}</code></div>`
-                    : `<div class="mt-1 small text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Bạn chưa cung cấp số tài khoản nhận hoàn cọc. Vui lòng bấm <strong>"Nhập STK nhận hoàn cọc"</strong> bên dưới.</div>`;
-
-                let statusAlert = '';
-                if (b.booking_status === 'checked_in') {
-                    statusAlert = `<div class="alert alert-success py-2 px-3 small my-2"><i class="fa-solid fa-person-running me-1"></i>Bạn đã nhận sân và đang thi đấu tại <strong>${BookingAccount.escape(b.sub_court_name)}</strong>. Vui lòng thanh toán số tiền còn lại (${BookingAccount.money(b.remaining_amount)}) tại quầy khi trả sân.</div>`;
-                } else if (b.booking_status === 'no_show') {
-                    if (b.is_deposit_refunded) {
-                        if (b.payment_status === 'refunded') {
-                            statusAlert = `<div class="alert alert-success py-2 px-3 small my-2"><i class="fa-solid fa-circle-check me-1"></i><strong>Đã hoàn cọc 100% (${depositStr}):</strong> Chủ sân đã hoàn trả tiền cọc theo đặc quyền Grace Pass Hội viên.${b.refund_note ? `<div class="mt-1 text-muted">${BookingAccount.escape(b.refund_note)}</div>` : ''}</div>`;
-                        } else {
-                            statusAlert = `<div class="alert alert-info py-2 px-3 small my-2"><i class="fa-solid fa-gift me-1"></i><strong>Đặc quyền Hội viên (Chờ hoàn cọc ${depositStr}):</strong> Đơn đã kích hoạt Grace Pass cứu cọc. Chủ sân đang xử lý chuyển khoản hoàn tiền qua SePay.${refundBankLine}</div>`;
-                        }
-                    } else {
-                        statusAlert = `<div class="alert alert-warning py-2 px-3 small my-2"><i class="fa-solid fa-user-xmark me-1"></i>Đơn đặt ghi nhận vắng mặt. Tiền cọc (${depositStr}) được giữ lại theo quy định sân.</div>`;
-                    }
-                } else if (b.booking_status === 'cancelled') {
-                    if (b.payment_status === 'unpaid') {
-                        statusAlert = `<div class="alert alert-light border py-2 px-3 small my-2 text-muted"><i class="fa-solid fa-ban text-secondary me-1"></i>Đơn đặt sân đã hủy khi chưa thanh toán tiền cọc.</div>`;
-                    } else if (b.is_deposit_refunded) {
-                        if (b.payment_status === 'refunded') {
-                            statusAlert = `<div class="alert alert-success py-2 px-3 small my-2"><i class="fa-solid fa-circle-check me-1"></i><strong>Đã hoàn cọc 100% (${depositStr}):</strong> Chủ sân đã chuyển khoản hoàn trả tiền cọc cho bạn.${b.refund_note ? `<div class="mt-1 text-muted">${BookingAccount.escape(b.refund_note)}</div>` : ''}</div>`;
-                        } else {
-                            statusAlert = `<div class="alert alert-info py-2 px-3 small my-2"><i class="fa-solid fa-clock-rotate-left text-teal me-1"></i><strong>Chờ hoàn cọc 100% (${depositStr}):</strong> Đơn hủy hợp lệ được bảo đảm hoàn cọc qua SePay.${b.refund_note ? `<div class="mt-1 text-muted">${BookingAccount.escape(b.refund_note)}</div>` : ''}${refundBankLine}</div>`;
-                        }
-                    } else {
-                        statusAlert = `<div class="alert alert-warning py-2 px-3 small my-2"><i class="fa-solid fa-shield-halved me-1"></i><strong>Khách hủy sát giờ (Giữ cọc ${depositStr}):</strong> Do hủy dưới 6 tiếng trước giờ thi đấu (ngoài 15 phút ân hạn), tiền cọc được giữ lại bù rủi ro trống sân.</div>`;
-                    }
-                } else if (b.booking_status === 'completed') {
-                    statusAlert = `<div class="alert alert-light border py-2 px-3 small my-2 text-muted"><i class="fa-solid fa-circle-check text-success me-1"></i>Lượt chơi đã kết thúc thành công. Cảm ơn bạn đã thi đấu tại GODMINTON!</div>`;
-                }
-
-                const cancelBtnLabel = b.is_member
-                    ? 'Hủy khẩn cấp (Hội viên)'
-                    : (b.will_refund_deposit ? 'Hủy đơn (Hoàn cọc 100%)' : (b.payment_status === 'unpaid' ? 'Hủy đơn' : 'Hủy đơn (Mất cọc)'));
-
-                const showUpdateBankBtn = ['cancelled', 'no_show'].includes(b.booking_status) && b.is_deposit_refunded && b.payment_status !== 'refunded' && b.deposit_amount > 0;
-
-                return `<div class="card border rounded-4 p-4 mb-3 shadow-sm ${b.booking_status === 'checked_in' ? 'border-success' : ''}">
-                    <div class="d-flex justify-content-between flex-wrap gap-2"><strong>${BookingAccount.escape(b.booking_code)}</strong>${BookingAccount.badge(b.booking_status)}</div>
-                    <h5 class="mt-3 mb-1">${BookingAccount.escape(b.court_name)}</h5>
-                    <p class="text-muted small mb-2">${BookingAccount.escape(b.court_address)}</p>
-                    <p class="mb-2"><strong class="text-teal">${BookingAccount.escape(b.sub_court_name)}</strong> · ${BookingAccount.escape(b.booking_date)} · <span class="fw-bold">${BookingAccount.escape(b.time_range)}</span></p>
-                    <p class="mb-2">Tổng tiền: <strong>${BookingAccount.money(b.total_amount)}</strong> · Tiền cọc: <strong class="text-teal">${depositStr}</strong> ${b.remaining_amount > 0 && !['completed','cancelled','no_show'].includes(b.booking_status) ? `· Còn thu tại quầy: <strong class="text-danger">${BookingAccount.money(b.remaining_amount)}</strong>` : ''}</p>
-                    <p class="small text-muted mb-2">Phương thức: ${BookingAccount.escape(b.payment_method || 'VietQR')}<br>Ghi chú: ${BookingAccount.escape(b.notes || '—')}</p>
-                    ${statusAlert}
-                    <div class="mt-2 d-flex flex-wrap gap-2">
-                        ${b.can_cancel ? `<button class="btn btn-outline-danger btn-sm rounded-pill" data-cancel="${b.id}"><i class="fa-solid fa-ban me-1"></i>${cancelBtnLabel}</button>` : (b.can_rebook === false ? '<span class="small text-muted">Sân đã ngừng nhận đặt</span>' : `<a class="btn btn-outline-secondary btn-sm rounded-pill" href="booking.php?court_id=${Number(b.rebook_court_id || b.court_id)}"><i class="fa-solid fa-rotate-right me-1"></i>Đặt lại</a>`)}
-                        ${showUpdateBankBtn ? `<button class="btn btn-teal btn-sm rounded-pill text-white" style="background:#0d9488;" data-update-bank="${b.id}"><i class="fa-solid fa-building-columns me-1"></i>${b.refund_account_number ? 'Đổi STK nhận hoàn cọc' : 'Nhập STK nhận hoàn cọc'}</button>` : ''}
+            renderBookingsList(currentBookings, false);
+        } catch (e) {
+            const offlineData = BookingAccount.getOfflineBookings();
+            if (offlineData && Array.isArray(offlineData.bookings) && offlineData.bookings.length) {
+                currentBookings = offlineData.bookings;
+                renderBookingsList(currentBookings, true, offlineData.updated_at);
+            } else {
+                container.innerHTML = `
+                    <div class="card p-5 text-center rounded-4 border shadow-sm">
+                        <i class="fa-solid fa-wifi-slash text-warning fs-1 mb-3"></i>
+                        <h5 class="fw-bold">Bạn đang ngoại tuyến</h5>
+                        <p class="text-muted small mb-3">Không thể kết nối tới máy chủ và chưa có lịch thi đấu nào được lưu trữ trên thiết bị này.</p>
+                        <div>
+                            <button class="btn btn-teal rounded-pill px-4 fw-bold" onclick="location.reload()">
+                                <i class="fa-solid fa-rotate-right me-1"></i> Thử tải lại
+                            </button>
+                        </div>
                     </div>
-                </div>`;
-            }).join('');
-        } catch (e) {container.textContent=e.message;const retry=document.createElement('button');retry.textContent='Thử lại';retry.className='btn btn-outline-secondary m-2';retry.onclick=load;container.append(retry);}
+                `;
+            }
+        }
     }
     container.addEventListener('click', async event => {
         const updateBankBtn = event.target.closest('[data-update-bank]');

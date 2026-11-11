@@ -29,7 +29,24 @@ window.BookingAccount = (() => {
             throw new Error(result.message || 'Thao tác thất bại.');
         }
         if (result.data?.csrf_token) token = result.data.csrf_token;
+        if (url.includes('api/bookings.php') && Array.isArray(result.data)) {
+            saveOfflineBookings(result.data);
+        }
         return result.data;
+    }
+    function getOfflineBookings() {
+        try {
+            const raw = localStorage.getItem('godminton_offline_bookings');
+            return raw ? JSON.parse(raw) : null;
+        } catch(e) { return null; }
+    }
+    function saveOfflineBookings(list) {
+        try {
+            localStorage.setItem('godminton_offline_bookings', JSON.stringify({
+                updated_at: new Date().toISOString(),
+                bookings: Array.isArray(list) ? list : []
+            }));
+        } catch(e) {}
     }
     function identity() {
         if (!identityPromise) identityPromise = request('api/auth/me.php').catch(e => { identityPromise = null; throw e; });
@@ -55,6 +72,10 @@ window.BookingAccount = (() => {
         const s = status[value] || ['bg-secondary', escape(value) || 'Không rõ'];
         return `<span class="badge ${s[0]} px-2 py-1 rounded-pill">${s[1]}</span>`;
     }
-    async function logout() {await request('api/auth/logout.php',{method:'POST',body:'{}'});location.href='auth.php';}
-    return {request,identity,escape,money,notify,confirm,badge,logout};
+    async function logout() {
+        try { localStorage.removeItem('godminton_offline_bookings'); } catch(e) {}
+        await request('api/auth/logout.php',{method:'POST',body:'{}'});
+        location.href='auth.php';
+    }
+    return {request,identity,escape,money,notify,confirm,badge,logout,getOfflineBookings,saveOfflineBookings};
 })();

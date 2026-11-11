@@ -4,7 +4,7 @@
  * Hỗ trợ: Pre-cache, Offline Fallback, Dynamic Network-First, Web Push Notification
  */
 
-const CACHE_VERSION = 'godminton-v1.3.3-bell-scroll';
+const CACHE_VERSION = 'godminton-v1.3.4-offline-schedule';
 const CACHE_STATIC  = `godminton-static-${CACHE_VERSION}`;
 const CACHE_RUNTIME = `godminton-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL   = 'offline.php';
@@ -14,6 +14,8 @@ const PRECACHE_ASSETS = [
     OFFLINE_URL,
     'manifest.json',
     'assets/css/style.css',
+    'assets/js/booking-account-client.js',
+    'assets/js/history.js',
     'assets/img/logo-teal.svg',
     'assets/img/icons/icon-192.png',
     'assets/img/icons/icon-512.png',
@@ -72,8 +74,8 @@ self.addEventListener('fetch', event => {
     // Bỏ qua các scheme không hỗ trợ (chrome-extension://, v.v.)
     if (!url.protocol.startsWith('http')) return;
 
-    // Never cache authentication or account pages, even when offline.
-    if (req.method !== 'GET' || /\/(?:owner-application|auth(?:-action)?|profile|history|payment|confirm|booking|admin-[^/]+)\.php$/i.test(url.pathname)) return;
+    // Never cache authentication or admin mutation pages, even when offline.
+    if (req.method !== 'GET' || /\/(?:owner-application|auth(?:-action)?|payment|confirm|booking|admin-[^/]+)\.php$/i.test(url.pathname)) return;
 
     // QUY TẮC SỐ 1: API GIAO DỊCH → NETWORK-ONLY TUYỆT ĐỐI
     // Không bao giờ cache api/hold, api/bookings, api/slots, api/auth, v.v.
