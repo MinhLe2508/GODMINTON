@@ -460,18 +460,21 @@ body.admin-body {
 .yt-bell-dropdown {
     position: fixed !important;
     z-index: 1060 !important;
-    width: 250px;
+    width: 360px !important;
+    max-width: calc(100vw - 16px) !important;
     background: #ffffff;
-    border-radius: 14px;
-    padding: 8px 0;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 16px !important;
+    padding: 0 !important;
+    box-shadow: 0 16px 40px -4px rgba(15, 23, 42, 0.16), 0 4px 16px -2px rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(13, 148, 136, 0.18);
     opacity: 0;
     transform: translateY(-8px) scale(0.96);
     pointer-events: none;
     transition: opacity 0.2s cubic-bezier(0.2, 0.8, 0.4, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.4, 1);
     font-family: inherit;
     user-select: none;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
 }
 
 .yt-bell-dropdown.show {
@@ -481,9 +484,38 @@ body.admin-body {
 }
 
 [data-bs-theme="dark"] .yt-bell-dropdown {
-    background: #282828;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+    background: #18181b !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.7), 0 4px 16px -2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.bell-dropdown-header {
+    background: rgba(13, 148, 136, 0.05);
+}
+
+[data-bs-theme="dark"] .bell-dropdown-header {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .bell-dropdown-header .text-dark {
+    color: #f8fafc !important;
+}
+
+.bell-header-action-btn:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+[data-bs-theme="dark"] .bell-header-action-btn {
+    background: #27272a !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] .bell-header-action-btn:hover {
+    background: #3f3f46 !important;
+    color: #ffffff !important;
 }
 
 .yt-bell-item {
@@ -502,16 +534,16 @@ body.admin-body {
 }
 
 .yt-bell-item:hover {
-    background: #f2f2f2;
+    background: #f8fafc;
 }
 
 [data-bs-theme="dark"] .yt-bell-item:hover {
-    background: #3f3f3f;
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .yt-bell-item .yt-bell-icon {
-    width: 32px;
-    font-size: 1.15rem;
+    width: 28px;
+    font-size: 1.1rem;
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -546,12 +578,12 @@ body.admin-body {
 
 .yt-bell-divider {
     height: 1px;
-    background: #e5e5e5;
-    margin: 6px 0;
+    background: #e5e7eb;
+    margin: 4px 0;
 }
 
 [data-bs-theme="dark"] .yt-bell-divider {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .yt-bell-item.yt-bell-test {
@@ -587,6 +619,76 @@ body.admin-body {
 
 .bell-explore-feed-scroll::-webkit-scrollbar-thumb:hover {
     background: rgba(13, 148, 136, 0.5);
+}
+
+.bell-reminder-card {
+    transition: all 0.15s ease;
+}
+
+.bell-reminder-card:hover {
+    background: rgba(13, 148, 136, 0.09) !important;
+    border-color: rgba(13, 148, 136, 0.35) !important;
+}
+
+.bell-post-item:hover {
+    background: #f8fafc;
+}
+
+.bell-post-item:hover .bell-post-title {
+    color: #0d9488 !important;
+}
+
+.bell-post-dismiss-btn:hover,
+.bell-reminder-dismiss-btn:hover {
+    opacity: 0.9 !important;
+    transform: scale(1.15);
+}
+
+[data-bs-theme="dark"] .bell-reminder-card {
+    background: rgba(45, 212, 191, 0.08) !important;
+    border-color: rgba(45, 212, 191, 0.25) !important;
+}
+
+[data-bs-theme="dark"] .bell-reminder-card:hover {
+    background: rgba(45, 212, 191, 0.14) !important;
+}
+
+[data-bs-theme="dark"] .bell-reminder-card .text-dark,
+[data-bs-theme="dark"] .bell-post-item .text-dark,
+[data-bs-theme="dark"] #bellPushSwitchLabel {
+    color: #f1f5f9 !important;
+}
+
+[data-bs-theme="dark"] .bell-reminder-card .bg-white {
+    background: #27272a !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-bs-theme="dark"] .bell-reminder-card .bg-light {
+    background: #27272a !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] .bell-post-item {
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-bs-theme="dark"] .bell-post-item:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+[data-bs-theme="dark"] .bell-reminder-dismiss-btn,
+[data-bs-theme="dark"] .bell-post-dismiss-btn {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.text-purple {
+    color: #9333ea !important;
+}
+
+[data-bs-theme="dark"] .text-purple {
+    color: #c084fc !important;
 }
 
 @media (max-width: 991px) {
@@ -648,17 +750,17 @@ body.admin-body {
         height: 6px;
     }
     .yt-bell-dropdown {
-        width: min(260px, calc(100vw - 24px)) !important;
-        max-width: calc(100vw - 24px) !important;
-        border-radius: 12px !important;
-        padding: 6px 0 !important;
+        width: min(350px, calc(100vw - 16px)) !important;
+        max-width: calc(100vw - 16px) !important;
+        border-radius: 14px !important;
+        padding: 0 !important;
     }
     .yt-bell-item {
-        padding: 8px 12px !important;
+        padding: 8px 14px !important;
         font-size: 0.86rem !important;
     }
     .yt-bell-item .yt-bell-icon {
-        width: 28px !important;
+        width: 24px !important;
         font-size: 0.92rem !important;
     }
     .yt-bell-item .yt-bell-label {

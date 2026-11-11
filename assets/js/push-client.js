@@ -286,6 +286,23 @@ window.PushClient = (() => {
         // Giúp người dùng 100% nhìn thấy thông báo demo ngay lập tức bất kể cài đặt Focus Assist của Windows
         showInAppPushBanner(payload);
 
+        // Lưu bản ghi nhắc nhở vào bảng thông báo trong chuông để người dùng xem lại
+        try {
+            const list = JSON.parse(localStorage.getItem('godminton_active_reminders') || '[]');
+            list.unshift({
+                id: 'test-' + Date.now(),
+                court_name: 'Sân Cầu Lông GODMINTON',
+                sub_court: 'Thảm A1 (Demo)',
+                booking_code: 'GDM-DEMO',
+                time_range: 'Bắt đầu sau 5 phút',
+                minutes_left: 5,
+                timestamp: Date.now(),
+                url: 'history.php'
+            });
+            localStorage.setItem('godminton_active_reminders', JSON.stringify(list.slice(0, 5)));
+            refreshPostFeed();
+        } catch (_) {}
+
         // 7. Đồng thời kích hoạt thông báo hệ điều hành / trình duyệt (OS Push Notification)
         try {
             if (reg && reg.showNotification) {
@@ -448,39 +465,282 @@ window.PushClient = (() => {
         }[c]));
     }
 
+    function getDismissedPostIds() {
+        try {
+            const raw = localStorage.getItem('godminton_dismissed_posts_v1');
+            return raw ? JSON.parse(raw) : [];
+        } catch (_) { return []; }
+    }
+
+    function saveDismissedPostIds(ids) {
+        try {
+            localStorage.setItem('godminton_dismissed_posts_v1', JSON.stringify(ids));
+        } catch (_) {}
+    }
+
+    function getDismissedReminderIds() {
+        try {
+            const raw = sessionStorage.getItem('godminton_dismissed_reminders');
+            return raw ? JSON.parse(raw) : [];
+        } catch (_) { return []; }
+    }
+
+    function saveDismissedReminderIds(ids) {
+        try {
+            sessionStorage.setItem('godminton_dismissed_reminders', JSON.stringify(ids));
+        } catch (_) {}
+    }
+
+    function getUpcomingCourtReminders() {
+        const reminders = [];
+        const dismissed = getDismissedReminderIds();
+
+        // 1. Kiểm tra reminders từ push server hoặc nút Gửi thử (godminton_active_reminders)
+        try {
+            const rawActive = localStorage.getItem('godminton_active_reminders');
+            if (rawActive) {
+                const list = JSON.parse(rawActive);
+                if (Array.isArray(list)) {
+                    list.forEach(r => {
+                        if (dismissed.includes(String(r.id))) return;
+                        const ts = r.timestamp || Date.now();
+                        if (Date.now() - ts < 7200000) { // Trong vòng 2 giờ
+                            reminders.push({
+                                id: String(r.id),
+                                type: 'push_reminder',
+                                court_name: r.court_name || 'Sân Cầu Lông GODMINTON',
+                                sub_court: r.sub_court || 'Thảm thi đấu',
+                                booking_code: r.booking_code || 'GDM',
+                                time_range: r.time_range || 'Sắp bắt đầu',
+                                countdownText: r.minutes_left ? `Còn ${r.minutes_left} phút` : 'Sắp diễn ra',
+                                badgeCls: 'bg-danger text-white',
+                                badgeText: 'NHẮC LỊCH SÂN',
+                                timeColor: 'text-danger',
+                                url: r.url || 'history.php'
+                            });
+                        }
+                    });
+                }
+            }
+        } catch (_) {}
+
+        // 2. Tự động quét từ danh sách đơn đặt sân đã lưu trên thiết bị (godminton_offline_bookings)
+        try {
+            const rawBookings = localStorage.getItem('godminton_offline_bookings');
+            if (rawBookings) {
+                const data = JSON.parse(rawBookings);
+                const bookings = Array.isArray(data.bookings) ? data.bookings : [];
+                const now = new Date();
+
+                bookings.forEach(b => {
+                    if (!['confirmed', 'checked_in'].includes(b.booking_status)) return;
+                    if (!b.booking_date || !b.start_time) return;
+
+                    let startTime = new Date(`${b.booking_date}T${b.start_time.length === 5 ? b.start_time + ':00' : b.start_time}`);
+                    if (isNaN(startTime.getTime()) && b.booking_date.includes('/')) {
+                        const parts = b.booking_date.split('/');
+                        if (parts.length === 3) {
+                            startTime = new Date(`${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}T${b.start_time.length === 5 ? b.start_time + ':00' : b.start_time}`);
+                        }
+                    }
+                    if (isNaN(startTime.getTime())) return;
+
+                    const endTimeStr = b.end_time ? (b.end_time.length === 5 ? b.end_time + ':00' : b.end_time) : null;
+                    let endTime = endTimeStr ? new Date(`${b.booking_date}T${endTimeStr}`) : new Date(startTime.getTime() + 5400000);
+                    if (isNaN(endTime.getTime())) endTime = new Date(startTime.getTime() + 5400000);
+
+                    const diffMs = startTime.getTime() - now.getTime();
+                    const diffMinutes = Math.round(diffMs / 60000);
+
+                    const isOngoing = now >= startTime && now <= endTime;
+                    const isUpcoming = diffMinutes > 0 && diffMinutes <= 1440; // Trong vòng 24 giờ tới
+
+                    const reminderId = 'booking-' + b.id;
+                    if (dismissed.includes(reminderId)) return;
+
+                    if (isOngoing || isUpcoming) {
+                        if (!reminders.some(r => r.booking_code === b.booking_code)) {
+                            let countdownText = '';
+                            let badgeCls = 'bg-teal text-white';
+                            let badgeText = 'LỊCH SÂN HÔM NAY';
+                            let timeColor = 'text-teal';
+
+                            if (isOngoing) {
+                                countdownText = 'Đang diễn ra';
+                                badgeCls = 'bg-primary text-white';
+                                badgeText = 'ĐANG THI ĐẤU';
+                                timeColor = 'text-primary';
+                            } else if (diffMinutes <= 60) {
+                                countdownText = `Còn ${diffMinutes} phút`;
+                                badgeCls = 'bg-danger text-white';
+                                badgeText = 'SẮP ĐẾN GIỜ';
+                                timeColor = 'text-danger';
+                            } else if (diffMinutes <= 180) {
+                                countdownText = `Còn ~${Math.round(diffMinutes / 60)} tiếng`;
+                                badgeCls = 'bg-warning text-dark';
+                                badgeText = 'SẮP THI ĐẤU';
+                                timeColor = 'text-dark';
+                            } else {
+                                countdownText = `Bắt đầu ${b.start_time}`;
+                            }
+
+                            reminders.push({
+                                id: reminderId,
+                                type: 'match_schedule',
+                                court_name: b.court_name || 'Sân cầu lông',
+                                sub_court: b.sub_court_name || 'Thảm thi đấu',
+                                booking_code: b.booking_code || 'GDM',
+                                time_range: b.time_range || `${b.start_time} - ${b.end_time}`,
+                                countdownText,
+                                badgeCls,
+                                badgeText,
+                                timeColor,
+                                minutes_left: diffMinutes,
+                                url: 'history.php'
+                            });
+                        }
+                    }
+                });
+            }
+        } catch (_) {}
+
+        reminders.sort((a, b) => (a.minutes_left ?? 9999) - (b.minutes_left ?? 9999));
+        return reminders;
+    }
+
     function refreshPostFeed() {
         const feedBox = document.getElementById('bellExploreFeedList');
         if (!feedBox) return;
         const api = window.GodmintonPostNotify;
-        const posts = (api && typeof api.getLatestPosts === 'function') ? api.getLatestPosts() : [];
-        if (!posts.length) {
-            feedBox.innerHTML = '<div class="px-3 py-2 small text-muted">Chưa có bài viết mới.</div>';
+        const allPosts = (api && typeof api.getLatestPosts === 'function') ? api.getLatestPosts() : [];
+        const dismissedIds = getDismissedPostIds();
+        const activePosts = allPosts.filter(p => !dismissedIds.includes(Number(p.id)));
+
+        const reminders = getUpcomingCourtReminders();
+
+        if (!reminders.length && !activePosts.length) {
+            feedBox.innerHTML = '<div class="px-3 py-4 text-center small text-muted"><div class="mb-1 text-teal opacity-50"><i class="fa-regular fa-bell-slash fs-4"></i></div>Chưa có thông báo mới.</div>';
             return;
         }
-        feedBox.innerHTML = posts.map(p => {
-            const unread = api && typeof api.isPostUnread === 'function' ? api.isPostUnread(p) : false;
-            const icon = p.type === 'event' ? 'fa-trophy text-purple' : (p.type === 'membership' ? 'fa-crown text-warning' : 'fa-bullhorn text-danger');
-            const url = `post-detail.php?slug=${encodeURIComponent(p.slug || '')}`;
-            return `
-                <a href="${url}" class="d-flex align-items-start gap-2 px-3 py-2 text-decoration-none border-bottom bell-post-item" data-post-id="${p.id}" style="color:inherit; font-size:0.8rem; max-width:100%; overflow:hidden;">
-                    <i class="fa-solid ${icon} mt-1 flex-shrink-0"></i>
-                    <div class="flex-grow-1" style="min-width:0; max-width:100%; overflow:hidden;">
-                        <div class="fw-bold" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</div>
-                        <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
-                            ${unread ? '<span class="badge bg-danger text-white rounded-pill" style="font-size:0.6rem;">MỚI</span>' : '<span class="text-muted" style="font-size:0.68rem;">Đã xem</span>'}
-                            ${p.voucher_code ? `<span class="badge bg-teal text-white rounded-pill" style="font-size:0.6rem;">🎁 -${escapeHtml(p.voucher_discount_percent)}%</span>` : ''}
+
+        let html = '';
+
+        // 1. Render các thông báo nhắc lịch sân sắp đến giờ (Hiển thị dạng Card nổi bật trên cùng)
+        if (reminders.length > 0) {
+            html += reminders.map(r => `
+                <div class="bell-reminder-card p-2 mx-2 my-2 rounded-3 border position-relative" style="background:rgba(13, 148, 136, 0.05); border-color:rgba(13, 148, 136, 0.22) !important;">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="badge ${r.badgeCls} rounded-pill px-2 py-0" style="font-size:0.62rem; font-weight:700; line-height:1.7;">
+                            <i class="fa-solid fa-bell me-1"></i>${r.badgeText}
+                        </span>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="${r.timeColor} fw-bold" style="font-size:0.72rem;">
+                                <i class="fa-regular fa-clock me-1"></i>${r.countdownText}
+                            </span>
+                            <button type="button" class="btn-close p-1 bell-reminder-dismiss-btn" data-reminder-id="${r.id}" title="Ẩn nhắc lịch này" aria-label="Đóng" style="font-size:0.5rem; opacity:0.5;"></button>
                         </div>
                     </div>
-                </a>
-            `;
-        }).join('');
+                    <a href="${r.url || 'history.php'}" class="text-decoration-none text-dark d-block bell-reminder-link" style="min-width:0;">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="flex-shrink-0 d-inline-flex align-items-center justify-content-center rounded-circle text-teal bg-white shadow-sm border" style="width:26px; height:26px; font-size:0.75rem;">
+                                <i class="fa-solid fa-person-running"></i>
+                            </div>
+                            <div class="flex-grow-1" style="min-width:0;">
+                                <div class="fw-bold text-dark text-truncate" style="font-size:0.8rem;" title="${escapeHtml(r.court_name)} · ${escapeHtml(r.sub_court)}">
+                                    ${escapeHtml(r.court_name)} · <span class="text-teal">${escapeHtml(r.sub_court)}</span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between text-muted mt-0" style="font-size:0.7rem;">
+                                    <span class="text-truncate me-1"><i class="fa-regular fa-calendar-check me-1 text-teal"></i>${escapeHtml(r.time_range)}</span>
+                                    <span class="badge bg-light text-secondary border font-monospace px-1 py-0 flex-shrink-0" style="font-size:0.63rem;">${escapeHtml(r.booking_code)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            `).join('');
+        }
 
-        feedBox.querySelectorAll('.bell-post-item').forEach(link => {
+        // 2. Render các bản tin Khám phá mới (Sự kiện, Gói hội viên, Thông báo)
+        if (activePosts.length > 0) {
+            html += activePosts.map(p => {
+                const unread = api && typeof api.isPostUnread === 'function' ? api.isPostUnread(p) : false;
+                const icon = p.type === 'event' ? 'fa-trophy' : (p.type === 'membership' ? 'fa-crown' : 'fa-bullhorn');
+                const iconColor = p.type === 'event' ? 'text-purple' : (p.type === 'membership' ? 'text-warning' : 'text-danger');
+                const iconBg = p.type === 'event' ? 'rgba(168, 85, 247, 0.12)' : (p.type === 'membership' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(239, 68, 68, 0.12)');
+                const url = `post-detail.php?slug=${encodeURIComponent(p.slug || '')}`;
+                return `
+                    <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom bell-post-item" data-post-id="${p.id}" style="font-size:0.8rem; transition:background 0.15s ease;">
+                        <a href="${url}" class="d-flex align-items-center gap-2 text-decoration-none flex-grow-1 bell-post-link" data-post-id="${p.id}" style="color:inherit; min-width:0; overflow:hidden;">
+                            <div class="flex-shrink-0 d-inline-flex align-items-center justify-content-center rounded-circle ${iconColor}" style="width:26px; height:26px; font-size:0.75rem; background:${iconBg};">
+                                <i class="fa-solid ${icon}"></i>
+                            </div>
+                            <div class="flex-grow-1" style="min-width:0; overflow:hidden;">
+                                <div class="fw-semibold text-dark text-truncate bell-post-title" style="font-size:0.79rem; line-height:1.3;" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</div>
+                                <div class="d-flex align-items-center gap-1 mt-0">
+                                    ${unread ? '<span class="badge bg-danger text-white rounded-pill px-1" style="font-size:0.58rem; line-height:1.5;">MỚI</span>' : '<span class="text-muted" style="font-size:0.67rem;">Đã xem</span>'}
+                                    ${p.voucher_code ? `<span class="badge bg-teal text-white rounded-pill px-1" style="font-size:0.58rem; line-height:1.5;">🎁 -${escapeHtml(p.voucher_discount_percent)}%</span>` : ''}
+                                </div>
+                            </div>
+                        </a>
+                        <button type="button" class="btn-close p-1 ms-1 text-muted flex-shrink-0 bell-post-dismiss-btn" data-dismiss-id="${p.id}" title="Xóa thông báo này" aria-label="Xóa" style="font-size:0.5rem; opacity:0.4;"></button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        feedBox.innerHTML = html;
+
+        // Gắn sự kiện click xem bài viết
+        feedBox.querySelectorAll('.bell-post-link').forEach(link => {
             link.addEventListener('click', () => {
                 if (api && typeof api.markPostSeen === 'function') {
                     api.markPostSeen(Number(link.dataset.postId));
                 }
                 closeBellDropdown();
+            });
+        });
+
+        // Gắn sự kiện click xem nhắc lịch sân
+        feedBox.querySelectorAll('.bell-reminder-link').forEach(link => {
+            link.addEventListener('click', () => {
+                closeBellDropdown();
+            });
+        });
+
+        // Gắn sự kiện nút xóa đơn lẻ bài viết
+        feedBox.querySelectorAll('.bell-post-dismiss-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const postId = Number(btn.dataset.dismissId);
+                if (postId) {
+                    const dismissed = getDismissedPostIds();
+                    if (!dismissed.includes(postId)) {
+                        dismissed.push(postId);
+                        saveDismissedPostIds(dismissed);
+                    }
+                    if (api && typeof api.markPostSeen === 'function') {
+                        api.markPostSeen(postId);
+                    }
+                    refreshPostFeed();
+                }
+            });
+        });
+
+        // Gắn sự kiện ẩn nhắc lịch đơn lẻ
+        feedBox.querySelectorAll('.bell-reminder-dismiss-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const reminderId = btn.dataset.reminderId;
+                if (reminderId) {
+                    const dismissed = getDismissedReminderIds();
+                    if (!dismissed.includes(reminderId)) {
+                        dismissed.push(reminderId);
+                        saveDismissedReminderIds(dismissed);
+                    }
+                    refreshPostFeed();
+                }
             });
         });
     }
@@ -492,38 +752,84 @@ window.PushClient = (() => {
 
         dropdown = document.createElement('div');
         dropdown.id = 'pushBellDropdown';
-        dropdown.className = 'yt-bell-dropdown';
-        dropdown.style.setProperty('width', 'min(310px, calc(100vw - 24px))', 'important');
-        dropdown.style.setProperty('max-width', 'calc(100vw - 24px)', 'important');
+        dropdown.className = 'yt-bell-dropdown shadow';
+        dropdown.style.setProperty('width', 'min(360px, calc(100vw - 16px))', 'important');
+        dropdown.style.setProperty('max-width', 'calc(100vw - 16px)', 'important');
+        dropdown.style.setProperty('box-sizing', 'border-box', 'important');
         dropdown.style.setProperty('overflow', 'hidden', 'important');
         dropdown.setAttribute('role', 'menu');
-        dropdown.setAttribute('aria-label', 'Tùy chọn thông báo');
+        dropdown.setAttribute('aria-label', 'Bảng thông báo');
         dropdown.innerHTML = `
-            <div class="px-3 py-2 d-flex align-items-center justify-content-between border-bottom gap-2" style="overflow:hidden;">
-                <span class="fw-extrabold small text-teal text-nowrap"><i class="fa-solid fa-compass me-1"></i>Bản tin Khám phá mới</span>
-                <a href="explore.php" class="small fw-bold text-teal text-decoration-none text-nowrap" style="font-size:0.74rem;">Xem tất cả &rarr;</a>
+            <div class="px-3 py-2 d-flex align-items-center justify-content-between border-bottom bell-dropdown-header" style="background:rgba(13, 148, 136, 0.05);">
+                <div class="d-flex align-items-center gap-1">
+                    <span class="text-teal" style="font-size:0.9rem;"><i class="fa-solid fa-bell"></i></span>
+                    <span class="fw-bold text-dark small" style="font-size:0.86rem;">Thông báo</span>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <button type="button" class="btn btn-sm btn-light border py-0 px-2 text-muted rounded-pill bell-header-action-btn" id="btnClearSeenFeed" title="Xóa các thông báo đã xem" style="font-size:0.7rem; line-height:1.7;">
+                        <i class="fa-regular fa-trash-can me-1"></i>Xóa đã xem
+                    </button>
+                    <a href="explore.php" class="btn btn-sm text-teal fw-bold py-0 px-2 rounded-pill text-decoration-none bell-header-action-btn" style="font-size:0.7rem; line-height:1.7; background:rgba(13, 148, 136, 0.08);">
+                        Khám phá &rarr;
+                    </a>
+                </div>
             </div>
-            <div id="bellExploreFeedList" class="bell-explore-feed-scroll" style="max-height:192px; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain;"></div>
-            <div class="yt-bell-divider"></div>
-            <label class="yt-bell-item d-flex align-items-center justify-content-between m-0" for="bellPushSwitchInput" id="bellPushSwitchRow" style="cursor:pointer;">
+            <div id="bellExploreFeedList" class="bell-explore-feed-scroll" style="max-height:240px; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain;"></div>
+            <div class="yt-bell-divider my-0"></div>
+            <label class="yt-bell-item d-flex align-items-center justify-content-between m-0" for="bellPushSwitchInput" id="bellPushSwitchRow" style="cursor:pointer; padding:9px 16px;">
                 <div class="d-flex align-items-center flex-grow-1" style="min-width:0;">
-                    <span class="yt-bell-icon flex-shrink-0" id="bellPushSwitchIcon"><i class="fa-solid fa-bell text-teal"></i></span>
-                    <span class="yt-bell-label fw-semibold" id="bellPushSwitchLabel">Thông báo</span>
+                    <span class="yt-bell-icon flex-shrink-0" id="bellPushSwitchIcon" style="width:26px; font-size:1rem;"><i class="fa-solid fa-bell text-teal"></i></span>
+                    <span class="yt-bell-label fw-semibold text-dark" id="bellPushSwitchLabel" style="font-size:0.86rem;">Thông báo</span>
                 </div>
                 <div class="form-check form-switch m-0 ps-2 d-flex align-items-center flex-shrink-0">
-                    <input class="form-check-input m-0 bell-push-switch" type="checkbox" role="switch" id="bellPushSwitchInput" aria-label="Bật hoặc tắt Thông báo" style="width:2.4rem; height:1.25rem; cursor:pointer;">
+                    <input class="form-check-input m-0 bell-push-switch" type="checkbox" role="switch" id="bellPushSwitchInput" aria-label="Bật hoặc tắt Thông báo" style="width:2.3rem; height:1.2rem; cursor:pointer;">
                 </div>
             </label>
-            <div class="yt-bell-divider"></div>
-            <div class="yt-bell-item yt-bell-test" data-action="test" role="menuitem" tabindex="0">
-                <span class="yt-bell-icon"><i class="fa-solid fa-paper-plane"></i></span>
-                <span class="yt-bell-label">Gửi thử nhắc lịch sân</span>
-                <span class="yt-bell-check"></span>
+            <div class="yt-bell-divider my-0"></div>
+            <div class="yt-bell-item yt-bell-test d-flex align-items-center" data-action="test" role="menuitem" tabindex="0" style="padding:9px 16px;">
+                <span class="yt-bell-icon flex-shrink-0" style="width:26px; font-size:0.95rem;"><i class="fa-solid fa-paper-plane"></i></span>
+                <span class="yt-bell-label fw-medium" style="font-size:0.83rem;">Gửi thử nhắc lịch sân</span>
             </div>
         `;
 
         document.body.appendChild(dropdown);
         refreshPostFeed();
+
+        // Gắn sự kiện nút "Xóa đã xem"
+        const clearBtn = dropdown.querySelector('#btnClearSeenFeed');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const api = window.GodmintonPostNotify;
+                const allPosts = (api && typeof api.getLatestPosts === 'function') ? api.getLatestPosts() : [];
+                const dismissed = getDismissedPostIds();
+                let clearedCount = 0;
+
+                allPosts.forEach(p => {
+                    const unread = api && typeof api.isPostUnread === 'function' ? api.isPostUnread(p) : false;
+                    if (!unread) { // Đã xem
+                        if (!dismissed.includes(Number(p.id))) {
+                            dismissed.push(Number(p.id));
+                            clearedCount++;
+                        }
+                    }
+                });
+
+                // Cũng dọn dẹp các demo reminder đã xong nếu có
+                try {
+                    localStorage.removeItem('godminton_active_reminders');
+                } catch(_) {}
+
+                if (clearedCount > 0) {
+                    saveDismissedPostIds(dismissed);
+                    refreshPostFeed();
+                    showToast('success', `Đã xóa ${clearedCount} thông báo đã xem.`);
+                } else {
+                    showToast('info', 'Không có thông báo đã xem nào để xóa.');
+                }
+            });
+        }
 
         const switchInput = dropdown.querySelector('#bellPushSwitchInput');
         if (switchInput) {
@@ -580,8 +886,8 @@ window.PushClient = (() => {
         const dropdown = document.getElementById('pushBellDropdown');
         if (!btn || !dropdown) return;
         const rect = btn.getBoundingClientRect();
-        const dropHeight = dropdown.offsetHeight || 160;
-        const dropWidth = dropdown.offsetWidth || 250;
+        const dropHeight = dropdown.offsetHeight || 260;
+        const dropWidth = dropdown.offsetWidth || 350;
         const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
         const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
 
@@ -594,9 +900,9 @@ window.PushClient = (() => {
 
         // Horizontal positioning: Ensure it stays well within viewport boundaries
         let rightOffset = Math.round(vw - rect.right);
-        if (rightOffset < 10) rightOffset = 10;
-        if (rightOffset + dropWidth > vw - 10) {
-            rightOffset = Math.max(10, vw - dropWidth - 10);
+        if (rightOffset < 8) rightOffset = 8;
+        if (rightOffset + dropWidth > vw - 8) {
+            rightOffset = Math.max(8, vw - dropWidth - 8);
         }
         dropdown.style.setProperty('right', `${rightOffset}px`, 'important');
         dropdown.style.setProperty('left', 'auto', 'important');
