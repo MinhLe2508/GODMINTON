@@ -40,43 +40,12 @@ function god_auth_cipher_key(): string {
 }
 
 /**
- * Lưu thông tin tài khoản vào Cookie HttpOnly được mã hóa AES-256-GCM (AEAD)
- * để tự động điền lại trên trang auth.php sau khi người dùng Đăng xuất.
+ * ĐÃ LOẠI BỎ: Không lưu mật khẩu/email vào Cookie theo tiêu chuẩn bảo mật OWASP.
+ * Cơ chế xác thực duy trì băm Argon2id trong Database và Remember Token an toàn (Selector-Validator).
+ * Hàm này chủ động xóa bỏ cookie cũ (nếu còn sót trên trình duyệt).
  */
 function god_auth_set_saved_credentials(string $email, string $password, int $days = GOD_REMEMBER_DAYS): void {
-    if (!function_exists('openssl_encrypt')) {
-        return;
-    }
-    try {
-        $expiresAt = time() + max(86400, $days * 86400);
-        $plain = json_encode([
-            'e'   => $email,
-            'p'   => $password,
-            'exp' => $expiresAt,
-        ], JSON_UNESCAPED_UNICODE);
-        if (!is_string($plain)) {
-            return;
-        }
-        $iv = random_bytes(12);
-        $tag = '';
-        $cipher = openssl_encrypt($plain, 'aes-256-gcm', god_auth_cipher_key(), OPENSSL_RAW_DATA, $iv, $tag, 'godminton-login-v1', 16);
-        if ($cipher === false || strlen($tag) !== 16) {
-            return;
-        }
-        $token = rtrim(strtr(base64_encode($iv . $tag . $cipher), '+/', '-_'), '=');
-        $isHttps = god_auth_is_https();
-        $name = god_auth_saved_login_cookie_name();
-        setcookie($name, $token, [
-            'expires'  => $expiresAt,
-            'path'     => '/',
-            'secure'   => $isHttps,
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
-        $_COOKIE[$name] = $token;
-    } catch (Throwable $e) {
-        error_log('[GODMINTON saved_credentials] ' . $e->getMessage());
-    }
+    god_auth_clear_saved_credentials();
 }
 
 function god_auth_clear_saved_credentials(): void {
@@ -96,46 +65,8 @@ function god_auth_clear_saved_credentials(): void {
 }
 
 function god_auth_get_saved_credentials(): ?array {
-    if (!function_exists('openssl_decrypt')) {
-        return null;
-    }
-    $raw = '';
-    foreach (['__Host-godminton_saved_login', 'godminton_saved_login'] as $name) {
-        if (!empty($_COOKIE[$name]) && is_string($_COOKIE[$name])) {
-            $raw = trim($_COOKIE[$name]);
-            break;
-        }
-    }
-    if ($raw === '') {
-        return null;
-    }
-    $b64 = strtr($raw, '-_', '+/');
-    $pad = strlen($b64) % 4;
-    if ($pad > 0) {
-        $b64 .= str_repeat('=', 4 - $pad);
-    }
-    $bin = base64_decode($b64, true);
-    if (!is_string($bin) || strlen($bin) <= 28) {
-        god_auth_clear_saved_credentials();
-        return null;
-    }
-    $iv = substr($bin, 0, 12);
-    $tag = substr($bin, 12, 16);
-    $cipher = substr($bin, 28);
-    $plain = openssl_decrypt($cipher, 'aes-256-gcm', god_auth_cipher_key(), OPENSSL_RAW_DATA, $iv, $tag, 'godminton-login-v1');
-    if (!is_string($plain)) {
-        god_auth_clear_saved_credentials();
-        return null;
-    }
-    $data = json_decode($plain, true);
-    if (!is_array($data) || empty($data['e']) || ! isset($data['p']) || (int)($data['exp'] ?? 0) <= time()) {
-        god_auth_clear_saved_credentials();
-        return null;
-    }
-    return [
-        'email'    => (string)$data['e'],
-        'password' => (string)$data['p'],
-    ];
+    god_auth_clear_saved_credentials();
+    return null;
 }
 
 function god_auth_set_remember_cookie(string $value, int $expiresAt): void {

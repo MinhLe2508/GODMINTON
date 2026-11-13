@@ -38,9 +38,7 @@ try {
         $user['session_version'] = $newSessionVersion;
         god_auth_issue_remember_token($pdo, $user, GOD_REMEMBER_DAYS);
     }
-    if (god_auth_get_saved_credentials() !== null && !empty($user['email'])) {
-        god_auth_set_saved_credentials((string)$user['email'], $next, GOD_REMEMBER_DAYS);
-    }
+    god_auth_clear_saved_credentials();
 
     god_auth_out(200, 'Đổi mật khẩu thành công. Các phiên trên thiết bị khác đã được đăng xuất.');
 } catch (Throwable $e) {

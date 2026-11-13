@@ -3,9 +3,9 @@ header('Cache-Control: no-store, max-age=0');
 define('GODMINTON_DB_OPTIONAL', true);
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/includes/auth-session.php';
-$savedLogin = god_auth_get_saved_credentials();
-$savedEmail = $savedLogin['email'] ?? '';
-$savedPassword = $savedLogin['password'] ?? '';
+god_auth_clear_saved_credentials();
+$savedEmail = '';
+$savedPassword = '';
 // Tự sinh timestamp chống cache trình duyệt
 $v = time();
 ?>
@@ -491,7 +491,7 @@ $v = time();
                     <label for="loginEmail">Địa chỉ Email</label>
                     <div class="field-wrap">
                         <i class="fa-regular fa-envelope field-icon"></i>
-                        <input type="email" id="loginEmail" name="email" value="<?= htmlspecialchars($savedEmail) ?>" placeholder="name@example.com" required autocomplete="email">
+                        <input type="email" id="loginEmail" name="email" value="" placeholder="name@example.com" required autocomplete="email">
                     </div>
                 </div>
 
@@ -502,7 +502,7 @@ $v = time();
                     </div>
                     <div class="field-wrap">
                         <i class="fa-solid fa-lock field-icon"></i>
-                        <input type="password" id="loginPassword" name="password" value="<?= htmlspecialchars($savedPassword) ?>" placeholder="Nhập mật khẩu..." required autocomplete="current-password">
+                        <input type="password" id="loginPassword" name="password" value="" placeholder="Nhập mật khẩu..." required autocomplete="current-password">
                         <button type="button" class="btn-eye" onclick="toggleEye('loginPassword', this)" aria-label="Ẩn / hiện mật khẩu">
                             <i class="fa-regular fa-eye"></i>
                         </button>

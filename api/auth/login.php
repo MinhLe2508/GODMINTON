@@ -29,11 +29,7 @@ try {
     }
 
     god_auth_login($user, $pdo, $remember);
-    if ($remember) {
-        god_auth_set_saved_credentials($email, $password, GOD_REMEMBER_DAYS);
-    } else {
-        god_auth_clear_saved_credentials();
-    }
+    god_auth_clear_saved_credentials();
     $pdo->prepare('DELETE FROM auth_rate_limits WHERE key_hash = ?')->execute([hash('sha256', 'login-email|' . $email)]);
     god_auth_out(200, 'Đăng nhập thành công.', [
         'user'        => god_auth_user($pdo),
