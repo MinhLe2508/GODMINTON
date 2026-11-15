@@ -1,6 +1,5 @@
 /**
  * assets/js/push-client.js — Quản lý Web Push Notification phía client
- * Người phụ trách: Triết (Tuần 4)
  */
 
 window.PushClient = (() => {

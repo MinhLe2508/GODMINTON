@@ -24,7 +24,7 @@ require_once __DIR__ . '/config/db.php';
 </head>
 <body>
 
-<!-- App Brand Header (Khung Cố Định) -->
+<!-- App Brand Header -->
 <header class="app-brand-head">
     <div class="container text-center">
         <a href="index.php" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
@@ -33,57 +33,44 @@ require_once __DIR__ . '/config/db.php';
     </div>
 </header>
 
-<!-- ==================== SLIM SEARCH BAR ==================== -->
+<!-- Search Bar -->
 <div class="search-bar-wrap">
     <div class="container-fluid px-0">
-
-        <!-- Main bar -->
         <div class="search-bar-inner">
-
-            <!-- 🔍 Text search -->
             <div class="sb-input-wrap">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="filterSearch" placeholder="Tìm tên sân, địa điểm..." autocomplete="off">
             </div>
 
-            <!-- Action buttons (right side) -->
             <div class="sb-actions">
-
-                <!-- Bộ lọc -->
                 <button class="sb-btn" id="btnOpenFilter" type="button" onclick="openFilterDrawer()" title="Bộ lọc">
                     <i class="fa-solid fa-sliders"></i>
                     <span class="sb-lbl">Bộ lọc</span>
                     <span class="filter-count" id="filterCountBadge" style="display:none;">0</span>
                 </button>
 
-                <!-- Bản đồ -->
                 <a href="#mapSection" class="sb-btn" title="Bản đồ sân">
                     <i class="fa-solid fa-map-location-dot"></i>
                     <span class="sb-lbl">Bản đồ</span>
                 </a>
 
-                <!-- Sân đã đặt -->
                 <a href="history.php" class="sb-btn" title="Sân đã đặt">
                     <i class="fa-solid fa-calendar-check"></i>
                     <span class="sb-lbl">Đã đặt</span>
                 </a>
 
-                <!-- Yêu thích -->
                 <button class="sb-btn" id="btnFavorite" type="button" onclick="toggleFavoriteFilter()" title="Sân yêu thích">
                     <i class="fa-regular fa-heart"></i>
                     <span class="sb-lbl">Yêu thích</span>
                 </button>
 
-                <!-- Giao diện Sáng / Tối -->
                 <button class="sb-btn" id="themeToggle" type="button" title="Chuyển chế độ Sáng / Tối" aria-label="Chuyển chế độ Sáng / Tối">
                     <i class="fa-solid fa-moon"></i>
                     <span class="sb-lbl">Giao diện</span>
                 </button>
-
             </div>
         </div>
 
-        <!-- Active filter tags strip (shown when filters applied) -->
         <div class="active-tags-strip" id="activeTagsStrip">
             <span class="small fw-bold text-muted me-1" style="font-size:0.7rem; flex-shrink:0;">ĐÃ LỌC:</span>
             <div id="activeTagsContainer" class="d-flex flex-wrap gap-1 align-items-center"></div>
@@ -91,18 +78,13 @@ require_once __DIR__ . '/config/db.php';
                 <i class="fa-solid fa-rotate-left"></i> Đặt lại
             </button>
         </div>
-
     </div>
 </div>
 
-<!-- ============================================================
-     FILTER DRAWER OVERLAY + DRAWER
-     ============================================================ -->
+<!-- Filter Drawer -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeFilterDrawer()"></div>
 
 <div class="filter-drawer" id="filterDrawer" role="dialog" aria-label="Bộ lọc tìm kiếm">
-
-    <!-- Header -->
     <div class="drawer-header">
         <div class="d-flex align-items-center gap-2">
             <button class="drawer-close" type="button" onclick="closeFilterDrawer()" title="Đóng" aria-label="Đóng">
@@ -115,9 +97,7 @@ require_once __DIR__ . '/config/db.php';
         </button>
     </div>
 
-    <!-- Body -->
     <div class="drawer-body">
-        <!-- Khu vực -->
         <div class="drawer-section">
             <div class="drawer-section-title">
                 <i class="fa-solid fa-location-dot text-teal me-1"></i>Khu Vực / Quận
@@ -127,7 +107,6 @@ require_once __DIR__ . '/config/db.php';
             </select>
         </div>
 
-        <!-- Mức giá -->
         <div class="drawer-section">
             <div class="drawer-section-title">
                 <i class="fa-solid fa-tag text-teal me-1"></i>Mức Giá Thuê
@@ -141,7 +120,6 @@ require_once __DIR__ . '/config/db.php';
             </select>
         </div>
 
-        <!-- Tiện ích sân -->
         <div class="drawer-section">
             <div class="drawer-section-title">
                 <i class="fa-solid fa-star text-teal me-1"></i>Tiện Ích Sân
@@ -191,10 +169,8 @@ require_once __DIR__ . '/config/db.php';
                 </button>
             </div>
         </div>
+    </div>
 
-    </div><!-- /drawer-body -->
-
-    <!-- Footer with reset + apply -->
     <div class="drawer-footer">
         <button class="btn-drawer-reset" type="button" onclick="resetAllFilters()" title="Đặt lại tất cả bộ lọc">
             <i class="fa-solid fa-rotate-left"></i> Đặt lại
@@ -205,11 +181,8 @@ require_once __DIR__ . '/config/db.php';
     </div>
 </div>
 
-<!-- ==================== MAIN CONTENT ==================== -->
 <main class="min-vh-100">
 <div class="container py-4">
-
-    <!-- Results header -->
     <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
         <div>
             <h5 class="fw-extrabold mb-0">Hệ Thống Sân Cầu Lông</h5>
@@ -224,7 +197,6 @@ require_once __DIR__ . '/config/db.php';
         </div>
     </div>
 
-    <!-- Court grid -->
     <div id="courtListContainer" class="row g-4">
         <div class="text-center py-5 col-12">
             <div class="spinner-border text-teal" role="status"></div>
@@ -254,7 +226,6 @@ require_once __DIR__ . '/config/db.php';
 </div>
 </main>
 
-<!-- ==================== FOOTER ==================== -->
 <footer class="footer-custom mt-5 pt-5 pb-4">
     <div class="container">
         <div class="row g-4 mb-4">
@@ -292,7 +263,6 @@ require_once __DIR__ . '/config/db.php';
     </div>
 </footer>
 
-<!-- ==================== SCRIPTS ==================== -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -300,9 +270,7 @@ require_once __DIR__ . '/config/db.php';
 <script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
 <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
 <script src="assets/js/courts.js?v=<?= filemtime(__DIR__ . '/assets/js/courts.js') ?>"></script>
-<!-- Push Client PWA -->
 <script src="assets/js/push-client.js?v=<?= filemtime(__DIR__ . '/assets/js/push-client.js') ?>"></script>
-<!-- Bottom Nav -->
 <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>

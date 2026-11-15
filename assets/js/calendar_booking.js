@@ -1,7 +1,7 @@
-/* =================================================================
-    CALENDAR BOOKING GRID ENGINE - Real-time AJAX Polling Version
-    GODMINTON — Tuần 2: Hỗ trợ đặt 1 tiếng / 1 tiếng 30 phút trở lên
-    ================================================================= */
+/**
+ * GODMINTON — Calendar Booking Grid Engine
+ * Điều khiển bảng chọn khung giờ theo thời gian thực (Real-time AJAX Polling).
+ */
 
 /* -------- Config -------- */
 const START_HOUR = 5, START_MIN = 30;  // 5:30

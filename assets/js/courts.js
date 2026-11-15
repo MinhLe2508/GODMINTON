@@ -1,9 +1,7 @@
-/* ================================================================
-   GODMINTON — courts.js
-   Trang danh sách sân (courts.php) — Tuần 1: chuyển sang AJAX thật.
-   Thay dữ liệu giả bằng fetch('api/courts.php').
-   Giữ nguyên giao diện và luồng UX đã có.
-   ================================================================ */
+/**
+ * GODMINTON — courts.js
+ * Quản lý tìm kiếm, lọc theo quận / mức giá / tiện ích và hiển thị danh sách sân cầu lông.
+ */
 
 /* ================================================================
    STATE
@@ -303,16 +301,12 @@ async function renderCourts() {
     try {
         let courts = await fetchCourts();
 
-        // --- Lọc thêm phía client: rating (chưa có trong DB) ---
-        // TODO (Tuần 2+): Thêm bảng reviews trong DB, hiện tại bỏ qua lọc rating
-        // if (state.minRating) courts = courts.filter(c => (c.avg_rating || 0) >= state.minRating);
-
-        // --- Sắp xếp phía client ---
+        // Sắp xếp phía client
         if (state.sortMode === 'price_asc') {
             courts = [...courts].sort((a, b) => a.price_per_hour - b.price_per_hour);
+        } else if (state.sortMode === 'rating') {
+            courts = [...courts].sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0));
         }
-        // TODO: sort by rating khi có bảng reviews
-        // if (state.sortMode === 'rating') courts = [...courts].sort((a,b) => (b.avg_rating||0) - (a.avg_rating||0));
 
         document.getElementById('courtCountText').textContent = courts.length;
 

@@ -5,8 +5,6 @@ require_once __DIR__.'/../../includes/auth-session.php';
  * GET số liệu thống kê tổng quan, danh sách đơn gần đây và sân quản lý cho chủ sân / admin.
  *   - Chủ sân (owner): chỉ tính trên các sân có owner_id = $_SESSION['user_id']
  *   - Quản trị viên (admin): tính trên toàn bộ hệ thống
- *
- * Người phụ trách: Huy (Tuần 3)
  */
 require_once __DIR__ . '/../../config/db.php';
 header('Content-Type: application/json; charset=utf-8');

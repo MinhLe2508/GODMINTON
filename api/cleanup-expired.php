@@ -1,7 +1,7 @@
 <?php
 /**
  * api/cleanup-expired.php
- * Task 8 & SePay — Dọn các slot giữ chỗ đã hết hạn, huỷ các đơn thanh toán pending quá hạn,
+ * Dọn các slot giữ chỗ đã hết hạn, huỷ các đơn thanh toán pending quá hạn,
  * cập nhật các gói hội viên đã hết hạn và quét nhắc lịch thi đấu tự động.
  *
  * 3 cách dùng:

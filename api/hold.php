@@ -2,19 +2,17 @@
 require_once __DIR__.'/../includes/auth-session.php';
 /**
  * api/hold.php
- * POST giữ chỗ 5 phút / huỷ giữ chỗ — Transaction + SELECT ... FOR UPDATE ★★★
+ * POST giữ chỗ 5 phút / huỷ giữ chỗ — Transaction + SELECT ... FOR UPDATE.
  * Hỗ trợ giữ 1 slot hoặc nhiều slot liên tiếp (1 tiếng, 1.5 tiếng, 2 tiếng...).
  *
- * Request JSON (giữ nguyên giao diện mà calendar_booking.js của Minh đang gọi):
+ * Request JSON:
  *   { "slot_id": 101, "action": "hold" }
  *   { "slot_ids": [101, 102, 103], "action": "hold" }      (action mặc định là "hold")
  *   { "action": "release", "slot_ids": [101, 102] }         (không có slot_ids → huỷ mọi slot đang giữ)
  *
- * Phản hồi: { status, code, message, data } theo booking_api_contract.md.
+ * Phản hồi: { status, code, message, data }
  *   200 thành công · 401 chưa đăng nhập · 404 không thấy slot · 405 sai phương thức
  *   409 slot đã bị người khác giữ / đã đặt / bị khoá · 422 thiếu/sai tham số · 500 lỗi hệ thống
- *
- * Người phụ trách: Huy (task 7) — hợp nhất với bản của Minh (nhiều slot + release).
  */
 require_once __DIR__ . '/../config/db.php';
 header('Content-Type: application/json; charset=utf-8');

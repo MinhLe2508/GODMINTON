@@ -4,10 +4,8 @@ require_once __DIR__.'/../includes/auth-session.php';
  * api/slots.php
  * GET danh sách khung giờ theo sân và ngày từ MySQL.
  * Hỗ trợ:
- *   - GET ?court_id=1&date=2026-10-14 : Lấy danh sách slots của sân trong ngày (dùng cho calendar_booking.js & polling 5s)
- *   - GET ?id=101                      : Lấy chi tiết 1 slot (dùng cho confirm.js)
- *
- * Người phụ trách: Huy (Tuần 2) & Minh (Tuần 2)
+ *   - GET ?court_id=1&date=2026-10-14 : Lấy danh sách slots của sân trong ngày
+ *   - GET ?id=101                      : Lấy chi tiết 1 slot
  */
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/payment-service.php';

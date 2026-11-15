@@ -1,10 +1,6 @@
 /**
- * GODMINTON - ADMIN & OWNER PANEL (Tuần 3 — Kết nối API MySQL thật)
- * Người phụ trách: Huy (Task 13, Task 14, Dashboard)
- *
- * Cung cấp các hàm gọi API thật (api/admin/courts.php, api/admin/slots.php,
- * api/admin/dashboard.php, api/auth/logout.php) đồng thời giữ các hàm
- * tương thích ngược cho admin-bookings.php.
+ * GODMINTON - ADMIN & OWNER PANEL CLIENT
+ * Cung cấp các hàm gọi API quản trị (courts, slots, dashboard, logout).
  */
 
 const AdminApp = (() => {
@@ -77,7 +73,7 @@ const AdminApp = (() => {
         return json;
     }
 
-    /* ================= COURTS API (Task 13) ================= */
+    /* ================= COURTS API ================= */
     async function fetchCourts(search = '') {
         const q = search ? `?search=${encodeURIComponent(search)}` : '';
         const res = await apiRequest(`api/admin/courts.php${q}`, { method: 'GET' });
@@ -116,7 +112,7 @@ const AdminApp = (() => {
         return setCourtStatusApi(id, 'inactive');
     }
 
-    /* ================= SLOTS API (Task 14) ================= */
+    /* ================= SLOTS API ================= */
     async function fetchSlots(courtId, dateStr) {
         const params = new URLSearchParams({ court_id: courtId, date: dateStr });
         const res = await apiRequest(`api/admin/slots.php?${params.toString()}`, { method: 'GET' });

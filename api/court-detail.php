@@ -8,8 +8,6 @@
  *
  * Response JSON:
  *   { "status": "success", "data": {...court} }
- *
- * Người phụ trách: Minh (Tuần 1)
  */
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/image-url.php';

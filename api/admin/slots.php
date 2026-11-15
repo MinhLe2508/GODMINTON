@@ -2,13 +2,11 @@
 require_once __DIR__.'/../../includes/auth-session.php';
 /**
  * api/admin/slots.php
- * Task 14 — Quản lý khung giờ (time_slots) trên MySQL thật + phân quyền chủ sân / admin:
+ * Quản lý khung giờ (time_slots) trên MySQL và phân quyền chủ sân / admin:
  *   - GET    /api/admin/slots.php?court_id=1&date=YYYY-MM-DD : Lấy danh sách khung giờ theo sân & ngày
  *   - POST   /api/admin/slots.php                            : Tạo khung giờ hàng loạt (Bulk Generate)
  *   - PATCH  /api/admin/slots.php (hoặc PUT / POST action=status) : Đổi trạng thái từng slot (available ↔ blocked)
  *   - DELETE /api/admin/slots.php?id=123 (hoặc POST action=delete): Xóa từng slot (hoặc xóa các slot trống trong ngày)
- *
- * Người phụ trách: Huy (Tuần 3 — Task 14)
  */
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../cleanup-expired.php';

@@ -1,7 +1,6 @@
 /**
  * assets/js/court-map.js
  * Quản lý khởi tạo bản đồ Leaflet + OpenStreetMap và hiển thị marker sân cầu lông
- * Người phụ trách: P3 (Trương Minh Triết, Tuần 3)
  */
 
 (function (window, document) {

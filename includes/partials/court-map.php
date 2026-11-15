@@ -6,11 +6,9 @@
  * Cách sử dụng:
  * 1. Danh sách sân (courts.php):
  *    include __DIR__ . '/includes/partials/court-map.php';
- * 2. Chi tiết sân (court-detail.php của Minh):
+ * 2. Chi tiết sân (court-detail.php):
  *    $courtMapData = $court; // hoặc mảng 1 sân
  *    include __DIR__ . '/includes/partials/court-map.php';
- *
- * Người phụ trách: P3 (Trương Minh Triết, Tuần 3)
  */
 
 $initialMapData = isset($courtMapData) ? (is_array($courtMapData) && isset($courtMapData['id']) ? [$courtMapData] : (array)$courtMapData) : [];

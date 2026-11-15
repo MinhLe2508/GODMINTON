@@ -1,8 +1,6 @@
 /**
  * GODMINTON — court_detail.js
- * Trang chi tiết sân (court-detail.php) — Tuần 1: chuyển sang AJAX thật.
- * Thay dữ liệu giả bằng fetch('api/court-detail.php?id=N').
- * Giữ nguyên giao diện và luồng UX đã có.
+ * Quản lý hiển thị chi tiết sân, tiện ích, hình ảnh, đánh giá và bản đồ.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {

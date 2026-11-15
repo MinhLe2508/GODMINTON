@@ -2,7 +2,7 @@
 require_once __DIR__.'/../../includes/auth-session.php';
 /**
  * api/admin/courts.php
- * Task 13 — CRUD sân cầu lông trên MySQL thật + phân quyền chủ sân / admin.
+ * Quản lý thông tin sân cầu lông và phân quyền chủ sân / admin.
  *   - Chủ sân chỉ quản lý sân được giao; thêm sân qua hồ sơ xét duyệt, không xóa lịch sử.
  *   - Quản trị viên (role = 'admin'): thấy và quản lý toàn bộ sân trong hệ thống.
  *
@@ -12,8 +12,6 @@ require_once __DIR__.'/../../includes/auth-session.php';
  *   - PUT    /api/admin/courts.php                   : Cập nhật thông tin sân
  *   - PATCH  /api/admin/courts.php                   : Cập nhật thông tin sân / đổi trạng thái
  *   - DELETE is rejected; PATCH status=inactive preserves historical orders.
- *
- * Người phụ trách: Huy (Tuần 3 — Task 13)
  */
 require_once __DIR__ . '/../../config/db.php';
 header('Content-Type: application/json; charset=utf-8');
