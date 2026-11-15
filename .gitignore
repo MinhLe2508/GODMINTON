@@ -15,3 +15,11 @@ Thumbs.db
 
 # Log, cache nếu phát sinh trong lúc chạy XAMPP
 *.log
+
+# File backup CSDL tạm thời
+*.sql.bak
+backup_*.sql
+
+# Thư mục tài liệu báo cáo đồ án (giữ trên máy cục bộ, không push lên git)
+report/
+scratch/
