@@ -278,6 +278,17 @@ function populateWardSelect() {
     }).join('');
 }
 
+// Đang trong giờ mở cửa hay không (theo giờ Việt Nam, hỗ trợ sân mở qua nửa đêm)
+function isOpenNow(openStr, closeStr) {
+    const toMin = v => { const m = /^(\d{1,2}):(\d{2})/.exec(String(v || '')); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+    const o = toMin(openStr), c = toMin(closeStr);
+    if (o === null || c === null) return false;
+    const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
+    const h = (+parts.find(x => x.type === 'hour').value) % 24;
+    const n = h * 60 + (+parts.find(x => x.type === 'minute').value);
+    return o <= c ? (n >= o && n < c) : (n >= o || n < c);
+}
+
 function renderCourtsTable() {
     const q = (document.getElementById('searchCourt').value || '').toLowerCase().trim();
     let list = myCourts.slice();
@@ -299,6 +310,8 @@ function renderCourtsTable() {
             ? `<div class="small text-teal"><i class="fa-regular fa-user me-1"></i>Chủ sân: ${AdminApp.escapeHTML(c.owner_name)}</div>`
             : '';
         const isActive = c.status === 'active';
+        const openNow = isOpenNow(c.opening_time || '06:00', c.closing_time || '22:00');
+        const pausedTag = isActive ? '' : '<div class="small text-muted mt-1">Đã tắt nhận đặt</div>';
         return `
         <tr>
             <td>
@@ -315,7 +328,7 @@ function renderCourtsTable() {
             <td>${AdminApp.formatVND(c.price_per_hour)}</td>
             <td>${c.total_sub_courts || 6}</td>
             <td>${c.opening_time || '06:00'} - ${c.closing_time || '22:00'}</td>
-            <td><span class="badge ${isActive ? 'bg-success' : 'bg-secondary'}">${isActive ? 'Hoạt động' : 'Tạm ngưng'}</span></td>
+            <td><span class="badge ${openNow ? 'bg-success' : 'bg-secondary'}">${openNow ? 'Đang hoạt động' : 'Ngoài giờ'}</span>${pausedTag}</td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-teal rounded-pill me-1" onclick="openCourtModal(${c.id})" title="Chỉnh sửa sân"><i class="fa-solid fa-pen"></i></button>
                 <a class="btn btn-sm btn-outline-secondary rounded-pill me-1" href="admin-slots.php?court=${c.id}" title="Quản lý khung giờ"><i class="fa-solid fa-clock"></i></a>
