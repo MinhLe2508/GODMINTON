@@ -15,5 +15,5 @@ try {
     if($block){$pdo->rollBack();god_auth_out(409,$block);}
     $mail=god_auth_mailer();$token=god_auth_token($pdo,(int)$user['id'],'delete');
     god_auth_send($mail,$stored,'delete',$token);$pdo->commit();
-    god_auth_out(200,'Đã gửi liên kết xác nhận.',['message'=>'Đã gửi liên kết xác nhận xóa đến email của bạn. Liên kết có hiệu lực 15 phút. Tài khoản vẫn hoạt động cho đến khi bạn xác nhận.']);
+    god_auth_out(200,'Đã gửi liên kết xác nhận.',['message'=>'Đã gửi liên kết xác nhận xóa đến email của bạn. Liên kết có hiệu lực 5 phút. Tài khoản vẫn hoạt động cho đến khi bạn xác nhận.']);
 }catch(Throwable $e){god_auth_failure($e);}

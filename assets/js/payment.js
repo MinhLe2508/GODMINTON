@@ -21,16 +21,8 @@ const PAYMENT_GATEWAY_CONFIG = {
         iconHtml: '<i class="fa-solid fa-building-columns fs-4" style="color:#0d9488;"></i>',
         checkoutTitle: 'Chuyển Khoản Ngân Hàng VietQR',
         checkoutSub: 'Xác nhận tức thì qua cổng SePay 24/7 · MB Bank',
-        providerLabel: 'Ngân hàng thụ hưởng:',
-        providerName: 'MB Bank (Ngân hàng Quân Đội)',
-        accLabel: 'Số tài khoản:',
-        accValue: '0783547289',
-        ownerName: 'TRUONG MINH TRIET',
-        qrImg: 'assets/img/vietqr-payment.png',
-        downloadName: 'VietQR-GODMINTON.png',
         logoUrl: 'assets/img/logo-teal.svg',
         headerClass: 'bank-header',
-        hintText: 'Quét mã VietQR bằng ứng dụng Ngân hàng (VCB, MB, BIDV, Techcombank...)',
     },
     vnpay: {
         label: 'VNPay (VNPAY-QR)',
@@ -41,16 +33,8 @@ const PAYMENT_GATEWAY_CONFIG = {
         iconHtml: '<i class="fa-solid fa-qrcode fs-4" style="color:#005baa;"></i>',
         checkoutTitle: 'Cổng Thanh Toán VNPAY-QR',
         checkoutSub: 'Hỗ trợ quét qua app ngân hàng & ví VNPAY · Tự động 24/7',
-        providerLabel: 'Ngân hàng thụ hưởng:',
-        providerName: 'MB Bank (Ngân hàng Quân Đội)',
-        accLabel: 'Số tài khoản:',
-        accValue: '0783547289',
-        ownerName: 'TRUONG MINH TRIET',
-        qrImg: 'assets/img/vietqr-payment.png',
-        downloadName: 'VietQR-GODMINTON.png',
         logoUrl: 'https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-VNPAY-QR.png',
         headerClass: 'vnpay-header',
-        hintText: 'Mở tính năng QR Pay trên app Ngân hàng hoặc Ví VNPAY để quét mã',
     },
     momo: {
         label: 'MoMo (Quét VietQR)',
@@ -61,16 +45,8 @@ const PAYMENT_GATEWAY_CONFIG = {
         iconHtml: '<i class="fa-solid fa-mobile-screen fs-4" style="color:#ae2070;"></i>',
         checkoutTitle: 'Cổng Thanh Toán Ví MoMo',
         checkoutSub: 'Quét VietQR từ siêu ứng dụng MoMo · Tự động 24/7',
-        providerLabel: 'Ngân hàng thụ hưởng:',
-        providerName: 'MB Bank (Ngân hàng Quân Đội)',
-        accLabel: 'Số tài khoản:',
-        accValue: '0783547289',
-        ownerName: 'TRUONG MINH TRIET',
-        qrImg: 'assets/img/vietqr-payment.png',
-        downloadName: 'MoMo-VietQR-GODMINTON.png',
         logoUrl: 'https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png',
         headerClass: 'momo-header',
-        hintText: 'Mở ứng dụng MoMo chọn mục Quét Mã để hoàn tất thanh toán',
     },
     zalopay: {
         label: 'ZaloPay (Quét VietQR)',
@@ -81,16 +57,8 @@ const PAYMENT_GATEWAY_CONFIG = {
         iconHtml: '<i class="fa-solid fa-wallet fs-4" style="color:#0068ff;"></i>',
         checkoutTitle: 'Cổng Thanh Toán Ví ZaloPay',
         checkoutSub: 'Ví ZaloPay & Ứng dụng Zalo · Tự động 24/7',
-        providerLabel: 'Ngân hàng thụ hưởng:',
-        providerName: 'MB Bank (Ngân hàng Quân Đội)',
-        accLabel: 'Số tài khoản:',
-        accValue: '0783547289',
-        ownerName: 'TRUONG MINH TRIET',
-        qrImg: 'assets/img/vietqr-payment.png',
-        downloadName: 'ZaloPay-VietQR-GODMINTON.png',
         logoUrl: 'https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-ZaloPay-Square.png',
         headerClass: 'zalopay-header',
-        hintText: 'Quét mã trực tiếp bằng ứng dụng Zalo hoặc ZaloPay',
     }
 };
 
@@ -218,7 +186,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     paymentReady = true;
     setPaymentButtons(false);
     startCountdown(holdRemaining);
-    updateTransferRef();
     syncPaymentMethodCard();
 });
 
@@ -378,15 +345,6 @@ function calcPrices() {
     if (gwModalAmountEl) gwModalAmountEl.textContent = fmt(deposit);
 
     updateCtaLabels();
-}
-
-function updateCtaLabels() {
-    const cfg = PAYMENT_GATEWAY_CONFIG[booking.method] || PAYMENT_GATEWAY_CONFIG.bank;
-    const ctaText = `Thanh Toán & Đặt Cọc (${cfg.label})`;
-    ['btnPayMobileText','btnPayDesktopText'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = ctaText;
-    });
 }
 
 /* ---- Voucher Handling ---- */
@@ -601,6 +559,8 @@ function updateCtaLabels() {
 
 /* ---- Mở Popup Cổng Thanh Toán SePay (VietQR / VNPay / MoMo / ZaloPay) ---- */
 function openPaymentGatewayModal(gatewayKey) {
+    // Chỉ trình bày yêu cầu thanh toán đã được máy chủ tạo.
+    if (!activePayment) return;
     const key = gatewayKey || booking.method || 'bank';
     const cfg = PAYMENT_GATEWAY_CONFIG[key] || PAYMENT_GATEWAY_CONFIG.bank;
 
@@ -628,36 +588,20 @@ function openPaymentGatewayModal(gatewayKey) {
     const dlBtn = document.getElementById('gwModalDownloadQr');
     const devSimWrap = document.getElementById('devSimulateWrap');
 
-    if (activePayment) {
-        if (qrImg) qrImg.src = activePayment.qr_url;
-        if (amt) amt.textContent = fmt(activePayment.amount);
-        if (ref) ref.textContent = activePayment.payment_code;
-        if (pLabel) pLabel.textContent = 'Ngân hàng thụ hưởng:';
-        if (pName) pName.textContent = activePayment.bank.name;
-        if (aLabel) aLabel.textContent = 'Số tài khoản:';
-        if (aVal) aVal.textContent = activePayment.bank.account_number;
-        if (owner) owner.textContent = activePayment.bank.account_name;
-        if (dlBtn) {
-            dlBtn.href = activePayment.qr_url;
-            dlBtn.setAttribute('download', 'VietQR-' + activePayment.payment_code + '.png');
-        }
-        if (devSimWrap) {
-            devSimWrap.style.display = activePayment.simulate_available ? 'block' : 'none';
-        }
-    } else {
-        if (qrImg) qrImg.src = cfg.qrImg;
-        if (amt) amt.textContent = fmt(booking._deposit);
-        if (ref) ref.textContent = booking._transferRef || 'GDM000000';
-        if (pLabel) pLabel.textContent = cfg.providerLabel;
-        if (pName) pName.textContent = cfg.providerName;
-        if (aLabel) aLabel.textContent = cfg.accLabel;
-        if (aVal) aVal.textContent = cfg.accValue;
-        if (owner) owner.textContent = cfg.ownerName;
-        if (dlBtn) {
-            dlBtn.href = cfg.qrImg;
-            dlBtn.setAttribute('download', cfg.downloadName);
-        }
-        if (devSimWrap) devSimWrap.style.display = 'none';
+    if (qrImg) qrImg.src = activePayment.qr_url;
+    if (amt) amt.textContent = fmt(activePayment.amount);
+    if (ref) ref.textContent = activePayment.payment_code;
+    if (pLabel) pLabel.textContent = 'Ngân hàng thụ hưởng:';
+    if (pName) pName.textContent = activePayment.bank.name;
+    if (aLabel) aLabel.textContent = 'Số tài khoản:';
+    if (aVal) aVal.textContent = activePayment.bank.account_number;
+    if (owner) owner.textContent = activePayment.bank.account_name;
+    if (dlBtn) {
+        dlBtn.href = activePayment.qr_url;
+        dlBtn.setAttribute('download', 'VietQR-' + activePayment.payment_code + '.png');
+    }
+    if (devSimWrap) {
+        devSimWrap.style.display = activePayment.simulate_available ? 'block' : 'none';
     }
 
     const modalEl = document.getElementById('checkoutGatewayModal');
@@ -793,7 +737,6 @@ async function handlePaymentCta() {
             // Đơn có yêu cầu thanh toán cọc SePay
             if (bData.payment) {
                 activePayment = bData.payment;
-                booking._transferRef = activePayment.payment_code;
 
                 // Đồng bộ countdown giữ chỗ theo thời hạn payment SePay
                 if (activePayment.expires_in_seconds) {
@@ -986,23 +929,6 @@ async function devSimulatePayment() {
     }
 }
 
-/* ---- Bank & E-Wallet transfer reference content ---- */
-function updateTransferRef() {
-    const suffix = Date.now().toString().slice(-5);
-    const ref = `DATSAN-${booking.courtId}-${suffix}`;
-    const vnpCode = `VNP-${booking.courtId}${suffix}`;
-
-    document.querySelectorAll('.js-transfer-ref').forEach(el => {
-        el.textContent = ref;
-    });
-
-    booking._transferRef = ref;
-    booking._vnpayCode = vnpCode;
-
-    const gwRef = document.getElementById('gwModalRef');
-    if (gwRef) gwRef.textContent = ref;
-}
-
 function copyText(txt) {
     navigator.clipboard?.writeText(txt).then(() => toast('Đã sao chép!'));
 }
@@ -1011,7 +937,7 @@ function copyById(id) {
     if (el) copyText(el.textContent.trim());
 }
 function copyTransferRef() {
-    copyText(booking._transferRef || 'DATSAN-...');
+    copyById('gwModalRef');
 }
 
 function toast(msg) {

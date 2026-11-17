@@ -35,7 +35,7 @@ try {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') push_subscribe_out(405, ['status' => 'error', 'message' => 'Chỉ hỗ trợ GET/POST.']);
 
     $csrf = $_SERVER['HTTP_X_GODMINTON_CSRF'] ?? '';
-    if ($csrf !== '' && (!is_string($csrf) || !hash_equals($_SESSION['csrf_token'], $csrf))) {
+    if (!is_string($csrf) || $csrf === '' || !hash_equals($_SESSION['csrf_token'], $csrf)) {
         push_subscribe_out(403, ['status' => 'error', 'message' => 'Phiên thao tác đã hết hạn. Hãy tải lại trang.']);
     }
     $in = json_decode(file_get_contents('php://input'), true);

@@ -1,6 +1,6 @@
 /**
  * GODMINTON - App JS (Theme, PWA, Navbar Render)
- * Phiên bản tĩnh - không cần PHP
+ * Dùng chung cho giao diện PHP, lấy trạng thái tài khoản từ API.
  */
 
 // ========================
@@ -93,18 +93,6 @@ async function renderNavbarUser() {
 }
 
 // ========================
-// ACTIVE NAV LINK
-// ========================
-function setActiveNav(pageId) {
-    document.querySelectorAll('.navbar-custom .nav-link').forEach(link => {
-        link.classList.remove('active');
-        if (link.dataset.page === pageId) {
-            link.classList.add('active');
-        }
-    });
-}
-
-// ========================
 // PWA & SERVICE WORKER
 // ========================
 let deferredInstallPrompt = null;
@@ -113,20 +101,6 @@ function initServiceWorker() {
     if ('serviceWorker' in navigator) {
         const registerSW = () => {
             navigator.serviceWorker.register('sw.js')
-                .then(registration => {
-                    console.log('[PWA] Service Worker registered with scope:', registration.scope);
-                    // Check for updates
-                    registration.addEventListener('updatefound', () => {
-                        const newWorker = registration.installing;
-                        if (newWorker) {
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    console.log('[PWA] Phiên bản mới đã sẵn sàng. Tự động cập nhật.');
-                                }
-                            });
-                        }
-                    });
-                })
                 .catch(error => {
                     console.warn('[PWA] Đăng ký Service Worker thất bại:', error);
                 });
@@ -165,7 +139,6 @@ function initPwaInstallPrompt() {
     });
 
     window.addEventListener('appinstalled', () => {
-        console.log('[PWA] Ứng dụng GODMINTON đã được cài đặt thành công!');
         deferredInstallPrompt = null;
         const installBtn = document.getElementById('btnPwaInstall');
         if (installBtn) installBtn.style.display = 'none';
@@ -177,8 +150,7 @@ function initPwaInstallPrompt() {
 async function triggerPwaInstall() {
     if (!deferredInstallPrompt) return;
     deferredInstallPrompt.prompt();
-    const { outcome } = await deferredInstallPrompt.userChoice;
-    console.log('[PWA] Lựa chọn của người dùng:', outcome);
+    await deferredInstallPrompt.userChoice;
     deferredInstallPrompt = null;
 }
 

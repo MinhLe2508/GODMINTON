@@ -4,10 +4,26 @@
  * Hỗ trợ: Pre-cache, Offline Fallback, Dynamic Network-First, Web Push Notification
  */
 
-const CACHE_VERSION = 'godminton-v1.3.6-bell-redesign';
+const CACHE_VERSION = 'godminton-v1.3.7-final-clean-20261117';
 const CACHE_STATIC  = `godminton-static-${CACHE_VERSION}`;
 const CACHE_RUNTIME = `godminton-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL   = 'offline.php';
+
+function isGodmintonCache(name) {
+    return name.startsWith('godminton-static-') || name.startsWith('godminton-runtime-');
+}
+
+async function cacheRuntimeResponse(request, response) {
+    if (!response || response.status !== 200 || /no-store|private/i.test(response.headers.get('Cache-Control') || '')) return;
+    const copy = response.clone();
+    try {
+        const cache = await caches.open(CACHE_RUNTIME);
+        await cache.put(request, copy);
+    } catch (error) {
+        // Cache đầy hoặc không khả dụng không được làm hỏng phản hồi mạng.
+        console.warn('[ServiceWorker] Không thể lưu bộ nhớ đệm:', error);
+    }
+}
 
 // Danh sách tài nguyên tĩnh thiết yếu cần precache khi cài đặt
 const PRECACHE_ASSETS = [
@@ -51,11 +67,8 @@ self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(keys => {
             return Promise.all(
-                keys.filter(key => key !== CACHE_STATIC && key !== CACHE_RUNTIME)
-                    .map(key => {
-                        console.log('[ServiceWorker] Xóa cache cũ:', key);
-                        return caches.delete(key);
-                    })
+                keys.filter(key => isGodmintonCache(key) && key !== CACHE_STATIC && key !== CACHE_RUNTIME)
+                    .map(key => caches.delete(key))
             );
         }).then(() => self.clients.claim())
     );
@@ -88,11 +101,7 @@ self.addEventListener('fetch', event => {
         event.respondWith(
             fetch(req)
                 .then(networkRes => {
-                    // Lưu bản sao vào cache runtime nếu response hợp lệ
-                    if (networkRes && networkRes.status === 200 && !/no-store|private/i.test(networkRes.headers.get('Cache-Control') || '')) {
-                        const copy = networkRes.clone();
-                        caches.open(CACHE_RUNTIME).then(cache => cache.put(req, copy));
-                    }
+                    event.waitUntil(cacheRuntimeResponse(req, networkRes));
                     return networkRes;
                 })
                 .catch(async () => {
@@ -121,16 +130,15 @@ self.addEventListener('fetch', event => {
 
         event.respondWith(
             caches.match(req).then(cached => {
-                const fetchPromise = fetch(req).then(networkRes => {
-                    if (networkRes && networkRes.status === 200 && !/no-store|private/i.test(networkRes.headers.get('Cache-Control') || '')) {
-                        const copy = networkRes.clone();
-                        caches.open(CACHE_RUNTIME).then(cache => cache.put(req, copy));
-                    }
+                const fetchPromise = fetch(req).then(async networkRes => {
+                    await cacheRuntimeResponse(req, networkRes);
                     return networkRes;
                 }).catch(() => null);
 
+                event.waitUntil(fetchPromise);
+
                 // Ưu tiên trả về cache ngay lập tức nếu có, đồng thời fetch ngầm cập nhật
-                return cached || fetchPromise;
+                return cached || fetchPromise.then(response => response || Response.error());
             })
         );
     }
