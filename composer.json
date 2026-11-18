@@ -1,6 +1,6 @@
 {
     "name": "nhom2-detai5/godminton",
-    "description": "Website Đặt Sân Cầu Lông Trực Tuyến (GODMINTON) — Nhóm 2, Đề tài 5",
+    "description": "Đặt sân và quản lý hệ thống Website Sân Cầu Lông Trực Tuyến (GODMINTON)",
     "type": "project",
     "require": {
         "php": ">=8.2",
