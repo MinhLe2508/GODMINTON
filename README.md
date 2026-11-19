@@ -81,7 +81,7 @@ Giữ `.htaccess` để chặn `.env`, Git, database, thư viện, công cụ CL
 
 | Vị trí | Nội dung |
 |---|---|
-| Các trang PHP ở gốc | Giao diện khách hàng, chủ sân và quản trị |
+| `pages/` | Các trang giao diện PHP (khách hàng, chủ sân và quản trị) được ánh xạ URL gốc qua `.htaccess` |
 | `api/` | API JSON, xác thực và kiểm tra quyền phía server |
 | `includes/`, `config/` | Dịch vụ nghiệp vụ, phiên, email và cấu hình |
 | `assets/` | JavaScript, CSS, ảnh và biểu tượng |

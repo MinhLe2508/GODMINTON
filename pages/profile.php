@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/includes/auth-check.php';
+require_once dirname(__DIR__) . '/includes/auth-check.php';
 header('Cache-Control: no-store');
 $sessionRole = $_SESSION['role'] ?? 'customer';
 ?>
@@ -10,7 +10,7 @@ $sessionRole = $_SESSION['role'] ?? 'customer';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trang Cá Nhân | GODMINTON</title>
-<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
+<?php include_once dirname(__DIR__) . '/includes/partials/pwa-head.php'; ?>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,9 +21,9 @@ $sessionRole = $_SESSION['role'] ?? 'customer';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
+    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/swal-godminton.css') ?>">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/style.css') ?>">
     <style>
         .profile-hero {
             background: linear-gradient(135deg, #0f766e 0%, #115e59 50%, #042f2e 100%);
@@ -333,7 +333,7 @@ $sessionRole = $_SESSION['role'] ?? 'customer';
             }
         }
     </style>
-<link rel="stylesheet" href="assets/css/password-requirements.css?v=<?= filemtime(__DIR__.'/assets/css/password-requirements.css') ?>">
+<link rel="stylesheet" href="assets/css/password-requirements.css?v=<?= filemtime(dirname(__DIR__).'/assets/css/password-requirements.css') ?>">
 </head>
 
 <body>
@@ -870,18 +870,18 @@ $sessionRole = $_SESSION['role'] ?? 'customer';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
+    <script src="assets/js/swal-godminton.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/swal-godminton.js') ?>"></script>
     <!-- API helpers -->
-    <script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
+    <script src="assets/js/booking-account-client.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/booking-account-client.js') ?>"></script>
     <!-- Web Push Client -->
-    <script src="assets/js/push-client.js?v=<?= filemtime(__DIR__ . '/assets/js/push-client.js') ?>"></script>
+    <script src="assets/js/push-client.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/push-client.js') ?>"></script>
     <!-- App JS -->
-    <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
+    <script src="assets/js/app.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/app.js') ?>"></script>
     <!-- Profile JS -->
-    <script src="assets/js/profile.js?v=<?= filemtime(__DIR__ . '/assets/js/profile.js') ?>"></script>
+    <script src="assets/js/profile.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/profile.js') ?>"></script>
     <!-- Bottom Nav -->
-    <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
-<script src="assets/js/password-requirements.js?v=<?= filemtime(__DIR__.'/assets/js/password-requirements.js') ?>"></script>
+    <script src="assets/js/bottom-nav.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/bottom-nav.js') ?>"></script>
+<script src="assets/js/password-requirements.js?v=<?= filemtime(dirname(__DIR__).'/assets/js/password-requirements.js') ?>"></script>
 <script>
 // Đảm bảo nút Khôi phục luôn đặt lại toàn bộ các ô về trạng thái ban đầu kể cả khi trình duyệt lưu cache JS cũ
 window.resetProfileForm = function(isManualReset = false) {

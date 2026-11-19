@@ -1,8 +1,8 @@
 <?php
 header('Cache-Control: no-store, max-age=0');
 define('GODMINTON_DB_OPTIONAL', true);
-require_once __DIR__ . '/config/db.php';
-require_once __DIR__ . '/includes/auth-session.php';
+require_once dirname(__DIR__) . '/config/db.php';
+require_once dirname(__DIR__) . '/includes/auth-session.php';
 god_auth_clear_saved_credentials();
 $savedEmail = '';
 $savedPassword = '';
@@ -15,14 +15,14 @@ $v = time();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng Nhập / Đăng Ký | GODMINTON</title>
-<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
+<?php include_once dirname(__DIR__) . '/includes/partials/pwa-head.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
+    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/swal-godminton.css') ?>">
     <link rel="stylesheet" href="assets/css/style.css?v=<?= $v ?>">
     <link rel="stylesheet" href="assets/css/auth_style.css?v=<?= $v ?>">
 
@@ -440,7 +440,7 @@ $v = time();
             .auth-field { margin-bottom: 0.95rem; }
         }
     </style>
-<link rel="stylesheet" href="assets/css/password-requirements.css?v=<?= filemtime(__DIR__.'/assets/css/password-requirements.css') ?>">
+<link rel="stylesheet" href="assets/css/password-requirements.css?v=<?= filemtime(dirname(__DIR__).'/assets/css/password-requirements.css') ?>">
 </head>
 <body>
 
@@ -622,9 +622,9 @@ $v = time();
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
-<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
-<script src="assets/js/auth.js?v=<?= filemtime(__DIR__ . '/assets/js/auth.js') ?>"></script>
-<script src="assets/js/password-requirements.js?v=<?= filemtime(__DIR__.'/assets/js/password-requirements.js') ?>"></script>
+<script src="assets/js/swal-godminton.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/swal-godminton.js') ?>"></script>
+<script src="assets/js/app.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/app.js') ?>"></script>
+<script src="assets/js/auth.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/auth.js') ?>"></script>
+<script src="assets/js/password-requirements.js?v=<?= filemtime(dirname(__DIR__).'/assets/js/password-requirements.js') ?>"></script>
 </body>
 </html>

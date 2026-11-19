@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>Trang Chủ - Đặt Sân Cầu Lông Trực Tuyến | GODMINTON</title>
     <meta name="description" content="Hệ thống đặt sân cầu lông trực tuyến theo thời gian thực (AJAX), hỗ trợ PWA cài đặt app và thông báo đẩy nhắc lịch thi đấu.">
-<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
+<?php include_once dirname(__DIR__) . '/includes/partials/pwa-head.php'; ?>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,11 +23,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
     <!-- SweetAlert2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
+    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/swal-godminton.css') ?>">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/style.css') ?>">
     <!-- Index Explore Tabs Style CSS -->
-    <link rel="stylesheet" href="assets/css/index_explore_tabs_style.css?v=<?= filemtime(__DIR__ . '/assets/css/index_explore_tabs_style.css') ?>">
+    <link rel="stylesheet" href="assets/css/index_explore_tabs_style.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/index_explore_tabs_style.css') ?>">
     <style>
         /* Gradient trắng xanh nhạt tinh tế cho các thanh chọn tìm kiếm tại trang chủ */
         .search-card-floating .form-select {
@@ -476,7 +476,7 @@
             </div>
         </div>
     </footer>
-<?php include_once __DIR__ . '/includes/partials/pwa-install-banner.php'; ?>
+<?php include_once dirname(__DIR__) . '/includes/partials/pwa-install-banner.php'; ?>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -486,16 +486,16 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
+    <script src="assets/js/swal-godminton.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/swal-godminton.js') ?>"></script>
     <!-- API helpers -->
-    <script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
+    <script src="assets/js/booking-account-client.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/booking-account-client.js') ?>"></script>
     <!-- App JS -->
-    <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
+    <script src="assets/js/app.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/app.js') ?>"></script>
 
-    <script src="assets/js/content-client.js?v=<?= filemtime(__DIR__ . '/assets/js/content-client.js') ?>"></script>
-    <script src="assets/js/index_explore_dt.js?v=<?= filemtime(__DIR__ . '/assets/js/index_explore_dt.js') ?>"></script>
+    <script src="assets/js/content-client.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/content-client.js') ?>"></script>
+    <script src="assets/js/index_explore_dt.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/index_explore_dt.js') ?>"></script>
 
-    <script src="assets/js/home-court-cards.js?v=<?= filemtime(__DIR__ . '/assets/js/home-court-cards.js') ?>"></script>
+    <script src="assets/js/home-court-cards.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/home-court-cards.js') ?>"></script>
 
     <!-- ===== AJAX: Load Featured Courts & Home Search ===== -->
     <script>
@@ -570,7 +570,7 @@
     </script>
 
     <!-- Bottom Nav -->
-    <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
+    <script src="assets/js/bottom-nav.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>
 

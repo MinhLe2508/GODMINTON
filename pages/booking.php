@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__.'/config/db.php';
-require_once __DIR__.'/includes/auth-session.php';
+require_once dirname(__DIR__).'/config/db.php';
+require_once dirname(__DIR__).'/includes/auth-session.php';
 header('Cache-Control: no-store, max-age=0');
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
@@ -16,14 +16,14 @@ if (!empty($_SESSION['user_id'])) {
     ];
 }
 if ($currentUser !== null) {
-    require_once __DIR__ . '/config/db.php';
+    require_once dirname(__DIR__) . '/config/db.php';
     $userStmt = $pdo->prepare('SELECT id,name,email,phone,role FROM users WHERE id=?');
     $userStmt->execute([(int)$_SESSION['user_id']]);
     $currentUser = $userStmt->fetch() ?: null;
 }
 
-require_once __DIR__ . '/config/db.php';
-require_once __DIR__ . '/includes/court-resolver.php';
+require_once dirname(__DIR__) . '/config/db.php';
+require_once dirname(__DIR__) . '/includes/court-resolver.php';
 $requestedCourt = $_GET['court_id'] ?? '';
 if (!is_string($requestedCourt) || !ctype_digit($requestedCourt) || (int)$requestedCourt<=0) {
     header('Location: courts.php');exit;
@@ -51,16 +51,16 @@ function booking_text($value): string {return htmlspecialchars((string)$value,EN
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đặt Sân Real-time | GODMINTON</title>
-<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
+<?php include_once dirname(__DIR__) . '/includes/partials/pwa-head.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
-    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
-    <link rel="stylesheet" href="assets/css/booking_style.css?v=<?= filemtime(__DIR__ . '/assets/css/booking_style.css') ?>">
+    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/swal-godminton.css') ?>">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="assets/css/booking_style.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/booking_style.css') ?>">
     <script>
         window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
@@ -249,11 +249,11 @@ function booking_text($value): string {return htmlspecialchars((string)$value,EN
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
-    <script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
-    <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
-    <script src="assets/js/calendar_booking.js?v=<?= filemtime(__DIR__ . '/assets/js/calendar_booking.js') ?>"></script>
+    <script src="assets/js/swal-godminton.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/swal-godminton.js') ?>"></script>
+    <script src="assets/js/booking-account-client.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/booking-account-client.js') ?>"></script>
+    <script src="assets/js/app.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/app.js') ?>"></script>
+    <script src="assets/js/calendar_booking.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/calendar_booking.js') ?>"></script>
     <!-- Bottom Nav -->
-    <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
+    <script src="assets/js/bottom-nav.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>

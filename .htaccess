@@ -1,4 +1,6 @@
 Options -Indexes
+DirectoryIndex pages/index.php index.php
+
 RedirectMatch 403 "(?i)/(?:\.git|config|database|docs|includes|report|scratch|tests|tools|vendor)(?:/|$)"
 <FilesMatch "^(\.env(?:\..*)?|composer\.(?:json|lock))$">
     Require all denied
@@ -7,3 +9,19 @@ RedirectMatch 403 "(?i)/(?:\.git|config|database|docs|includes|report|scratch|te
 <Files "KIEM_THU.cjs">
     Require all denied
 </Files>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Chuyển hướng truy cập trực tiếp /pages/ten-trang.php về URL gốc /ten-trang.php
+    RewriteCond %{THE_REQUEST} \s/+([^\s?]*/)?pages/([a-zA-Z0-9_-]+\.php)[\s?] [NC]
+    RewriteRule ^pages/[a-zA-Z0-9_-]+\.php$ /%1%2 [R=302,L,QSA]
+
+    # Trang chủ (/) -> pages/index.php
+    RewriteRule ^$ pages/index.php [L,QSA]
+
+    # Ánh xạ các URL /ten-trang.php ở gốc vào thư mục pages/
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([a-zA-Z0-9_-]+\.php)$ pages/$1 [L,QSA]
+</IfModule>

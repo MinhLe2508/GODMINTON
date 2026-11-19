@@ -5,10 +5,10 @@
  * Tuân thủ quy tắc hiển thị Mục 2.4: Nếu không đủ điều kiện công khai -> Trả về 404.
  */
 
-require_once __DIR__ . '/includes/auth-session.php';
-require_once __DIR__ . '/config/db.php';
-require_once __DIR__ . '/includes/post-service.php';
-require_once __DIR__ . '/includes/membership-service.php';
+require_once dirname(__DIR__) . '/includes/auth-session.php';
+require_once dirname(__DIR__) . '/config/db.php';
+require_once dirname(__DIR__) . '/includes/post-service.php';
+require_once dirname(__DIR__) . '/includes/membership-service.php';
 
 god_auth_start();
 $currentUserId = (int)($_SESSION['user_id'] ?? 0);
@@ -71,7 +71,7 @@ if ($post && !empty($post['voucher_id']) && !empty($post['voucher_code']) && ($p
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $post ? htmlspecialchars($post['title']) . ' | GODMINTON' : '404 - Không tìm thấy bài viết | GODMINTON' ?></title>
     <meta name="description" content="<?= $post ? htmlspecialchars($post['summary'] ?? $post['title']) : 'Bài viết không tồn tại.' ?>">
-<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
+<?php include_once dirname(__DIR__) . '/includes/partials/pwa-head.php'; ?>
 
     <!-- Fonts & Bootstrap -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -80,8 +80,8 @@ if ($post && !empty($post['voucher_id']) && !empty($post['voucher_code']) && ($p
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
-    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/swal-godminton.css') ?>">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/style.css') ?>">
 
     <style>
         .post-detail-cover {
@@ -465,8 +465,8 @@ if ($post && !empty($post['voucher_id']) && !empty($post['voucher_code']) && ($p
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
-    <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
+    <script src="assets/js/app.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/app.js') ?>"></script>
+    <script src="assets/js/bottom-nav.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/bottom-nav.js') ?>"></script>
 
     <?php if ($post && $post['type'] === 'membership'): 
         $pkgShortTitle = 'Gói Hội Viên';

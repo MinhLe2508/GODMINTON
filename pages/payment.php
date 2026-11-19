@@ -1,14 +1,14 @@
 <?php
 header('Cache-Control: no-store, max-age=0');
-require_once __DIR__ . '/includes/auth-check.php';
+require_once dirname(__DIR__) . '/includes/auth-check.php';
 $currentUser = [
     'id' => (int)$_SESSION['user_id'],
     'name' => $_SESSION['name'] ?? '',
     'role' => $_SESSION['role'] ?? ''
 ];
 if ($currentUser !== null) {
-    require_once __DIR__ . '/config/db.php';
-    require_once __DIR__ . '/includes/membership-service.php';
+    require_once dirname(__DIR__) . '/config/db.php';
+    require_once dirname(__DIR__) . '/includes/membership-service.php';
     $userStmt = $pdo->prepare('SELECT id,name,email,phone,role FROM users WHERE id=?');
     $userStmt->execute([(int)$_SESSION['user_id']]);
     $currentUser = $userStmt->fetch() ?: null;
@@ -24,16 +24,16 @@ if ($currentUser !== null) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thanh Toán Đặt Cọc | GODMINTON</title>
     <meta name="description" content="Xác nhận và thanh toán đặt cọc sân cầu lông trực tuyến tại GODMINTON.">
-<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
+<?php include_once dirname(__DIR__) . '/includes/partials/pwa-head.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
-    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
-    <link rel="stylesheet" href="assets/css/payment_style.css?v=<?= filemtime(__DIR__ . '/assets/css/payment_style.css') ?>">
+    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/swal-godminton.css') ?>">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="assets/css/payment_style.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/payment_style.css') ?>">
     <script>
         window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
@@ -552,11 +552,11 @@ if ($currentUser !== null) {
 <!-- ===================== SCRIPTS ===================== -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
-<script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
-<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
-<script src="assets/js/payment.js?v=<?= filemtime(__DIR__ . '/assets/js/payment.js') ?>"></script>
+<script src="assets/js/swal-godminton.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/swal-godminton.js') ?>"></script>
+<script src="assets/js/booking-account-client.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/booking-account-client.js') ?>"></script>
+<script src="assets/js/app.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/app.js') ?>"></script>
+<script src="assets/js/payment.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/payment.js') ?>"></script>
 <!-- Bottom Nav -->
-<script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
+<script src="assets/js/bottom-nav.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>
