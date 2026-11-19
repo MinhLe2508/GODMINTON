@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Liên Hệ & Hỗ Trợ Khách Hàng | GODMINTON</title>
-<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
+<?php include_once dirname(__DIR__) . '/includes/partials/pwa-head.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,9 +13,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
+    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/swal-godminton.css') ?>">
     <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/contact.css?v=<?= filemtime(__DIR__ . '/assets/css/contact.css') ?>">
+    <link rel="stylesheet" href="assets/css/contact.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/contact.css') ?>">
 </head>
 <body>
 
@@ -134,12 +134,12 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
-    <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
-    <script src="assets/js/content-client.js?v=<?= filemtime(__DIR__ . '/assets/js/content-client.js') ?>"></script>
-    <script src="assets/js/contact.js?v=<?= filemtime(__DIR__ . '/assets/js/contact.js') ?>"></script>
+    <script src="assets/js/swal-godminton.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/swal-godminton.js') ?>"></script>
+    <script src="assets/js/app.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/app.js') ?>"></script>
+    <script src="assets/js/content-client.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/content-client.js') ?>"></script>
+    <script src="assets/js/contact.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/contact.js') ?>"></script>
     <!-- Bottom Nav -->
-    <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
+    <script src="assets/js/bottom-nav.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>
 

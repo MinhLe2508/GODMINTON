@@ -13,7 +13,7 @@ header('Cache-Control: no-store, max-age=0');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Khám Phá — Sự Kiện, Gói Hội Viên & Thông Báo | GODMINTON</title>
     <meta name="description" content="Khám phá các giải đấu cầu lông sôi động, gói hội viên ưu đãi đặc quyền và thông báo cập nhật mới nhất từ GODMINTON.">
-<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
+<?php include_once dirname(__DIR__) . '/includes/partials/pwa-head.php'; ?>
 
     <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,8 +24,8 @@ header('Cache-Control: no-store, max-age=0');
     <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
-    <link rel="stylesheet" href="assets/css/index_explore_tabs_style.css?v=<?= filemtime(__DIR__ . '/assets/css/index_explore_tabs_style.css') ?>">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="assets/css/index_explore_tabs_style.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/index_explore_tabs_style.css') ?>">
 
     <style>
         .explore-hero {
@@ -311,9 +311,9 @@ header('Cache-Control: no-store, max-age=0');
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-    <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
-    <script src="assets/js/content-client.js?v=<?= filemtime(__DIR__ . '/assets/js/content-client.js') ?>"></script>
-    <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
-    <script src="assets/js/explore.js?v=<?= filemtime(__DIR__ . '/assets/js/explore.js') ?>"></script>
+    <script src="assets/js/app.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/app.js') ?>"></script>
+    <script src="assets/js/content-client.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/content-client.js') ?>"></script>
+    <script src="assets/js/bottom-nav.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/bottom-nav.js') ?>"></script>
+    <script src="assets/js/explore.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/explore.js') ?>"></script>
 </body>
 </html>

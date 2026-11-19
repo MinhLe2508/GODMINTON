@@ -5,7 +5,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self'; style-sr
 header('X-Content-Type-Options: nosniff');
 ?>
 <!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Xác thực tài khoản | GODMINTON</title><link rel="stylesheet" href="assets/css/auth-action.css?v=<?= filemtime(__DIR__.'/assets/css/auth-action.css') ?>"><link rel="stylesheet" href="assets/css/password-requirements.css?v=<?= filemtime(__DIR__.'/assets/css/password-requirements.css') ?>">
+<title>Xác thực tài khoản | GODMINTON</title><link rel="stylesheet" href="assets/css/auth-action.css?v=<?= filemtime(dirname(__DIR__).'/assets/css/auth-action.css') ?>"><link rel="stylesheet" href="assets/css/password-requirements.css?v=<?= filemtime(dirname(__DIR__).'/assets/css/password-requirements.css') ?>">
 </head>
 <body><main class="account-card"><a href="index.php"><img class="logo" src="assets/img/logo-teal.svg" alt="GODMINTON"></a>
 <span class="eyebrow">BẢO MẬT TÀI KHOẢN</span><h1 id="actionTitle">Xác minh email</h1>
@@ -17,5 +17,5 @@ header('X-Content-Type-Options: nosniff');
 </div><div id="deleteConfirmation" hidden><label class="delete-consent"><input id="confirmDeleteAccount" type="checkbox"> Tôi hiểu và đồng ý xóa tài khoản.</label></div><button type="submit" id="actionSubmit">Xác minh email</button></form>
 <p id="actionMessage" role="status" aria-live="polite"></p>
 <a class="back" href="auth.php">Quay lại đăng nhập</a><p class="security-note">Liên kết chỉ có hiệu lực một lần. Không chia sẻ với người khác.</p>
-</main><script src="assets/js/auth-action.js?v=<?= filemtime(__DIR__.'/assets/js/auth-action.js') ?>"></script><script src="assets/js/password-requirements.js?v=<?= filemtime(__DIR__.'/assets/js/password-requirements.js') ?>"></script>
+</main><script src="assets/js/auth-action.js?v=<?= filemtime(dirname(__DIR__).'/assets/js/auth-action.js') ?>"></script><script src="assets/js/password-requirements.js?v=<?= filemtime(dirname(__DIR__).'/assets/js/password-requirements.js') ?>"></script>
 </body></html>

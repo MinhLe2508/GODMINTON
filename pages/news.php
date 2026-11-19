@@ -4,20 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chi Tiết Sân Cầu Lông | GODMINTON</title>
-<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
+    <title>Tin Tức & Cẩm Nang Cầu Lông | GODMINTON</title>
+<?php include_once dirname(__DIR__) . '/includes/partials/pwa-head.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
-    <!-- Leaflet 1.9.4 CSS + court-map.css -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-    <link rel="stylesheet" href="assets/css/court-map.css?v=<?= @filemtime(__DIR__ . '/assets/css/court-map.css') ?: time() ?>">
-    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
@@ -31,10 +26,16 @@
     </header>
 
     <main class="min-vh-100">
-    <div class="container py-4" id="pageContent">
-        <div class="text-center py-5">
-            <div class="spinner-border text-teal" role="status"></div>
-            <div class="mt-2 text-muted">Đang tải thông tin sân...</div>
+    <div class="container py-4">
+        <div class="mb-4 pb-2 border-bottom">
+            <h2 class="fw-extrabold mb-1">Cẩm Nang & Tin Tức Cầu Lông</h2>
+            <p class="text-muted small mb-0">Cập nhật tin tức giải đấu, kỹ thuật thi đấu và mẹo chọn dụng cụ từ chuyên gia</p>
+        </div>
+
+        <div class="row g-4" id="newsContainer">
+            <div class="text-center py-5 col-12">
+                <div class="spinner-border text-teal" role="status"></div>
+            </div>
         </div>
     </div>
     </main>
@@ -58,16 +59,6 @@
                         <li><a href="contact.php">Hỗ trợ</a></li>
                     </ul>
                 </div>
-                <div class="col-lg-3 col-md-6">
-                    <h6 class="text-white fw-bold mb-3">Hotline</h6>
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="icon-circle bg-teal text-white"><i class="fa-solid fa-phone"></i></div>
-                        <div>
-                            <div class="small text-muted-light">Tổng đài 24/7</div>
-                            <div class="fs-5 fw-bold text-white">1900 8888</div>
-                        </div>
-                    </div>
-                </div>
             </div>
             <hr class="border-secondary opacity-25 my-4">
             <div class="small text-muted-light">&copy; 2026 GODMINTON - Đồ án Lập trình Web.</div>
@@ -76,16 +67,11 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
-    <script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
-    <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
-    <!-- Leaflet 1.9.4 JS + court-map.js -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="assets/js/court-map.js?v=<?= @filemtime(__DIR__ . '/assets/js/court-map.js') ?: time() ?>"></script>
-    <script src="assets/js/court_detail.js?v=<?= filemtime(__DIR__ . '/assets/js/court_detail.js') ?>"></script>
+    <script src="assets/js/app.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/app.js') ?>"></script>
+    <script src="assets/js/content-client.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/content-client.js') ?>"></script>
+    <script src="assets/js/news.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/news.js') ?>"></script>
     <!-- Bottom Nav -->
-    <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
+    <script src="assets/js/bottom-nav.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>
 
