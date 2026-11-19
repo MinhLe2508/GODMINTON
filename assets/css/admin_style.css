@@ -6,12 +6,34 @@
 body.admin-body {
     background-color: var(--bg-body);
     min-height: 100vh;
+    min-height: 100dvh;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    padding-bottom: 0 !important;
+}
+
+body.admin-body.has-bottom-nav,
+body.admin-body.has-owner-nav,
+body.has-owner-nav {
+    padding-bottom: 0 !important;
+}
+
+/* Xóa bỏ hoàn toàn thanh menu dưới k cần thiết trên tất cả các trang admin/chủ sân */
+body.admin-body #godmintonBottomNav,
+.admin-shell ~ #godmintonBottomNav,
+#godmintonBottomNav.owner-nav {
+    display: none !important;
 }
 
 /* ---------- Layout ---------- */
 .admin-shell {
     display: flex;
     min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
 /* ---------- Sidebar ---------- */
@@ -23,6 +45,7 @@ body.admin-body {
     position: sticky;
     top: 0;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     z-index: 1030;
@@ -117,8 +140,12 @@ body.admin-body {
 .admin-main {
     flex: 1;
     min-width: 0;
+    width: 100%;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
 .admin-topbar {
@@ -131,6 +158,15 @@ body.admin-body {
     display: flex;
     align-items: center;
     gap: 1rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.admin-topbar-title {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
 }
 
 .admin-topbar-title h1 {
@@ -138,11 +174,135 @@ body.admin-body {
     font-weight: 800;
     margin: 0;
     color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .admin-topbar-title .admin-breadcrumb {
     font-size: 0.78rem;
     color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------- Admin Topbar Actions (Notification Bell & Theme Toggle) ---------- */
+.admin-topbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.admin-topbar #pushBellToggle,
+.admin-shell #pushBellToggle,
+.admin-layout #pushBellToggle,
+[data-workflow-page] #pushBellToggle {
+    display: none !important;
+}
+
+.admin-topbar .admin-icon-btn,
+.admin-topbar #themeToggle,
+.admin-topbar .bnav-bell-float {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    z-index: 1 !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    max-width: 40px !important;
+    max-height: 40px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    font-size: 1rem !important;
+    line-height: 1 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    flex-shrink: 0 !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* Light mode styles */
+[data-bs-theme="light"] .admin-topbar .admin-icon-btn,
+[data-bs-theme="light"] .admin-topbar #pushBellToggle,
+[data-bs-theme="light"] .admin-topbar .bnav-bell-float {
+    background: #ffffff !important;
+    border: 1.5px solid rgba(13, 148, 136, 0.3) !important;
+    color: #0d9488 !important;
+}
+
+[data-bs-theme="light"] .admin-topbar #themeToggle {
+    background: #ffffff !important;
+    border: 1.5px solid rgba(13, 148, 136, 0.35) !important;
+    color: #0d9488 !important;
+}
+
+[data-bs-theme="light"] .admin-topbar .admin-icon-btn:hover,
+[data-bs-theme="light"] .admin-topbar #pushBellToggle:hover,
+[data-bs-theme="light"] .admin-topbar #themeToggle:hover,
+[data-bs-theme="light"] .admin-topbar .bnav-bell-float:hover {
+    background: #0d9488 !important;
+    border-color: #0d9488 !important;
+    color: #ffffff !important;
+    transform: scale(1.06) !important;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25) !important;
+}
+
+[data-bs-theme="light"] .admin-topbar .admin-icon-btn:hover i,
+[data-bs-theme="light"] .admin-topbar #pushBellToggle:hover i,
+[data-bs-theme="light"] .admin-topbar #themeToggle:hover i,
+[data-bs-theme="light"] .admin-topbar .bnav-bell-float:hover i {
+    color: #ffffff !important;
+}
+
+/* Dark mode styles */
+[data-bs-theme="dark"] .admin-topbar .admin-icon-btn,
+[data-bs-theme="dark"] .admin-topbar #pushBellToggle,
+[data-bs-theme="dark"] .admin-topbar .bnav-bell-float {
+    background: rgba(13, 39, 48, 0.85) !important;
+    border: 1.5px solid rgba(45, 212, 191, 0.25) !important;
+    color: #2dd4bf !important;
+}
+
+[data-bs-theme="dark"] .admin-topbar #themeToggle {
+    background: rgba(13, 39, 48, 0.85) !important;
+    border: 1.5px solid rgba(45, 212, 191, 0.25) !important;
+    color: #fbbf24 !important;
+}
+
+[data-bs-theme="dark"] .admin-topbar .admin-icon-btn:hover,
+[data-bs-theme="dark"] .admin-topbar #pushBellToggle:hover,
+[data-bs-theme="dark"] .admin-topbar #themeToggle:hover,
+[data-bs-theme="dark"] .admin-topbar .bnav-bell-float:hover {
+    background: #0d9488 !important;
+    border-color: #0d9488 !important;
+    color: #ffffff !important;
+    transform: scale(1.06) !important;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35) !important;
+}
+
+[data-bs-theme="dark"] .admin-topbar .admin-icon-btn:hover i,
+[data-bs-theme="dark"] .admin-topbar #pushBellToggle:hover i,
+[data-bs-theme="dark"] .admin-topbar #themeToggle:hover i,
+[data-bs-theme="dark"] .admin-topbar .bnav-bell-float:hover i {
+    color: #ffffff !important;
+}
+
+.admin-topbar #pushBellToggle .bell-active-dot,
+.admin-topbar .bnav-bell-float .bell-active-dot {
+    position: absolute !important;
+    top: 5px !important;
+    right: 6px !important;
 }
 
 .admin-sidebar-toggle {
@@ -152,6 +312,10 @@ body.admin-body {
 .admin-content {
     padding: 1.5rem;
     flex: 1;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 /* ---------- Stat cards ---------- */
@@ -165,6 +329,8 @@ body.admin-body {
     gap: 1rem;
     height: 100%;
     box-shadow: var(--shadow-sm);
+    min-width: 0;
+    overflow: hidden;
 }
 
 .admin-stat-icon {
@@ -197,6 +363,11 @@ body.admin-body {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-sm);
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .admin-panel-head {
@@ -258,13 +429,338 @@ body.admin-body {
 }
 .slot-chip small { display:block; font-weight:600; opacity:.75; font-size: .68rem; }
 
-.slot-chip.is-available { border-color: rgba(34,197,94,.35); color:#16a34a; }
-.slot-chip.is-available:hover { background: rgba(34,197,94,.1); }
-.slot-chip.is-holding { border-color: rgba(245,158,11,.4); color:#b45309; background: rgba(245,158,11,.08); }
-.slot-chip.is-booked { border-color: rgba(239,68,68,.35); color:#dc2626; background: rgba(239,68,68,.08); }
+.slot-chip.is-available { border-color: rgba(34,197,94,.4); color:#16a34a; background: rgba(34,197,94,.04); }
+.slot-chip.is-available:hover { background: rgba(34,197,94,.12); transform: translateY(-1px); }
+.slot-chip.is-holding { border-color: rgba(245,158,11,.45); color:#b45309; background: rgba(245,158,11,.08); }
+.slot-chip.is-booked { border-color: rgba(239,68,68,.4); color:#dc2626; background: rgba(239,68,68,.08); }
+.slot-chip.is-maintenance { border-color: rgba(234,88,12,.45); color:#ea580c; background: rgba(234,88,12,.08); }
+.slot-chip.is-maintenance:hover { background: rgba(234,88,12,.15); }
 .slot-chip.is-blocked { border-color: var(--border-color); color: var(--text-secondary); background: repeating-linear-gradient(135deg, var(--bg-body), var(--bg-body) 6px, rgba(148,163,184,.15) 6px, rgba(148,163,184,.15) 12px); }
 
+[data-bs-theme="dark"] .slot-chip.is-available { color: #4ade80; border-color: rgba(74,222,128,.35); background: rgba(34,197,94,.08); }
+[data-bs-theme="dark"] .slot-chip.is-holding { color: #fde047; border-color: rgba(253,224,71,.35); background: rgba(245,158,11,.12); }
+[data-bs-theme="dark"] .slot-chip.is-booked { color: #f87171; border-color: rgba(248,113,113,.35); background: rgba(239,68,68,.12); }
+[data-bs-theme="dark"] .slot-chip.is-maintenance { color: #fb923c; border-color: rgba(251,146,60,.4); background: rgba(234,88,12,.16); }
+
+.slot-chip-note {
+    font-size: 0.68rem;
+    font-weight: 500;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+    margin-top: 2px;
+    opacity: 0.9;
+}
+
 .slot-legend-dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:.35rem; }
+
+/* ---------- View Switcher (Segmented Control) ---------- */
+.view-switch-group {
+    background: var(--bg-body, #f1f5f9);
+    padding: 3px;
+    border-radius: 999px;
+    display: inline-flex;
+    border: 1px solid var(--border-color, rgba(0,0,0,0.1));
+}
+.view-switch-btn {
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary, #64748b);
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-radius: 999px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+.view-switch-btn:hover {
+    color: var(--text-primary, #0f172a);
+}
+.view-switch-btn.active {
+    background: #ffffff;
+    color: var(--brand-teal, #0d9488);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+[data-bs-theme="dark"] .view-switch-group {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.12);
+}
+[data-bs-theme="dark"] .view-switch-btn {
+    color: #94a3b8;
+}
+[data-bs-theme="dark"] .view-switch-btn:hover {
+    color: #f1f5f9;
+}
+[data-bs-theme="dark"] .view-switch-btn.active {
+    background: #1e293b;
+    color: #2dd4bf;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* ---------- KPI Badges Summary ---------- */
+.slot-kpi-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+.slot-kpi-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: var(--bg-surface, #ffffff);
+    border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+    color: var(--text-primary, #1e293b);
+}
+
+/* ---------- Sub-court Tabs View ---------- */
+.subcourt-tabs-nav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+}
+.subcourt-tab-btn {
+    border: 1px solid var(--border-color, rgba(0,0,0,0.1));
+    background: var(--bg-surface, #ffffff);
+    color: var(--text-secondary, #64748b);
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.subcourt-tab-btn:hover {
+    border-color: var(--brand-teal, #0d9488);
+    color: var(--brand-teal, #0d9488);
+}
+.subcourt-tab-btn.active {
+    background: var(--brand-teal, #0d9488);
+    border-color: var(--brand-teal, #0d9488);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(13,148,136,0.25);
+}
+.subcourt-tab-btn .badge {
+    font-size: 0.72rem;
+    padding: 3px 7px;
+    border-radius: 999px;
+    font-weight: 700;
+}
+.subcourt-tab-btn.active .badge {
+    background: rgba(255,255,255,0.25) !important;
+    color: #ffffff !important;
+}
+
+.subcourt-toolbar {
+    background: var(--bg-surface, #ffffff);
+    border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+/* Card Slot trong Tab Thảm */
+.slot-detail-card {
+    background: var(--bg-surface, #ffffff);
+    border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+    border-radius: 14px;
+    padding: 12px 14px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.slot-detail-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+.slot-detail-card.is-available {
+    border-color: rgba(34,197,94,0.35);
+    background: linear-gradient(180deg, var(--bg-surface, #ffffff) 0%, rgba(34,197,94,0.03) 100%);
+}
+.slot-detail-card.is-holding {
+    border-color: rgba(245,158,11,0.4);
+    background: linear-gradient(180deg, var(--bg-surface, #ffffff) 0%, rgba(245,158,11,0.04) 100%);
+}
+.slot-detail-card.is-booked {
+    border-color: rgba(239,68,68,0.35);
+    background: linear-gradient(180deg, var(--bg-surface, #ffffff) 0%, rgba(239,68,68,0.04) 100%);
+}
+.slot-detail-card.is-maintenance {
+    border-color: rgba(234,88,12,0.45);
+    background: linear-gradient(180deg, var(--bg-surface, #ffffff) 0%, rgba(234,88,12,0.06) 100%);
+}
+.slot-detail-card.is-blocked {
+    border-color: var(--border-color);
+    background: repeating-linear-gradient(135deg, var(--bg-surface), var(--bg-surface) 8px, rgba(148,163,184,.08) 8px, rgba(148,163,184,.08) 16px);
+}
+
+/* ---------- Timeline Matrix Grid View ---------- */
+.matrix-container {
+    position: relative;
+    max-height: 720px;
+    overflow: auto;
+    border-radius: 14px;
+    border: 1px solid var(--border-color, rgba(0,0,0,0.1));
+    background: var(--bg-surface, #ffffff);
+}
+.matrix-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 680px;
+}
+.matrix-table th, .matrix-table td {
+    border-right: 1px solid var(--border-color, rgba(0,0,0,0.08));
+    border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.08));
+    padding: 0;
+    vertical-align: middle;
+}
+.matrix-table th:last-child, .matrix-table td:last-child {
+    border-right: 0;
+}
+.matrix-time-header-corner {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 25;
+    background: var(--bg-card, #ffffff);
+    width: 110px;
+    min-width: 110px;
+    max-width: 110px;
+    padding: 12px 10px !important;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    border-bottom: 2px solid var(--border-color, rgba(0,0,0,0.15)) !important;
+}
+.matrix-court-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--bg-card, #ffffff);
+    padding: 12px 10px !important;
+    text-align: center;
+    border-bottom: 2px solid var(--border-color, rgba(0,0,0,0.15)) !important;
+    min-width: 145px;
+}
+.matrix-time-cell {
+    position: sticky;
+    left: 0;
+    z-index: 15;
+    background: var(--bg-card, #ffffff);
+    padding: 8px 10px !important;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--text-secondary, #64748b);
+    width: 110px;
+    min-width: 110px;
+    border-right: 2px solid var(--border-color, rgba(0,0,0,0.12)) !important;
+}
+.matrix-cell-content {
+    min-height: 58px;
+    padding: 6px 8px;
+    margin: 3px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    user-select: none;
+    position: relative;
+    border: 1px solid transparent;
+}
+.matrix-cell-content:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+    z-index: 2;
+}
+.matrix-cell-content.is-available {
+    background: rgba(34,197,94,0.08);
+    border-color: rgba(34,197,94,0.35);
+    color: #16a34a;
+}
+.matrix-cell-content.is-holding {
+    background: rgba(245,158,11,0.1);
+    border-color: rgba(245,158,11,0.45);
+    color: #b45309;
+}
+.matrix-cell-content.is-booked {
+    background: rgba(239,68,68,0.1);
+    border-color: rgba(239,68,68,0.38);
+    color: #dc2626;
+}
+.matrix-cell-content.is-maintenance {
+    background: rgba(234,88,12,0.12);
+    border-color: rgba(234,88,12,0.45);
+    color: #ea580c;
+}
+.matrix-cell-content.is-blocked {
+    background: repeating-linear-gradient(135deg, var(--bg-body), var(--bg-body) 6px, rgba(148,163,184,.14) 6px, rgba(148,163,184,.14) 12px);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+.matrix-cell-empty {
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--border-color);
+    font-size: 0.85rem;
+}
+
+[data-bs-theme="dark"] .matrix-time-header-corner,
+[data-bs-theme="dark"] .matrix-court-header,
+[data-bs-theme="dark"] .matrix-time-cell {
+    background: #1e293b;
+}
+[data-bs-theme="dark"] .matrix-cell-content.is-available {
+    background: rgba(34,197,94,0.12);
+    border-color: rgba(74,222,128,0.35);
+    color: #4ade80;
+}
+[data-bs-theme="dark"] .matrix-cell-content.is-holding {
+    background: rgba(245,158,11,0.14);
+    border-color: rgba(253,224,71,0.35);
+    color: #fde047;
+}
+[data-bs-theme="dark"] .matrix-cell-content.is-booked {
+    background: rgba(239,68,68,0.14);
+    border-color: rgba(248,113,113,0.35);
+    color: #f87171;
+}
+[data-bs-theme="dark"] .matrix-cell-content.is-maintenance {
+    background: rgba(234,88,12,0.18);
+    border-color: rgba(251,146,60,0.4);
+    color: #fb923c;
+}
 
 /* ---------- Responsive ---------- */
 @media (max-width: 991.98px) {
@@ -284,4 +780,803 @@ body.admin-body {
         z-index: 1025;
     }
     .admin-overlay.show { display: block; }
+}
+
+/* Keep desktop management navigation attached to the viewport while lists scroll. */
+@media (min-width: 992px) {
+    .admin-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        height: 100vh;
+        height: 100dvh;
+    }
+    .admin-main { margin-left: 260px; }
+}
+.admin-sidebar-brand, .admin-sidebar-footer { flex-shrink: 0; }
+.admin-sidebar .admin-nav { min-height: 0; overscroll-behavior: contain; }
+
+/* ==========================================================
+   ADMIN LIGHT & DARK THEME REFINEMENTS
+   Đảm bảo giao diện Sáng / Tối đồng bộ, tinh tế, độ tương phản chuẩn
+   ========================================================== */
+
+/* Helper Text Classes */
+.admin-text-primary {
+    color: var(--text-primary, #0f172a) !important;
+}
+.admin-text-secondary {
+    color: var(--text-secondary, #64748b) !important;
+}
+
+/* User Avatar */
+.user-avatar-sm {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: rgba(13, 148, 136, 0.12);
+    color: var(--brand-teal, #0d9488);
+    border: 1px solid rgba(13, 148, 136, 0.25);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+/* Dòng chờ duyệt (Pending) trong bảng admin: Light Mode */
+.admin-table tr.row-pending-approval,
+.admin-table tr.table-warning {
+    --bs-table-bg: rgba(245, 158, 11, 0.08) !important;
+    background-color: rgba(245, 158, 11, 0.08) !important;
+    border-left: 3px solid #f59e0b;
+}
+.admin-table tr.row-pending-approval td,
+.admin-table tr.table-warning td {
+    background-color: transparent !important;
+    color: inherit !important;
+}
+
+/* ==========================================================
+   CHẾ ĐỘ TỐI (DARK MODE) CHO TOÀN BỘ ADMIN
+   ========================================================== */
+[data-bs-theme="dark"] body.admin-body {
+    background-color: var(--bg-body, #05161c);
+    color: var(--text-primary, #f8fafc);
+}
+
+[data-bs-theme="dark"] .admin-topbar {
+    background: var(--bg-surface, #0a2128);
+    border-bottom-color: var(--border-color, #173844);
+}
+
+[data-bs-theme="dark"] .admin-stat-card,
+[data-bs-theme="dark"] .admin-panel {
+    background: var(--bg-card, #0d2730);
+    border-color: var(--border-color, #173844);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+[data-bs-theme="dark"] .admin-panel-head {
+    border-bottom-color: var(--border-color, #173844);
+}
+
+/* Tự động khắc phục triệt để class hardcode .text-dark trong Dark Mode */
+[data-bs-theme="dark"] .admin-main .text-dark:not(.badge):not(.btn-warning),
+[data-bs-theme="dark"] .admin-panel .text-dark:not(.badge):not(.btn-warning),
+[data-bs-theme="dark"] .admin-table .text-dark:not(.badge):not(.btn-warning),
+[data-bs-theme="dark"] .modal .text-dark:not(.badge):not(.btn-warning) {
+    color: #f1f5f9 !important;
+}
+
+/* Text secondary / muted rõ nét trong dark mode */
+[data-bs-theme="dark"] .admin-main .text-muted,
+[data-bs-theme="dark"] .admin-panel .text-muted,
+[data-bs-theme="dark"] .admin-table .text-muted {
+    color: #94a3b8 !important;
+}
+
+/* Bảng dữ liệu trong Dark Mode */
+[data-bs-theme="dark"] .admin-table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-primary, #f8fafc);
+    border-color: var(--border-color, #173844);
+}
+
+[data-bs-theme="dark"] .admin-table thead th {
+    background-color: rgba(10, 33, 40, 0.7);
+    color: var(--text-secondary, #94a3b8);
+    border-bottom-color: var(--border-color, #173844) !important;
+}
+
+[data-bs-theme="dark"] .admin-table td {
+    border-bottom-color: rgba(23, 56, 68, 0.6);
+}
+
+[data-bs-theme="dark"] .admin-table tbody tr:hover {
+    background-color: rgba(20, 184, 166, 0.06);
+}
+
+/* Dòng chờ duyệt: Dark Mode sang trọng, không chói */
+[data-bs-theme="dark"] .admin-table tr.row-pending-approval,
+[data-bs-theme="dark"] .admin-table tr.table-warning {
+    --bs-table-bg: rgba(245, 158, 11, 0.12) !important;
+    background-color: rgba(245, 158, 11, 0.12) !important;
+    border-left: 3px solid #f59e0b;
+}
+[data-bs-theme="dark"] .admin-table tr.row-pending-approval td,
+[data-bs-theme="dark"] .admin-table tr.table-warning td {
+    background-color: transparent !important;
+    color: #fef3c7 !important;
+}
+[data-bs-theme="dark"] .admin-table tr.row-pending-approval .admin-text-primary,
+[data-bs-theme="dark"] .admin-table tr.table-warning .admin-text-primary,
+[data-bs-theme="dark"] .admin-table tr.row-pending-approval .text-dark,
+[data-bs-theme="dark"] .admin-table tr.table-warning .text-dark {
+    color: #ffffff !important;
+}
+[data-bs-theme="dark"] .admin-table tr.row-pending-approval .text-muted,
+[data-bs-theme="dark"] .admin-table tr.table-warning .text-muted {
+    color: #fde68a !important;
+    opacity: 0.9;
+}
+
+/* User avatar trong Dark Mode */
+[data-bs-theme="dark"] .user-avatar-sm {
+    background: rgba(13, 148, 136, 0.22);
+    color: #2dd4bf;
+    border-color: rgba(45, 212, 191, 0.35);
+}
+
+/* Form Controls & Select trong Dark Mode */
+[data-bs-theme="dark"] .admin-content .form-control,
+[data-bs-theme="dark"] .admin-content .form-select,
+[data-bs-theme="dark"] .membership-filter-toolbar .form-control,
+[data-bs-theme="dark"] .membership-filter-toolbar .form-select {
+    background-color: #071c22 !important;
+    border: 1px solid #1a424e !important;
+    color: #f8fafc !important;
+}
+[data-bs-theme="dark"] .admin-content .form-control::placeholder,
+[data-bs-theme="dark"] .membership-filter-toolbar .form-control::placeholder {
+    color: #64748b !important;
+}
+[data-bs-theme="dark"] .admin-content .form-control:focus,
+[data-bs-theme="dark"] .admin-content .form-select:focus,
+[data-bs-theme="dark"] .membership-filter-toolbar .form-control:focus,
+[data-bs-theme="dark"] .membership-filter-toolbar .form-select:focus {
+    background-color: #0b2832 !important;
+    border-color: #0d9488 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.25) !important;
+}
+[data-bs-theme="dark"] .form-select option {
+    background-color: #0d2730;
+    color: #f8fafc;
+}
+
+/* Nút hành động khác (btn-light) & dropdown trong Dark Mode */
+[data-bs-theme="dark"] .admin-panel .btn-light {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #f8fafc !important;
+}
+[data-bs-theme="dark"] .admin-panel .btn-light:hover {
+    background-color: rgba(255, 255, 255, 0.16) !important;
+    color: #ffffff !important;
+}
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: #0d2730 !important;
+    border: 1px solid #173844 !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55) !important;
+}
+[data-bs-theme="dark"] .dropdown-item {
+    color: #e2e8f0 !important;
+}
+[data-bs-theme="dark"] .dropdown-item:hover,
+[data-bs-theme="dark"] .dropdown-item:focus {
+    background-color: rgba(13, 148, 136, 0.2) !important;
+    color: #ffffff !important;
+}
+[data-bs-theme="dark"] .dropdown-divider {
+    border-top-color: #173844 !important;
+}
+
+/* Subtle Badges trong Dark Mode */
+[data-bs-theme="dark"] .badge.bg-secondary-subtle {
+    background-color: rgba(148, 163, 184, 0.15) !important;
+    color: #cbd5e1 !important;
+    border-color: rgba(148, 163, 184, 0.25) !important;
+}
+[data-bs-theme="dark"] .badge.bg-success-subtle {
+    background-color: rgba(34, 197, 94, 0.15) !important;
+    color: #4ade80 !important;
+    border-color: rgba(34, 197, 94, 0.25) !important;
+}
+[data-bs-theme="dark"] .badge.bg-danger-subtle {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
+}
+[data-bs-theme="dark"] .badge.bg-warning-subtle {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    color: #fbbf24 !important;
+    border-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+/* Custom Purple Subtle Badge cho loại bài Sự kiện (Light + Dark mode) */
+.bg-purple-subtle {
+    background-color: rgba(139, 92, 246, 0.12) !important;
+}
+.text-purple {
+    color: #7c3aed !important;
+}
+.border-purple-subtle {
+    border-color: rgba(139, 92, 246, 0.28) !important;
+}
+[data-bs-theme="dark"] .bg-purple-subtle {
+    background-color: rgba(139, 92, 246, 0.2) !important;
+}
+[data-bs-theme="dark"] .text-purple {
+    color: #c4b5fd !important;
+}
+[data-bs-theme="dark"] .border-purple-subtle {
+    border-color: rgba(139, 92, 246, 0.4) !important;
+}
+
+/* Modals trong Dark Mode */
+[data-bs-theme="dark"] .modal-content {
+    background-color: #0d2730 !important;
+    border: 1px solid #173844 !important;
+    color: #f8fafc !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6) !important;
+}
+[data-bs-theme="dark"] .modal .bg-light {
+    background-color: #081e24 !important;
+    border-color: #173844 !important;
+}
+
+/* ==========================================================
+   RESPONSIVE TOÀN DIỆN CHO ADMIN TRÊN MOBILE (CHỐNG TRÀN TOÀN BỘ DIV, Ô)
+   ========================================================== */
+@media (max-width: 575.98px) {
+    /* Khung chính & nội dung */
+    .admin-content {
+        padding: 0.65rem 0.55rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Topbar */
+    .admin-topbar {
+        padding: 0.45rem 0.55rem !important;
+        gap: 0.35rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    .admin-topbar-title {
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+        overflow: hidden !important;
+    }
+    .admin-topbar-title .admin-breadcrumb {
+        display: none !important;
+    }
+    .admin-topbar-title h1 {
+        font-size: 0.88rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        line-height: 1.25 !important;
+    }
+    .admin-topbar-actions {
+        gap: 0.25rem !important;
+        flex-shrink: 0 !important;
+    }
+    .admin-topbar .admin-icon-btn,
+    .admin-topbar #themeToggle,
+    .admin-topbar #pushBellToggle,
+    .admin-topbar .bnav-bell-float {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        min-height: 32px !important;
+        font-size: 0.82rem !important;
+    }
+    .admin-topbar-actions .btn {
+        padding: 0.3rem 0.55rem !important;
+        font-size: 0.72rem !important;
+        white-space: nowrap !important;
+    }
+    @media (max-width: 440px) {
+        .admin-topbar-actions .btn {
+            padding: 0.3rem 0.45rem !important;
+        }
+        .admin-topbar-actions .btn span.btn-text,
+        .admin-topbar-actions .btn span.btn-label-text {
+            display: none !important;
+        }
+    }
+
+    /* Thẻ thống kê (Stat cards) - hiển thị 2x2 cân đối, không tràn mép */
+    .admin-stat-card {
+        padding: 0.65rem 0.5rem !important;
+        gap: 0.45rem !important;
+        border-radius: 0.85rem !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+    .admin-stat-icon {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        font-size: 0.92rem !important;
+        border-radius: 0.6rem !important;
+        flex-shrink: 0 !important;
+    }
+    .admin-stat-card > div:not(.admin-stat-icon) {
+        min-width: 0 !important;
+        flex: 1 !important;
+        overflow: hidden !important;
+    }
+    .admin-stat-value {
+        font-size: 1rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        line-height: 1.2 !important;
+    }
+    .admin-stat-label {
+        font-size: 0.65rem !important;
+        line-height: 1.25 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+
+    /* Khung panel & Card */
+    .admin-panel {
+        border-radius: 0.85rem !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+    }
+    .admin-panel-head {
+        padding: 0.75rem 0.85rem !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.55rem !important;
+    }
+    .admin-panel-head h2 {
+        font-size: 0.95rem !important;
+    }
+    .admin-panel-head > div {
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.45rem !important;
+    }
+    .admin-panel-head input,
+    .admin-panel-head select,
+    #searchPost, #filterType, #filterStatus, #searchVoucher {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    .admin-panel-body {
+        padding: 0.75rem 0.85rem !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    /* Thumbnail sân nhỏ gọn trên mobile */
+    .admin-court-thumb {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 0.5rem !important;
+    }
+
+    /* Bảng dữ liệu: cuộn ngang mượt mà trong khung bảng, không làm tràn trang */
+    .table-responsive {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        border: 0 !important;
+    }
+    .admin-table {
+        margin-bottom: 0 !important;
+        font-size: 0.82rem !important;
+    }
+    .admin-table thead th {
+        font-size: 0.7rem !important;
+        padding: 0.55rem 0.65rem !important;
+        white-space: nowrap !important;
+    }
+    .admin-table td {
+        padding: 0.55rem 0.65rem !important;
+        font-size: 0.8rem !important;
+        white-space: nowrap !important;
+    }
+
+    /* Modal trên mobile */
+    .modal-dialog {
+        margin: 0.5rem !important;
+        max-width: calc(100% - 1rem) !important;
+    }
+    .modal-content {
+        border-radius: 1rem !important;
+    }
+
+    /* Form input trên iOS tránh phóng to tự động */
+    input.form-control, select.form-select, textarea.form-control {
+        font-size: 16px !important;
+    }
+}
+
+/* Badge Thông Báo trong bảng bài viết Admin */
+.badge.bg-danger-subtle.text-danger {
+    background-color: rgba(244, 63, 94, 0.12) !important;
+    color: #e11d48 !important;
+    border: 1px solid rgba(244, 63, 94, 0.28) !important;
+}
+[data-bs-theme="dark"] .badge.bg-danger-subtle.text-danger {
+    background-color: rgba(244, 63, 94, 0.18) !important;
+    color: #fda4af !important;
+    border-color: rgba(244, 63, 94, 0.38) !important;
+}
+
+/* ==========================================================
+   THANH CHỌN THAO TÁC ĐƠN ĐẶT SÂN - GRADIENT HIỆN ĐẠI & GỌN GÀNG
+   ========================================================== */
+.booking-action-btn {
+    background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 9999px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    padding: 0.28rem 0.85rem !important;
+    box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    white-space: nowrap !important;
+}
+.booking-action-btn:hover {
+    background: linear-gradient(135deg, #0f766e 0%, #0369a1 100%) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35) !important;
+}
+.booking-action-btn:focus, .booking-action-btn:active {
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.3) !important;
+    outline: none !important;
+}
+.booking-action-btn::after {
+    margin-left: 0.35em !important;
+    vertical-align: 0.12em !important;
+}
+
+/* Menu Dropdown chứa các thao tác với màu Gradient */
+.booking-action-menu {
+    border-radius: 12px !important;
+    padding: 6px !important;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08)) !important;
+    min-width: 175px !important;
+    background: var(--bg-card, #ffffff) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+    z-index: 1060 !important;
+}
+
+/* Từng mục thao tác bên trong đều có màu Gradient riêng biệt */
+.action-gradient-item {
+    border-radius: 8px !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    padding: 7px 12px !important;
+    margin: 3px 0 !important;
+    transition: all 0.18s ease !important;
+    display: block !important;
+    width: 100% !important;
+    text-align: left !important;
+    border: none !important;
+}
+
+/* Check-in nhận sân: Gradient xanh lá Mint/Teal */
+.action-gradient-item.action-checkin {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(13, 148, 136, 0.22) 100%) !important;
+    color: #0f766e !important;
+}
+.action-gradient-item.action-checkin:hover {
+    background: linear-gradient(135deg, #10b981 0%, #0d9488 100%) !important;
+    color: #ffffff !important;
+    transform: translateX(2px);
+}
+
+/* Thu tiền & Trả sân (Thanh toán): Gradient ngọc lục bảo Emerald */
+.action-gradient-item.action-complete {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.14) 0%, rgba(16, 185, 129, 0.25) 100%) !important;
+    color: #047857 !important;
+}
+.action-gradient-item.action-complete:hover {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+    color: #ffffff !important;
+    transform: translateX(2px);
+}
+
+/* Xem chi tiết / Đồng hồ: Gradient xanh lam Sky/Cyan */
+.action-gradient-item.action-view {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.1) 0%, rgba(6, 182, 212, 0.2) 100%) !important;
+    color: #0369a1 !important;
+}
+.action-gradient-item.action-view:hover {
+    background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%) !important;
+    color: #ffffff !important;
+    transform: translateX(2px);
+}
+
+/* Báo bùng sân: Gradient hổ phách Amber/Orange */
+.action-gradient-item.action-noshow {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(234, 88, 12, 0.22) 100%) !important;
+    color: #b45309 !important;
+}
+.action-gradient-item.action-noshow:hover {
+    background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%) !important;
+    color: #ffffff !important;
+    transform: translateX(2px);
+}
+
+/* Gia hạn gói hội viên: Gradient vàng hổ phách Amber/Gold */
+.action-gradient-item.action-extend {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.22) 100%) !important;
+    color: #b45309 !important;
+}
+.action-gradient-item.action-extend:hover {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    color: #ffffff !important;
+    transform: translateX(2px);
+}
+
+/* Hủy đơn: Gradient đỏ hồng Rose/Red */
+.action-gradient-item.action-cancel {
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(225, 29, 72, 0.2) 100%) !important;
+    color: #be123c !important;
+}
+.action-gradient-item.action-cancel:hover {
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+    color: #ffffff !important;
+    transform: translateX(2px);
+}
+
+/* Hỗ trợ Select dự phòng nếu có */
+.booking-action-select {
+    background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%) !important;
+    color: #0f766e !important;
+    border: 1.5px solid rgba(13, 148, 136, 0.35) !important;
+    border-radius: 9999px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    padding: 0.28rem 1.8rem 0.28rem 0.85rem !important;
+    min-width: 125px;
+    width: auto;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%230d9488' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.7rem center !important;
+    background-size: 11px 9px !important;
+    box-shadow: 0 1px 4px rgba(13, 148, 136, 0.12) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark mode cho Thao tác */
+[data-bs-theme="dark"] .booking-action-menu {
+    background: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4) !important;
+}
+[data-bs-theme="dark"] .action-gradient-item.action-checkin {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(13, 148, 136, 0.32) 100%) !important;
+    color: #34d399 !important;
+}
+[data-bs-theme="dark"] .action-gradient-item.action-complete {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.22) 0%, rgba(16, 185, 129, 0.35) 100%) !important;
+    color: #6ee7b7 !important;
+}
+[data-bs-theme="dark"] .action-gradient-item.action-view {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.18) 0%, rgba(6, 182, 212, 0.3) 100%) !important;
+    color: #38bdf8 !important;
+}
+[data-bs-theme="dark"] .action-gradient-item.action-noshow {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(234, 88, 12, 0.32) 100%) !important;
+    color: #fbbf24 !important;
+}
+[data-bs-theme="dark"] .action-gradient-item.action-cancel {
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.2) 0%, rgba(225, 29, 72, 0.32) 100%) !important;
+    color: #fb7185 !important;
+}
+[data-bs-theme="dark"] .booking-action-select {
+    background: linear-gradient(135deg, #0d2730 0%, #0c3345 100%) !important;
+    color: #2dd4bf !important;
+    border: 1.5px solid rgba(45, 212, 191, 0.4) !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%232dd4bf' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+}
+
+/* ==========================================================
+   MODAL CHI TIẾT ĐƠN ĐẶT SÂN (CHUYÊN NGHIỆP & ĐỒNG BỘ)
+   ========================================================== */
+#bookingDetailModal .modal-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+}
+
+#bookingDetailModal .modal-header .btn-close {
+    margin: 0 !important;
+    padding: 0.5rem !important;
+    opacity: 0.75;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+#bookingDetailModal .modal-header .btn-close:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+#bookingDetailModal #modalBookingBadge .badge {
+    font-size: 0.82rem !important;
+    padding: 0.38rem 0.85rem !important;
+    font-weight: 600 !important;
+    border-radius: 9999px !important;
+    letter-spacing: 0.02em;
+}
+
+/* Kích cỡ chữ đồng nhất cho toàn bộ bảng chi tiết */
+.modal-card-title {
+    font-size: 0.8rem !important;
+    letter-spacing: 0.04em !important;
+    font-weight: 700 !important;
+    color: var(--text-secondary, #64748b) !important;
+}
+
+.modal-info-row {
+    font-size: 0.875rem !important;
+    line-height: 1.55 !important;
+}
+
+.modal-info-row .info-label {
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: var(--text-secondary, #64748b) !important;
+}
+
+.modal-info-row .info-value {
+    font-size: 0.875rem !important;
+}
+
+/* Các nút hành động dưới chân Modal đồng nhất kích cỡ */
+.modal-footer-btn {
+    min-width: 140px;
+    height: 38px;
+    padding: 0 1.25rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    border-radius: 9999px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-footer-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.modal-footer-btn:active {
+    transform: translateY(0);
+}
+
+
+/* ==========================================================
+   KHUNG DANH SÁCH ĐƠN ĐẶT SÂN & THANH CÔNG CỤ LỌC (ADMIN / CHỦ SÂN)
+   ========================================================== */
+.booking-filter-toolbar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: nowrap !important;
+    gap: 0.5rem !important;
+}
+
+.booking-filter-toolbar .form-control,
+.booking-filter-toolbar .form-select,
+.booking-filter-toolbar .btn {
+    display: inline-block !important;
+    margin-bottom: 0 !important;
+    height: 36px !important;
+    font-size: 0.825rem !important;
+}
+
+.booking-filter-toolbar #searchBooking {
+    width: 240px !important;
+    min-width: 190px !important;
+    max-width: 240px !important;
+    flex: 0 0 240px !important;
+}
+
+.booking-filter-toolbar #filterStatus {
+    width: 175px !important;
+    min-width: 150px !important;
+    max-width: 175px !important;
+    flex: 0 0 175px !important;
+}
+
+.booking-filter-toolbar #btnResetBookingFilters {
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+[data-bs-theme="dark"] .booking-filter-toolbar .form-control,
+[data-bs-theme="dark"] .booking-filter-toolbar .form-select {
+    background-color: #071c22 !important;
+    border: 1px solid #1a424e !important;
+    color: #f8fafc !important;
+}
+
+/* Đảm bảo bảng danh sách đơn đặt không tạo thanh cuộn dọc nhỏ hoặc che khuất dòng khi mở menu thao tác */
+.booking-list-panel {
+    overflow: visible !important;
+}
+
+.booking-table-wrap {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    border-bottom-left-radius: var(--radius-xl);
+    border-bottom-right-radius: var(--radius-xl);
+}
+
+.booking-table-wrap .admin-table th,
+.booking-table-wrap .admin-table td {
+    padding-top: 0.85rem !important;
+    padding-bottom: 0.85rem !important;
+    vertical-align: middle !important;
+}
+
+@media (max-width: 767.98px) {
+    .booking-filter-toolbar {
+        flex-wrap: wrap !important;
+        width: 100% !important;
+        justify-content: stretch !important;
+    }
+    .booking-filter-toolbar #searchBooking {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .booking-filter-toolbar #filterStatus {
+        flex: 1 1 calc(100% - 44px) !important;
+        width: auto !important;
+        max-width: none !important;
+    }
 }

@@ -1,0 +1,710 @@
+/* ==========================================================
+   GODMINTON — SweetAlert2 Custom Theme
+   Brand Teal / Glassmorphism / Dark Mode Ready
+   Font: Plus Jakarta Sans (inherited from body)
+   ========================================================== */
+
+/* ─── POPUP CONTAINER ─── */
+.swal2-popup.swal2-modal {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    border-radius: 1.25rem;
+    padding: 2rem 1.75rem 1.5rem;
+    border: 1.5px solid rgba(13, 148, 136, 0.18);
+    box-shadow:
+        0 20px 60px -12px rgba(0, 0, 0, 0.15),
+        0 0 30px rgba(13, 148, 136, 0.08);
+    background: #ffffff;
+    max-width: 420px;
+    animation: swalGodmintionIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ─── POPUP ANIMATION (override default) ─── */
+@keyframes swalGodmintionIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.82) translateY(18px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.swal2-popup.swal2-hide {
+    animation: swalGodmintionOut 0.22s cubic-bezier(0.4, 0, 0.2, 1) both !important;
+}
+
+@keyframes swalGodmintionOut {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.88) translateY(12px);
+    }
+}
+
+/* ─── BACKDROP ─── */
+body:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show {
+    background: rgba(5, 22, 28, 0.55) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+}
+
+/* ─── TITLE ─── */
+.swal2-popup .swal2-title {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: #0f172a;
+    padding: 0.6rem 0 0;
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+}
+
+/* ─── HTML CONTENT / TEXT ─── */
+.swal2-popup .swal2-html-container {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 0.92rem;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0.5rem 1rem 0;
+    font-weight: 500;
+}
+
+/* ─── MODERN VECTOR ICONS (FONTAWESOME CDN) ─── */
+.swal2-popup:not(.swal2-toast) .swal2-icon {
+    width: 74px !important;
+    height: 74px !important;
+    min-width: 74px !important;
+    min-height: 74px !important;
+    border: none !important;
+    border-radius: 50% !important;
+    margin: 1.4rem auto 0.6rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    animation: swalIconBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-icon .swal2-icon-content {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 3.3rem !important;
+    line-height: 1 !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.swal2-popup:not(.swal2-toast) .swal2-icon .swal2-icon-content i {
+    font-size: inherit;
+    line-height: inherit;
+}
+
+/* Success Icon — Dấu tích xanh ngọc (Brand Teal) */
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success {
+    background: rgba(13, 148, 136, 0.12) !important;
+    color: #0d9488 !important;
+    box-shadow: 0 0 0 6px rgba(13, 148, 136, 0.08) !important;
+}
+
+/* Warning Icon — Dấu chấm than hổ phách (Brand Amber) */
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning {
+    background: rgba(245, 158, 11, 0.12) !important;
+    color: #f59e0b !important;
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.08) !important;
+}
+
+/* Error Icon — Dấu nhân đỏ (Brand Red) */
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error {
+    background: rgba(239, 68, 68, 0.12) !important;
+    color: #ef4444 !important;
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.08) !important;
+}
+
+/* Info Icon — Dấu i thông tin (Teal Cyan) */
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
+    background: rgba(20, 184, 166, 0.12) !important;
+    color: #14b8a6 !important;
+    box-shadow: 0 0 0 6px rgba(20, 184, 166, 0.08) !important;
+}
+
+/* Question Icon — Dấu hỏi tím indigo */
+.swal2-popup:not(.swal2-toast) .swal2-icon.swal2-question {
+    background: rgba(99, 102, 241, 0.12) !important;
+    color: #6366f1 !important;
+    box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.08) !important;
+}
+
+/* Ẩn các khối mặt nạ gãy hình của SweetAlert cũ */
+.swal2-popup .swal2-icon.swal2-success [class^='swal2-success-circular-line'],
+.swal2-popup .swal2-icon.swal2-success [class^='swal2-success-line'],
+.swal2-popup .swal2-icon.swal2-success .swal2-success-ring,
+.swal2-popup .swal2-icon.swal2-success .swal2-success-fix,
+.swal2-popup .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+    display: none !important;
+}
+
+@keyframes swalIconBounce {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ─── BUTTONS ─── */
+.swal2-popup .swal2-actions {
+    margin-top: 1.25rem;
+    gap: 0.6rem;
+}
+
+/* Confirm Button — Gradient Teal */
+.swal2-popup .swal2-styled.swal2-confirm {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 0.65rem;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.92rem;
+    padding: 0.65rem 1.75rem;
+    letter-spacing: 0.01em;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.swal2-popup .swal2-styled.swal2-confirm:hover {
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
+    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.45);
+    transform: translateY(-2px);
+}
+.swal2-popup .swal2-styled.swal2-confirm:focus {
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.25), 0 4px 14px rgba(13, 148, 136, 0.3) !important;
+}
+.swal2-popup .swal2-styled.swal2-confirm:active {
+    transform: translateY(0);
+}
+
+/* Cancel Button — Soft Outline */
+.swal2-popup .swal2-styled.swal2-cancel {
+    background: transparent !important;
+    color: #64748b !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 0.65rem;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding: 0.6rem 1.5rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.swal2-popup .swal2-styled.swal2-cancel:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #475569 !important;
+    transform: translateY(-1px);
+}
+.swal2-popup .swal2-styled.swal2-cancel:focus {
+    box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.15) !important;
+}
+
+/* Deny Button */
+.swal2-popup .swal2-styled.swal2-deny {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    border: none !important;
+    border-radius: 0.65rem;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.92rem;
+    padding: 0.65rem 1.5rem;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.swal2-popup .swal2-styled.swal2-deny:hover {
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    transform: translateY(-2px);
+}
+
+/* ─── INPUT FIELD ─── */
+.swal2-popup .swal2-input,
+.swal2-popup .swal2-textarea,
+.swal2-popup .swal2-select {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 0.65rem;
+    font-size: 0.92rem;
+    padding: 0.6rem 0.9rem;
+    color: #0f172a;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+}
+.swal2-popup .swal2-input:focus,
+.swal2-popup .swal2-textarea:focus,
+.swal2-popup .swal2-select:focus {
+    border-color: #0d9488;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+    background: #ffffff;
+    outline: none;
+}
+
+/* ─── TOAST MODE ─── */
+.swal2-popup.swal2-toast {
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    position: relative !important;
+    overflow: hidden !important;
+    border-radius: 0.85rem !important;
+    padding: 0.75rem 1rem 0.85rem !important;
+    box-shadow:
+        0 10px 25px -4px rgba(0, 0, 0, 0.12),
+        0 4px 10px -2px rgba(13, 148, 136, 0.08) !important;
+    border: 1px solid rgba(13, 148, 136, 0.18) !important;
+    background: #ffffff !important;
+    animation: swalToastSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes swalToastSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(40px) scale(0.92);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.swal2-popup.swal2-toast.swal2-hide {
+    animation: swalToastSlideOut 0.22s ease-in both !important;
+}
+
+@keyframes swalToastSlideOut {
+    0% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(30px) scale(0.95);
+    }
+}
+
+.swal2-popup.swal2-toast .swal2-title {
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: #0f172a !important;
+    text-align: left !important;
+    flex: 1 1 auto !important;
+}
+
+.swal2-popup.swal2-toast .swal2-icon {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    min-height: 26px !important;
+    max-width: 26px !important;
+    max-height: 26px !important;
+    margin: 0 0.65rem 0 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 50% !important;
+    box-shadow: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    animation: none !important;
+    flex-shrink: 0 !important;
+}
+
+.swal2-popup.swal2-toast .swal2-icon .swal2-icon-content {
+    font-size: 0.95rem !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.swal2-popup.swal2-toast .swal2-icon .swal2-icon-content i {
+    font-size: 0.95rem !important;
+    line-height: 1 !important;
+}
+
+/* Toast Icon Colors */
+.swal2-popup.swal2-toast .swal2-icon.swal2-success {
+    background: rgba(13, 148, 136, 0.15) !important;
+    color: #0d9488 !important;
+    box-shadow: none !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-warning {
+    background: rgba(245, 158, 11, 0.15) !important;
+    color: #f59e0b !important;
+    box-shadow: none !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-error {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #ef4444 !important;
+    box-shadow: none !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-info {
+    background: rgba(20, 184, 166, 0.15) !important;
+    color: #14b8a6 !important;
+    box-shadow: none !important;
+}
+.swal2-popup.swal2-toast .swal2-icon.swal2-question {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #6366f1 !important;
+    box-shadow: none !important;
+}
+
+/* Toast Timer Progress Bar — Teal */
+.swal2-popup.swal2-toast .swal2-timer-progress-bar {
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 3px !important;
+    background: linear-gradient(90deg, #0d9488, #14b8a6) !important;
+    border-radius: 0 0 0.85rem 0.85rem !important;
+}
+
+/* ─── TIMER PROGRESS BAR (Modal) ─── */
+.swal2-popup .swal2-timer-progress-bar {
+    background: linear-gradient(90deg, #0d9488, #14b8a6) !important;
+    height: 4px;
+}
+
+/* ─── CLOSE BUTTON ─── */
+.swal2-popup .swal2-close {
+    color: #94a3b8;
+    font-size: 1.5rem;
+    font-weight: 400;
+    transition: all 0.2s ease;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+}
+.swal2-popup .swal2-close:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+    transform: rotate(90deg);
+}
+
+/* ─── LOADING SPINNER ─── */
+.swal2-popup .swal2-loading .swal2-styled.swal2-confirm {
+    background: transparent !important;
+    border: 3px solid #e2e8f0 !important;
+    border-top-color: #0d9488 !important;
+    box-shadow: none !important;
+}
+
+/* ─── VALIDATION MESSAGE ─── */
+.swal2-popup .swal2-validation-message {
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+}
+
+/* ─── FOOTER ─── */
+.swal2-popup .swal2-footer {
+    border-top: 1px solid #e2e8f0;
+    color: #94a3b8;
+    font-size: 0.82rem;
+    padding-top: 0.85rem;
+    margin-top: 1rem;
+}
+.swal2-popup .swal2-footer a {
+    color: #0d9488;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+.swal2-popup .swal2-footer a:hover {
+    color: #14b8a6;
+    text-decoration: underline;
+}
+
+
+/* ==========================================================
+   DARK MODE  [data-bs-theme="dark"]
+   ========================================================== */
+
+[data-bs-theme="dark"] .swal2-popup.swal2-modal {
+    background: #0d2730;
+    border-color: rgba(45, 212, 191, 0.22);
+    box-shadow:
+        0 24px 70px -14px rgba(0, 0, 0, 0.55),
+        0 0 40px rgba(20, 184, 166, 0.12);
+}
+
+[data-bs-theme="dark"] body:not(.swal2-toast-shown) .swal2-container.swal2-backdrop-show {
+    background: rgba(2, 13, 18, 0.72) !important;
+}
+
+/* Title — Dark */
+[data-bs-theme="dark"] .swal2-popup .swal2-title {
+    color: #f8fafc;
+}
+
+/* Text — Dark */
+[data-bs-theme="dark"] .swal2-popup .swal2-html-container {
+    color: #94a3b8;
+}
+
+/* Cancel Button — Dark */
+[data-bs-theme="dark"] .swal2-popup .swal2-styled.swal2-cancel {
+    border-color: #173844 !important;
+    color: #94a3b8 !important;
+}
+[data-bs-theme="dark"] .swal2-popup .swal2-styled.swal2-cancel:hover {
+    background: rgba(23, 56, 68, 0.6) !important;
+    border-color: rgba(45, 212, 191, 0.3) !important;
+    color: #cbd5e1 !important;
+}
+
+/* Confirm Button Glow — Dark */
+[data-bs-theme="dark"] .swal2-popup .swal2-styled.swal2-confirm {
+    box-shadow: 0 4px 18px rgba(20, 184, 166, 0.35);
+}
+[data-bs-theme="dark"] .swal2-popup .swal2-styled.swal2-confirm:hover {
+    box-shadow: 0 6px 25px rgba(20, 184, 166, 0.5);
+}
+
+/* Input — Dark */
+[data-bs-theme="dark"] .swal2-popup .swal2-input,
+[data-bs-theme="dark"] .swal2-popup .swal2-textarea,
+[data-bs-theme="dark"] .swal2-popup .swal2-select {
+    background: #0a2128;
+    border-color: #173844;
+    color: #f8fafc;
+}
+[data-bs-theme="dark"] .swal2-popup .swal2-input:focus,
+[data-bs-theme="dark"] .swal2-popup .swal2-textarea:focus,
+[data-bs-theme="dark"] .swal2-popup .swal2-select:focus {
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
+    background: #0d2730;
+}
+
+/* Input placeholder — Dark */
+[data-bs-theme="dark"] .swal2-popup .swal2-input::placeholder,
+[data-bs-theme="dark"] .swal2-popup .swal2-textarea::placeholder {
+    color: #475569;
+}
+
+/* Icons — Glowing vector badges in Dark Mode */
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-success {
+    background: rgba(45, 212, 191, 0.16) !important;
+    color: #2dd4bf !important;
+    box-shadow: 0 0 0 6px rgba(45, 212, 191, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-warning {
+    background: rgba(245, 158, 11, 0.18) !important;
+    color: #fbbf24 !important;
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-error {
+    background: rgba(239, 68, 68, 0.18) !important;
+    color: #f87171 !important;
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-info {
+    background: rgba(45, 212, 191, 0.16) !important;
+    color: #2dd4bf !important;
+    box-shadow: 0 0 0 6px rgba(45, 212, 191, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .swal2-popup:not(.swal2-toast) .swal2-icon.swal2-question {
+    background: rgba(129, 140, 248, 0.18) !important;
+    color: #818cf8 !important;
+    box-shadow: 0 0 0 6px rgba(129, 140, 248, 0.08) !important;
+}
+
+/* Toast — Dark */
+[data-bs-theme="dark"] .swal2-popup.swal2-toast {
+    background: #0f172a !important;
+    border: 1px solid rgba(45, 212, 191, 0.25) !important;
+    box-shadow:
+        0 10px 30px -4px rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(20, 184, 166, 0.15) !important;
+}
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-title {
+    color: #f8fafc !important;
+}
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-icon.swal2-success {
+    background: rgba(45, 212, 191, 0.2) !important;
+    color: #2dd4bf !important;
+}
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-icon.swal2-warning {
+    background: rgba(251, 191, 36, 0.2) !important;
+    color: #fbbf24 !important;
+}
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-icon.swal2-error {
+    background: rgba(248, 113, 113, 0.2) !important;
+    color: #f87171 !important;
+}
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-icon.swal2-info {
+    background: rgba(45, 212, 191, 0.2) !important;
+    color: #2dd4bf !important;
+}
+[data-bs-theme="dark"] .swal2-popup.swal2-toast .swal2-icon.swal2-question {
+    background: rgba(129, 140, 248, 0.2) !important;
+    color: #818cf8 !important;
+}
+
+/* Close Button — Dark */
+[data-bs-theme="dark"] .swal2-popup .swal2-close {
+    color: #475569;
+}
+[data-bs-theme="dark"] .swal2-popup .swal2-close:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+}
+
+/* Footer — Dark */
+[data-bs-theme="dark"] .swal2-popup .swal2-footer {
+    border-top-color: #173844;
+    color: #64748b;
+}
+
+/* Validation — Dark */
+[data-bs-theme="dark"] .swal2-popup .swal2-validation-message {
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+}
+
+
+/* ==========================================================
+   RESPONSIVE ADJUSTMENTS (MOBILE)
+   ========================================================== */
+
+@media (max-width: 576px) {
+    .swal2-popup.swal2-modal {
+        max-width: calc(100vw - 2rem);
+        padding: 1.5rem 1.25rem 1.25rem;
+        border-radius: 1rem;
+        margin: 0 auto;
+    }
+    .swal2-popup .swal2-title {
+        font-size: 1.15rem;
+    }
+    .swal2-popup .swal2-html-container {
+        font-size: 0.87rem;
+        margin: 0.4rem 0.5rem 0;
+    }
+    .swal2-popup .swal2-styled.swal2-confirm,
+    .swal2-popup .swal2-styled.swal2-cancel,
+    .swal2-popup .swal2-styled.swal2-deny {
+        font-size: 0.87rem;
+        padding: 0.55rem 1.25rem;
+        flex: 1 1 auto;
+        min-width: 110px;
+    }
+    .swal2-popup .swal2-actions {
+        flex-wrap: wrap;
+        width: 100%;
+        gap: 0.45rem;
+    }
+    .swal2-popup:not(.swal2-toast) .swal2-icon {
+        width: 62px !important;
+        height: 62px !important;
+        min-width: 62px !important;
+        min-height: 62px !important;
+        margin: 1.15rem auto 0.45rem !important;
+    }
+    .swal2-popup:not(.swal2-toast) .swal2-icon .swal2-icon-content {
+        font-size: 2.75rem !important;
+    }
+
+    /* Toasts responsive trên điện thoại: căn đều ở cạnh trên, không bị tràn viền */
+    body.swal2-toast-shown .swal2-container.swal2-top-end,
+    body.swal2-toast-shown .swal2-container.swal2-top-right,
+    body.swal2-toast-shown .swal2-container.swal2-top {
+        top: 10px !important;
+        right: 12px !important;
+        left: 12px !important;
+        width: auto !important;
+        max-width: calc(100vw - 24px) !important;
+        justify-content: center !important;
+    }
+    .swal2-popup.swal2-toast {
+        width: 100% !important;
+        max-width: calc(100vw - 24px) !important;
+        box-sizing: border-box !important;
+        padding: 0.65rem 0.85rem 0.75rem !important;
+        font-size: 0.84rem !important;
+        border-radius: 0.75rem !important;
+    }
+    .swal2-popup.swal2-toast .swal2-title {
+        font-size: 0.84rem !important;
+        line-height: 1.35 !important;
+    }
+    .swal2-popup.swal2-toast .swal2-icon {
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+        min-height: 24px !important;
+        max-width: 24px !important;
+        max-height: 24px !important;
+        margin: 0 0.55rem 0 0 !important;
+        box-shadow: none !important;
+    }
+    .swal2-popup.swal2-toast .swal2-icon .swal2-icon-content {
+        font-size: 0.88rem !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .swal2-popup.swal2-modal {
+        padding: 1.25rem 1rem 1rem;
+    }
+    .swal2-popup .swal2-title {
+        font-size: 1.05rem;
+    }
+    .swal2-popup .swal2-actions {
+        flex-direction: column;
+    }
+    .swal2-popup .swal2-styled.swal2-confirm,
+    .swal2-popup .swal2-styled.swal2-cancel,
+    .swal2-popup .swal2-styled.swal2-deny {
+        width: 100%;
+    }
+}
+
+/* Notifications must appear above the filter drawer, owner sidebar and modals. */
+.swal2-container { z-index: 2000; }
+
+/* Toasts are compact notices, with no page-sized backdrop or blur. */
+body.swal2-toast-shown .swal2-container,
+body.swal2-toast-shown .swal2-container.swal2-backdrop-show {
+    height: auto !important;
+    max-width: 100vw;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    pointer-events: none;
+}
+body.swal2-toast-shown .swal2-popup.swal2-toast { pointer-events: auto; }

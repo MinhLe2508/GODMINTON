@@ -1,0 +1,24 @@
+-- Additive migration: no demo articles and no changes to booking data.
+CREATE TABLE IF NOT EXISTS news (
+ id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ title VARCHAR(200) NOT NULL,
+ summary TEXT NOT NULL,
+ content MEDIUMTEXT NOT NULL,
+ image_url VARCHAR(2048) NULL,
+ category VARCHAR(30) NOT NULL DEFAULT 'notice',
+ status VARCHAR(20) NOT NULL DEFAULT 'draft',
+ published_at DATETIME NULL,
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ INDEX idx_news_publication (status, published_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS contacts (
+ id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+ user_id INT UNSIGNED NULL,
+ name VARCHAR(120) NOT NULL,
+ phone VARCHAR(30) NOT NULL,
+ email VARCHAR(254) NOT NULL,
+ subject VARCHAR(200) NOT NULL,
+ message TEXT NOT NULL,
+ status VARCHAR(20) NOT NULL DEFAULT 'new',
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

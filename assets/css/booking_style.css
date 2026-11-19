@@ -2,16 +2,85 @@
     BOOKING CALENDAR GRID
     ======================================================= */
 
-/* ---- Sticky Toolbar ---- */
+/* ---- Sticky Toolbar & Stacking Order ---- */
 .booking-toolbar {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 251, 249, 0.8) 100%);
+    border: 1px solid rgba(13, 148, 136, 0.18);
     border-radius: 1rem;
     padding: 0.85rem 1.25rem;
     box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(10px);
+}
+[data-bs-theme="dark"] .booking-toolbar {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(6, 32, 38, 0.88) 100%);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
-/* ---- Date nav pills ---- */
+/* Stacking Order: Thanh 1 (chứa menu Đổi Sân) luôn có z-index cao nhất để dropdown nổi lên trên các thanh sau */
+.booking-court-header {
+    position: relative;
+    z-index: 1050 !important;
+}
+.booking-court-header .dropdown {
+    position: relative;
+    z-index: 1060;
+}
+.booking-court-header .dropdown-menu {
+    z-index: 1080 !important;
+    min-width: 270px;
+    max-width: 380px;
+    background: var(--bg-card, #ffffff);
+    border: 1.5px solid rgba(13, 148, 136, 0.25) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2) !important;
+}
+.booking-court-header .dropdown-item {
+    color: var(--text-primary, #0f172a);
+    font-size: 0.88rem;
+    transition: all 0.15s ease;
+}
+.booking-court-header .dropdown-item:hover,
+.booking-court-header .dropdown-item:focus {
+    background: rgba(13, 148, 136, 0.12);
+    color: var(--brand-teal, #0d9488);
+    transform: translateX(3px);
+}
+.booking-court-header .dropdown-item.active {
+    background: rgba(13, 148, 136, 0.15) !important;
+    color: var(--brand-teal, #0d9488) !important;
+    font-weight: 700;
+}
+[data-bs-theme="dark"] .booking-court-header .dropdown-menu {
+    background: #0d2730 !important;
+    border-color: #173844 !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6) !important;
+}
+[data-bs-theme="dark"] .booking-court-header .dropdown-item {
+    color: #f1f5f9;
+}
+[data-bs-theme="dark"] .booking-court-header .dropdown-item:hover,
+[data-bs-theme="dark"] .booking-court-header .dropdown-item:focus {
+    background: rgba(45, 212, 191, 0.2);
+    color: #2dd4bf;
+}
+[data-bs-theme="dark"] .booking-court-header .dropdown-item.active {
+    background: rgba(45, 212, 191, 0.2) !important;
+    color: #2dd4bf !important;
+}
+
+.booking-date-legend-toolbar {
+    position: relative;
+    z-index: 20 !important;
+}
+.booking-filter-court-toolbar {
+    position: relative;
+    z-index: 15 !important;
+}
+.cal-wrapper {
+    position: relative;
+    z-index: 10 !important;
+}
+
+/* ---- Date nav pills (Lịch ngày trong tuần gradient) ---- */
 .date-nav-scroll {
     display: flex;
     gap: 0.5rem;
@@ -27,27 +96,86 @@
     flex-direction: column;
     align-items: center;
     padding: 0.45rem 0.85rem;
-    border-radius: 0.65rem;
-    border: 1.5px solid var(--border-color);
-    background: var(--bg-surface);
+    border-radius: 0.75rem;
+    border: 1.5px solid rgba(13, 148, 136, 0.22);
+    background: linear-gradient(135deg, #ffffff 0%, rgba(240, 251, 249, 0.75) 100%);
     cursor: pointer;
-    transition: all 0.18s ease;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     min-width: 58px;
     user-select: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 .date-pill:hover {
     border-color: var(--brand-teal);
     color: var(--brand-teal);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.18);
 }
 .date-pill.active {
-    background: var(--brand-teal);
-    border-color: var(--brand-teal);
+    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+    border-color: #0d9488;
     color: #fff;
-    box-shadow: 0 4px 12px rgba(13,148,136,0.35);
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.38);
+    transform: translateY(-1px);
 }
 .date-pill .day-name { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; opacity: 0.75; }
 .date-pill .day-num  { font-size: 1.05rem; font-weight: 800; line-height: 1.2; }
 .date-pill.active .day-name { opacity: 0.85; }
+
+[data-bs-theme="dark"] .date-pill {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(6, 32, 38, 0.7) 100%);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+[data-bs-theme="dark"] .date-pill:hover {
+    border-color: #2dd4bf;
+    background: linear-gradient(135deg, rgba(13, 148, 136, 0.25) 0%, rgba(20, 184, 166, 0.2) 100%);
+}
+[data-bs-theme="dark"] .date-pill.active {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    border-color: #2dd4bf;
+    box-shadow: 0 4px 14px rgba(45, 212, 191, 0.3);
+}
+
+/* ---- Date Picker Input (Ô chọn lịch gradient) ---- */
+.booking-date-input,
+#bookingDateInput {
+    background: linear-gradient(135deg, rgba(211, 244, 238, 0.65) 0%, rgba(240, 251, 249, 0.95) 100%) !important;
+    border: 1.5px solid rgba(13, 148, 136, 0.38) !important;
+    color: #0f766e !important;
+    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+    border-radius: 0.75rem !important;
+    padding: 0.42rem 0.85rem !important;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.12) !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+.booking-date-input:hover,
+.booking-date-input:focus,
+#bookingDateInput:hover,
+#bookingDateInput:focus {
+    border-color: #0d9488 !important;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25) !important;
+    outline: none !important;
+}
+
+[data-bs-theme="dark"] .booking-date-input,
+[data-bs-theme="dark"] #bookingDateInput {
+    background: linear-gradient(135deg, rgba(9, 44, 52, 0.85) 0%, rgba(6, 32, 38, 0.95) 100%) !important;
+    border: 1.5px solid rgba(45, 212, 191, 0.35) !important;
+    color: #e2e8f0 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+    color-scheme: dark;
+}
+
+[data-bs-theme="dark"] .booking-date-input:hover,
+[data-bs-theme="dark"] .booking-date-input:focus,
+[data-bs-theme="dark"] #bookingDateInput:hover,
+[data-bs-theme="dark"] #bookingDateInput:focus {
+    border-color: #2dd4bf !important;
+    box-shadow: 0 4px 14px rgba(45, 212, 191, 0.3) !important;
+}
 
 /* ---- Legend ---- */
 .legend-bar {
@@ -97,11 +225,16 @@
     CALENDAR GRID SYSTEM (CORE)
     ============================================================ */
 .cal-wrapper {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 251, 249, 0.5) 100%);
+    border: 1px solid rgba(13, 148, 136, 0.18);
     border-radius: 1rem;
     overflow: hidden;
     box-shadow: var(--shadow-sm);
+}
+
+[data-bs-theme="dark"] .cal-wrapper {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(4, 22, 28, 0.95) 100%);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .cal-scroll-container {
@@ -115,14 +248,15 @@
 .cal-scroll-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
 
 .cal-table {
-    /* Each 30-min slot = 72px wide; 37 half-hour slots 5:30→24:00 */
-    --slot-w: 72px;
-    --court-label-w: 100px;
+    /* Each 30-min slot = 76px wide; 37 half-hour slots 5:30→24:00 */
+    --slot-w: 76px;
+    --court-label-w: 104px;
     --row-h: 68px;
-    --header-h: 42px;
+    --header-h: 46px;
 
     table-layout: fixed;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     width: calc(var(--court-label-w) + var(--slot-w) * 37);
     min-width: 100%;
 }
@@ -131,7 +265,7 @@
 .cal-th-court {
     width: var(--court-label-w);
     height: var(--header-h);
-    background: var(--bg-surface);
+    background: linear-gradient(180deg, #f8fafc 0%, #f0fdfa 100%);
     border-right: 2px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
     position: sticky;
@@ -141,23 +275,75 @@
 .cal-th-time {
     width: var(--slot-w);
     height: var(--header-h);
-    text-align: center;
+    padding: 0;
+    text-align: left;
+    background: linear-gradient(180deg, #f8fafc 0%, #f0fdfa 100%);
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    vertical-align: bottom;
+    white-space: nowrap;
+    position: sticky;
+    top: 0; /* if outer is scrollable vertically */
+    overflow: visible;
+}
+.cal-ruler-tick {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    pointer-events: none;
+    z-index: 5;
+    user-select: none;
+}
+.cal-ruler-tick.first-tick {
+    left: 6px;
+    transform: none;
+    align-items: flex-start;
+}
+.cal-ruler-tick.last-tick {
+    left: auto;
+    right: 0;
+    transform: translateX(50%);
+}
+.ruler-label {
     font-size: 0.72rem;
     font-weight: 700;
     color: var(--text-secondary);
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
-    vertical-align: middle;
+    line-height: 1.1;
+    margin-bottom: 4px;
     white-space: nowrap;
-    letter-spacing: 0.3px;
-    position: sticky;
-    top: 0; /* if outer is scrollable vertically */
 }
-.cal-th-time.hour-mark {
-    color: var(--text-primary);
+.ruler-notch {
+    width: 2px;
+    height: 7px;
+    background: var(--border-color);
+}
+.cal-th-time.hour-mark .ruler-label {
+    color: var(--brand-teal);
     font-weight: 800;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
+}
+.cal-th-time.hour-mark .ruler-notch {
+    height: 11px;
+    width: 2px;
+    background: var(--brand-teal);
+}
+.cal-th-time.current-hour .ruler-label {
+    color: #f43f5e;
+}
+[data-bs-theme="dark"] .cal-th-court,
+[data-bs-theme="dark"] .cal-th-time {
+    background: linear-gradient(180deg, #0f172a 0%, #062026 100%);
+}
+[data-bs-theme="dark"] .ruler-label {
+    color: #94a3b8;
+}
+[data-bs-theme="dark"] .cal-th-time.hour-mark .ruler-label {
+    color: #2dd4bf;
 }
 
 /* Body rows: courts */
@@ -247,6 +433,24 @@
     color: #fff;
 }
 
+/* Maintenance - Orange / Amber with striped pattern */
+.cal-td-maintenance {
+    background: #fff7ed;
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(234, 88, 12, 0.08) 6px, rgba(234, 88, 12, 0.08) 12px);
+    border-right: none;
+    cursor: not-allowed !important;
+}
+[data-bs-theme="dark"] .cal-td-maintenance {
+    background: rgba(234, 88, 12, 0.16);
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(251, 146, 60, 0.1) 6px, rgba(251, 146, 60, 0.1) 12px);
+}
+.block-maintenance {
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+    color: #fff;
+    cursor: not-allowed !important;
+    box-shadow: 0 2px 6px rgba(234, 88, 12, 0.25);
+}
+
 /* Locked/Closed - Dark */
 .cal-td-locked {
     background: #f1f5f9;
@@ -303,6 +507,40 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Past time slot - Greyed out & Disabled */
+.cal-td-slot.cal-td-past {
+    background-color: #f1f5f9 !important;
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(148, 163, 184, 0.15) 6px, rgba(148, 163, 184, 0.15) 12px) !important;
+    cursor: not-allowed !important;
+    user-select: none;
+    opacity: 0.65;
+    position: relative;
+    transition: none !important;
+}
+.cal-td-slot.cal-td-past:hover {
+    background-color: #e2e8f0 !important;
+    filter: none !important;
+}
+[data-bs-theme="dark"] .cal-td-slot.cal-td-past {
+    background-color: rgba(15, 23, 42, 0.75) !important;
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255, 255, 255, 0.04) 6px, rgba(255, 255, 255, 0.04) 12px) !important;
+    opacity: 0.45;
+}
+.cal-td-slot.cal-td-past .past-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #94a3b8;
+    font-size: 0.68rem;
+    font-weight: 600;
+    pointer-events: none;
+    user-select: none;
+}
+[data-bs-theme="dark"] .cal-td-slot.cal-td-past .past-label {
+    color: #64748b;
 }
 
 /* "Now" indicator line */
@@ -364,6 +602,63 @@
 /* current-time column highlight */
 .cal-th-time.current-hour { color: #f43f5e; }
 
-@media (max-width:640px) {
+@media (max-width: 768px) {
+    main {
+        padding-bottom: 120px !important;
+    }
+    .booking-summary-bar {
+        position: fixed !important;
+        bottom: calc(66px + env(safe-area-inset-bottom, 0px) + 8px) !important;
+        left: 10px !important;
+        right: 10px !important;
+        z-index: 1025 !important;
+        padding: 0.85rem 1.15rem !important;
+        border-radius: 1.15rem !important;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 24px rgba(13, 148, 136, 0.35) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        animation: slideUpBar 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    @keyframes slideUpBar {
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .cal-scroll-container {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+    }
+}
+
+@media (max-width: 640px) {
     :root { --slot-w: 58px !important; --court-label-w: 82px !important; }
+}
+
+@media (max-width: 420px) {
+    :root { --slot-w: 52px !important; --court-label-w: 74px !important; }
+    .booking-summary-bar {
+        padding: 0.75rem 0.85rem !important;
+        left: 6px !important;
+        right: 6px !important;
+        gap: 0.65rem !important;
+    }
+    .booking-summary-bar .fs-4 {
+        font-size: 1.25rem !important;
+    }
+    #summaryTitle {
+        font-size: 0.88rem !important;
+    }
+    #summaryDetail {
+        font-size: 0.75rem !important;
+    }
+    #btnGoPayment {
+        padding: 0.42rem 0.85rem !important;
+        font-size: 0.84rem !important;
+    }
+    #btnCancelSel {
+        padding: 0.38rem 0.65rem !important;
+        font-size: 0.78rem !important;
+    }
+    #courtNameTitle {
+        font-size: 1.1rem !important;
+    }
 }

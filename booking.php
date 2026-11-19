@@ -1,24 +1,76 @@
+<?php
+require_once __DIR__.'/config/db.php';
+require_once __DIR__.'/includes/auth-session.php';
+header('Cache-Control: no-store, max-age=0');
+if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax']);
+    god_auth_start();
+    god_auth_user($pdo);
+}
+$currentUser = null;
+if (!empty($_SESSION['user_id'])) {
+    $currentUser = [
+        'id' => (int)$_SESSION['user_id'],
+        'name' => $_SESSION['name'] ?? '',
+        'role' => $_SESSION['role'] ?? ''
+    ];
+}
+if ($currentUser !== null) {
+    require_once __DIR__ . '/config/db.php';
+    $userStmt = $pdo->prepare('SELECT id,name,email,phone,role FROM users WHERE id=?');
+    $userStmt->execute([(int)$_SESSION['user_id']]);
+    $currentUser = $userStmt->fetch() ?: null;
+}
+
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/court-resolver.php';
+$requestedCourt = $_GET['court_id'] ?? '';
+if (!is_string($requestedCourt) || !ctype_digit($requestedCourt) || (int)$requestedCourt<=0) {
+    header('Location: courts.php');exit;
+}
+$requestedCourt = (int)$requestedCourt;
+$resolvedCourt = court_rebooking_target($pdo, $requestedCourt);
+if ($resolvedCourt === null) {
+    http_response_code(404);
+    echo '<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sân đang tạm ngưng nhận đặt | GODMINTON</title><body style="margin:0;background:#f0fdfa;font:16px/1.6 system-ui;color:#134e4a"><main style="max-width:520px;margin:15vh auto;padding:32px 28px;background:white;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,0.06);text-align:center"><div style="font-size:48px;margin-bottom:12px">🏸⏸️</div><h1 style="font-size:22px;margin:0 0 12px;color:#0f766e">Sân đang tạm ngưng nhận đặt</h1><p style="color:#64748b;margin:0 0 24px">Sân này hiện đang tạm ngừng hoạt động hoặc ngừng nhận lịch đặt mới. Quý khách vui lòng chọn sân khác để tiếp tục.</p><a href="courts.php" style="display:inline-block;background:#0d9488;color:white;padding:12px 28px;border-radius:999px;text-decoration:none;font-weight:700">Xem danh sách sân khác</a></main></body></html>';
+    exit;
+}
+if ($resolvedCourt !== $requestedCourt) {
+    $selection=['court_id'=>$resolvedCourt];
+    if (isset($_GET['date']) && is_string($_GET['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['date'])) $selection['date']=$_GET['date'];
+    header('Location: booking.php?' . http_build_query($selection));exit;
+}
+$courtStmt=$pdo->prepare('SELECT id,name,address,opening_time,closing_time FROM courts WHERE id=?');
+$courtStmt->execute([$resolvedCourt]);$bookingCourt=$courtStmt->fetch();
+$switchCourts=$pdo->query("SELECT id,name FROM courts WHERE status='active' AND booking_open=1 ORDER BY name")->fetchAll();
+function booking_text($value): string {return htmlspecialchars((string)$value,ENT_QUOTES,'UTF-8');}
+?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đặt Sân Real-time | GODMINTON</title>
+<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/booking_style.css">
+    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
+    <link rel="stylesheet" href="assets/css/booking_style.css?v=<?= filemtime(__DIR__ . '/assets/css/booking_style.css') ?>">
+    <script>
+        window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    </script>
 </head>
 <body>
 
     <!-- App Brand Header (Khung Cố Định) -->
     <header class="app-brand-head">
         <div class="container text-center">
-            <a href="index.html" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
+            <a href="index.php" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
                 <img src="assets/img/logo-teal.svg" alt="GODMINTON" class="brand-logo-img">
             </a>
         </div>
@@ -28,45 +80,57 @@
     <div class="container-fluid px-3 px-lg-4 py-4">
 
         <!-- ===== COURT INFO HEADER ===== -->
-        <div class="booking-toolbar mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="booking-toolbar booking-court-header mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-3">
                 <div class="brand-logo-badge" style="border-radius:10px; width:44px; height:44px; font-size:1.1rem;">
                     <i class="fa-solid fa-layer-group"></i>
                 </div>
                 <div>
                     <div class="d-flex align-items-center gap-2">
-                        <h5 class="fw-extrabold mb-0" id="courtNameTitle">Cầu Lông Quận 1 – Lê Thánh Tôn Sport</h5>
+                        <h5 class="fw-extrabold mb-0" id="courtNameTitle"><?= booking_text($bookingCourt['name']) ?></h5>
                         <span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.7rem;">
-                            <i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> Đang mở cửa
+                            <i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> Đang nhận đặt
                         </span>
                     </div>
                     <div class="small text-muted">
-                        <i class="fa-solid fa-map-pin text-teal me-1"></i>Số 12 Lê Thánh Tôn, Quận 1, TP.HCM
+                        <i class="fa-solid fa-map-pin text-teal me-1"></i><?= booking_text($bookingCourt['address']) ?>
                         <span class="mx-2 opacity-50">|</span>
-                        <i class="fa-regular fa-clock text-teal me-1"></i>06:00 – 23:00
+                        <i class="fa-regular fa-clock text-teal me-1"></i><?= booking_text(substr($bookingCourt['opening_time'],0,5)) ?> – <?= booking_text(substr($bookingCourt['closing_time'],0,5)) ?>
                     </div>
                 </div>
             </div>
             <div class="d-flex gap-2">
-                <a href="court-detail.html?id=1" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <a href="court-detail.php?id=<?= (int)$bookingCourt['id'] ?>" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
                     <i class="fa-solid fa-circle-info me-1"></i>Thông tin sân
                 </a>
                 <div class="dropdown">
-                    <button class="btn btn-outline-teal btn-sm rounded-pill px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <button class="btn btn-outline-teal btn-sm rounded-pill px-3 dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fa-solid fa-shuffle me-1"></i>Đổi sân
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4">
-                        <li><a class="dropdown-item" href="#">Quận 1 –  Lê Thánh Tôn Sport</a></li>
-                        <li><a class="dropdown-item" href="#">Quận 3 – Nguyễn Đình Chiểu Arena</a></li>
-                        <li><a class="dropdown-item" href="#">Quận 5 – Nguyễn Trãi Badminton</a></li>
-                        <li><a class="dropdown-item" href="#">Quận 10 – Sư Vạn Hạnh Court</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2" style="max-height:360px;overflow-y:auto;min-width:270px;">
+                        <li class="dropdown-header small text-uppercase text-muted fw-bold px-3 py-1">
+                            <i class="fa-solid fa-layer-group me-1 text-teal"></i>Danh sách sân cầu lông
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <?php foreach ($switchCourts as $switchCourt): 
+                            $isCurrent = ((int)$switchCourt['id'] === (int)$bookingCourt['id']);
+                        ?>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2 px-3 d-flex align-items-center justify-content-between <?= $isCurrent ? 'active fw-bold' : '' ?>" href="booking.php?court_id=<?= (int)$switchCourt['id'] ?>">
+                                <span><?= booking_text($switchCourt['name']) ?></span>
+                                <?php if ($isCurrent): ?>
+                                    <i class="fa-solid fa-check small text-teal ms-2"></i>
+                                <?php endif; ?>
+                            </a>
+                        </li>
+                        <?php endforeach; ?>
                     </ul>
                 </div>
             </div>
         </div>
 
         <!-- ===== DATE SELECTOR + LEGEND ===== -->
-        <div class="booking-toolbar mb-3">
+        <div class="booking-toolbar booking-date-legend-toolbar mb-3">
             <div class="row align-items-center g-3">
                 <!-- Date pills -->
                 <div class="col-lg-7">
@@ -91,7 +155,13 @@
                             <span class="legend-swatch" style="background:#e2e8f0; border:1.5px solid #cbd5e1;"></span>Trống
                         </div>
                         <div class="legend-chip">
+                            <span class="legend-swatch" style="background:#f1f5f9; border:1.5px dashed #94a3b8;"></span>Đã qua
+                        </div>
+                        <div class="legend-chip">
                             <span class="legend-swatch" style="background:#ef4444;"></span>Đã đặt
+                        </div>
+                        <div class="legend-chip">
+                            <span class="legend-swatch" style="background:#ea580c;"></span>Bảo trì
                         </div>
                         <div class="legend-chip">
                             <span class="legend-swatch" style="background:#334155;"></span>Khoá / Đóng
@@ -108,7 +178,7 @@
         </div>
 
         <!-- ===== COURT FILTER TABS ===== -->
-        <div class="booking-toolbar mb-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+        <div class="booking-toolbar booking-filter-court-toolbar mb-3 d-flex align-items-center justify-content-between gap-3 flex-wrap">
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <span class="small fw-bold text-muted">Hiển thị sân:</span>
                 <div class="court-tabs" id="courtTabsRow">
@@ -120,10 +190,7 @@
                 </div>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-teal-subtle text-teal">
-                    <i class="fa-solid fa-sync fa-spin me-1" style="font-size:0.65rem;"></i>Cập nhật mỗi 5s
-                </span>
-                <input type="date" id="bookingDateInput" class="form-control form-control-sm rounded-3" style="width:155px;">
+                <input type="date" id="bookingDateInput" class="form-control form-control-sm rounded-3 booking-date-input" style="width:155px;">
             </div>
         </div>
 
@@ -146,11 +213,11 @@
         </div>
 
         <!-- ===== BOOKING SUMMARY BAR ===== -->
-        <div class="booking-summary-bar" id="bookingSummaryBar" style="display:none !important;">
+        <div class="booking-summary-bar d-none" id="bookingSummaryBar">
             <div class="d-flex align-items-center gap-3">
                 <i class="fa-solid fa-cart-shopping fs-4"></i>
                 <div>
-                    <div class="fw-bold" id="summaryTitle">Thảm A1 • 17:00 – 18:00</div>
+                    <div class="fw-bold" id="summaryTitle">Thảm A1 17h-18h</div>
                     <div class="small opacity-85" id="summaryDetail">90.000 đ • Đặt cọc 50.000 đ</div>
                 </div>
             </div>
@@ -158,17 +225,10 @@
                 <button class="btn btn-light btn-sm rounded-pill px-3 text-teal fw-bold" id="btnCancelSel">
                     <i class="fa-solid fa-xmark me-1"></i>Huỷ chọn
                 </button>
-                <a id="btnGoPayment" href="payment.html" class="btn btn-light fw-bold rounded-pill px-4" style="color:var(--brand-teal);">
-                    <i class="fa-solid fa-lock me-2"></i>Đặt Cọc & Thanh Toán
+                <a id="btnGoPayment" href="payment.php" class="btn btn-light fw-bold rounded-pill px-4" style="color:var(--brand-teal);">
+                    <i class="fa-solid fa-credit-card me-2"></i>Thanh Toán
                 </a>
             </div>
-        </div>
-
-        <!-- ===== GUIDE ===== -->
-        <div class="mt-3 p-3 rounded-3 bg-body-tertiary border small text-muted text-center">
-            <i class="fa-solid fa-hand-pointer text-teal me-1"></i>
-            Click vào ô <strong>trắng/xám</strong> để chọn khung giờ trống •
-            Kéo qua nhiều ô để chọn nhiều giờ liên tiếp (tính năng drag sẽ được bổ sung)
         </div>
 
     </div><!-- /container -->
@@ -189,15 +249,11 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/mock-data.js"></script>
-    <script src="assets/js/app.js"></script>
-    <script src="assets/js/calendar_booking.js"></script>
+    <script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
+    <script src="assets/js/booking-account-client.js?v=<?= filemtime(__DIR__ . '/assets/js/booking-account-client.js') ?>"></script>
+    <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
+    <script src="assets/js/calendar_booking.js?v=<?= filemtime(__DIR__ . '/assets/js/calendar_booking.js') ?>"></script>
     <!-- Bottom Nav -->
-    <script src="assets/js/bottom-nav.js"></script>
+    <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>
-
-
-
-
-

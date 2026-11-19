@@ -1,12 +1,73 @@
 <?php
-/**
- * api/profile.php
- * GET/POST thông tin hồ sơ cá nhân.
- *
- * Người phụ trách: Minh (Tuần 3)
- */
-require_once __DIR__ . '/../config/db.php'; // sửa số lượng '../' nếu đổi vị trí file
-header('Content-Type: application/json; charset=utf-8');
 
-// TODO: triển khai logic thật, dùng $pdo->prepare(...) — không nối chuỗi SQL trực tiếp.
-echo json_encode(['status' => 'not_implemented']);
+require_once __DIR__ . '/../includes/booking-account-api.php';
+const PROFILE_LEVELS = ['beginner' => 'Mới chơi', 'intermediate' => 'Trung bình', 'advanced' => 'Khá', 'pro' => 'Thi đấu / Nâng cao'];
+const PROFILE_TIMES = ['morning' => 'Sáng (05:00 - 11:00)', 'noon' => 'Trưa (11:00 - 14:00)', 'afternoon' => 'Chiều (14:00 - 17:00)', 'evening' => 'Tối (17:00 - 22:00)', 'flexible' => 'Linh hoạt'];
+function profile_extra(PDO $pdo, int $id): array {
+    $s = $pdo->prepare('SELECT avatar_url,area_label,skill_level,preferred_time FROM users WHERE id=?');
+    $s->execute([$id]);
+    return $s->fetch() ?: ['avatar_url' => null, 'area_label' => null, 'skill_level' => null, 'preferred_time' => null];
+}
+
+function profile_areas(PDO $pdo): array {
+    $r = $pdo->query("SELECT DISTINCT old_area_label FROM wards WHERE old_area_label IS NOT NULL AND old_area_label<>''")->fetchAll(PDO::FETCH_COLUMN);
+    natsort($r);
+    return array_values($r);
+}
+
+function profile_payload(PDO $pdo, array $user): array {
+    try {
+        $extra = profile_extra($pdo, (int) $user['id']);
+    } catch (Throwable $e) {
+        $extra = ['avatar_url' => null, 'area_label' => null, 'skill_level' => null, 'preferred_time' => null];
+    }
+    return ['user' => $user + $extra, 'options' => ['areas' => profile_areas($pdo), 'levels' => PROFILE_LEVELS, 'times' => PROFILE_TIMES]];
+}
+
+try {
+    $user = booking_account_user();
+    $method = $_SERVER['REQUEST_METHOD'];
+    if ($method === 'GET')
+        booking_account_out(200, profile_payload($pdo, $user) + ['csrf_token' => $_SESSION['csrf_token']]);
+    if ($method !== 'POST')
+        booking_account_out(405, null, 'Chỉ hỗ trợ GET/POST.');
+    booking_account_csrf();
+    $in = booking_account_input();
+    foreach (['name', 'email', 'phone'] as $key)
+        if (!isset($in[$key]) || !is_string($in[$key]))
+            booking_account_out(422, null, 'Vui lòng nhập họ tên, email và điện thoại.');
+    $name = trim($in['name']);
+    $email = strtolower(trim($in['email']));
+    $phone = preg_replace('/\s+/', '', $in['phone']);
+    if (mb_strlen($name) < 2 || mb_strlen($name) > 150 || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 150 || !preg_match('/^(0|\+84)\d{9}$/', $phone))
+        booking_account_out(422, null, 'Họ tên, email hoặc số điện thoại không hợp lệ.');
+    if ($email !== strtolower($user['email']))
+        booking_account_out(422, null, 'Email đăng nhập đã xác minh không thể đổi trực tiếp trong hồ sơ. Vui lòng liên hệ quản trị.');
+    $area = isset($in['area_label']) && is_string($in['area_label']) ? trim($in['area_label']) : '';
+    $level = isset($in['skill_level']) && is_string($in['skill_level']) ? trim($in['skill_level']) : '';
+    $time = isset($in['preferred_time']) && is_string($in['preferred_time']) ? trim($in['preferred_time']) : '';
+    if ($area !== '' && !in_array($area, profile_areas($pdo), true))
+        booking_account_out(422, null, 'Khu vực sinh sống không hợp lệ.');
+    if ($level !== '' && !isset(PROFILE_LEVELS[$level]))
+        booking_account_out(422, null, 'Trình độ chơi không hợp lệ.');
+    if ($time !== '' && !isset(PROFILE_TIMES[$time]))
+        booking_account_out(422, null, 'Thời gian chơi yêu thích không hợp lệ.');
+    try {
+        $pdo->prepare("UPDATE users SET name=?,email=?,phone=?,area_label=?,skill_level=?,preferred_time=? WHERE id=? AND deleted_at IS NULL AND account_status='active'")->execute([$name, $email, $phone, $area ?: null, $level ?: null, $time ?: null, $user['id']]);
+    } catch (PDOException $e) {
+        if ((int) ($e->errorInfo[1] ?? 0) === 1054)
+            booking_account_out(500, null, 'Database chưa nâng cấp: hãy import database/migration_user_profile.sql.');
+        throw $e;
+    }
+
+    $_SESSION['name'] = $name;
+    $_SESSION['email'] = $email;
+    $_SESSION['phone'] = $phone;
+    booking_account_out(200, profile_payload($pdo, booking_account_user()), 'Đã lưu hồ sơ vào MySQL.');
+} catch (PDOException $e) {
+    if ((int) ($e->errorInfo[1] ?? 0) === 1062)
+        booking_account_out(409, null, 'Email đã được tài khoản khác sử dụng.');
+    booking_account_error($e);
+} catch (Throwable $e) {
+    booking_account_error($e);
+}

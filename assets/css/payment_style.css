@@ -109,40 +109,55 @@ textarea.pay-input {
 }
 .pay-field { margin-bottom: 0.85rem; }
 
-/* ---- Payment method grid ---- */
+/* ---- Payment method grid (4 methods: VNPay, MoMo, ZaloPay, Chuyển khoản) ---- */
 .pm-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.6rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.65rem;
 }
 .pm-btn {
     position: relative;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    gap: 0.45rem;
-    padding: 0.9rem 0.4rem 0.7rem;
+    gap: 0.3rem;
+    padding: 0.85rem 0.45rem 0.7rem;
     border: 2px solid var(--border-color);
     border-radius: 0.85rem;
     background: var(--bg-surface);
     cursor: pointer;
-    transition: all 0.18s;
+    transition: all 0.18s ease;
     font-family: inherit;
-    min-height: 80px;
+    min-height: 88px;
+    outline: none !important;
 }
-.pm-btn:hover { border-color: var(--brand-teal); }
+.pm-btn:focus,
+.pm-btn:focus-visible {
+    outline: none !important;
+}
+.pm-btn:hover {
+    border-color: rgba(13,148,136,0.55);
+    transform: translateY(-1px);
+}
 .pm-btn.selected {
     border-color: var(--brand-teal);
     background: rgba(13,148,136,0.05);
-    box-shadow: 0 0 0 3px rgba(13,148,136,0.1);
+    box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
 }
 .pm-btn .pm-name {
-    font-size: 0.68rem;
-    font-weight: 700;
-    color: var(--text-secondary);
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: var(--text-primary);
     text-align: center;
     line-height: 1.2;
 }
 .pm-btn.selected .pm-name { color: var(--brand-teal); }
+.pm-btn .pm-sub {
+    font-size: 0.63rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.1;
+}
 .pm-check {
     position: absolute;
     top: 6px; right: 6px;
@@ -160,29 +175,314 @@ textarea.pay-input {
     display: flex; align-items: center; justify-content: center;
 }
 .pm-icon-wrap img {
-    height: 28px; max-width: 64px; object-fit: contain;
+    height: 28px; max-width: 68px; object-fit: contain;
 }
 .pm-icon-wrap i { font-size: 1.7rem; }
 
-/* ---- Bank QR panel ---- */
+.pm-verified-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.22rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* ---- Selected Payment Method Summary Card ---- */
+.pm-summary-card {
+    background: #ffffff;
+    border: 1.5px solid rgba(13, 148, 136, 0.25);
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.06);
+    transition: all 0.2s ease;
+}
+.pm-summary-card:hover {
+    border-color: rgba(13, 148, 136, 0.45);
+}
+.pm-summary-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 0.75rem;
+    background: rgba(13, 148, 136, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ---- Bank & E-Wallet QR panels ---- */
 .bank-panel {
     display: none;
     border: 1.5px solid var(--border-color);
-    border-radius: 0.85rem;
+    border-radius: 0.9rem;
     padding: 1.1rem;
     background: var(--bg-surface);
-    margin-top: 0.75rem;
+    margin-top: 0.85rem;
+    animation: fadeInPanel 0.22s ease;
 }
 .bank-panel.show { display: block; }
+
+@keyframes fadeInPanel {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Gateway mode tabs (QR vs Web / ATM / Phone) */
+.gw-mode-tabs {
+    display: flex;
+    gap: 0.45rem;
+    background: var(--bg-body);
+    padding: 0.3rem;
+    border-radius: 0.7rem;
+    border: 1px solid var(--border-color);
+}
+.gw-mode-tab {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.45rem 0.65rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    font-family: inherit;
+    text-align: center;
+}
+.gw-mode-tab:hover {
+    color: var(--text-primary);
+}
+.gw-mode-tab.active {
+    background: var(--bg-surface);
+    color: var(--brand-teal);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.07);
+}
+.gw-tab-pane {
+    display: none;
+}
+.gw-tab-pane.show {
+    display: block;
+}
+
+/* Brand dots & badges */
+.gw-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.vnpay-dot { background: #005baa; box-shadow: 0 0 0 3px rgba(0, 91, 170, 0.15); }
+.momo-dot { background: #a50064; box-shadow: 0 0 0 3px rgba(165, 0, 100, 0.15); }
+.zalopay-dot { background: #0068ff; box-shadow: 0 0 0 3px rgba(0, 104, 255, 0.15); }
+
+.momo-badge {
+    background: rgba(165, 0, 100, 0.1);
+    color: #a50064;
+    border: 1px solid rgba(165, 0, 100, 0.22);
+}
+.zalopay-badge {
+    background: rgba(0, 104, 255, 0.1);
+    color: #0068ff;
+    border: 1px solid rgba(0, 104, 255, 0.22);
+}
+
+/* Supported bank chips & steps */
+.gw-supported-Row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+.gw-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.18rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.67rem;
+    font-weight: 700;
+    background: var(--bg-body);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+.gw-steps-inline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: 0.55rem;
+    background: rgba(165, 0, 100, 0.05);
+    border: 1px dashed rgba(165, 0, 100, 0.25);
+    font-size: 0.73rem;
+    color: var(--text-secondary);
+}
+.gw-steps-inline i {
+    font-size: 0.6rem;
+    color: #a50064;
+}
+
+/* Domestic bank selector grid inside VNPAY ATM tab */
+.gw-bank-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.4rem;
+}
+.gw-bank-item {
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-body);
+    color: var(--text-primary);
+    border-radius: 0.55rem;
+    padding: 0.4rem 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+}
+.gw-bank-item:hover {
+    border-color: var(--brand-teal);
+}
+.gw-bank-item.active {
+    border-color: var(--brand-teal);
+    background: rgba(13, 148, 136, 0.08);
+    color: var(--brand-teal);
+}
+
+/* Gateway action buttons */
+.btn-gw-action {
+    font-weight: 700;
+    border: none;
+    color: #fff;
+    transition: all 0.18s ease;
+}
+.btn-gw-action.vnpay-action {
+    background: linear-gradient(135deg, #005baa 0%, #004282 100%);
+    color: #fff;
+}
+.btn-gw-action.vnpay-action:hover {
+    background: linear-gradient(135deg, #004282 0%, #003163 100%);
+    color: #fff;
+}
+.btn-gw-action.momo-action {
+    background: linear-gradient(135deg, #a50064 0%, #82004f 100%);
+    color: #fff;
+}
+.btn-gw-action.momo-action:hover {
+    background: linear-gradient(135deg, #82004f 0%, #63003c 100%);
+    color: #fff;
+}
+.btn-gw-action.zalopay-action {
+    background: linear-gradient(135deg, #0068ff 0%, #0050c8 100%);
+    color: #fff;
+}
+.btn-gw-action.zalopay-action:hover {
+    background: linear-gradient(135deg, #0050c8 0%, #003d99 100%);
+    color: #fff;
+}
+.btn-gw-action.bank-action {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(13, 148, 136, 0.28);
+}
+.btn-gw-action.bank-action:hover {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(13, 148, 136, 0.38);
+}
+.btn-gw-action.bank-action.confirmed {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(22, 163, 74, 0.3);
+}
+.gw-modal-header.bank-header {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+}
+@keyframes pulseCta {
+    0%, 100% { transform: scale(1); box-shadow: 0 4px 20px rgba(13,148,136,0.35); }
+    50% { transform: scale(1.028); box-shadow: 0 8px 30px rgba(13,148,136,0.65); }
+}
+.btn-pay-cta.pulse-cta {
+    animation: pulseCta 0.9s ease-in-out 3;
+}
+
+/* QR box and animated laser scan line */
 .qr-box {
-    width: 120px; height: 120px;
-    border-radius: 0.75rem;
+    width: 145px;
+    height: 198px;
+    border-radius: 0.85rem;
     border: 1.5px solid var(--border-color);
     overflow: hidden;
-    background: #fff;
+    background: #f8fafc;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
-.qr-box img { width: 100%; height: 100%; object-fit: cover; }
+.qr-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(13, 148, 136, 0.2);
+    border-color: var(--brand-teal);
+}
+.qr-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #ffffff;
+    transition: transform 0.25s ease;
+}
+.qr-box:hover img {
+    transform: scale(1.02);
+}
+.qr-scan-line {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #0d9488, transparent);
+    box-shadow: 0 0 8px rgba(13, 148, 136, 0.7);
+    z-index: 2;
+    pointer-events: none;
+    animation: scanMove 2.6s ease-in-out infinite;
+}
+.qr-scan-line.momo-line {
+    background: linear-gradient(90deg, transparent, #d82d8b, transparent);
+    box-shadow: 0 0 8px rgba(216, 45, 139, 0.75);
+}
+.qr-scan-line.zalopay-line {
+    background: linear-gradient(90deg, transparent, #0068ff, transparent);
+    box-shadow: 0 0 8px rgba(0, 104, 255, 0.75);
+}
+@keyframes scanMove {
+    0%, 100% { top: 28%; opacity: 0.4; }
+    50%      { top: 82%; opacity: 1; }
+}
+
+.qr-zoom-hint {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(15, 23, 42, 0.78);
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 3px 4px;
+    backdrop-filter: blur(2px);
+    pointer-events: none;
+    transition: background 0.2s ease;
+    z-index: 3;
+}
+.qr-box:hover .qr-zoom-hint {
+    background: var(--brand-teal);
+}
 .copy-row {
     display: flex;
     align-items: center;
@@ -203,19 +503,368 @@ textarea.pay-input {
     flex-shrink: 0; padding: 0;
 }
 
-/* ---- Card input panel ---- */
-.card-panel { display: none; margin-top: 0.75rem; }
-.card-panel.show { display: block; }
-.card-number-wrap {
-    position: relative;
+/* Gateway checkout modal header */
+.gw-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    transition: background 0.3s ease;
 }
-.card-number-wrap input { padding-right: 3.5rem; }
-.card-scheme-icons {
-    position: absolute;
-    right: 0.75rem; top: 50%; transform: translateY(-50%);
-    display: flex; gap: 3px;
+.gw-modal-header.bank-header {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
 }
-.card-scheme-icons i { font-size: 1.2rem; }
+.gw-modal-header.vnpay-header {
+    background: linear-gradient(135deg, #005baa 0%, #003e75 100%) !important;
+}
+.gw-modal-header.momo-header {
+    background: linear-gradient(135deg, #a50064 0%, #730046 100%) !important;
+}
+.gw-modal-header.zalopay-header {
+    background: linear-gradient(135deg, #0068ff 0%, #0048b3 100%) !important;
+}
+.gw-modal-logo-wrap {
+    width: 38px;
+    height: 38px;
+    border-radius: 0.6rem;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    flex-shrink: 0;
+}
+.gw-modal-logo-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* ---- Compact Payment Method Summary Card ---- */
+.pm-summary-card {
+    background: var(--bg-surface);
+    border: 1.5px solid var(--border-color);
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+.pm-summary-card:hover {
+    border-color: rgba(13, 148, 136, 0.4);
+}
+.pm-summary-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(13, 148, 136, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.pm-summary-hint {
+    border-color: var(--border-color) !important;
+}
+.btn-outline-teal {
+    color: var(--brand-teal);
+    border-color: var(--brand-teal);
+    background: transparent;
+    transition: all 0.2s ease;
+}
+.btn-outline-teal:hover {
+    background: var(--brand-teal);
+    color: #ffffff;
+}
+
+/* ---- Checkout Gateway Modal Dialog & QR Styling ---- */
+.gw-checkout-dialog {
+    max-width: 440px;
+    margin: 1.75rem auto;
+}
+.gw-qr-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+.gw-qr-card {
+    background: #ffffff;
+    border: 1.5px solid var(--border-color, #e2e8f0);
+    border-radius: 1.25rem;
+    padding: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: fit-content;
+    max-width: 240px;
+    margin: 0 auto;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.gw-qr-card:hover {
+    box-shadow: 0 8px 24px rgba(13, 148, 136, 0.12) !important;
+}
+.gw-qr-img-box {
+    background: #fafafa;
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    border-radius: 0.85rem;
+    padding: 0.45rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 220px;
+    box-sizing: border-box;
+}
+.gw-qr-img {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: 8px;
+    object-fit: contain;
+    background: #ffffff;
+}
+
+/* ---- Transfer Details Table inside Checkout Gateway Modal ---- */
+.transfer-info-card {
+    background: var(--bg-body, #f8fafc);
+    border: 1.5px solid var(--border-color, #e2e8f0);
+    border-radius: 0.85rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+}
+.ti-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+    font-size: 0.82rem;
+    gap: 0.75rem;
+}
+.ti-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0.15rem;
+}
+.ti-row:first-child {
+    padding-top: 0.15rem;
+}
+.ti-label {
+    flex: 0 0 142px;
+    max-width: 142px;
+    color: #64748b;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+}
+.ti-value-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.45rem;
+    text-align: right;
+    min-width: 0;
+}
+.ti-value {
+    color: #0f172a;
+    font-weight: 700;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    font-size: 0.86rem;
+    line-height: 1.35;
+}
+.ti-value.highlight-amount {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+.ti-value.code-val {
+    font-family: var(--bs-font-monospace, monospace);
+    font-size: 0.88rem;
+    letter-spacing: 0.5px;
+    color: #0f172a;
+}
+.ti-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 26px;
+    border-radius: 6px;
+    background: rgba(13, 148, 136, 0.08);
+    color: var(--brand-teal, #0d9488);
+    border: 1px solid rgba(13, 148, 136, 0.2);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    padding: 0;
+}
+.ti-copy-btn:hover {
+    background: var(--brand-teal, #0d9488);
+    color: #ffffff;
+    border-color: var(--brand-teal, #0d9488);
+}
+.ti-copy-btn:active {
+    transform: scale(0.95);
+}
+.ti-copy-placeholder {
+    width: 28px;
+    height: 26px;
+    flex-shrink: 0;
+    visibility: hidden;
+}
+
+#btnGwConfirmDone {
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.35;
+    padding: 0.75rem 1.25rem;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    border-radius: 9999px;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
+    transition: all 0.2s ease;
+}
+#btnGwConfirmDone:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.35);
+}
+
+/* Modal Responsive adjustments */
+@media (max-width: 576px) {
+    .gw-checkout-dialog {
+        margin: 0.65rem auto;
+        width: calc(100% - 1.25rem);
+        max-width: 430px;
+    }
+    #checkoutGatewayModal .modal-body {
+        padding: 1.15rem 0.95rem !important;
+    }
+    .transfer-info-card {
+        padding: 0.65rem 0.85rem;
+    }
+    .ti-label {
+        flex: 0 0 125px;
+        max-width: 125px;
+        font-size: 0.78rem;
+    }
+    .ti-row {
+        gap: 0.5rem;
+        padding: 0.48rem 0;
+    }
+    .ti-value {
+        font-size: 0.82rem;
+    }
+    .ti-value.highlight-amount {
+        font-size: 1rem;
+    }
+    .ti-value.code-val {
+        font-size: 0.84rem;
+    }
+    #btnGwConfirmDone {
+        font-size: 0.92rem;
+        padding: 0.72rem 1.15rem;
+    }
+}
+
+@media (max-width: 414px) {
+    .gw-checkout-dialog {
+        margin: 0.5rem auto;
+        width: calc(100% - 1rem);
+    }
+    #checkoutGatewayModal .modal-body {
+        padding: 1rem 0.75rem !important;
+    }
+    .gw-qr-card {
+        max-width: 220px;
+        padding: 0.55rem;
+    }
+    .gw-qr-img-box {
+        max-width: 195px;
+        padding: 0.35rem;
+    }
+    .gw-qr-img {
+        max-width: 180px;
+    }
+    .ti-label {
+        flex: 0 0 112px;
+        max-width: 112px;
+        font-size: 0.75rem;
+    }
+    .ti-value {
+        font-size: 0.79rem;
+    }
+    .ti-value.highlight-amount {
+        font-size: 0.94rem;
+    }
+    .ti-value.code-val {
+        font-size: 0.81rem;
+    }
+    .ti-copy-btn, .ti-copy-placeholder {
+        width: 26px;
+        height: 24px;
+        font-size: 0.7rem;
+    }
+    #btnGwConfirmDone {
+        font-size: 0.88rem;
+        padding: 0.68rem 1rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .gw-checkout-dialog {
+        margin: 0.35rem auto;
+        width: calc(100% - 0.6rem);
+    }
+    #checkoutGatewayModal .modal-body {
+        padding: 0.85rem 0.55rem !important;
+    }
+    .gw-qr-card {
+        max-width: 200px;
+        padding: 0.45rem;
+    }
+    .gw-qr-img-box {
+        max-width: 175px;
+        padding: 0.25rem;
+    }
+    .gw-qr-img {
+        max-width: 160px;
+    }
+    .transfer-info-card {
+        padding: 0.55rem 0.65rem;
+    }
+    .ti-label {
+        flex: 0 0 102px;
+        max-width: 102px;
+        font-size: 0.72rem;
+    }
+    .ti-value {
+        font-size: 0.76rem;
+    }
+    .ti-value.highlight-amount {
+        font-size: 0.88rem;
+    }
+    .ti-value.code-val {
+        font-size: 0.77rem;
+    }
+    #btnGwConfirmDone {
+        font-size: 0.84rem;
+        padding: 0.62rem 0.85rem;
+    }
+}
 
 /* ---- Order summary ---- */
 .order-wrap {
@@ -299,30 +948,39 @@ textarea.pay-input {
     letter-spacing: 1px;
 }
 
-/* ---- CTA button ---- */
+/* ---- CTA button (Thanh toán & Đặt cọc) ---- */
 .btn-pay-cta {
     width: 100%;
-    height: 52px;
+    height: 44px;
     background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
     color: #fff;
     border: none;
-    border-radius: 0.85rem;
+    border-radius: 0.75rem;
     font-family: inherit;
-    font-size: 0.95rem;
-    font-weight: 800;
+    font-size: 0.9rem;
+    font-weight: 700;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    gap: 0.55rem;
+    gap: 0.45rem;
+    padding: 0.45rem 1rem;
     transition: all 0.2s;
-    box-shadow: 0 4px 20px rgba(13,148,136,0.35);
-    letter-spacing: 0.3px;
+    box-shadow: 0 3px 16px rgba(13,148,136,0.3);
+    letter-spacing: 0.2px;
 }
 .btn-pay-cta:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 28px rgba(13,148,136,0.45);
+    box-shadow: 0 5px 22px rgba(13,148,136,0.4);
 }
 .btn-pay-cta:active { transform: translateY(0); }
 .btn-pay-cta:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.btn-pay-cta.btn-confirmed-deposit {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    box-shadow: 0 4px 22px rgba(5, 150, 105, 0.45) !important;
+}
+.btn-pay-cta.btn-confirmed-deposit:hover {
+    background: linear-gradient(135deg, #047857 0%, #065f46 100%) !important;
+    box-shadow: 0 6px 28px rgba(5, 150, 105, 0.6) !important;
+}
 
 /* ---- Trust badges ---- */
 .trust-badges { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; }
@@ -378,12 +1036,570 @@ textarea.pay-input {
 }
 .sdrow:last-child { border-bottom: none; }
 
-/* ---- Responsive ---- */
+/* ---- Responsive for Tablets & Mobile ---- */
 @media (max-width: 767px) {
     .pm-grid { grid-template-columns: repeat(2, 1fr); }
+    .gw-bank-grid { grid-template-columns: repeat(2, 1fr); }
     .step-label { display: none; }
     .order-hero { height: 110px; }
 }
-@media (max-width: 400px) {
-    .pm-grid { grid-template-columns: repeat(3, 1fr); }
+
+/* Phones (<= 576px, e.g. iPhone 16 393px, Galaxy 360px) */
+@media (max-width: 576px) {
+    /* Compact card padding on mobile so content isn't squeezed */
+    .card.p-4 {
+        padding: 1.15rem 0.95rem !important;
+        border-radius: 1rem !important;
+    }
+    .order-body {
+        padding: 0.9rem 0.95rem !important;
+    }
+
+    /* 2 columns for payment methods on phones: spacious, no text clipping, no 3-line wrapping */
+    .pm-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.55rem !important;
+    }
+    .pm-btn {
+        min-height: 74px !important;
+        padding: 0.75rem 0.45rem 0.6rem !important;
+    }
+    .pm-btn .pm-name {
+        font-size: 0.72rem !important;
+        line-height: 1.25 !important;
+    }
+    .pm-icon-wrap {
+        height: 28px !important;
+    }
+    .pm-icon-wrap img {
+        height: 24px !important;
+        max-width: 56px !important;
+    }
+    .pm-icon-wrap i {
+        font-size: 1.45rem !important;
+    }
+
+    /* Bank QR panel centered and spacious */
+    .bank-panel {
+        padding: 0.9rem 0.8rem !important;
+    }
+    .bank-panel .d-flex.gap-3 {
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+    .bank-panel .qr-box {
+        width: 160px !important;
+        height: 200px !important;
+        margin: 0 auto 0.5rem auto !important;
+    }
+    .bank-panel .flex-grow-1 {
+        width: 100% !important;
+    }
+    .copy-row {
+        padding: 0.45rem 0.65rem !important;
+        font-size: 0.8rem !important;
+    }
+    .copy-btn {
+        background: rgba(13, 148, 136, 0.1) !important;
+        color: var(--brand-teal) !important;
+        padding: 0.2rem 0.55rem !important;
+        border-radius: 999px !important;
+        font-size: 0.7rem !important;
+        border: 1px solid rgba(13, 148, 136, 0.2) !important;
+    }
+
+    /* Compact countdown */
+    .countdown-wrap {
+        padding: 0.5rem 0.75rem !important;
+        margin-bottom: 0.65rem !important;
+    }
+    .countdown-timer {
+        font-size: 0.98rem !important;
+    }
+
+    /* Compact step bar */
+    .step-bar {
+        padding: 0.65rem 0 0.35rem !important;
+    }
+    .step-dot {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 0.7rem !important;
+    }
+    .step-item::before {
+        top: 13px !important;
+    }
+
+    /* Voucher box compact */
+    .voucher-box {
+        padding: 0.75rem 0.85rem !important;
+        margin-bottom: 0.85rem !important;
+    }
+    .voucher-box .input-group .form-control {
+        height: 40px !important;
+        font-size: 0.82rem !important;
+    }
+    .voucher-box .input-group .btn-teal {
+        height: 40px !important;
+        padding: 0 0.9rem !important;
+        font-size: 0.82rem !important;
+    }
+    .voucher-box .input-group .btn-outline-danger {
+        height: 40px !important;
+    }
+
+    /* Compact summary card on mobile */
+    .pm-summary-card {
+        padding: 0.85rem 0.75rem !important;
+    }
+    .pm-summary-card .d-flex.align-items-center.gap-3 {
+        gap: 0.65rem !important;
+    }
+    .pm-summary-icon {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 0.6rem !important;
+    }
+    .pm-summary-icon i {
+        font-size: 1.15rem !important;
+    }
+    #pmSummaryTitle {
+        font-size: 0.8rem !important;
+    }
+    #pmSummaryDesc {
+        font-size: 0.73rem !important;
+        line-height: 1.35 !important;
+    }
+    .pm-summary-hint {
+        font-size: 0.71rem !important;
+        line-height: 1.35 !important;
+    }
+
+    /* Booking CTA button */
+    .btn-pay-cta {
+        height: 48px !important;
+        font-size: 0.92rem !important;
+        border-radius: 0.75rem !important;
+    }
+}
+
+/* Extra Small Phones (<= 380px, e.g. iPhone SE, Galaxy Fold cover) */
+@media (max-width: 380px) {
+    .card.p-4 {
+        padding: 0.95rem 0.7rem !important;
+    }
+    .order-body {
+        padding: 0.75rem 0.7rem !important;
+    }
+    .bdr {
+        font-size: 0.78rem !important;
+        padding: 0.35rem 0 !important;
+    }
+    .prow {
+        font-size: 0.8rem !important;
+    }
+    .prow.total-row .prow-val {
+        font-size: 1.1rem !important;
+    }
+    .prow.deposit-row .prow-val {
+        font-size: 1rem !important;
+    }
+    .pm-btn {
+        min-height: 68px !important;
+        padding: 0.65rem 0.35rem 0.5rem !important;
+    }
+    .pm-btn .pm-name {
+        font-size: 0.66rem !important;
+    }
+    .bank-panel .qr-box {
+        width: 135px !important;
+        height: 175px !important;
+    }
+    .pm-summary-card {
+        padding: 0.7rem 0.6rem !important;
+    }
+    .pm-summary-icon {
+        width: 32px !important;
+        height: 32px !important;
+    }
+    .pm-summary-icon i {
+        font-size: 1rem !important;
+    }
+    #pmSummaryTitle {
+        font-size: 0.76rem !important;
+    }
+    #pmSummaryDesc {
+        font-size: 0.68rem !important;
+    }
+    .pm-summary-hint {
+        font-size: 0.67rem !important;
+    }
+}
+/* Completed booking screen: centered card with a separate bottom footer. */
+.success-overlay {
+    display: flex; flex-direction: column; align-items: stretch;
+    justify-content: flex-start; overflow-y: auto; overscroll-behavior: contain;
+}
+.success-content { flex: 1 0 auto; display: grid; place-items: center; width: 100%; padding: 36px 20px; }
+.success-inner {
+    width: 100%; max-width: 600px; padding: 32px;
+    background: var(--bg-card); border: 1px solid var(--border-color);
+    border-radius: 24px; box-shadow: 0 16px 48px rgba(0,0,0,.08); text-align: center;
+}
+.success-ring { width: 72px; height: 72px; font-size: 30px; margin-bottom: 18px; }
+.success-eyebrow { color: var(--brand-teal); font-size: .68rem; font-weight: 800; letter-spacing: 1px; margin-bottom: 8px; }
+.success-heading { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; color: var(--text-primary); margin: 0 0 10px; }
+.success-description { color: var(--text-secondary); font-size: .875rem; line-height: 1.6; margin: 0 auto 20px; max-width: 430px; }
+.success-code-box { padding: 14px; border: 1px dashed var(--brand-teal); background: rgba(13,148,136,.06); border-radius: 14px; margin-bottom: 20px; }
+.success-code-label { display: block; color: var(--text-secondary); font-size: .75rem; margin-bottom: 4px; }
+.success-code-box .booking-code { display: block; font-size: clamp(1rem, 4vw, 1.4rem); letter-spacing: 1px; overflow-wrap: anywhere; }
+.success-detail-card { width: 100%; margin: 0 0 16px; background: var(--bg-body); }
+.success-detail-card .sdrow { display: grid; grid-template-columns: 110px minmax(0,1fr); gap: 16px; align-items: start; padding: 12px 16px; }
+.success-detail-card .sdrow strong { text-align: right; overflow-wrap: anywhere; color: var(--text-primary); }
+.success-detail-card .success-deposit-row { background: rgba(13,148,136,.07); color: var(--brand-teal); }
+.success-detail-card .success-deposit-row strong { color: var(--brand-teal); font-size: 1rem; }
+.success-contact { color: var(--text-secondary); font-size: .78rem; margin: 0 0 16px; overflow-wrap: anywhere; }
+.success-contact i { color: var(--brand-teal); margin-right: 4px; }
+.success-demo-note { color: var(--text-secondary); font-size: .75rem; margin: 0 0 16px; }
+.success-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.success-actions .btn { padding: 11px 14px; font-size: .875rem; }
+.success-footer { flex-shrink: 0; width: 100%; padding: 18px 20px calc(18px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--border-color); text-align: center; color: var(--text-secondary); background: var(--bg-surface); font-size: .75rem; }
+@media (max-width: 575.98px) {
+    .success-content { padding: 20px 12px; }
+    .success-inner { padding: 24px 16px; border-radius: 18px; }
+    .success-detail-card .sdrow { grid-template-columns: 85px minmax(0,1fr); gap: 10px; padding: 11px 12px; }
+    .success-actions { grid-template-columns: 1fr; gap: 8px; }
+}
+
+/* ---- Voucher Box: Modern Gradient & Full-width Fit ---- */
+.voucher-box {
+    width: 100%;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(20, 184, 166, 0.18) 100%);
+    border: 1.5px solid rgba(13, 148, 136, 0.3);
+    border-radius: 1rem;
+    padding: 0.95rem 1rem;
+    margin-bottom: 1.1rem;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.06);
+    transition: all 0.25s ease;
+}
+.voucher-box:hover {
+    border-color: rgba(13, 148, 136, 0.5);
+    box-shadow: 0 6px 18px rgba(13, 148, 136, 0.1);
+}
+.voucher-box-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--text-primary, #0f172a);
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.3px;
+}
+.voucher-box-title i {
+    color: var(--brand-teal, #0d9488);
+}
+.voucher-box .input-group {
+    width: 100%;
+    display: flex;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+.voucher-box .input-group .form-control {
+    height: 44px;
+    background: #ffffff;
+    border: 1.5px solid rgba(13, 148, 136, 0.25);
+    border-right: none;
+    border-radius: 0.75rem 0 0 0.75rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    padding-left: 0.95rem;
+    color: #0f172a;
+    transition: all 0.2s ease;
+}
+.voucher-box .input-group .form-control:focus {
+    border-color: var(--brand-teal, #0d9488);
+    box-shadow: none;
+    background: #ffffff;
+}
+.voucher-box .input-group .btn-teal {
+    height: 44px;
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    border: none;
+    border-radius: 0 0.75rem 0.75rem 0;
+    color: #fff;
+    font-weight: 800;
+    padding: 0 1.25rem;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.voucher-box .input-group .btn-teal:hover {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%);
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+}
+.voucher-box .input-group .btn-outline-danger {
+    height: 44px;
+    border-radius: 0 0.75rem 0.75rem 0;
+    border: 1.5px solid #ef4444;
+    border-left: none;
+    background: #fff;
+    color: #ef4444;
+}
+
+/* ---- SweetAlert2 Payment Responsive Overrides ---- */
+.swal2-popup.swal-payment-responsive-popup,
+.swal2-popup {
+    border-radius: 1.25rem !important;
+    padding: 1.5rem 1.25rem !important;
+    max-width: 92vw !important;
+    width: 390px !important;
+    box-sizing: border-box !important;
+}
+.swal-payment-responsive-popup .swal2-title,
+.swal2-popup .swal2-title {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    padding: 0.25rem 0.5rem 0 !important;
+}
+.swal-payment-responsive-popup .swal2-html-container,
+.swal2-popup .swal2-html-container {
+    margin: 0.65rem 0 0 !important;
+    overflow: hidden !important;
+}
+.swal-confirm-box {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+}
+.swal-confirm-box strong {
+    font-size: 0.92rem;
+}
+.swal-payment-responsive-popup .swal2-actions,
+.swal2-popup .swal2-actions {
+    margin-top: 1.15rem !important;
+    width: 100% !important;
+    justify-content: center !important;
+}
+.swal-payment-responsive-popup .swal2-confirm,
+.swal-payment-confirm-btn,
+.swal2-popup .swal2-confirm {
+    border-radius: 9999px !important;
+    padding: 0.72rem 1.5rem !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    width: 100% !important;
+    max-width: 260px !important;
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.4rem !important;
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
+    border: none !important;
+}
+.swal-payment-responsive-popup .swal2-confirm:hover,
+.swal-payment-confirm-btn:hover,
+.swal2-popup .swal2-confirm:hover {
+    background: linear-gradient(135deg, #0f766e 0%, #115e59 100%) !important;
+    box-shadow: 0 6px 18px rgba(13, 148, 136, 0.4) !important;
+}
+
+@media (max-width: 380px) {
+    .swal2-popup.swal-payment-responsive-popup,
+    .swal2-popup {
+        padding: 1.15rem 0.75rem !important;
+        width: 310px !important;
+        max-width: 95vw !important;
+    }
+    .swal-payment-responsive-popup .swal2-title,
+    .swal2-popup .swal2-title {
+        font-size: 1.05rem !important;
+    }
+    .swal-confirm-box {
+        padding: 0.65rem 0.6rem !important;
+        font-size: 0.78rem !important;
+    }
+    .swal-confirm-box strong {
+        font-size: 0.85rem !important;
+    }
+    .swal-payment-responsive-popup .swal2-confirm,
+    .swal-payment-confirm-btn,
+    .swal2-popup .swal2-confirm {
+        font-size: 0.88rem !important;
+        padding: 0.65rem 1.25rem !important;
+        max-width: 230px !important;
+    }
+}
+
+/* ================================================================
+   HEADER THEME & BELL BUTTONS (NẰM GỌN TRÊN HEADER, KHÔNG TRÔI NỔI ĐÈ CHỮ)
+   ================================================================ */
+.payment-page .app-brand-head {
+    position: relative !important;
+}
+.payment-page .app-brand-head #themeToggle,
+.payment-page .app-brand-head .bnav-theme-float {
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    right: 20px !important;
+    z-index: 1025 !important;
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+.payment-page .app-brand-head #pushBellToggle,
+.payment-page .app-brand-head .bnav-bell-float {
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    right: 74px !important;
+    z-index: 1025 !important;
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+@media (max-width: 575px) {
+    .payment-page .app-brand-head #themeToggle,
+    .payment-page .app-brand-head .bnav-theme-float {
+        right: 12px !important;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 0.95rem !important;
+    }
+    .payment-page .app-brand-head #pushBellToggle,
+    .payment-page .app-brand-head .bnav-bell-float {
+        right: 56px !important;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 0.95rem !important;
+    }
+}
+
+/* ================================================================
+   ẨN NÚT FLOATING "VỀ KÊNH QUẢN TRỊ" ĐỂ TRÁNH ĐÈ LÊN HÓA ĐƠN & NÚT ĐẶT CỌC
+   ================================================================ */
+.payment-page .owner-return-link,
+body.payment-page .owner-return-link,
+#ownerReturnLink {
+    display: none !important;
+}
+
+/* ================================================================
+   SỬA LỖI MÀU CHỮ DARK MODE CHO BANNER HỘI VIÊN & DÒNG GIẢM GIÁ
+   ================================================================ */
+[data-bs-theme="dark"] #memberVipBanner {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(56, 189, 248, 0.28)) !important;
+    border-left: 4px solid #38bdf8 !important;
+    color: #f0f9ff !important;
+}
+[data-bs-theme="dark"] #memberVipBanner #memberBannerText,
+[data-bs-theme="dark"] #memberVipBanner strong,
+[data-bs-theme="dark"] #memberVipBanner span {
+    color: #f0f9ff !important;
+}
+[data-bs-theme="dark"] #memberVipBanner #memberBannerPercent {
+    color: #fb7185 !important;
+}
+[data-bs-theme="dark"] #memberVipBanner #memberBannerIcon {
+    color: #38bdf8 !important;
+}
+[data-bs-theme="dark"] #prowMembership {
+    color: #38bdf8 !important;
+}
+[data-bs-theme="dark"] #prowMembership span {
+    color: #7dd3fc !important;
+}
+
+/* ================================================================
+   BẢO VỆ THANH ĐIỀU HƯỚNG DƯỚI (BOTTOM NAV) KHÔNG BỊ TRONG SUỐT HOẶC BỊ ĐÈ
+   ================================================================ */
+#godmintonBottomNav {
+    z-index: 1050 !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+[data-bs-theme="dark"] #godmintonBottomNav {
+    background: #0b1e24 !important;
+    background-color: #0b1e24 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Hạ z-index của cột tóm tắt đơn để không đè lên thanh menu dưới */
+.payment-page .sticky-top {
+    z-index: 1010 !important;
+}
+
+/* Đảm bảo toàn trang có đủ padding-bottom để cuộn thoáng qua thanh bottom nav */
+body.payment-page {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+
+
+/* Tương phản cho cổng thanh toán, chỉ áp dụng ở chế độ tối. */
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-label {
+    color: #cbd5e1;
+}
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-value,
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-value.code-val {
+    color: #f8fafc;
+}
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-value.highlight-amount {
+    color: #5eead4;
+}
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-row {
+    border-bottom-color: #294550;
+}
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-copy-btn {
+    color: #5eead4;
+    background: #103b3b;
+    border-color: #2b7772;
+}
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-copy-btn:hover,
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-copy-btn:focus-visible {
+    color: #f0fdfa;
+    background: #115e59;
+    border-color: #5eead4;
+}
+[data-bs-theme="dark"] #checkoutGatewayModal .ti-copy-btn:focus-visible {
+    outline: 2px solid #5eead4;
+    outline-offset: 2px;
+}
+[data-bs-theme="dark"] #gwCheckoutSub {
+    color: #ffffff !important;
+}
+[data-bs-theme="dark"] #gwPaymentStatusCard {
+    background: #10342f !important;
+    border-color: #2b7772 !important;
+    color: #e2e8f0;
+}
+[data-bs-theme="dark"] #gwPaymentStatusCard .text-teal {
+    color: #5eead4 !important;
+}
+[data-bs-theme="dark"] #gwPaymentStatusCard .text-success {
+    color: #86efac !important;
+}
+[data-bs-theme="dark"] #gwLiveStatusSub,
+[data-bs-theme="dark"] #checkoutGatewayModal .modal-body > .border-top .text-muted {
+    color: #cbd5e1 !important;
+}
+[data-bs-theme="dark"] #pmSummaryTitle {
+    color: #f8fafc !important;
 }

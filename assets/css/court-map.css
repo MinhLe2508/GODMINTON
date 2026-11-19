@@ -1,0 +1,410 @@
+/**
+ * assets/css/court-map.css
+ * Định dạng giao diện bản đồ sân cầu lông Leaflet + OpenStreetMap
+ * Người phụ trách: P3 (Trương Minh Triết, Tuần 3)
+ */
+
+.court-map-wrapper {
+    position: relative;
+    border-radius: 1.25rem;
+    background: var(--bs-body-bg, #fff);
+    border: 1px solid var(--bs-border-color, #e2e8f0);
+    padding: 1.25rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease;
+}
+
+[data-bs-theme="dark"] .court-map-wrapper {
+    background: #111e2e;
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.court-map-container {
+    width: 100%;
+    height: 380px;
+    border-radius: 1rem;
+    overflow: hidden;
+    position: relative;
+    z-index: 1; /* Không đè lên navbar dropdown hay drawer */
+    border: 1px solid var(--bs-border-color, #e2e8f0);
+}
+
+/* Responsive chiều cao bản đồ */
+@media (max-width: 576px) {
+    .court-map-container {
+        height: 300px;
+    }
+    .court-map-wrapper {
+        padding: 0.75rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .court-map-container {
+        height: 420px;
+    }
+}
+
+/* Custom Marker Pin */
+.court-custom-marker,
+.court-svg-marker-wrapper {
+    background: transparent !important;
+    border: none !important;
+}
+
+.court-svg-pin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: 50% 100%;
+}
+
+.court-svg-pin:hover {
+    transform: scale(1.22);
+}
+
+.court-marker-pin {
+    width: 36px;
+    height: 36px;
+    border-radius: 50% 50% 50% 0;
+    background: #0d9488;
+    position: absolute;
+    transform: rotate(-45deg);
+    left: 50%;
+    top: 50%;
+    margin: -20px 0 0 -20px;
+    box-shadow: 0 3px 10px rgba(13, 148, 136, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.court-marker-pin:hover {
+    transform: rotate(-45deg) scale(1.15);
+    background: #0f766e;
+}
+
+.court-marker-pin i {
+    transform: rotate(45deg);
+    color: #ffffff;
+    font-size: 15px;
+}
+
+/* Popup tùy biến theo tông GODMINTON */
+.leaflet-popup-content-wrapper {
+    border-radius: 1rem !important;
+    padding: 0.5rem !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid var(--bs-border-color, #e2e8f0);
+    background: var(--bs-body-bg, #ffffff) !important;
+    color: var(--bs-body-color, #1e293b) !important;
+}
+
+.leaflet-popup-tip {
+    background: var(--bs-body-bg, #ffffff) !important;
+}
+
+[data-bs-theme="dark"] .leaflet-popup-content-wrapper,
+[data-bs-theme="dark"] .leaflet-popup-tip {
+    background: #1e293b !important;
+    color: #f1f5f9 !important;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.court-map-popup {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    min-width: 240px;
+    max-width: 300px;
+}
+
+.court-map-popup .popup-img-wrapper {
+    position: relative;
+    width: 100%;
+    height: 115px;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+    background: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .court-map-popup .popup-img-wrapper {
+    background: #0f172a;
+}
+
+.court-map-popup .popup-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.35s ease;
+}
+
+.court-map-popup:hover .popup-thumb {
+    transform: scale(1.06);
+}
+
+.court-map-popup .popup-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--bs-body-color, #0f172a);
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+}
+
+[data-bs-theme="dark"] .court-map-popup .popup-title {
+    color: #f8fafc;
+}
+
+.court-map-popup .popup-address {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+/* Nút Fullscreen nổi trên bản đồ có nhãn chữ rõ ràng */
+.court-map-floating-fs-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 1000;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #0d9488;
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.45);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+    user-select: none;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.court-map-floating-fs-btn:hover {
+    transform: scale(1.06);
+    background: #0f766e;
+    box-shadow: 0 6px 18px rgba(13, 148, 136, 0.6);
+}
+
+.court-map-floating-fs-btn:active {
+    transform: scale(0.96);
+}
+
+.court-map-floating-fs-btn .fs-floating-text {
+    line-height: 1;
+    color: #ffffff;
+}
+
+/* Chế độ Fullscreen */
+.court-map-wrapper:fullscreen,
+.court-map-wrapper:-webkit-full-screen,
+.court-map-wrapper.court-map-is-fullscreen {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 99999 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    padding: 1rem 1.5rem !important;
+    background: var(--bs-body-bg, #ffffff) !important;
+    display: flex;
+    flex-direction: column;
+}
+
+[data-bs-theme="dark"] .court-map-wrapper:fullscreen,
+[data-bs-theme="dark"] .court-map-wrapper:-webkit-full-screen,
+[data-bs-theme="dark"] .court-map-wrapper.court-map-is-fullscreen {
+    background: #0b1320 !important;
+}
+
+.court-map-wrapper:fullscreen .court-map-container,
+.court-map-wrapper:-webkit-full-screen .court-map-container,
+.court-map-wrapper.court-map-is-fullscreen .court-map-container {
+    flex-grow: 1;
+    height: calc(100vh - 85px) !important;
+    border-radius: 0.75rem;
+}
+
+.court-map-popup .popup-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 0.5rem;
+    margin-top: 0.5rem;
+    border-top: 1px solid var(--bs-border-color, #e2e8f0);
+}
+
+[data-bs-theme="dark"] .court-map-popup .popup-footer {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.court-map-popup .popup-price {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #0d9488;
+}
+
+.court-map-popup .btn-popup-route {
+    background: #f0fdfa;
+    color: #0d9488;
+    border: 1px solid rgba(13, 148, 136, 0.4);
+    font-weight: 600;
+    font-size: 0.76rem;
+    padding: 3px 10px;
+    border-radius: 999px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.court-map-popup .btn-popup-route:hover {
+    background: #0d9488;
+    color: #ffffff;
+    border-color: #0d9488;
+    transform: translateY(-1px);
+}
+
+[data-bs-theme="dark"] .court-map-popup .btn-popup-route {
+    background: rgba(13, 148, 136, 0.15);
+    color: #2dd4bf;
+    border-color: rgba(45, 212, 191, 0.35);
+}
+
+[data-bs-theme="dark"] .court-map-popup .btn-popup-route:hover {
+    background: #0d9488;
+    color: #ffffff;
+}
+
+/* Bảng thông tin chỉ đường nổi trên bản đồ */
+.court-map-route-panel {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    right: 14px;
+    z-index: 1000;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(13, 148, 136, 0.35);
+    border-radius: 14px;
+    padding: 10px 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    animation: routePanelSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-bs-theme="dark"] .court-map-route-panel {
+    background: rgba(15, 23, 42, 0.94);
+    border-color: rgba(45, 212, 191, 0.35);
+    color: #f1f5f9;
+}
+
+@keyframes routePanelSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.court-map-route-panel .route-badge-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(13, 148, 136, 0.12);
+    color: #0d9488;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+[data-bs-theme="dark"] .court-map-route-panel .route-badge-icon {
+    background: rgba(45, 212, 191, 0.18);
+    color: #2dd4bf;
+}
+
+/* User location pulsing marker */
+.court-user-location-wrapper {
+    background: transparent;
+    border: none;
+}
+
+.court-user-pulse-marker {
+    position: relative;
+    width: 26px;
+    height: 26px;
+}
+
+.court-user-pulse-marker .user-pulse-wave {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: rgba(14, 165, 233, 0.45);
+    animation: pulseWaveAnim 1.8s infinite ease-out;
+}
+
+.court-user-pulse-marker .user-pulse-dot {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #0284c7;
+    border: 2.5px solid #ffffff;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+@keyframes pulseWaveAnim {
+    0% {
+        transform: scale(0.6);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+}
+
+/* Thông báo lỗi khi không nạp được bản đồ */
+.court-map-error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.03);
+    color: #64748b;
+    padding: 2rem;
+    text-align: center;
+}
+
+[data-bs-theme="dark"] .court-map-error-state {
+    background: rgba(255, 255, 255, 0.03);
+    color: #94a3b8;
+}

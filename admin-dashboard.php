@@ -1,17 +1,33 @@
+<?php header('Cache-Control: no-store, max-age=0'); ?>
+<?php
+require_once __DIR__ . '/includes/auth-check.php';
+$currentUser = [
+    'id'    => (int)$_SESSION['user_id'],
+    'name'  => $_SESSION['name'] ?? '',
+    'email' => $_SESSION['email'] ?? '',
+    'phone' => $_SESSION['phone'] ?? '',
+    'role'  => $_SESSION['role'] ?? ''
+];
+?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tổng Quan | Kênh Chủ Sân - GODMINTON</title>
+<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
     <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/admin_style.css">
+    <link rel="stylesheet" href="assets/css/admin_style.css?v=<?= filemtime(__DIR__ . '/assets/css/admin_style.css') ?>">
+    <script>
+        window.__GODMINTON_USER__ = <?php echo json_encode($currentUser, JSON_UNESCAPED_UNICODE|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT); ?>;
+    </script>
 </head>
 <body class="admin-body">
 
@@ -31,7 +47,7 @@
         </nav>
         <div class="admin-sidebar-footer">
             <div id="adminUserBox" class="mb-2"></div>
-            <a href="index.html" class="admin-back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại trang khách</a>
+            <a href="index.php" class="admin-back-link"><i class="fa-solid fa-arrow-left"></i> Quay lại trang khách</a>
         </div>
     </aside>
     <div class="admin-overlay" id="adminOverlay"></div>
@@ -44,12 +60,11 @@
                 <div class="admin-breadcrumb" id="adminBreadcrumb">Kênh chủ sân</div>
                 <h1 id="adminPageTitle">Tổng quan</h1>
             </div>
-            <button id="themeToggle" class="btn btn-outline-secondary rounded-circle" style="width:40px;height:40px;" title="Chuyển giao diện sáng/tối">
-                <i class="fa-solid fa-moon"></i>
-            </button>
-            <a href="admin-bookings.html" class="btn btn-teal rounded-pill px-3 fw-semibold d-none d-md-inline-flex">
-                <i class="fa-solid fa-clipboard-list me-1"></i> Xem đơn đặt
-            </a>
+            <div class="admin-topbar-actions">
+                <button id="themeToggle" type="button" class="admin-icon-btn" aria-label="Chuyển giao diện sáng/tối" title="Chuyển giao diện sáng/tối">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+            </div>
         </header>
 
         <main class="admin-content">
@@ -87,7 +102,7 @@
                     <div class="admin-stat-card">
                         <div class="admin-stat-icon bg-success bg-opacity-10 text-success"><i class="fa-solid fa-sack-dollar"></i></div>
                         <div>
-                            <div class="admin-stat-value" id="statRevenue">0đ</div>
+                            <div class="admin-stat-value" id="statRevenue">0 đ</div>
                             <div class="admin-stat-label">Doanh thu (đơn hợp lệ)</div>
                         </div>
                     </div>
@@ -100,7 +115,7 @@
                     <div class="admin-panel h-100">
                         <div class="admin-panel-head">
                             <h2><i class="fa-solid fa-receipt text-teal me-2"></i>Đơn đặt gần đây</h2>
-                            <a href="admin-bookings.html" class="btn btn-sm btn-outline-teal rounded-pill">Xem tất cả</a>
+                            <a href="admin-bookings.php" class="btn btn-sm btn-outline-teal rounded-pill">Xem tất cả</a>
                         </div>
                         <div class="admin-panel-body p-0">
                             <div class="table-responsive">
@@ -129,7 +144,7 @@
                     <div class="admin-panel h-100">
                         <div class="admin-panel-head">
                             <h2><i class="fa-solid fa-layer-group text-teal me-2"></i>Sân của tôi</h2>
-                            <a href="admin-courts.html" class="btn btn-sm btn-outline-teal rounded-pill">Quản lý</a>
+                            <a href="admin-courts.php" class="btn btn-sm btn-outline-teal rounded-pill">Quản lý</a>
                         </div>
                         <div class="admin-panel-body">
                             <div id="myCourtsList" class="d-flex flex-column gap-3"></div>
@@ -147,64 +162,68 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="assets/js/mock-data.js"></script>
-<script src="assets/js/app.js"></script>
-<script src="assets/js/admin.js"></script>
-<script src="assets/js/bottom-nav.js"></script>
+<script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
+<script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
+<script src="assets/js/admin.js?v=<?= filemtime(__DIR__ . '/assets/js/admin.js') ?>"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const user = AdminApp.renderShell('dashboard', 'Tổng quan', 'Kênh chủ sân / Thống kê tổng quan');
     if (!user) return;
 
-    const stats = AdminApp.computeStats(user);
-    document.getElementById('statCourts').textContent = stats.totalCourts;
-    document.getElementById('statToday').textContent = stats.todayCount;
-    document.getElementById('statWeek').textContent = stats.weekCount;
-    document.getElementById('statRevenue').textContent = MockDB.formatVND(stats.revenue);
+    try {
+        const data = await AdminApp.fetchDashboard();
+        const stats = data.stats || {};
+        const bookings = data.recentBookings || [];
+        const courts = data.courts || [];
 
-    // Recent bookings (5 mới nhất)
-    const bookings = AdminApp.getMyBookings(user)
-        .slice()
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .slice(0, 6);
+        document.getElementById('statCourts').textContent = stats.totalCourts ?? 0;
+        document.getElementById('statToday').textContent = stats.todayCount ?? 0;
+        document.getElementById('statWeek').textContent = stats.weekCount ?? 0;
+        document.getElementById('statRevenue').textContent = AdminApp.formatVND(stats.revenue ?? 0);
 
-    const statusMap = {
-        confirmed: { badge: 'bg-success', text: 'Đã xác nhận' },
-        completed: { badge: 'bg-primary', text: 'Hoàn thành' },
-        cancelled: { badge: 'bg-secondary', text: 'Đã hủy' }
-    };
+        const statusMap = {
+            pending:   { badge: 'bg-warning text-dark', text: 'Chờ xác nhận' },
+            confirmed: { badge: 'bg-info-subtle text-info-emphasis border border-info-subtle', text: 'Đã cọc' },
+            completed: { badge: 'bg-success text-white', text: 'Hoàn thành' },
+            cancelled: { badge: 'bg-danger text-white', text: 'Đã hủy' }
+        };
 
-    const body = document.getElementById('recentBookingsBody');
-    if (bookings.length === 0) {
-        document.getElementById('recentBookingsEmpty').style.display = 'block';
-    } else {
-        body.innerHTML = bookings.map(b => {
-            const s = statusMap[b.booking_status] || statusMap.confirmed;
-            return `<tr>
-                <td class="fw-semibold">${b.booking_code}</td>
-                <td>${b.court_name}<div class="small text-muted">${b.sub_court_name || ''}</div></td>
-                <td>${b.user_name}</td>
-                <td>${b.booking_date}<div class="small text-muted">${b.time_range}</div></td>
-                <td><span class="badge ${s.badge}">${s.text}</span></td>
-            </tr>`;
-        }).join('');
-    }
+        const body = document.getElementById('recentBookingsBody');
+        if (bookings.length === 0) {
+            body.innerHTML = '';
+            document.getElementById('recentBookingsEmpty').style.display = 'block';
+        } else {
+            document.getElementById('recentBookingsEmpty').style.display = 'none';
+            body.innerHTML = bookings.map(b => {
+                const s = statusMap[b.booking_status] || statusMap.confirmed;
+                return `<tr>
+                    <td class="fw-semibold">${AdminApp.escapeHTML(b.booking_code)}</td>
+                    <td>${AdminApp.escapeHTML(b.court_name)}<div class="small text-muted">${AdminApp.escapeHTML(b.sub_court_name || '')}</div></td>
+                    <td>${AdminApp.escapeHTML(b.user_name)}</td>
+                    <td>${AdminApp.escapeHTML(b.booking_date)}<div class="small text-muted">${AdminApp.escapeHTML(b.time_range)}</div></td>
+                    <td><span class="badge ${s.badge}">${s.text}</span></td>
+                </tr>`;
+            }).join('');
+        }
 
-    // Courts summary
-    const courts = AdminApp.getMyCourts(user);
-    const list = document.getElementById('myCourtsList');
-    if (courts.length === 0) {
-        document.getElementById('myCourtsEmpty').style.display = 'block';
-    } else {
-        list.innerHTML = courts.slice(0, 5).map(c => `
-            <div class="d-flex align-items-center gap-3">
-                <img src="${c.image_url}" class="admin-court-thumb" alt="">
-                <div class="flex-grow-1 min-w-0">
-                    <div class="fw-semibold text-truncate">${c.name}</div>
-                    <div class="small text-muted">${c.district} · ${c.total_sub_courts} sân con</div>
-                </div>
-                <span class="badge ${c.status === 'active' ? 'bg-success' : 'bg-secondary'}">${c.status === 'active' ? 'Hoạt động' : 'Tạm ngưng'}</span>
-            </div>`).join('');
+        const list = document.getElementById('myCourtsList');
+        if (courts.length === 0) {
+            list.innerHTML = '';
+            document.getElementById('myCourtsEmpty').style.display = 'block';
+        } else {
+            document.getElementById('myCourtsEmpty').style.display = 'none';
+            list.innerHTML = courts.slice(0, 5).map(c => `
+                <div class="d-flex align-items-center gap-2 gap-sm-3 w-100" style="min-width: 0;">
+                    <img src="${AdminApp.escapeHTML(c.image_url)}" class="admin-court-thumb flex-shrink-0" alt="">
+                    <div class="flex-grow-1 min-w-0" style="min-width: 0; overflow: hidden;">
+                        <div class="fw-semibold text-truncate small">${AdminApp.escapeHTML(c.name)}</div>
+                        <div class="text-muted text-truncate" style="font-size: 0.72rem;">${AdminApp.escapeHTML(c.district)} · ${c.total_sub_courts || 6} sân con</div>
+                    </div>
+                    <span class="badge flex-shrink-0 ms-auto ${c.status === 'active' ? 'bg-success' : 'bg-secondary'}" style="font-size: 0.72rem;">${c.status === 'active' ? 'Hoạt động' : 'Tạm ngưng'}</span>
+                </div>`).join('');
+        }
+    } catch (err) {
+        AdminApp.toast('error', err.message || 'Không tải được dữ liệu thống kê.');
     }
 });
 </script>

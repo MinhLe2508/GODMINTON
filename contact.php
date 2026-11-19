@@ -1,9 +1,11 @@
+<?php header('Cache-Control: no-store, max-age=0'); ?>
 <!DOCTYPE html>
 <html lang="vi" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Liên Hệ & Hỗ Trợ Khách Hàng | GODMINTON</title>
+<?php include_once __DIR__ . '/includes/partials/pwa-head.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,107 +13,98 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="assets/css/swal-godminton.css?v=<?= filemtime(__DIR__ . '/assets/css/swal-godminton.css') ?>">
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/contact.css?v=<?= filemtime(__DIR__ . '/assets/css/contact.css') ?>">
 </head>
 <body>
 
     <!-- App Brand Header (Khung Cố Định) -->
     <header class="app-brand-head">
         <div class="container text-center">
-            <a href="index.html" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
+            <a href="index.php" class="brand-logo-link" aria-label="GODMINTON Trang chủ">
                 <img src="assets/img/logo-teal.svg" alt="GODMINTON" class="brand-logo-img">
             </a>
         </div>
     </header>
 
-    <main class="min-vh-100">
-    <div class="container py-5">
-        <div class="row g-4 justify-content-center">
+    <main class="contact-page">
+    <div class="container contact-shell">
+        <div class="row g-4 justify-content-center align-items-stretch">
             <!-- Thông tin liên hệ -->
             <div class="col-lg-5" data-aos="fade-right">
-                <div class="card border-0 text-white rounded-4 p-4 p-sm-5 shadow-lg h-100" style="background-color: var(--brand-teal);">
-                    <h3 class="fw-extrabold mb-3">Liên Hệ Với Chúng Tôi</h3>
-                    <p class="opacity-90 mb-4">
-                        Đội ngũ hỗ trợ GODMINTON luôn sẵn sàng giải đáp thắc mắc về lịch đặt sân, hợp tác mở cụm sân mới và dịch vụ thể thao.
-                    </p>
+                <section class="contact-info-card h-100" aria-labelledby="contactInfoTitle">
+                    <div class="contact-kicker"><span class="contact-kicker-icon"><i class="fa-solid fa-headset"></i></span> GODMINTON SUPPORT</div>
+                    <h1 id="contactInfoTitle">Kết nối với đội ngũ hỗ trợ</h1>
+                    <p class="contact-intro">Bạn cần trợ giúp về đặt sân, tài khoản hoặc muốn hợp tác cùng GODMINTON? Hãy gửi lời nhắn, đội ngũ sẽ tiếp nhận và phản hồi qua email của bạn.</p>
 
-                    <div class="d-flex flex-column gap-3 mb-5">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="icon-circle bg-white text-teal fs-5 shadow-sm">
-                                <i class="fa-solid fa-phone"></i>
-                            </div>
-                            <div>
-                                <div class="small opacity-75">Hotline hỗ trợ 24/7</div>
-                                <div class="fs-5 fw-bold">1900 8888 / 0988 888 888</div>
-                            </div>
-                        </div>
+                    <div class="contact-topics" aria-label="Chủ đề hỗ trợ">
+                        <span><i class="fa-regular fa-calendar-check"></i> Đặt sân</span>
+                        <span><i class="fa-solid fa-building"></i> Hợp tác sân</span>
+                        <span><i class="fa-solid fa-circle-question"></i> Tài khoản</span>
+                    </div>
 
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="icon-circle bg-white text-teal fs-5 shadow-sm">
-                                <i class="fa-solid fa-envelope"></i>
-                            </div>
-                            <div>
-                                <div class="small opacity-75">Email phản hồi</div>
-                                <div class="fs-6 fw-bold">contact@datsancaulong.vn</div>
-                            </div>
-                        </div>
-
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="icon-circle bg-white text-teal fs-5 shadow-sm">
-                                <i class="fa-solid fa-location-dot"></i>
-                            </div>
-                            <div>
-                                <div class="small opacity-75">Trụ sở chính</div>
-                                <div class="fs-6 fw-bold">Nguyễn Hữu Thọ, Tân Hưng, Hồ Chí Minh</div>
-                            </div>
+                    <div class="contact-channel">
+                        <span class="contact-channel-icon"><i class="fa-solid fa-envelope"></i></span>
+                        <div>
+                            <span class="contact-channel-label">Email tiếp nhận</span>
+                            <a href="mailto:admgodminton@gmail.com">admgodminton@gmail.com</a>
                         </div>
                     </div>
 
-                    <div class="mt-auto pt-3 border-top border-white border-opacity-25 small opacity-90">
-                        Cam kết phản hồi trong vòng 15 phút làm việc.
+                    <div class="contact-privacy-note">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>Thông tin bạn gửi chỉ được dùng để xử lý yêu cầu hỗ trợ.</span>
                     </div>
-                </div>
+                </section>
             </div>
 
             <!-- Form gửi thư liên hệ -->
             <div class="col-lg-6" data-aos="fade-left">
-                <div class="card border rounded-4 p-4 p-sm-5 shadow-sm">
-                    <h4 class="fw-extrabold mb-3">Gửi Thắc Mắc Hoặc Góp Ý</h4>
+                <section class="contact-form-card h-100" aria-labelledby="contactFormTitle">
+                    <div class="contact-form-heading">
+                        <span class="contact-form-icon"><i class="fa-regular fa-paper-plane"></i></span>
+                        <div>
+                            <h2 id="contactFormTitle">Gửi lời nhắn cho chúng tôi</h2>
+                            <p>Các trường có dấu <span aria-hidden="true">*</span> là bắt buộc.</p>
+                        </div>
+                    </div>
 
-                    <div id="alertSuccess" class="alert alert-success border-0 rounded-3 d-none">
-                        <i class="fa-solid fa-circle-check me-2"></i>Cảm ơn bạn đã liên hệ! Ban quản trị sẽ liên lạc với bạn sớm nhất.
+                    <div id="alertSuccess" class="contact-feedback contact-feedback-success d-none" role="status" aria-live="polite">
+                        <i class="fa-solid fa-circle-check"></i><span>Cảm ơn bạn đã liên hệ! Tin nhắn đã được gửi đến đội ngũ GODMINTON.</span>
                     </div>
 
                     <form id="contactForm">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold">Họ và Tên *</label>
-                                <input type="text" name="name" id="contactName" class="form-control rounded-3" required placeholder="Nguyễn Văn A">
+                                <label for="contactName" class="form-label">Họ và tên <span>*</span></label>
+                                <input type="text" name="name" id="contactName" class="form-control" required maxlength="120" autocomplete="name" placeholder="Nguyễn Văn A">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold">Số Điện Thoại *</label>
-                                <input type="tel" name="phone" id="contactPhone" class="form-control rounded-3" required placeholder="0912345678">
+                                <label for="contactPhone" class="form-label">Số điện thoại <span>*</span></label>
+                                <input type="tel" name="phone" id="contactPhone" class="form-control" required maxlength="20" autocomplete="tel" inputmode="tel" placeholder="0912 345 678">
                             </div>
                             <div class="col-12">
-                                <label class="form-label small fw-bold">Email *</label>
-                                <input type="email" name="email" id="contactEmail" class="form-control rounded-3" required placeholder="name@gmail.com">
+                                <label for="contactEmail" class="form-label">Email phản hồi <span>*</span></label>
+                                <input type="email" name="email" id="contactEmail" class="form-control" required maxlength="150" autocomplete="email" placeholder="ten@email.com">
                             </div>
                             <div class="col-12">
-                                <label class="form-label small fw-bold">Chủ Đề</label>
-                                <input type="text" name="subject" id="contactSubject" class="form-control rounded-3" placeholder="Hỏi về đặt sân theo tháng, giải đấu...">
+                                <label for="contactSubject" class="form-label">Chủ đề</label>
+                                <input type="text" name="subject" id="contactSubject" class="form-control" maxlength="200" placeholder="Ví dụ: Hỗ trợ đặt sân, góp ý dịch vụ">
                             </div>
                             <div class="col-12">
-                                <label class="form-label small fw-bold">Nội Dung Chi Tiết *</label>
-                                <textarea name="message" id="contactMessage" class="form-control rounded-3" rows="4" required placeholder="Nhập nội dung cần hỗ trợ..."></textarea>
+                                <label for="contactMessage" class="form-label">Nội dung chi tiết <span>*</span></label>
+                                <textarea name="message" id="contactMessage" class="form-control" rows="5" required maxlength="5000" placeholder="Mô tả vấn đề hoặc điều bạn muốn chia sẻ..."></textarea>
                             </div>
-                            <div class="col-12">
-                                <button type="submit" id="btnContactSubmit" class="btn btn-teal btn-lg rounded-pill px-4 fw-bold shadow">
-                                    <i class="fa-solid fa-paper-plane me-1"></i> Gửi Tin Nhắn
+                            <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3 pt-1">
+                                <small class="contact-form-hint"><i class="fa-solid fa-lock"></i> Thông tin được gửi an toàn qua hệ thống.</small>
+                                <button type="submit" id="btnContactSubmit" class="btn btn-teal contact-submit-btn">
+                                    <i class="fa-solid fa-paper-plane"></i> Gửi tin nhắn
                                 </button>
                             </div>
                         </div>
                     </form>
-                </div>
+                </section>
             </div>
         </div>
     </div>
@@ -127,9 +120,9 @@
                 <div class="col-lg-2 col-md-6">
                     <h6 class="text-white fw-bold mb-3">Liên Kết Nhanh</h6>
                     <ul class="list-unstyled footer-links">
-                        <li><a href="index.html">Trang chủ</a></li>
-                        <li><a href="courts.html">Tìm kiếm sân</a></li>
-                        <li><a href="news.html">Tin tức</a></li>
+                        <li><a href="index.php">Trang chủ</a></li>
+                        <li><a href="courts.php">Tìm kiếm sân</a></li>
+                        <li><a href="explore.php">Khám phá</a></li>
                     </ul>
                 </div>
             </div>
@@ -141,11 +134,12 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="assets/js/mock-data.js"></script>
-    <script src="assets/js/app.js"></script>
-    <script src="assets/js/contact.js"></script>
+    <script src="assets/js/swal-godminton.js?v=<?= filemtime(__DIR__ . '/assets/js/swal-godminton.js') ?>"></script>
+    <script src="assets/js/app.js?v=<?= filemtime(__DIR__ . '/assets/js/app.js') ?>"></script>
+    <script src="assets/js/content-client.js?v=<?= filemtime(__DIR__ . '/assets/js/content-client.js') ?>"></script>
+    <script src="assets/js/contact.js?v=<?= filemtime(__DIR__ . '/assets/js/contact.js') ?>"></script>
     <!-- Bottom Nav -->
-    <script src="assets/js/bottom-nav.js"></script>
+    <script src="assets/js/bottom-nav.js?v=<?= filemtime(__DIR__ . '/assets/js/bottom-nav.js') ?>"></script>
 </body>
 </html>
 

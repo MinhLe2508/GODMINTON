@@ -1,31 +1,43 @@
 /**
  * GODMINTON - App JS (Theme, PWA, Navbar Render)
- * Phiên bản tĩnh - không cần PHP
+ * Dùng chung cho giao diện PHP, lấy trạng thái tài khoản từ API.
  */
 
 // ========================
 // THEME TOGGLE (Dark Mode)
 // ========================
 function initTheme() {
-    const saved = localStorage.getItem('bm_theme') || 'light';
+    const saved = localStorage.getItem('bm_theme') || localStorage.getItem('godminton_theme') || 'light';
     document.documentElement.setAttribute('data-bs-theme', saved);
     updateThemeIcon(saved);
+    if (typeof updateLogoTheme === 'function') {
+        updateLogoTheme();
+    }
 }
 
 function updateThemeIcon(theme) {
     const btn = document.getElementById('themeToggle');
     if (!btn) return;
-    btn.innerHTML = theme === 'dark'
-        ? '<i class="fa-solid fa-sun"></i>'
-        : '<i class="fa-solid fa-moon"></i>';
+    if (theme === 'dark') {
+        btn.innerHTML = '<i class="fa-solid fa-sun text-warning"></i>';
+        btn.setAttribute('title', 'Chuyển sang chế độ Sáng');
+    } else {
+        btn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+        btn.setAttribute('title', 'Chuyển sang chế độ Tối');
+    }
 }
 
-function toggleTheme() {
+function toggleTheme(e) {
+    if (e && e.preventDefault) e.preventDefault();
     const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-bs-theme', next);
     localStorage.setItem('bm_theme', next);
+    localStorage.setItem('godminton_theme', next);
     updateThemeIcon(next);
+    if (typeof updateLogoTheme === 'function') {
+        updateLogoTheme();
+    }
 }
 
 // ========================
@@ -40,66 +52,131 @@ function initAOS() {
 // ========================
 // NAVBAR USER STATE
 // ========================
-function renderNavbarUser() {
-    const user = MockDB.getUser();
-    const userArea = document.getElementById('navbarUserArea');
-    if (!userArea) return;
-
-    const initial = user && user.name ? user.name.charAt(0).toUpperCase() : 'A';
-    const displayName = user ? user.name : 'Tài Khoản';
-    const displayRole = user && user.role ? (user.role === 'admin' ? 'QUẢN TRỊ' : (user.role === 'owner' ? 'CHỦ SÂN' : 'KHÁCH HÀNG')) : 'KHÁCH HÀNG';
-
-    userArea.innerHTML = `
-    <!-- Nút chọn Kênh Admin trực tiếp trên header -->
-    <a href="admin-dashboard.html" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold d-flex align-items-center gap-1" title="Kênh Quản trị / Chủ sân">
-        <i class="fa-solid fa-gauge-high"></i> <span class="d-none d-sm-inline">Kênh Admin</span>
-    </a>
-
-    <!-- Dropdown Chọn Trang & Tài Khoản -->
-    <div class="dropdown">
-        <button class="btn dropdown-toggle d-flex align-items-center gap-2 border-0 py-1 px-2 rounded-pill shadow-sm" type="button" data-bs-toggle="dropdown"
-            style="background: rgba(255,255,255,0.15); color:#fff;">
-            <div class="avatar-sm rounded-circle bg-teal text-white d-flex align-items-center justify-content-center fw-bold" style="width:32px;height:32px;font-size:0.85rem;">
-                ${initial}
+async function renderNavbarUser() {
+    const area = document.getElementById('navbarUserArea');
+    if (!area) return;
+    const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    try {
+        const response = await fetch('api/auth/me.php', { credentials: 'same-origin', cache: 'no-store' });
+        const result = await response.json();
+        if (!response.ok || result.status !== 'success') throw new Error('Không tải được tài khoản.');
+        const user = result.data.user;
+        if (!user) { area.innerHTML = '<a class="btn btn-light rounded-pill" href="auth.php">Đăng nhập / Đăng ký</a>'; return; }
+        const avatarIcon = user.avatar_url
+            ? `<img src="${esc(user.avatar_url)}" alt="" class="rounded-circle me-1 flex-shrink-0" style="width:20px;height:20px;object-fit:cover;vertical-align:text-bottom;" onerror="this.outerHTML='<i class=\\'fa-regular fa-circle-user me-1 text-teal\\'></i>'">`
+            : `<i class="fa-regular fa-circle-user me-1 text-teal"></i>`;
+        area.innerHTML = `
+            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                <a class="btn btn-sm btn-light rounded-pill px-3 fw-semibold shadow-sm text-truncate d-inline-flex align-items-center" style="max-width: 185px;" href="profile.php">
+                    ${avatarIcon}<span class="text-truncate">${esc(user.name)}</span>
+                </a>
+                ${['admin', 'owner'].includes(user.role) ? '<a class="btn btn-warning btn-sm rounded-pill px-3 fw-semibold" href="admin-bookings.php"><i class="fa-solid fa-gauge-high me-1"></i> Quản lý</a>' : ''}
+                <a href="auth.php" class="btn btn-sm btn-switch-account rounded-pill px-3 fw-semibold" title="Đổi tài khoản khác">
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i> Đổi tài khoản
+                </a>
+                <button class="btn btn-sm btn-logout-account rounded-pill px-3 fw-semibold" id="btnLogout" title="Đăng xuất tài khoản">
+                    <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                </button>
             </div>
-            <span class="d-none d-md-inline fw-semibold small pe-1">${displayName}</span>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-2 py-2" style="min-width: 240px;">
-            <li class="px-3 py-2 border-bottom mb-1">
-                <div class="fw-bold text-truncate">${displayName}</div>
-                <div class="small text-muted text-truncate">${user ? user.email : 'khach1@gmail.com'}</div>
-                <span class="badge bg-teal-subtle text-teal mt-1 fw-bold">${displayRole}</span>
-            </li>
-            <li><h6 class="dropdown-header text-uppercase fs-xs fw-bold text-muted py-1" style="font-size:0.72rem;">CHỌN TRANG NHANH</h6></li>
-            <li><a class="dropdown-item py-2 fw-semibold" href="profile.html"><i class="fa-solid fa-circle-user me-2 text-teal"></i>Trang cá nhân</a></li>
-            <li><a class="dropdown-item py-2 fw-semibold" href="admin-dashboard.html"><i class="fa-solid fa-gauge-high me-2 text-warning"></i>Kênh Quản trị (Admin)</a></li>
-            <li><a class="dropdown-item py-2 fw-semibold" href="history.html"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Lịch sử đặt sân</a></li>
-            <li><hr class="dropdown-divider my-1"></li>
-            <li><h6 class="dropdown-header text-uppercase fs-xs fw-bold text-muted py-1" style="font-size:0.72rem;">XÁC THỰC TÀI KHOẢN</h6></li>
-            <li><a class="dropdown-item py-2" href="login.html"><i class="fa-solid fa-right-to-bracket me-2 text-success"></i>Trang Đăng nhập</a></li>
-            <li><a class="dropdown-item py-2" href="register.html"><i class="fa-solid fa-user-plus me-2 text-info"></i>Trang Đăng ký</a></li>
-            <li><hr class="dropdown-divider my-1"></li>
-            <li><a class="dropdown-item py-2 text-danger" href="#" id="btnLogout"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất</a></li>
-        </ul>
-    </div>`;
-
-    document.getElementById('btnLogout')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        MockDB.logout();
-        window.location.reload();
-    });
+        `;
+        document.getElementById('btnLogout').addEventListener('click', async () => {
+            const out = await fetch('api/auth/logout.php', { method: 'POST', credentials: 'same-origin' });
+            if (out.ok) {
+                location.href = 'auth.php';
+            } else if (window.Swal) {
+                Swal.fire({ icon: 'error', title: 'Đăng xuất thất bại', text: 'Vui lòng thử lại sau.' });
+            } else {
+                alert('Đăng xuất thất bại.');
+            }
+        });
+    } catch (e) { area.textContent = e.message; }
 }
 
 // ========================
-// ACTIVE NAV LINK
+// PWA & SERVICE WORKER
 // ========================
-function setActiveNav(pageId) {
-    document.querySelectorAll('.navbar-custom .nav-link').forEach(link => {
-        link.classList.remove('active');
-        if (link.dataset.page === pageId) {
-            link.classList.add('active');
+let deferredInstallPrompt = null;
+
+function initServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        const registerSW = () => {
+            navigator.serviceWorker.register('sw.js')
+                .catch(error => {
+                    console.warn('[PWA] Đăng ký Service Worker thất bại:', error);
+                });
+        };
+
+        if (document.readyState === 'complete') {
+            registerSW();
+        } else {
+            window.addEventListener('load', registerSW);
+        }
+    }
+}
+
+const PWA_DISMISS_KEY = 'godminton_pwa_dismissed_at';
+const PWA_DISMISS_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 ngày
+
+function isPwaBannerDismissed() {
+    try {
+        const ts = Number(localStorage.getItem(PWA_DISMISS_KEY) || 0);
+        return ts > 0 && (Date.now() - ts) < PWA_DISMISS_TTL_MS;
+    } catch (_) {
+        return false;
+    }
+}
+
+function dismissPwaBanner() {
+    try {
+        localStorage.setItem(PWA_DISMISS_KEY, String(Date.now()));
+    } catch (_) {}
+    const installBanner = document.getElementById('pwaInstallBanner');
+    if (installBanner) installBanner.classList.remove('show');
+}
+
+function initPwaInstallPrompt() {
+    window.addEventListener('beforeinstallprompt', e => {
+        // Ngăn chặn thanh prompt mặc định của trình duyệt để hiển thị giao diện tùy chỉnh
+        e.preventDefault();
+        deferredInstallPrompt = e;
+
+        const installBtn = document.getElementById('btnPwaInstall');
+        const installBanner = document.getElementById('pwaInstallBanner');
+
+        if (installBtn) {
+            installBtn.style.display = 'inline-flex';
+            installBtn.onclick = triggerPwaInstall;
+        }
+
+        if (installBanner && !isPwaBannerDismissed()) {
+            installBanner.classList.add('show');
+            const actionBtn = document.getElementById('btnBannerInstall');
+            if (actionBtn) actionBtn.onclick = triggerPwaInstall;
+            const closeBtn = document.getElementById('btnBannerDismiss');
+            if (closeBtn) closeBtn.onclick = dismissPwaBanner;
         }
     });
+
+    window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        const installBtn = document.getElementById('btnPwaInstall');
+        if (installBtn) installBtn.style.display = 'none';
+        const installBanner = document.getElementById('pwaInstallBanner');
+        if (installBanner) installBanner.classList.remove('show');
+    });
+}
+
+async function triggerPwaInstall() {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    if (choice && choice.outcome === 'dismissed') {
+        dismissPwaBanner();
+    } else {
+        const installBanner = document.getElementById('pwaInstallBanner');
+        if (installBanner) installBanner.classList.remove('show');
+    }
 }
 
 // ========================
@@ -109,7 +186,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initAOS();
     renderNavbarUser();
+    initServiceWorker();
+    initPwaInstallPrompt();
 
     // Theme toggle button
-    document.getElementById('themeToggle')?.addEventListener('click', toggleTheme);
+    const themeBtn = document.getElementById('themeToggle');
+    if (themeBtn && !themeBtn.hasAttribute('onclick') && !themeBtn.dataset.themeInit) {
+        themeBtn.dataset.themeInit = 'true';
+        themeBtn.addEventListener('click', toggleTheme);
+    }
 });

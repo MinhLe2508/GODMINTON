@@ -1,9 +1,24 @@
 {
     "name": "nhom2-detai5/godminton",
-    "description": "Website Đặt Sân Cầu Lông Trực Tuyến (GODMINTON) — Nhóm 2, Đề tài 5",
+    "description": "Đặt sân và quản lý hệ thống Website Sân Cầu Lông Trực Tuyến (GODMINTON)",
     "type": "project",
     "require": {
-        "php": ">=8.0",
+        "php": ">=8.2",
+        "ext-ctype": "*",
+        "ext-filter": "*",
+        "ext-hash": "*",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-openssl": "*",
         "minishlink/web-push": "^9.0"
+    },
+    "config": {
+        "optimize-autoloader": true
+    },
+    "autoload": {
+        "psr-4": {
+            "PHPMailer\\PHPMailer\\": "vendor/PHPMailer/src/"
+        }
     }
 }

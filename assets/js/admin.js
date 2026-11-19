@@ -1,119 +1,243 @@
 /**
- * GODMINTON - ADMIN (CHỦ SÂN) PANEL
- * Lớp mở rộng phía client cho khu vực quản trị chủ sân.
- * Không đụng tới mock-data.js — chỉ đọc/ghi thêm các key localStorage
- * theo đúng định dạng mà MockDB đã dùng, để tương thích với phần
- * giao diện khách hàng (booking.js, history.js ...).
+ * GODMINTON - ADMIN & OWNER PANEL CLIENT
+ * Cung cấp các hàm gọi API quản trị (courts, slots, dashboard, logout).
  */
 
 const AdminApp = (() => {
+    let cachedCourts = [];
+    let cachedWards  = [];
 
-    /* ================= AUTH GUARD (CHẾ ĐỘ TĨNH) ================= */
-    // Luôn cho phép truy cập khu quản trị tĩnh với dữ liệu mẫu đầy đủ
+    /** Định dạng tiền tệ VNĐ thuần JS */
+    function formatVND(amount) {
+        return new Intl.NumberFormat('vi-VN').format(Number(amount) || 0) + ' đ';
+    }
+
+    const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    /* ================= AUTH GUARD (SERVER SESSION) ================= */
     function requireAuth() {
-        MockDB.init();
-        let user = MockDB.getUser();
+        const user = window.__GODMINTON_USER__ || null;
+
         if (!user || (user.role !== 'owner' && user.role !== 'admin')) {
-            user = {
-                id: 1,
-                name: "Quản Trị Viên (Demo)",
-                email: "admin@godminton.vn",
-                phone: "0900 000 001",
-                role: "admin"
-            };
+            const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `auth.php?redirect=${redirectUrl}`;
+            return null;
         }
         return user;
     }
 
-
-    /* ================= OWNER -> COURTS SCOPE ================= */
-    // Chủ sân chỉ quản lý những sân mà họ đứng tên (owner_phone trùng
-    // với số điện thoại tài khoản). Admin (quản trị hệ thống) thấy tất cả.
-    function getAllCourts() {
-        MockDB.init();
-        return JSON.parse(localStorage.getItem('bm_courts') || '[]');
-    }
-
-    function saveAllCourts(courts) {
-        localStorage.setItem('bm_courts', JSON.stringify(courts));
-    }
-
-    function getMyCourts(user) {
-        const all = getAllCourts();
-        if (!user) return [];
-        if (user.role === 'admin') return all;
-        return all.filter(c => c.owner_phone && user.phone && c.owner_phone.replace(/\s/g, '') === user.phone.replace(/\s/g, ''));
-    }
-
-    function getMyCourtIds(user) {
-        return getMyCourts(user).map(c => c.id);
-    }
-
-    /* ================= BOOKINGS SCOPE ================= */
-    function getMyBookings(user) {
-        const ids = getMyCourtIds(user);
-        return MockDB.getBookings().filter(b => ids.includes(b.court_id));
-    }
-
-    function saveBookings(bookings) {
-        MockDB.saveBookings(bookings);
-    }
-
-    /* ================= SLOTS ================= */
-    function slotKey(courtId, dateStr) {
-        return `bm_slots_${courtId}_${dateStr}`;
-    }
-
-    function getSlots(courtId, dateStr) {
-        return JSON.parse(localStorage.getItem(slotKey(courtId, dateStr)) || '[]');
-    }
-
-    function saveSlots(courtId, dateStr, slots) {
-        localStorage.setItem(slotKey(courtId, dateStr), JSON.stringify(slots));
-    }
-
-    // Sinh khung giờ hàng loạt cho 1 sân / 1 ngày.
-    // opts: { startTime, endTime, durationMin, price, subCourts: [names] }
-    function generateSlots(court, dateStr, opts) {
-        const existing = getSlots(court.id, dateStr);
-        const [sh, sm] = opts.startTime.split(':').map(Number);
-        const [eh, em] = opts.endTime.split(':').map(Number);
-        let cursor = sh * 60 + sm;
-        const end = eh * 60 + em;
-        const created = [];
-        let idCounter = existing.reduce((max, s) => Math.max(max, s.id), Date.now() % 100000);
-
-        while (cursor + opts.durationMin <= end) {
-            const startStr = minutesToTime(cursor);
-            const endStr = minutesToTime(cursor + opts.durationMin);
-
-            opts.subCourts.forEach(subName => {
-                const clash = existing.some(s => s.sub_court_name === subName && s.start_time === startStr && s.end_time === endStr);
-                if (!clash) {
-                    idCounter += 1;
-                    created.push({
-                        id: idCounter,
-                        court_id: court.id,
-                        court_name: court.name,
-                        sub_court_name: subName,
-                        slot_date: dateStr,
-                        start_time: startStr,
-                        end_time: endStr,
-                        time_range: `${startStr} - ${endStr}`,
-                        price: opts.price,
-                        price_formatted: MockDB.formatVND(opts.price),
-                        status: 'available',
-                        holding_user_id: null,
-                        hold_expire: null
-                    });
-                }
-            });
-            cursor += opts.durationMin;
+    /* ================= API HELPER ================= */
+    async function apiRequest(url, options = {}) {
+        const method=(options.method||'GET').toUpperCase();
+        const defaultHeaders = { 'Content-Type': 'application/json' };
+        if(method!=='GET' && method!=='HEAD'){
+            const context=await fetch('api/auth/context.php',{credentials:'same-origin',cache:'no-store'});
+            const identity=await context.json();if(!context.ok)throw new Error('Không thể tạo phiên thao tác.');
+            defaultHeaders['X-GODMINTON-CSRF']=identity.data.csrf_token;
+            if(url.startsWith('api/admin/courts.php') && ['PUT','PATCH'].includes(method) && window.__GODMINTON_USER__?.role==='admin'){
+                const body=JSON.parse(options.body||'{}');
+                const auth=await Swal.fire({
+                    titleText:'Xác nhận thay đổi sân',
+                    html:'<label class="d-block text-start">Lý do quản trị<textarea id="courtAdminReason" class="form-control mt-2" rows="3" maxlength="1000"></textarea></label><label class="d-block text-start mt-3">Mật khẩu Admin<input id="courtAdminPassword" class="form-control mt-2" type="password" autocomplete="current-password"></label>',
+                    showCancelButton:true,
+                    confirmButtonText:'Lưu thay đổi',
+                    cancelButtonText:'Hủy',
+                    didOpen:(popup)=>{
+                        document.querySelectorAll('.modal.show').forEach(m=>window.bootstrap?.Modal?.getInstance(m)?._focustrap?.deactivate());
+                        setTimeout(()=>popup.querySelector('#courtAdminReason')?.focus(), 50);
+                    },
+                    preConfirm:()=>{const reason=document.getElementById('courtAdminReason').value.trim(),password=document.getElementById('courtAdminPassword').value;if(reason.length<5||!password){Swal.showValidationMessage('Nhập lý do ít nhất 5 ký tự và mật khẩu Admin.');return false;}return {admin_reason:reason,admin_password:password};}
+                });
+                if(!auth.isConfirmed)throw new Error('Đã hủy thay đổi.');options={...options,body:JSON.stringify({...body,...auth.value})};
+            }
         }
+        const config = {
+            credentials: 'same-origin',
+            cache: 'no-store',
+            ...options,
+            headers: { ...defaultHeaders, ...(options.headers || {}) }
+        };
+        const res = await fetch(url, config);
+        let json = null;
+        try {
+            json = await res.json();
+        } catch (_) {
+            json = { status: 'error', message: 'Phản hồi máy chủ không hợp lệ.' };
+        }
+        if (!res.ok || json.status === 'error') {
+            const err = new Error(json?.message || `Lỗi HTTP ${res.status}`);
+            err.status = res.status;
+            err.payload = json;
+            throw err;
+        }
+        return json;
+    }
 
-        const merged = existing.concat(created);
-        saveSlots(court.id, dateStr, merged);
-        return { createdCount: created.length, total: merged.length };
+    /* ================= COURTS API ================= */
+    async function fetchCourts(search = '') {
+        const q = search ? `?search=${encodeURIComponent(search)}` : '';
+        const res = await apiRequest(`api/admin/courts.php${q}`, { method: 'GET' });
+        cachedCourts = Array.isArray(res.data) ? res.data : [];
+        if (Array.isArray(res.wards)) {
+            cachedWards = res.wards;
+        }
+        return { courts: cachedCourts, wards: cachedWards, owners: res.owners || [] };
+    }
+
+    async function createCourt(payload) {
+        const res = await apiRequest('api/admin/courts.php', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        return res.data;
+    }
+
+    async function updateCourt(id, payload) {
+        const res = await apiRequest('api/admin/courts.php', {
+            method: 'PUT',
+            body: JSON.stringify({ id: Number(id), ...payload })
+        });
+        return res.data;
+    }
+
+    async function setCourtStatusApi(id, status) {
+        const res = await apiRequest('api/admin/courts.php', {
+            method: 'PATCH',
+            body: JSON.stringify({ id: Number(id), status: status })
+        });
+        return res;
+    }
+
+    async function deleteCourtApi(id) {
+        return setCourtStatusApi(id, 'inactive');
+    }
+
+    /* ================= SLOTS API ================= */
+    async function fetchSlots(courtId, dateStr) {
+        const params = new URLSearchParams({ court_id: courtId, date: dateStr });
+        const res = await apiRequest(`api/admin/slots.php?${params.toString()}`, { method: 'GET' });
+        return res.data || [];
+    }
+
+    async function generateSlotsApi(courtId, dateStr, opts) {
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'generate',
+                court_id: Number(courtId),
+                slot_date: dateStr,
+                start_time: opts.startTime,
+                end_time: opts.endTime,
+                duration_min: Number(opts.durationMin),
+                price: Number(opts.price),
+                sub_courts: opts.subCourts
+            })
+        });
+        return res;
+    }
+
+    async function setSlotStatusApi(slotId, status) {
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'PATCH',
+            body: JSON.stringify({ slot_id: Number(slotId), status })
+        });
+        return res;
+    }
+
+    async function updateSlotApi(slotId, data = {}) {
+        const payload = { slot_id: Number(slotId), ...data };
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+        });
+        return res;
+    }
+
+    async function bulkMaintenanceSlotsApi(courtId, dateStr, opts = {}) {
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'bulk_maintenance',
+                court_id: Number(courtId),
+                slot_date: dateStr,
+                sub_court_name: opts.subCourtName || 'all',
+                start_time: opts.startTime || '',
+                end_time: opts.endTime || '',
+                status: opts.status || 'maintenance',
+                note: opts.note || ''
+            })
+        });
+        return res;
+    }
+
+    async function bulkReopenSlotsApi(courtId, dateStr, opts = {}) {
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'bulk_reopen',
+                court_id: Number(courtId),
+                slot_date: dateStr,
+                sub_court_name: opts.subCourtName || 'all',
+                start_time: opts.startTime || '',
+                end_time: opts.endTime || ''
+            })
+        });
+        return res;
+    }
+
+    async function bulkPriceSlotsApi(courtId, dateStr, opts = {}) {
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'bulk_price',
+                court_id: Number(courtId),
+                slot_date: dateStr,
+                sub_court_name: opts.subCourtName || 'all',
+                price: Number(opts.price)
+            })
+        });
+        return res;
+    }
+
+    async function deleteSlotApi(slotId) {
+        const res = await apiRequest(`api/admin/slots.php?id=${encodeURIComponent(slotId)}`, {
+            method: 'DELETE'
+        });
+        return res;
+    }
+
+    async function bulkDeleteSlotsApi(courtId, dateStr, opts = {}) {
+        const body = {
+            bulk_delete: 1,
+            court_id: Number(courtId),
+            slot_date: dateStr,
+            start_time: opts.startTime || '',
+            end_time: opts.endTime || '',
+            sub_courts: opts.subCourts || []
+        };
+        const res = await apiRequest('api/admin/slots.php', {
+            method: 'DELETE',
+            body: JSON.stringify(body)
+        });
+        return res;
+    }
+
+    async function clearDaySlotsApi(courtId, dateStr) {
+        const params = new URLSearchParams({
+            court_id: courtId,
+            date: dateStr,
+            clear_day: '1'
+        });
+        const res = await apiRequest(`api/admin/slots.php?${params.toString()}`, {
+            method: 'DELETE'
+        });
+        return res;
+    }
+
+    /* ================= DASHBOARD API ================= */
+    async function fetchDashboard() {
+        const res = await apiRequest('api/admin/dashboard.php', { method: 'GET' });
+        return res.data;
     }
 
     function minutesToTime(total) {
@@ -122,99 +246,82 @@ const AdminApp = (() => {
         return `${h}:${m}`;
     }
 
-    function setSlotStatus(courtId, dateStr, slotId, status) {
-        const slots = getSlots(courtId, dateStr);
-        const slot = slots.find(s => s.id === slotId);
-        if (!slot) return false;
-        if (slot.status === 'booked' && status !== 'booked') {
-            // Không cho phép mở lại slot đã có khách đặt & xác nhận từ màn hình khung giờ.
-            return false;
-        }
-        slot.status = status;
-        if (status === 'available') { slot.holding_user_id = null; slot.hold_expire = null; }
-        saveSlots(courtId, dateStr, slots);
-        return true;
-    }
-
-    function deleteSlot(courtId, dateStr, slotId) {
-        const slots = getSlots(courtId, dateStr).filter(s => s.id !== slotId);
-        saveSlots(courtId, dateStr, slots);
-    }
-
-    /* ================= STATS ================= */
-    function computeStats(user) {
-        const courts = getMyCourts(user);
-        const bookings = getMyBookings(user);
-        const todayStr = new Date().toISOString().split('T')[0];
-
-        const startOfWeek = new Date();
-        const day = (startOfWeek.getDay() + 6) % 7; // Monday = 0
-        startOfWeek.setDate(startOfWeek.getDate() - day);
-        startOfWeek.setHours(0, 0, 0, 0);
-
-        const todayBookings = bookings.filter(b => b.booking_date === todayStr);
-        const weekBookings = bookings.filter(b => new Date(b.booking_date) >= startOfWeek);
-        const revenue = bookings
-            .filter(b => b.booking_status === 'confirmed' || b.booking_status === 'completed')
-            .reduce((sum, b) => sum + (b.total_amount || 0), 0);
-
-        return {
-            totalCourts: courts.length,
-            activeCourts: courts.filter(c => c.status === 'active').length,
-            todayCount: todayBookings.length,
-            weekCount: weekBookings.length,
-            totalBookings: bookings.length,
-            pendingCount: bookings.filter(b => b.booking_status === 'confirmed').length,
-            cancelledCount: bookings.filter(b => b.booking_status === 'cancelled').length,
-            revenue
-        };
-    }
-
     /* ================= UI: SIDEBAR / TOPBAR ================= */
     function renderShell(activePage, pageTitle, breadcrumb) {
         const user = requireAuth();
         if (!user) return null;
 
-        const initial = user.name ? user.name.charAt(0) : 'C';
+        const escapeShell=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const initial = escapeShell(user.name ? user.name.charAt(0).toUpperCase() : 'C');
         const roleLabel = user.role === 'admin' ? 'Quản trị viên' : 'Chủ sân';
 
         const navItems = [
-            { key: 'dashboard', href: 'admin-dashboard.html', icon: 'fa-gauge-high', label: 'Tổng quan' },
-            { key: 'courts', href: 'admin-courts.html', icon: 'fa-building-shield', label: 'Quản lý sân' },
-            { key: 'slots', href: 'admin-slots.html', icon: 'fa-clock', label: 'Quản lý khung giờ' },
-            { key: 'bookings', href: 'admin-bookings.html', icon: 'fa-clipboard-list', label: 'Quản lý đơn đặt' },
+            { key: 'dashboard', href: 'admin-dashboard.php', icon: 'fa-gauge-high', label: 'Tổng quan' },
+            { key: 'courts', href: 'admin-courts.php', icon: 'fa-building-shield', label: 'Quản lý sân' },
+            { key: 'slots', href: 'admin-slots.php', icon: 'fa-clock', label: 'Quản lý khung giờ' },
+            { key: 'bookings', href: 'admin-bookings.php', icon: 'fa-clipboard-list', label: 'Quản lý đơn đặt' },
+            { key: 'vouchers', href: 'admin-vouchers.php', icon: 'fa-ticket', label: 'Mã giảm giá' },
         ];
 
+        if(user.role==='admin')navItems.push(
+            {key:'memberships',href:'admin-memberships.php',icon:'fa-crown',label:'Quản lý hội viên'},
+            {key:'users',href:'admin-users.php',icon:'fa-users-gear',label:'Quản lý tài khoản'},
+            {key:'owner-requests',href:'admin-owner-requests.php',icon:'fa-file-circle-check',label:'Yêu cầu chủ sân'},
+            {key:'posts',href:'admin-posts.php',icon:'fa-newspaper',label:'Quản lý bài viết'}
+        );
+        else navItems.push({key:'application',href:'owner-application.php',icon:'fa-file-circle-plus',label:'Đăng ký sân mới'});
+        document.querySelectorAll('.brand-sub').forEach(el=>el.textContent=user.role==='admin'?'Kênh quản trị':'Kênh chủ sân');
         const navHtml = navItems.map(item => `
             <a class="admin-nav-link ${item.key === activePage ? 'active' : ''}" href="${item.href}">
                 <i class="fa-solid ${item.icon}"></i> ${item.label}
             </a>`).join('');
 
-        document.getElementById('adminSidebarNav').innerHTML = navHtml;
+        const navEl = document.getElementById('adminSidebarNav');
+        if (navEl) navEl.innerHTML = navHtml;
 
-        document.getElementById('adminUserBox').innerHTML = `
+        const userBoxEl = document.getElementById('adminUserBox');
+        if (userBoxEl) {
+            const avatarInner = user.avatar_url
+                ? `<img src="${escapeShell(user.avatar_url)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.remove()">`
+                : initial;
+            userBoxEl.innerHTML = `
             <div class="dropdown w-100">
                 <button class="btn w-100 d-flex align-items-center gap-2 border-0 text-start px-2" type="button" data-bs-toggle="dropdown" style="background:rgba(255,255,255,.04); border-radius:.75rem; color:#e2e8f0;">
-                    <div class="avatar-sm rounded-circle bg-teal text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0">${initial}</div>
+                    <div class="avatar-sm rounded-circle bg-teal text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0 overflow-hidden" id="adminSidebarAvatarBox">${avatarInner}</div>
                     <div class="flex-grow-1 min-w-0">
-                        <div class="fw-semibold small text-truncate" style="color:#f1f5f9;">${user.name}</div>
+                        <div class="fw-semibold small text-truncate" style="color:#f1f5f9;">${escapeShell(user.name)}</div>
                         <div class="text-truncate" style="font-size:.72rem; color:#94a3b8;">${roleLabel}</div>
                     </div>
                     <i class="fa-solid fa-chevron-up small" style="color:#64748b;"></i>
                 </button>
                 <ul class="dropdown-menu shadow-lg border-0 rounded-4">
-                    <li><a class="dropdown-item py-2" href="profile.html"><i class="fa-solid fa-circle-user me-2 text-teal"></i>Trang cá nhân</a></li>
-                    <li><a class="dropdown-item py-2" href="index.html"><i class="fa-solid fa-house me-2 text-muted"></i>Về trang khách</a></li>
-                    <li><a class="dropdown-item py-2" href="login.html"><i class="fa-solid fa-right-to-bracket me-2 text-primary"></i>Đổi tài khoản</a></li>
+                    <li><a class="dropdown-item py-2" href="profile.php"><i class="fa-solid fa-circle-user me-2 text-teal"></i>Trang cá nhân</a></li>
+                    <li><a class="dropdown-item py-2" href="index.php"><i class="fa-solid fa-house me-2 text-muted"></i>Về trang khách</a></li>
+                    <li><a class="dropdown-item py-2 text-primary fw-semibold" href="auth.php"><i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Đổi tài khoản khác</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item py-2 text-danger" href="#" id="adminLogoutBtn"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất</a></li>
+                    <li><a class="dropdown-item py-2 text-danger fw-semibold" href="#" id="adminLogoutBtn"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất tài khoản</a></li>
                 </ul>
             </div>`;
+            if (!user.avatar_url) {
+                fetch('api/auth/me.php', { credentials: 'same-origin', cache: 'no-store' })
+                    .then(r => r.json())
+                    .then(res => {
+                        const url = res?.data?.user?.avatar_url;
+                        const box = document.getElementById('adminSidebarAvatarBox');
+                        if (url && box) {
+                            box.innerHTML = `<img src="${escapeShell(url)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.parentElement.textContent='${initial}'">`;
+                        }
+                    }).catch(() => {});
+            }
+        }
 
-        document.getElementById('adminLogoutBtn')?.addEventListener('click', (e) => {
+        document.getElementById('adminLogoutBtn')?.addEventListener('click', async (e) => {
             e.preventDefault();
-            MockDB.logout();
-            window.location.href = 'index.html';
+            try {
+                const response = await fetch('api/auth/logout.php', { method: 'POST', credentials: 'same-origin' });
+                if (!response.ok) throw new Error('Đăng xuất thất bại.');
+            } catch (error) {toast('error', error.message);return;}
+            window.location.href = 'auth.php';
         });
 
         const titleEl = document.getElementById('adminPageTitle');
@@ -224,12 +331,12 @@ const AdminApp = (() => {
 
         // Mobile sidebar toggle
         document.getElementById('adminSidebarToggle')?.addEventListener('click', () => {
-            document.getElementById('adminSidebar').classList.add('show');
-            document.getElementById('adminOverlay').classList.add('show');
+            document.getElementById('adminSidebar')?.classList.add('show');
+            document.getElementById('adminOverlay')?.classList.add('show');
         });
         document.getElementById('adminOverlay')?.addEventListener('click', () => {
-            document.getElementById('adminSidebar').classList.remove('show');
-            document.getElementById('adminOverlay').classList.remove('show');
+            document.getElementById('adminSidebar')?.classList.remove('show');
+            document.getElementById('adminOverlay')?.classList.remove('show');
         });
 
         return user;
@@ -250,13 +357,87 @@ const AdminApp = (() => {
     }
 
     return {
-        requireAuth, getAllCourts, saveAllCourts, getMyCourts, getMyCourtIds,
-        getMyBookings, saveBookings, getSlots, saveSlots, generateSlots,
-        setSlotStatus, deleteSlot, computeStats, renderShell, toast, confirmAction,
-        minutesToTime
+        escapeHTML,
+        formatVND,
+        requireAuth,
+        fetchCourts,
+        createCourt,
+        updateCourt,
+        setCourtStatusApi,
+        deleteCourtApi,
+        fetchSlots,
+        generateSlotsApi,
+        setSlotStatusApi,
+        updateSlotApi,
+        bulkMaintenanceSlotsApi,
+        bulkReopenSlotsApi,
+        bulkPriceSlotsApi,
+        deleteSlotApi,
+        bulkDeleteSlotsApi,
+        clearDaySlotsApi,
+        fetchDashboard,
+        renderShell,
+        toast,
+        confirmAction,
+        minutesToTime,
+        initAdminTheme,
+        initAdminPushBell
     };
 })();
 
-document.addEventListener('DOMContentLoaded', () => {
-    initTheme();
-});
+// Quản lý Dark/Light Theme trên các trang Admin
+function initAdminTheme() {
+    const saved = localStorage.getItem('godminton_theme') || localStorage.getItem('bm_theme') || 'light';
+    document.documentElement.setAttribute('data-bs-theme', saved);
+    updateAdminThemeIcon(saved);
+
+    const themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) {
+        // Nếu app.js đã quản lý toggleTheme, không gắn thêm listener để tránh bị toggle 2 lần (double-toggle)
+        if (typeof toggleTheme === 'function') {
+            return;
+        }
+        if (!themeBtn.dataset.adminThemeBound) {
+            themeBtn.dataset.adminThemeBound = 'true';
+            themeBtn.addEventListener('click', function (e) {
+                if (e && e.preventDefault) e.preventDefault();
+                const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-bs-theme', next);
+                localStorage.setItem('godminton_theme', next);
+                localStorage.setItem('bm_theme', next);
+                updateAdminThemeIcon(next);
+            });
+        }
+    }
+}
+
+function updateAdminThemeIcon(theme) {
+    const themeBtn = document.getElementById('themeToggle');
+    if (!themeBtn) return;
+    if (theme === 'dark') {
+        themeBtn.innerHTML = '<i class="fa-solid fa-sun text-warning"></i>';
+        themeBtn.setAttribute('title', 'Chuyển sang chế độ Sáng');
+    } else {
+        themeBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+        themeBtn.setAttribute('title', 'Chuyển sang chế độ Tối');
+    }
+}
+
+// Loại bỏ nút chuông thông báo trên kênh Quản trị & Chủ sân
+function initAdminPushBell() {
+    const bellBtn = document.getElementById('pushBellToggle');
+    if (bellBtn) bellBtn.remove();
+}
+
+function initAdminComponents() {
+    initAdminTheme();
+    initAdminPushBell();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdminComponents);
+} else {
+    initAdminComponents();
+}
+

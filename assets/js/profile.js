@@ -1,168 +1,1050 @@
-/**
- * GODMINTON - Profile JS (Trang cá nhân tĩnh)
- */
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Tải thông tin người dùng
-    const user = (typeof MockDB !== 'undefined' && MockDB.getUser()) ? MockDB.getUser() : {
-        id: 4,
-        name: "Nguyễn Văn An",
-        email: "khach1@gmail.com",
-        phone: "0912 345 678",
-        role: "customer"
-    };
-
-    // Render thông tin lên Header Hero
-    const initial = user.name ? user.name.charAt(0).toUpperCase() : 'A';
-    const avatarEl = document.getElementById('profileAvatarInitial');
-    if (avatarEl) {
-        avatarEl.innerHTML = `${initial} <span class="profile-avatar-edit" title="Đổi ảnh đại diện"><i class="fa-solid fa-camera"></i></span>`;
-    }
-    const headerName = document.getElementById('profileHeaderName');
-    if (headerName) headerName.textContent = user.name;
-    const headerEmail = document.getElementById('profileHeaderEmail');
-    if (headerEmail) headerEmail.innerHTML = `<i class="fa-regular fa-envelope me-1"></i> ${user.email}`;
-
-    // Render vào Form
-    const inpName = document.getElementById('inpFullName');
-    if (inpName) inpName.value = user.name;
-    const inpEmail = document.getElementById('inpEmail');
-    if (inpEmail) inpEmail.value = user.email;
-    const inpPhone = document.getElementById('inpPhone');
-    if (inpPhone) inpPhone.value = user.phone;
-
-    // 2. Render danh sách lịch sử đặt sân gần đây
-    renderBookingsList();
-
-    // 3. Form cập nhật thông tin cá nhân
-    document.getElementById('formUpdateProfile')?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const newName = document.getElementById('inpFullName').value.trim();
-        const newPhone = document.getElementById('inpPhone').value.trim();
-        const newEmail = document.getElementById('inpEmail').value.trim();
-
-        const updated = { ...user, name: newName, phone: newPhone, email: newEmail };
-        if (typeof MockDB !== 'undefined') {
-            MockDB.setUser(updated);
-        }
-
-        if (headerName) headerName.textContent = newName;
-        if (headerEmail) headerEmail.innerHTML = `<i class="fa-regular fa-envelope me-1"></i> ${newEmail}`;
-        if (avatarEl) avatarEl.innerHTML = `${newName.charAt(0).toUpperCase()} <span class="profile-avatar-edit" title="Đổi ảnh đại diện"><i class="fa-solid fa-camera"></i></span>`;
-
-        Swal.fire({
-            icon: 'success',
-            title: 'Cập nhật thành công!',
-            text: 'Thông tin hồ sơ cá nhân đã được lưu.',
-            timer: 1500,
-            showConfirmButton: false
-        });
-    });
-
-    // 4. Form đổi mật khẩu
-    document.getElementById('formChangePassword')?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const newPass = document.getElementById('newPass').value;
-        const confirmPass = document.getElementById('confirmPass').value;
-
-        if (newPass !== confirmPass) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Mật khẩu không khớp',
-                text: 'Vui lòng xác nhận mật khẩu mới chính xác.',
-                confirmButtonColor: '#0d9488'
-            });
-            return;
-        }
-
-        Swal.fire({
-            icon: 'success',
-            title: 'Đổi mật khẩu thành công!',
-            text: 'Mật khẩu mới của bạn đã được cập nhật an toàn.',
-            timer: 1500,
-            showConfirmButton: false
-        });
-        document.getElementById('formChangePassword').reset();
-    });
-});
-
-function renderBookingsList() {
-    const container = document.getElementById('profileBookingsList');
-    if (!container) return;
-
-    let bookings = [];
-    if (typeof MockDB !== 'undefined') {
-        bookings = MockDB.getBookings();
-    }
-
-    if (!bookings || bookings.length === 0) {
-        container.innerHTML = `
-            <div class="text-center py-5 text-muted">
-                <i class="fa-regular fa-calendar-xmark fs-2 d-block mb-2"></i>
-                Bạn chưa có đơn đặt sân nào.
-                <div class="mt-3">
-                    <a href="courts.html" class="btn btn-teal rounded-pill px-4">Đặt sân ngay</a>
-                </div>
-            </div>`;
-        return;
-    }
-
-    const statusMap = {
-        confirmed: { badge: 'bg-success', text: 'Đã xác nhận' },
-        completed: { badge: 'bg-primary', text: 'Hoàn thành' },
-        cancelled: { badge: 'bg-secondary', text: 'Đã hủy' }
-    };
-
-    const countEl = document.getElementById('statBookingsCount');
-    if (countEl) countEl.textContent = bookings.length;
-
-    container.innerHTML = bookings.slice(0, 6).map(b => {
-        const s = statusMap[b.booking_status] || statusMap.confirmed;
-        return `
-            <div class="card border rounded-4 p-3 shadow-sm">
-                <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
-                    <div>
-                        <span class="badge ${s.badge} rounded-pill px-3 py-1 mb-1">${s.text}</span>
-                        <h6 class="fw-bold mb-0 text-truncate" style="max-width: 380px;">${b.court_name}</h6>
-                        <div class="small text-muted">${b.sub_court_name || 'Sân tiêu chuẩn'} · Mã đơn: <strong class="text-teal">${b.booking_code || ('GDM-' + b.id)}</strong></div>
-                    </div>
-                    <div class="text-end">
-                        <div class="fw-extrabold text-teal fs-6">${typeof MockDB !== 'undefined' ? MockDB.formatVND(b.total_amount) : (b.total_amount + ' đ')}</div>
-                        <div class="small text-muted">Cọc: ${typeof MockDB !== 'undefined' ? MockDB.formatVND(b.deposit_amount) : (b.deposit_amount + ' đ')} (${b.payment_method || 'VNPay'})</div>
-                    </div>
-                </div>
-                <hr class="my-2 border-secondary opacity-25">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 small text-muted">
-                    <div>
-                        <i class="fa-regular fa-calendar me-1 text-teal"></i>${b.booking_date}
-                        <span class="mx-2">·</span>
-                        <i class="fa-regular fa-clock me-1 text-teal"></i>${b.time_range}
-                    </div>
-                    <a href="courts.html" class="btn btn-sm btn-outline-teal rounded-pill px-3 py-1" style="font-size: 0.78rem;">
-                        <i class="fa-solid fa-arrow-rotate-right me-1"></i>Đặt lại
-                    </a>
-                </div>
-            </div>`;
-    }).join('');
-}
-
-function resetProfileForm() {
-    const user = (typeof MockDB !== 'undefined' && MockDB.getUser()) ? MockDB.getUser() : null;
-    if (user) {
-        document.getElementById('inpFullName').value = user.name || '';
-        document.getElementById('inpPhone').value = user.phone || '';
-        document.getElementById('inpEmail').value = user.email || '';
+let savedProfile = null;
+const DEFAULT_EXTRA_PREFS = {
+    district: 'Quận 1',
+    level: 'intermediate',
+    preferredTime: 'evening'
+};
+function getSavedExtraPrefs(userId) {
+    try {
+        const raw = localStorage.getItem('godminton_profile_prefs_' + (userId || 'default'));
+        return raw ? { ...DEFAULT_EXTRA_PREFS, ...JSON.parse(raw) } : { ...DEFAULT_EXTRA_PREFS };
+    } catch (e) {
+        return { ...DEFAULT_EXTRA_PREFS };
     }
 }
-
-function copyVoucher(code) {
-    navigator.clipboard.writeText(code).then(() => {
+function saveExtraPrefs(userId) {
+    try {
+        const prefs = {
+            district: document.getElementById('inpDistrict')?.value || DEFAULT_EXTRA_PREFS.district,
+            level: document.getElementById('inpLevel')?.value || DEFAULT_EXTRA_PREFS.level,
+            preferredTime: document.getElementById('inpPreferredTime')?.value || DEFAULT_EXTRA_PREFS.preferredTime
+        };
+        localStorage.setItem('godminton_profile_prefs_' + (userId || 'default'), JSON.stringify(prefs));
+    } catch (e) {}
+}
+function resetProfileForm(isManualReset = false) {
+    const form = document.getElementById('formUpdateProfile');
+    if (form) form.reset();
+    if (savedProfile) {
+        const elName = document.getElementById('inpFullName');
+        const elEmail = document.getElementById('inpEmail');
+        const elPhone = document.getElementById('inpPhone');
+        if (elName) elName.value = savedProfile.name || '';
+        if (elEmail) elEmail.value = savedProfile.email || '';
+        if (elPhone) elPhone.value = savedProfile.phone || '';
+    }
+    const userId = savedProfile ? savedProfile.id : 'default';
+    if (isManualReset) {
+        try { localStorage.removeItem('godminton_profile_prefs_' + userId); } catch (e) {}
+    }
+    const prefs = isManualReset ? { ...DEFAULT_EXTRA_PREFS } : getSavedExtraPrefs(userId);
+    const elDist = document.getElementById('inpDistrict');
+    const elLvl = document.getElementById('inpLevel');
+    const elTime = document.getElementById('inpPreferredTime');
+    if (elDist) elDist.value = prefs.district;
+    if (elLvl) elLvl.value = prefs.level;
+    if (elTime) elTime.value = prefs.preferredTime;
+    if (isManualReset && window.Swal) {
         Swal.fire({
             toast: true,
             position: 'top-end',
-            icon: 'success',
-            title: `Đã sao chép mã ${code}!`,
+            icon: 'info',
+            title: 'Đã khôi phục về trạng thái ban đầu',
             showConfirmButton: false,
-            timer: 2000
+            timer: 1800,
+            timerProgressBar: true
         });
+    }
+}
+function renderAvatarDisplay(user) {
+    const initial = (user?.name ? user.name.charAt(0).toUpperCase() : 'U');
+    const avatarUrl = (user?.avatar_url || '').trim();
+    const heroInitial = document.getElementById('profileAvatarInitial');
+    const heroImg = document.getElementById('profileAvatarImg');
+    const formInitial = document.getElementById('formAvatarInitial');
+    const formImg = document.getElementById('formAvatarImg');
+
+    if (heroInitial) heroInitial.textContent = initial;
+    if (formInitial) formInitial.textContent = initial;
+
+    if (avatarUrl) {
+        if (heroImg) { heroImg.src = avatarUrl; heroImg.style.display = 'block'; }
+        if (heroInitial) heroInitial.style.display = 'none';
+        if (formImg) { formImg.src = avatarUrl; formImg.style.display = 'block'; }
+        if (formInitial) formInitial.style.display = 'none';
+    } else {
+        if (heroImg) { heroImg.src = ''; heroImg.style.display = 'none'; }
+        if (heroInitial) heroInitial.style.display = '';
+        if (formImg) { formImg.src = ''; formImg.style.display = 'none'; }
+        if (formInitial) formInitial.style.display = '';
+    }
+}
+
+function showProfile(user) {
+    savedProfile=user;resetProfileForm();
+    const memberSince=document.getElementById('profileMemberSince');
+    if(memberSince) memberSince.textContent=user.created_at ? 'Thành viên từ '+user.created_at : 'Chưa cập nhật ngày tham gia';
+    document.getElementById('profileHeaderName').textContent=user.name;
+    document.getElementById('profileHeaderEmail').textContent=user.email;
+    renderAvatarDisplay(user);
+    const role=document.getElementById('profileRoleLabel');if(role)role.textContent={customer:'Khách hàng',owner:'Chủ sân',admin:'Quản trị viên'}[user.role]||user.role;
+    const ownerAppLink = document.getElementById('sidebarOwnerAppLink');
+    const ownerAppText = document.getElementById('sidebarOwnerAppText');
+    const adminReturnBtn = document.getElementById('sidebarAdminReturnBtn');
+    const adminReturnBtnText = document.getElementById('sidebarAdminReturnBtnText');
+    const isStaff = user.role === 'owner' || user.role === 'admin';
+    if (ownerAppLink) ownerAppLink.classList.toggle('d-none', user.role === 'admin');
+    if (ownerAppText) ownerAppText.textContent = user.role === 'owner' ? 'Hồ sơ đăng ký sân' : 'Đăng ký / Hồ sơ chủ sân';
+    if (adminReturnBtn) adminReturnBtn.classList.toggle('d-none', !isStaff);
+    if (adminReturnBtnText) adminReturnBtnText.textContent = user.role === 'admin' ? 'Về kênh quản trị' : 'Về kênh chủ sân';
+}
+document.addEventListener('DOMContentLoaded', async () => {
+    const update=document.getElementById('formUpdateProfile');
+    const password=document.getElementById('formChangePassword');
+    const save=update.querySelector('[type="submit"]');save.disabled=true;
+    try {
+        const result=await BookingAccount.request('api/profile.php');showProfile(result.user);save.disabled=false;
+        const bookings=await BookingAccount.request('api/bookings.php');document.getElementById('statBookingsCount').textContent=bookings.length;
+        const area=document.getElementById('profileBookingsList');
+        area.innerHTML=bookings.length?bookings.slice(0,6).map(b=>`<div class="card p-3">${BookingAccount.badge(b.booking_status)}<h6 class="mt-2">${BookingAccount.escape(b.court_name)}</h6><p>${BookingAccount.escape(b.booking_code)} · ${BookingAccount.escape(b.booking_date)} · ${BookingAccount.escape(b.time_range)}</p><strong>${BookingAccount.money(b.total_amount)}</strong><a href="history.php">Xem lịch sử đầy đủ</a></div>`).join(''):'<p>Bạn chưa có đơn đặt sân.</p>';
+        await loadMyVouchers();
+        await loadMyMembership();
+        initRenewMembershipModal();
+        if (window.PushClient && typeof PushClient.initBellButton === 'function') {
+            PushClient.initBellButton();
+        }
+    }catch(e){await BookingAccount.notify(e.message,true);}
+    update.addEventListener('submit',async event=>{
+        event.preventDefault();save.disabled=true;
+        try {
+            if (savedProfile) saveExtraPrefs(savedProfile.id);
+            const result=await BookingAccount.request('api/profile.php',{method:'POST',body:JSON.stringify({name:document.getElementById('inpFullName').value.trim(),email:document.getElementById('inpEmail').value.trim(),phone:document.getElementById('inpPhone').value.trim()})});
+            showProfile(result.user);
+            await renderNavbarUser();
+            await BookingAccount.notify('Hồ sơ đã lưu vào MySQL.');
+        }
+        catch(e){await BookingAccount.notify(e.message,true);}finally{save.disabled=false;}
+    });
+    password.addEventListener('submit',async event=>{
+        event.preventDefault();const next=document.getElementById('newPass').value;
+        if(next!==document.getElementById('confirmPass').value){await BookingAccount.notify('Mật khẩu xác nhận không khớp.',true);return;}
+        const button=password.querySelector('[type="submit"]');button.disabled=true;
+        try {await BookingAccount.request('api/auth/change-password.php',{method:'POST',body:JSON.stringify({old_password:document.getElementById('oldPass').value,new_password:next})});password.reset();await BookingAccount.notify('Đã đổi mật khẩu.');}
+        catch(e){await BookingAccount.notify(e.message,true);}finally{button.disabled=false;}
+    });
+    document.getElementById('profileLogout')?.addEventListener('click',async()=>{try{await BookingAccount.logout();}catch(e){await BookingAccount.notify(e.message,true);}});
+
+    const avatarInput = document.getElementById('profileAvatarInput');
+    if (avatarInput && avatarInput.dataset.boundAvatar !== '1') {
+        avatarInput.dataset.boundAvatar = '1';
+        const triggerAvatarPick = (e) => {
+            if (e.target === avatarInput) return;
+            avatarInput?.click();
+        };
+        (document.getElementById('profileAvatarContainer') || document.getElementById('profileAvatarWrapper'))?.addEventListener('click', triggerAvatarPick);
+        document.getElementById('btnChooseAvatarBtn')?.addEventListener('click', () => avatarInput?.click());
+        avatarInput.addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const chooseBtn = document.getElementById('btnChooseAvatarBtn');
+            const oldHtml = chooseBtn ? chooseBtn.innerHTML : '';
+            if (chooseBtn) {
+                chooseBtn.disabled = true;
+                chooseBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang tải lên...';
+            }
+            try {
+                const fd = new FormData();
+                fd.append('image', file);
+                const data = await BookingAccount.request('api/upload-image.php?type=avatar', {
+                    method: 'POST',
+                    body: fd
+                });
+                if (savedProfile && data?.url) {
+                    savedProfile.avatar_url = data.url;
+                    renderAvatarDisplay(savedProfile);
+                }
+                const cur = getCurrentUser();
+                if (cur && data?.url) {
+                    cur.avatar_url = data.url;
+                    setCurrentUser(cur);
+                }
+                await BookingAccount.notify('Đã cập nhật ảnh đại diện thành công!');
+            } catch (err) {
+                await BookingAccount.notify(err.message || 'Không thể tải ảnh đại diện lên.', true);
+            } finally {
+                avatarInput.value = '';
+                if (chooseBtn) {
+                    chooseBtn.disabled = false;
+                    chooseBtn.innerHTML = oldHtml;
+                }
+            }
+        });
+    }
+});
+
+
+document.getElementById('btnDeleteAccount')?.addEventListener('click',async()=>{
+    const button=document.getElementById('btnDeleteAccount');
+    if(!window.Swal){await BookingAccount.notify('Vui lòng tải lại trang để mở bước xác nhận.',true);return;}
+    const reply=await Swal.fire({icon:'warning',titleText:'Yêu cầu xóa tài khoản?',
+        text:'Nhập mật khẩu hiện tại. Chúng tôi sẽ gửi email xác nhận; tài khoản chỉ bị xóa khi bạn mở liên kết và xác nhận. Thao tác không thể hoàn tác.',
+        input:'password',inputPlaceholder:'Nhập mật khẩu hiện tại',inputAttributes:{autocomplete:'current-password'},
+        showCancelButton:true,confirmButtonText:'Gửi email xác nhận',cancelButtonText:'Giữ tài khoản',confirmButtonColor:'#b83240',
+        showLoaderOnConfirm:true,allowOutsideClick:()=>!Swal.isLoading(),
+        preConfirm:async password=>{
+            if(!password){Swal.showValidationMessage('Vui lòng nhập mật khẩu hiện tại.');return false;}
+            try{return await BookingAccount.request('api/auth/delete-account.php',{method:'POST',body:JSON.stringify({password,confirm_delete:true})});}
+            catch(error){Swal.showValidationMessage(error.message);return false;}
+        }});
+    if(reply.isConfirmed)await Swal.fire({icon:'info',titleText:'Kiểm tra email của bạn',text:reply.value.message||'Đã gửi liên kết xác nhận. Liên kết có hiệu lực 15 phút.'});
+});
+
+async function loadMyVouchers() {
+    const listEl = document.getElementById('profileVouchersList');
+    const statEl = document.getElementById('statVouchersCount');
+    if (!listEl) return;
+
+    try {
+        const vouchers = await BookingAccount.request('api/vouchers/my-vouchers.php');
+        if (statEl) statEl.textContent = vouchers.length;
+
+        if (!vouchers.length) {
+            listEl.innerHTML = `
+                <div class="col-12 text-center py-5 text-muted">
+                    <i class="fa-solid fa-ticket fs-1 d-block mb-3 text-secondary opacity-50"></i>
+                    <p class="mb-1 fw-semibold">Kho mã giảm giá của bạn đang trống.</p>
+                    <small class="d-block mb-3 text-muted">Mã giảm giá được tặng kèm trong các bài viết Sự Kiện &amp; Bản Tin. Hãy khám phá và bấm "Nhận mã" để lưu vào kho!</small>
+                    <a href="explore.php" class="btn btn-sm btn-outline-teal rounded-pill px-4 fw-bold">
+                        <i class="fa-solid fa-compass me-1"></i> Khám phá bài viết nhận mã ngay
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        listEl.innerHTML = vouchers.map(v => {
+            const maxText = v.max_discount_text ? `Tối đa ${v.max_discount_text}` : 'Không giới hạn mức giảm';
+            const minText = v.min_order > 0 ? `Đơn từ ${v.min_order_text}` : 'Mọi giá trị đơn';
+            const endText = v.end_at ? v.end_at.substring(0, 10).split('-').reverse().join('/') : '--';
+            const scopeText = v.court_name;
+            let statusBadge = '';
+            if (!v.is_usable && v.unusable_reason) {
+                statusBadge = `<span class="badge bg-secondary text-white ms-1" style="font-size:0.68rem;">${BookingAccount.escape(v.unusable_reason)}</span>`;
+            } else if (v.first_booking_only) {
+                statusBadge = '<span class="badge bg-info-subtle text-info border border-info-subtle ms-1" style="font-size:0.65rem;">Khách mới</span>';
+            }
+
+            const cardStyle = v.is_usable
+                ? 'background:linear-gradient(135deg, rgba(13,148,136,0.06) 0%, rgba(20,184,166,0.14) 100%); border: 1.5px dashed var(--brand-teal, #0d9488);'
+                : 'background:rgba(0,0,0,0.02); border: 1.5px dashed rgba(0,0,0,0.15); opacity: 0.85;';
+
+            return `
+                <div class="col-md-6">
+                    <div class="voucher-card p-3 h-100 d-flex flex-column justify-content-between position-relative shadow-sm rounded-4" style="${cardStyle}">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="badge ${v.is_usable ? 'bg-teal' : 'bg-secondary'} text-white px-2 py-1" style="font-size:0.8rem; letter-spacing:0.5px;">
+                                    <i class="fa-solid fa-bolt me-1"></i>GIẢM ${v.discount_percent}%
+                                </span>
+                                ${statusBadge}
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="fs-5 fw-extrabold text-uppercase ${v.is_usable ? 'text-dark' : 'text-muted'} tracking-wide font-monospace">${BookingAccount.escape(v.code)}</div>
+                            </div>
+                            <div class="small text-muted mb-2">
+                                <div><i class="fa-solid fa-shield-halved me-1 text-teal"></i> ${maxText} · ${minText}</div>
+                                <div><i class="fa-solid fa-location-dot me-1 text-teal"></i> ${BookingAccount.escape(scopeText)}</div>
+                                <div><i class="fa-regular fa-clock me-1 text-teal"></i> Hạn dùng: ${endText}</div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 mt-2 pt-2 border-top">
+                            <button type="button" class="btn btn-sm btn-outline-teal rounded-pill flex-grow-1 fw-bold btn-copy-voucher" data-code="${v.code}">
+                                <i class="fa-regular fa-copy me-1"></i> Sao chép mã
+                            </button>
+                            <a href="courts.php" class="btn btn-sm ${v.is_usable ? 'btn-teal' : 'btn-outline-secondary'} rounded-pill px-3 fw-bold" title="${v.is_usable ? 'Đặt sân để dùng mã' : (v.unusable_reason || 'Không khả dụng')}">
+                                Dùng ngay <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Gắn sự kiện copy
+        listEl.querySelectorAll('.btn-copy-voucher').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const code = btn.dataset.code;
+                try {
+                    await navigator.clipboard.writeText(code);
+                    if (window.Swal) {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: `Đã sao chép mã ${code}!`,
+                            text: 'Hãy dán vào ô giảm giá khi thanh toán đặt sân.',
+                            showConfirmButton: false,
+                            timer: 2500,
+                            timerProgressBar: true
+                        });
+                    } else {
+                        alert(`Đã sao chép mã ${code}! Hãy dán vào ô giảm giá khi thanh toán.`);
+                    }
+                } catch (_) {
+                    alert(`Mã giảm giá: ${code}`);
+                }
+            });
+        });
+
+    } catch (e) {
+        console.warn('Lỗi tải mã giảm giá:', e);
+        listEl.innerHTML = `<div class="col-12 text-center text-muted py-4">Chưa có mã ưu đãi nào hoặc database chưa nâng cấp voucher.</div>`;
+    }
+}
+
+let allUserMemberships = [];
+
+function showUserMembershipInvoice(item) {
+    if (!item) return;
+
+    const modalEl = document.getElementById('userMembershipInvoiceModal');
+    if (!modalEl) return;
+
+    const subEl = document.getElementById('userModalInvoiceSub');
+    if (subEl) {
+        const createdDate = item.created_at ? item.created_at.substring(0, 16).replace('T', ' ') : '—';
+        subEl.textContent = `Mã hóa đơn: #MB-${String(item.id).padStart(6, '0')} · Ngày tạo: ${createdDate}`;
+    }
+
+    const badgeEl = document.getElementById('userModalInvoiceStatusBadge');
+    if (badgeEl) {
+        if (item.status === 'pending') {
+            badgeEl.innerHTML = '<span class="badge bg-warning text-dark border border-warning rounded-pill fw-bold px-3 py-1"><i class="fa-solid fa-clock-rotate-left me-1"></i>Chờ thanh toán</span>';
+        } else if (item.status === 'active' && !item.is_expired) {
+            badgeEl.innerHTML = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-bold px-3 py-1"><i class="fa-solid fa-circle-check me-1"></i>Đang kích hoạt</span>';
+        } else if (item.status === 'rejected') {
+            badgeEl.innerHTML = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1">Đã từ chối</span>';
+        } else if (item.status === 'cancelled') {
+            badgeEl.innerHTML = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1">Đã đổi gói</span>';
+        } else {
+            badgeEl.innerHTML = '<span class="badge bg-secondary text-white rounded-pill px-3 py-1">Đã hết hạn</span>';
+        }
+    }
+
+    let tierBadgeClass = 'tier-badge-silver';
+    let tierLabel = 'Hội viên Bạc';
+    if (item.tier === 'gold') {
+        tierBadgeClass = 'tier-badge-gold';
+        tierLabel = 'Hội viên Vàng';
+    } else if (item.tier === 'platinum') {
+        tierBadgeClass = 'tier-badge-platinum';
+        tierLabel = 'Hội viên Bạch Kim';
+    }
+
+    const startFormatted = item.start_date ? item.start_date.substring(0, 10).split('-').reverse().join('/') : '--';
+    const endFormatted = item.end_date ? item.end_date.substring(0, 10).split('-').reverse().join('/') : '--';
+
+    const customerName = (savedProfile && savedProfile.name) || 'Khách hàng GODMINTON';
+    const customerPhone = (savedProfile && savedProfile.phone) || '—';
+    const customerEmail = (savedProfile && savedProfile.email) || '—';
+    const cleanTitle = item.package_title || tierLabel;
+
+    const bodyEl = document.getElementById('userModalInvoiceBody');
+    if (bodyEl) {
+        bodyEl.innerHTML = `
+            <!-- 1. THÔNG TIN KHÁCH HÀNG & GÓI HỘI VIÊN -->
+            <div class="card p-3 rounded-4 border bg-body-tertiary mb-3">
+                <div class="row g-3">
+                    <!-- Khách hàng -->
+                    <div class="col-md-6 border-end-md">
+                        <div class="text-uppercase fw-bold text-muted small mb-2"><i class="fa-solid fa-user me-1 text-teal"></i>Thông tin tài khoản</div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Họ và tên:</span>
+                            <span class="fw-semibold text-dark">${BookingAccount.escape(customerName)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Điện thoại:</span>
+                            <span class="fw-semibold text-dark">${BookingAccount.escape(customerPhone)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Email:</span>
+                            <span class="fw-semibold text-dark">${BookingAccount.escape(customerEmail)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 small">
+                            <span class="text-secondary">Mã tài khoản:</span>
+                            <span class="fw-semibold text-dark">UID#${item.user_id || (savedProfile && savedProfile.id) || '—'}</span>
+                        </div>
+                    </div>
+
+                    <!-- Gói hội viên -->
+                    <div class="col-md-6">
+                        <div class="text-uppercase fw-bold text-muted small mb-2"><i class="fa-solid fa-crown me-1 text-warning"></i>Gói đăng ký</div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Gói hội viên:</span>
+                            <span class="fw-semibold text-teal">${BookingAccount.escape(cleanTitle)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Hạng thẻ:</span>
+                            <span class="badge ${tierBadgeClass} rounded-pill px-2 py-1 fw-bold" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-crown me-1"></i>${tierLabel}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Ưu đãi tiền sân:</span>
+                            <span class="fw-bold text-success">Giảm ${item.discount_percent || 0}% Tiền Sân</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 small">
+                            <span class="text-secondary">Thời hạn hiệu lực:</span>
+                            <span class="fw-semibold text-dark">${item.duration_days || 30} ngày</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. THỜI GIAN HIỆU LỰC & CHI TIẾT THANH TOÁN -->
+            <div class="row g-3">
+                <!-- Thời hạn sử dụng -->
+                <div class="col-md-6">
+                    <div class="p-3 rounded-4 border bg-body-tertiary h-100">
+                        <div class="text-uppercase fw-bold text-muted small mb-2"><i class="fa-solid fa-calendar-check me-1 text-teal"></i>Thời gian hiệu lực</div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Ngày bắt đầu:</span>
+                            <span class="fw-semibold text-dark">${startFormatted}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Hạn kết thúc:</span>
+                            <span class="fw-semibold text-danger">${endFormatted} (23:59:59)</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 small">
+                            <span class="text-secondary">Tình trạng ngày:</span>
+                            <span class="badge ${item.status === 'active' && !item.is_expired ? 'bg-warning text-dark' : 'bg-secondary text-white'} rounded-pill fw-bold px-2 py-1">
+                                ${item.status === 'active' && !item.is_expired ? `Còn ${item.days_left || 0} ngày` : (item.status === 'pending' ? 'Chờ thanh toán' : 'Hết hạn')}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chi tiết thanh toán -->
+                <div class="col-md-6">
+                    <div class="p-3 rounded-4 border bg-body-tertiary h-100">
+                        <div class="text-uppercase fw-bold text-muted small mb-2"><i class="fa-solid fa-credit-card me-1 text-teal"></i>Chi tiết thanh toán</div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Phương thức:</span>
+                            <span class="fw-semibold text-dark">${BookingAccount.escape(item.payment_method || 'VietQR (SePay 24/7)')}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom small">
+                            <span class="text-secondary">Trạng thái thanh toán:</span>
+                            <span class="fw-bold ${item.status === 'pending' ? 'text-warning' : 'text-success'}">
+                                ${item.status === 'pending' ? 'Đang chờ chuyển khoản VietQR' : 'Đã thanh toán thành công'}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between pt-2">
+                            <span class="fw-bold text-dark">Tổng tiền thanh toán:</span>
+                            <span class="fs-5 fw-extrabold text-teal">${BookingAccount.money(item.price_paid || 0)}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+}
+
+async function loadMyMembership() {
+    const badgeEl = document.getElementById('profileMembershipBadge');
+    const statEl = document.getElementById('statMembershipTier');
+    const activeBox = document.getElementById('profileMembershipActiveBox');
+    const historyList = document.getElementById('profileMembershipHistoryList');
+
+    try {
+        const res = await BookingAccount.request('api/memberships/my-membership.php');
+        const active = res.active_membership;
+        const pending = res.pending_membership;
+        const history = res.history || [];
+
+        // 1. Badge hiển thị ngay dưới họ tên
+        if (badgeEl) {
+            let pendingPkgName = 'Gói Hội Viên';
+            if (pending) {
+                if (pending.tier === 'silver') {
+                    pendingPkgName = 'Gói Hội Viên Bạc';
+                } else if (pending.tier === 'gold') {
+                    pendingPkgName = 'Gói Hội Viên Vàng';
+                } else if (pending.tier === 'platinum') {
+                    pendingPkgName = 'Gói Hội Viên Bạch Kim';
+                } else if (pending.package_title) {
+                    pendingPkgName = pending.package_title.split('(')[0].split('–')[0].split('-')[0].trim();
+                    if (!pendingPkgName.toLowerCase().startsWith('gói')) {
+                        pendingPkgName = 'Gói ' + pendingPkgName;
+                    }
+                }
+            }
+
+            if (active && Number(active.discount_percent) > 0) {
+                let tierLabel = 'Hội viên Bạc';
+                let tierGradient = 'linear-gradient(135deg, #475569 0%, #64748b 50%, #94a3b8 100%)';
+                let tierIcon = 'fa-solid fa-shield-halved';
+                let tierBoxShadow = 'rgba(100, 116, 139, 0.45)';
+
+                if (active.tier === 'gold') {
+                    tierLabel = 'Hội viên Vàng';
+                    tierGradient = 'linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%)';
+                    tierIcon = 'fa-solid fa-crown';
+                    tierBoxShadow = 'rgba(217, 119, 6, 0.45)';
+                } else if (active.tier === 'platinum') {
+                    tierLabel = 'Hội viên Bạch Kim';
+                    tierGradient = 'linear-gradient(135deg, #090d16 0%, #1e293b 50%, #334155 100%)';
+                    tierIcon = 'fa-solid fa-gem';
+                    tierBoxShadow = 'rgba(15, 23, 42, 0.55)';
+                }
+
+                let pendingNote = '';
+                if (pending) {
+                    pendingNote = `<span class="badge bg-warning text-dark ms-2 px-2 py-1 rounded-pill fw-bold" style="font-size:0.75rem;"><i class="fa-solid fa-qrcode me-1"></i>Chờ thanh toán: ${BookingAccount.escape(pendingPkgName)}</span>`;
+                }
+
+                badgeEl.innerHTML = `
+                    <div class="d-inline-flex align-items-center flex-wrap gap-1">
+                        <span class="badge px-3 py-1 rounded-pill fw-bold d-inline-flex align-items-center gap-2 shadow-sm"
+                              style="background: ${tierGradient}; color: #ffffff; font-size: 0.82rem; border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 3px 10px ${tierBoxShadow};">
+                            <i class="${tierIcon}"></i>
+                            <span>${tierLabel}</span>
+                        </span>
+                        ${pendingNote}
+                    </div>
+                `;
+            } else if (pending) {
+                badgeEl.innerHTML = `
+                    <span class="badge bg-warning text-dark px-3 py-1 rounded-pill fw-bold d-inline-flex align-items-center gap-2 shadow-sm" style="font-size: 0.82rem;">
+                        <i class="fa-solid fa-qrcode"></i>
+                        <span>Chờ thanh toán: ${BookingAccount.escape(pendingPkgName)}</span>
+                    </span>
+                `;
+            } else {
+                badgeEl.innerHTML = `
+                    <a href="explore.php?tab=membership" class="badge bg-white bg-opacity-25 text-white border border-white border-opacity-25 px-2 py-1 rounded-pill text-decoration-none fw-semibold" style="font-size:0.78rem;">
+                        <i class="fa-solid fa-crown text-warning me-1"></i> Chưa là Hội viên · Đăng ký nhận giảm 5% – 15%
+                    </a>
+                `;
+            }
+        }
+
+        // 2. Stat box ở bảng tóm tắt nhanh (Chỉ hiển thị tên hạng: Bạc, Vàng, Bạch Kim)
+        if (statEl) {
+            if (active && Number(active.discount_percent) > 0) {
+                const tierMap = { silver: 'Bạc', gold: 'Vàng', platinum: 'Bạch Kim' };
+                statEl.textContent = tierMap[active.tier] || 'Vàng';
+            } else {
+                statEl.textContent = 'Chưa có';
+            }
+        }
+
+        // 3. Tab Gói Hội Viên - Khối thẻ thành viên đang hoạt động
+        if (activeBox) {
+            let pendingBannerHtml = '';
+            if (pending) {
+                pendingBannerHtml = `
+                    <div class="p-3 rounded-4 mb-3 border border-warning bg-warning bg-opacity-10 d-flex align-items-center justify-content-between flex-wrap gap-2 shadow-sm">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="icon-circle bg-warning text-dark flex-shrink-0" style="width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                <i class="fa-solid fa-qrcode"></i>
+                            </div>
+                            <div>
+                                <strong class="text-dark d-block">Đơn đăng ký / gia hạn đang chờ thanh toán VietQR (SePay 24/7):</strong>
+                                <span class="small text-muted">${BookingAccount.escape(pending.package_title)} · ${BookingAccount.money(pending.price_paid || 0)} · Tự động kích hoạt ngay khi nhận tiền</span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <button type="button" class="btn btn-sm btn-teal text-white rounded-pill px-3 fw-bold btn-pay-pending-membership shadow-sm">
+                                <i class="fa-solid fa-qrcode me-1"></i> Quét mã QR thanh toán
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-warning text-dark rounded-pill px-3 fw-bold btn-view-user-pending-invoice shadow-sm" style="background:#fff;">
+                                <i class="fa-solid fa-file-invoice-dollar me-1"></i> Xem hóa đơn
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (active && Number(active.discount_percent) > 0) {
+                let cardGradient = 'linear-gradient(135deg, #475569 0%, #334155 100%)';
+                let shortName = 'Gói Hội Viên Bạc';
+
+                if (active.tier === 'gold') {
+                    cardGradient = 'linear-gradient(135deg, #d97706 0%, #b45309 100%)';
+                    shortName = 'Gói Hội Viên Vàng';
+                } else if (active.tier === 'platinum') {
+                    cardGradient = 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)';
+                    shortName = 'Gói Hội Viên Bạch Kim';
+                }
+
+                // Lấy danh sách quyền lợi chi tiết của gói
+                let benefitsList = [];
+                if (active.benefits && typeof active.benefits === 'string') {
+                    benefitsList = active.benefits.split(/\r\n|\r|\n/).map(s => s.trim()).filter(Boolean);
+                }
+                if (!benefitsList.length) {
+                    if (active.tier === 'gold') {
+                        benefitsList = [
+                            'Giảm 10% trực tiếp trên tổng tiền sân cho mọi lượt đặt lịch',
+                            'Ưu tiên giữ khung giờ vàng trước 7 ngày',
+                            'Tặng 01 ống cầu lông thi đấu chuẩn khi kích hoạt',
+                            'Miễn phí đổi lịch hoặc hủy trước 6 tiếng'
+                        ];
+                    } else if (active.tier === 'platinum') {
+                        benefitsList = [
+                            'Giảm 15% tối đa trên tổng hóa đơn đặt sân toàn hệ thống',
+                            'Ưu tiên giữ lịch cố định tháng và đặt trước 14 ngày',
+                            'Miễn phí hủy đơn trước 4 tiếng',
+                            'Vé VIP tham dự các giải đấu mở rộng do GODMINTON tổ chức',
+                            'Được tặng áo đấu độc quyền và quà tri ân sinh nhật'
+                        ];
+                    } else {
+                        benefitsList = [
+                            'Giảm 5% trực tiếp trên tổng tiền sân cho mọi lượt đặt lịch',
+                            'Ưu tiên giữ slot trước 3 ngày so với khách thông thường',
+                            'Miễn phí đổi lịch trước 12 tiếng không tính phí',
+                            'Hỗ trợ tư vấn đặt sân và kiểm tra lịch nhanh qua hotline'
+                        ];
+                    }
+                }
+
+                const endFormatted = active.end_date ? active.end_date.substring(0, 10).split('-').reverse().join('/') : '--';
+
+                activeBox.innerHTML = `
+                    ${pendingBannerHtml}
+                    <div class="card border-0 rounded-4 p-4 text-white shadow-sm overflow-hidden" style="background: ${cardGradient};">
+                        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <span class="badge px-3 py-1 rounded-pill fw-bold d-inline-flex align-items-center gap-2 shadow-sm"
+                                      style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.3); font-size: 0.8rem;">
+                                    <span style="color: #5eead4; font-weight: 800; letter-spacing: 0.8px; font-size: 0.82rem;">GODMINTON</span>
+                                    <span class="badge bg-warning text-dark px-2 py-0 rounded-pill fw-extrabold" style="font-size: 0.65rem; letter-spacing: 0.5px;">VIP</span>
+                                </span>
+                                <span class="badge bg-success text-white px-3 py-1 rounded-pill fw-semibold shadow-sm text-nowrap" style="font-size:0.78rem;">
+                                    <i class="fa-solid fa-circle-check me-1"></i>Đang kích hoạt
+                                </span>
+                            </div>
+                            <div class="fs-4 fw-extrabold text-warning">
+                                GIẢM ${active.discount_percent}% TIỀN SÂN
+                            </div>
+                        </div>
+
+                        <h3 class="fw-bold mb-3">${shortName}</h3>
+
+                        <!-- Danh sách quyền lợi chi tiết -->
+                        <div class="membership-benefits-box mb-4 p-3 rounded-4" style="background: rgba(15, 23, 42, 0.32); border: 1px solid rgba(255, 255, 255, 0.15);">
+                            <div class="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom border-white border-opacity-15">
+                                <i class="fa-solid fa-gift text-warning"></i>
+                                <span class="small fw-bold text-uppercase" style="letter-spacing: 0.5px; font-size: 0.76rem; color: #f1f5f9;">
+                                    Danh sách đặc quyền hội viên của bạn:
+                                </span>
+                            </div>
+                            <div class="row g-2">
+                                ${benefitsList.map(item => `
+                                    <div class="col-md-6 col-12">
+                                        <div class="d-flex align-items-start gap-2" style="color: #f8fafc; font-size: 0.84rem; line-height: 1.45;">
+                                            <i class="fa-solid fa-circle-check text-warning mt-1 flex-shrink-0" style="font-size: 0.85rem;"></i>
+                                            <span>${BookingAccount.escape(item)}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-3 border-top border-white border-opacity-20">
+                            <div>
+                                <div class="small opacity-75">Hạn sử dụng gói:</div>
+                                <div class="fw-bold fs-6">
+                                    Đến ${endFormatted}
+                                    <span class="badge bg-warning text-dark ms-2 fw-bold">Còn ${active.days_left || 0} ngày</span>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="btn btn-outline-light rounded-pill px-3 fw-semibold btn-view-user-active-invoice">
+                                    <i class="fa-solid fa-file-invoice-dollar me-1"></i> Chi tiết hóa đơn
+                                </button>
+                                <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold shadow-sm text-dark btn-open-renew-membership">
+                                    <i class="fa-solid fa-arrows-rotate me-1"></i> Gia hạn gói
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Gắn sự kiện mở modal gia hạn
+                const renewBtn = activeBox.querySelector('.btn-open-renew-membership');
+                if (renewBtn) {
+                    renewBtn.addEventListener('click', () => {
+                        const modalEl = document.getElementById('modalRenewMembership');
+                        if (!modalEl) return;
+                        if (typeof showRenewStep1 === 'function') showRenewStep1();
+                        document.getElementById('renewPackageTitle').textContent = shortName;
+                        document.getElementById('renewDiscountBadge').textContent = `-${active.discount_percent}% Tiền Sân`;
+                        document.getElementById('renewCurrentEnd').textContent = endFormatted;
+                        document.getElementById('renewAddDays').textContent = `+1 tháng (cộng dồn)`;
+
+                        const priceNum = Math.round(Number(active.price_paid) || 0);
+                        const priceText = BookingAccount.money(priceNum);
+                        document.getElementById('renewPriceText').textContent = priceText;
+
+                        window.__CURRENT_ACTIVE_POST_ID__ = active.post_id;
+                        window.__CURRENT_ACTIVE_PKG_TITLE__ = shortName;
+                        const instance = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        instance.show();
+                    });
+                }
+            } else {
+                activeBox.innerHTML = `
+                    ${pendingBannerHtml}
+                    <div class="p-4 rounded-4 text-center border-2 border-dashed position-relative" style="background: rgba(13, 148, 136, 0.03); border-color: rgba(13, 148, 136, 0.25);">
+                        <div class="icon-circle bg-teal-subtle text-teal mx-auto mb-3" style="width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">
+                            <i class="fa-solid fa-crown text-warning"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Bạn chưa có Gói Hội Viên nào đang hoạt động</h5>
+                        <p class="text-muted small mx-auto mb-4" style="max-width: 520px;">
+                            Đăng ký gói hội viên GODMINTON để nhận đặc quyền <strong>giảm trực tiếp 5% – 15%</strong> toàn bộ tiền sân cho mọi lượt đặt lịch, ưu tiên giữ sân giờ vàng và nhiều quà tặng hấp dẫn!
+                        </p>
+                        <div class="d-flex justify-content-center">
+                            <a href="explore.php?tab=membership" class="btn btn-teal rounded-pill px-4 py-2 fw-bold shadow-sm">
+                                <i class="fa-solid fa-crown me-2 text-warning"></i> Đăng ký gói hội viên ngay
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // 4. Tab Gói Hội Viên - Lịch sử đăng ký (Tinh gọn, rõ ràng)
+        if (historyList) {
+            if (!history.length) {
+                historyList.innerHTML = `
+                    <div class="text-center py-4 text-muted border rounded-3 bg-light">
+                        <i class="fa-regular fa-folder-open fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                        <p class="small mb-0">Bạn chưa có lịch sử đăng ký gói hội viên nào.</p>
+                    </div>
+                `;
+            } else {
+                const tierTitles = {
+                    silver: 'Gói Hội Viên Bạc',
+                    gold: 'Gói Hội Viên Vàng',
+                    platinum: 'Gói Hội Viên Bạch Kim'
+                };
+
+                historyList.innerHTML = history.map(item => {
+                    const start = item.start_date ? item.start_date.substring(0, 10).split('-').reverse().join('/') : '--';
+                    const end = item.end_date ? item.end_date.substring(0, 10).split('-').reverse().join('/') : '--';
+                    const isCurrent = item.status === 'active';
+
+                    let statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">Đã hết hạn</span>';
+                    if (item.status === 'pending') {
+                        statusBadge = '<span class="badge bg-warning text-dark border border-warning rounded-pill fw-bold"><i class="fa-solid fa-qrcode me-1"></i>Chờ thanh toán</span>';
+                    } else if (item.status === 'rejected') {
+                        statusBadge = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Đã từ chối</span>';
+                    } else if (isCurrent) {
+                        statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill fw-bold"><i class="fa-solid fa-circle-check me-1"></i>Đang kích hoạt</span>';
+                    } else if (item.status === 'cancelled') {
+                        statusBadge = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Đã chuyển gói</span>';
+                    }
+
+                    const discountPercent = item.discount_percent || (item.tier === 'platinum' ? 15 : (item.tier === 'gold' ? 10 : 5));
+                    const discountBadge = `<span class="badge bg-warning-subtle text-dark border border-warning-subtle rounded-pill fw-bold">-${discountPercent}% Sân</span>`;
+                    const cleanTitle = tierTitles[item.tier] || item.package_title || 'Gói Hội Viên';
+
+                    return `
+                        <div class="p-3 rounded-3 border bg-surface d-flex align-items-center justify-content-between flex-wrap gap-2 ${isCurrent ? 'border-teal shadow-sm' : ''} ${item.status === 'pending' ? 'border-warning' : ''}">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                    <strong class="fs-6 fw-bold">${cleanTitle}</strong>
+                                    ${discountBadge}
+                                    ${statusBadge}
+                                </div>
+                                <div class="small text-muted">
+                                    <i class="fa-regular fa-calendar me-1 text-teal"></i> ${start} – ${end} (${item.duration_days} ngày)
+                                </div>
+                            </div>
+                            <div class="text-sm-end d-flex align-items-center gap-2">
+                                <div class="fw-bold fs-6 text-teal">${BookingAccount.money(item.price_paid || 0)}</div>
+                                <button type="button" class="btn btn-sm btn-outline-teal rounded-pill px-3 btn-view-user-history-invoice" data-id="${item.id}" title="Xem chi tiết hóa đơn">
+                                    <i class="fa-solid fa-file-invoice-dollar me-1"></i> Hóa đơn
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Lưu dữ liệu tất cả gói để xem hóa đơn
+        allUserMemberships = [
+            ...(active ? [active] : []),
+            ...(pending ? [pending] : []),
+            ...history
+        ];
+
+        // Gắn sự kiện xem hóa đơn
+        const btnActiveInv = activeBox ? activeBox.querySelector('.btn-view-user-active-invoice') : null;
+        if (btnActiveInv && active) {
+            btnActiveInv.addEventListener('click', () => showUserMembershipInvoice(active));
+        }
+
+        const btnPendingInv = activeBox ? activeBox.querySelector('.btn-view-user-pending-invoice') : null;
+        if (btnPendingInv && pending) {
+            btnPendingInv.addEventListener('click', () => showUserMembershipInvoice(pending));
+        }
+
+        // Gắn sự kiện thanh toán QR ngay cho gói pending
+        const btnPayPending = activeBox ? activeBox.querySelector('.btn-pay-pending-membership') : null;
+        if (btnPayPending && pending) {
+            btnPayPending.addEventListener('click', () => {
+                const modalEl = document.getElementById('modalRenewMembership');
+                if (!modalEl) return;
+                window.__CURRENT_ACTIVE_POST_ID__ = pending.post_id;
+                window.__CURRENT_ACTIVE_PKG_TITLE__ = pending.package_title || 'Gói Hội Viên';
+                const instance = bootstrap.Modal.getOrCreateInstance(modalEl);
+                instance.show();
+                startProfileSepayMembershipPayment(pending.post_id, pending.package_title);
+            });
+        }
+
+        if (historyList) {
+            historyList.querySelectorAll('.btn-view-user-history-invoice').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = Number(btn.getAttribute('data-id'));
+                    const item = allUserMemberships.find(x => Number(x.id) === id);
+                    if (item) {
+                        showUserMembershipInvoice(item);
+                    }
+                });
+            });
+        }
+
+        // 5. Kiểm tra nếu URL có ?tab=membership thì tự động kích hoạt tab Hội Viên
+        const tabParam = new URLSearchParams(window.location.search).get('tab');
+        if (tabParam === 'membership') {
+            const btn = document.getElementById('tabBtnMembership');
+            if (btn && typeof bootstrap !== 'undefined') {
+                const tabInstance = bootstrap.Tab.getOrCreateInstance(btn);
+                tabInstance.show();
+            }
+        }
+
+    } catch (e) {
+        console.warn('Lỗi tải thông tin gói hội viên:', e);
+        if (badgeEl) badgeEl.innerHTML = '';
+        if (statEl) statEl.textContent = '—';
+        if (activeBox) {
+            activeBox.innerHTML = `<div class="p-3 text-muted small text-center">Không thể tải thông tin gói hội viên.</div>`;
+        }
+    }
+}
+
+let renewPollTimer = null;
+let renewCountdownTimer = null;
+
+function stopRenewTimers() {
+    if (renewPollTimer) { clearInterval(renewPollTimer); renewPollTimer = null; }
+    if (renewCountdownTimer) { clearInterval(renewCountdownTimer); renewCountdownTimer = null; }
+}
+
+function startRenewCountdown(seconds) {
+    if (renewCountdownTimer) clearInterval(renewCountdownTimer);
+    let remain = Math.max(0, Number(seconds) || 900);
+    const badge = document.getElementById('renewQrTimerBadge');
+    const tick = () => {
+        const m = String(Math.floor(remain / 60)).padStart(2, '0');
+        const s = String(remain % 60).padStart(2, '0');
+        if (badge) badge.textContent = `${m}:${s}`;
+        if (remain <= 0) {
+            clearInterval(renewCountdownTimer);
+        }
+        remain--;
+    };
+    tick();
+    renewCountdownTimer = setInterval(tick, 1000);
+}
+
+window.showRenewStep1 = function() {
+    stopRenewTimers();
+    const s1 = document.getElementById('renewStep1');
+    const s2 = document.getElementById('renewStep2');
+    if (s1) s1.style.display = 'block';
+    if (s2) s2.style.display = 'none';
+};
+
+window.copyRenewText = function(text, label) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(String(text)).then(() => {
+            if (window.Swal) {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `Đã sao chép ${label}: ${text}`,
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            }
+        }).catch(() => {});
+    }
+};
+
+async function startProfileSepayMembershipPayment(postId, packageTitle) {
+    const btn = document.getElementById('btnConfirmRenew');
+    const text = document.getElementById('btnRenewText');
+    const spinner = document.getElementById('btnRenewSpinner');
+
+    if (btn) btn.disabled = true;
+    if (text) text.style.display = 'none';
+    if (spinner) spinner.style.display = 'inline-block';
+
+    try {
+        const res = await fetch('api/memberships/subscribe.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ post_id: postId, payment_method: 'VietQR' })
+        });
+        const json = await res.json();
+
+        if (!res.ok || json.status !== 'success' || !json.data || !json.data.payment) {
+            throw new Error(json.message || 'Không thể khởi tạo mã thanh toán VietQR lúc này.');
+        }
+
+        const p = json.data.payment;
+        const pkgTitle = json.data.package_title || packageTitle || 'Gói Hội Viên';
+
+        const headerTitleEl = document.getElementById('renewStep2HeaderTitle');
+        if (headerTitleEl) headerTitleEl.textContent = pkgTitle;
+
+        const qrImg = document.getElementById('renewQrImg');
+        if (qrImg) qrImg.src = p.qr_url;
+        const dlLink = document.getElementById('renewDownloadQrLink');
+        if (dlLink) {
+            dlLink.href = p.qr_url;
+            dlLink.download = `VietQR-${p.payment_code}.png`;
+        }
+
+        const qrPriceEl = document.getElementById('renewQrPriceText');
+        if (qrPriceEl) qrPriceEl.textContent = BookingAccount.money(p.amount);
+        const refEl = document.getElementById('renewTransferRef');
+        if (refEl) refEl.textContent = p.payment_code;
+        const bankNameEl = document.getElementById('renewBankName');
+        if (bankNameEl && p.bank) bankNameEl.textContent = p.bank.name;
+        const accNumEl = document.getElementById('renewAccNum');
+        if (accNumEl && p.bank) accNumEl.textContent = p.bank.account_number;
+        const accNameEl = document.getElementById('renewAccName');
+        if (accNameEl && p.bank) accNameEl.textContent = p.bank.account_name;
+
+        const btnCopyPrice = document.getElementById('btnCopyRenewPrice');
+        if (btnCopyPrice) btnCopyPrice.onclick = () => copyRenewText(p.amount, 'Số tiền');
+        const btnCopyRef = document.getElementById('btnCopyRenewRef');
+        if (btnCopyRef) btnCopyRef.onclick = () => copyRenewText(p.payment_code, 'Nội dung chuyển khoản');
+        const btnCopyAcc = document.getElementById('btnCopyRenewAcc');
+        if (btnCopyAcc && p.bank) btnCopyAcc.onclick = () => copyRenewText(p.bank.account_number, 'Số tài khoản');
+
+        const simBtn = document.getElementById('btnSimulateRenewPay');
+        if (simBtn) {
+            if (p.simulate_available) {
+                simBtn.style.display = 'block';
+                simBtn.disabled = false;
+                simBtn.innerHTML = '<i class="fa-solid fa-flask me-1"></i> [DEV TEST] Giả lập SePay nhận tiền thành công';
+                simBtn.onclick = async () => {
+                    simBtn.disabled = true;
+                    simBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang giả lập webhook SePay...';
+                    try {
+                        await fetch('api/payments/simulate.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ code: p.payment_code })
+                        });
+                        await pollRenewPaymentStatus(p.payment_code, pkgTitle);
+                    } catch (err) {
+                        simBtn.disabled = false;
+                    }
+                };
+            } else {
+                simBtn.style.display = 'none';
+            }
+        }
+
+        const s1 = document.getElementById('renewStep1');
+        const s2 = document.getElementById('renewStep2');
+        if (s1) s1.style.display = 'none';
+        if (s2) s2.style.display = 'block';
+
+        startRenewCountdown(p.expires_in_seconds || 900);
+        if (renewPollTimer) clearInterval(renewPollTimer);
+        renewPollTimer = setInterval(() => {
+            pollRenewPaymentStatus(p.payment_code, pkgTitle);
+        }, 3000);
+
+    } catch (e) {
+        if (window.Swal) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Không thể tạo mã thanh toán',
+                text: e.message || 'Vui lòng thử lại sau.',
+                confirmButtonColor: '#0d9488'
+            });
+        }
+    } finally {
+        if (btn) btn.disabled = false;
+        if (text) text.style.display = 'inline-block';
+        if (spinner) spinner.style.display = 'none';
+    }
+}
+
+async function pollRenewPaymentStatus(paymentCode, pkgTitle) {
+    try {
+        const res = await fetch(`api/payments/status.php?code=${encodeURIComponent(paymentCode)}`, { cache: 'no-store' });
+        const json = await res.json();
+        if (!res.ok || !json.data) return;
+
+        const d = json.data;
+        if (d.status === 'paid') {
+            stopRenewTimers();
+            const modalEl = document.getElementById('modalRenewMembership');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+                const instance = bootstrap.Modal.getInstance(modalEl);
+                if (instance) instance.hide();
+            }
+            if (window.Swal) {
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Kích Hoạt / Gia Hạn Thành Công!',
+                    html: `Hệ thống đã nhận đủ thanh toán và <strong>kích hoạt ngay lập tức ${pkgTitle || 'Gói Hội Viên'}</strong> cho tài khoản của bạn.<br><br>Hóa đơn điện tử &amp; Chứng nhận Thẻ Hội Viên VIP cũng đã được gửi tới email của bạn!`,
+                    confirmButtonText: 'Tuyệt vời!',
+                    confirmButtonColor: '#0d9488'
+                });
+            }
+            await loadMyMembership();
+        } else if (d.status === 'expired' || d.status === 'cancelled') {
+            stopRenewTimers();
+            const titleEl = document.getElementById('renewPayStatusTitle');
+            const descEl = document.getElementById('renewPayStatusDesc');
+            if (titleEl) titleEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> Mã QR đã hết hạn';
+            if (descEl) descEl.textContent = 'Vui lòng bấm Quay lại để tạo mã QR thanh toán mới.';
+        }
+    } catch (err) {}
+}
+
+function initRenewMembershipModal() {
+    const modalEl = document.getElementById('modalRenewMembership');
+    if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            stopRenewTimers();
+        });
+    }
+
+    const btn = document.getElementById('btnConfirmRenew');
+    if (!btn || btn.dataset.bound === 'true') return;
+    btn.dataset.bound = 'true';
+
+    btn.addEventListener('click', async () => {
+        const postId = window.__CURRENT_ACTIVE_POST_ID__;
+        if (!postId) return;
+        await startProfileSepayMembershipPayment(postId, window.__CURRENT_ACTIVE_PKG_TITLE__ || 'Gói Hội Viên');
     });
 }
