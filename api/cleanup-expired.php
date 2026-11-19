@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/cleanup-expired.php
  * Dọn các slot giữ chỗ đã hết hạn, huỷ các đơn thanh toán pending quá hạn,
@@ -19,8 +20,7 @@ require_once __DIR__ . '/../includes/web-push.php';
  *
  * @return array{cleaned_slots: int, expired_payments: int, reminders_sent: int}
  */
-function cleanup_expired_holds(PDO $pdo): array
-{
+function cleanup_expired_holds(PDO $pdo): array {
     $expiredPayments = payment_expire_overdue($pdo, 100);
 
     $stmt = $pdo->prepare(
@@ -34,15 +34,15 @@ function cleanup_expired_holds(PDO $pdo): array
     $remindersSent = 0;
     try {
         $remResult = god_push_dispatch_due_reminders($pdo);
-        $remindersSent = (int)($remResult['sent'] ?? 0);
+        $remindersSent = (int) ($remResult['sent'] ?? 0);
     } catch (Throwable $e) {
         error_log('[cleanup-expired reminder] ' . $e->getMessage());
     }
 
     return [
-        'cleaned_slots'    => $cleanedSlots,
+        'cleaned_slots' => $cleanedSlots,
         'expired_payments' => $expiredPayments,
-        'reminders_sent'   => $remindersSent,
+        'reminders_sent' => $remindersSent,
     ];
 }
 
@@ -51,8 +51,7 @@ function cleanup_expired_holds(PDO $pdo): array
  *
  * @return int số gói hội viên đã chuyển trạng thái hết hạn
  */
-function cleanup_expired_memberships(PDO $pdo): int
-{
+function cleanup_expired_memberships(PDO $pdo): int {
     $stmt = $pdo->prepare(
         "UPDATE user_memberships
             SET status = 'expired', updated_at = NOW()
@@ -77,10 +76,10 @@ if ($__isDirect) {
         } else {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode([
-                'status'  => 'success',
-                'code'    => 200,
+                'status' => 'success',
+                'code' => 200,
                 'message' => $msg,
-                'data'    => $result,
+                'data' => $result,
             ], JSON_UNESCAPED_UNICODE);
         }
     } catch (Throwable $e) {
@@ -89,6 +88,7 @@ if ($__isDirect) {
             fwrite(STDERR, "Lỗi: " . $e->getMessage() . "\n");
             exit(1);
         }
+
         http_response_code(500);
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['status' => 'error', 'code' => 500,

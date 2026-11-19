@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/admin/memberships.php
  * API Quản lý Gói Hội Viên dành riêng cho Quản trị viên (Admin).
@@ -31,19 +32,19 @@ try {
     // GET: Thống kê & Danh sách hội viên
     // ==========================================
     if ($method === 'GET') {
-        $q = isset($_GET['q']) ? trim((string)$_GET['q']) : '';
-        $tier = isset($_GET['tier']) ? trim((string)$_GET['tier']) : '';
-        $status = isset($_GET['status']) ? trim((string)$_GET['status']) : '';
-        $page = max(1, (int)($_GET['page'] ?? 1));
-        $limit = max(5, min(100, (int)($_GET['limit'] ?? 15)));
+        $q = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
+        $tier = isset($_GET['tier']) ? trim((string) $_GET['tier']) : '';
+        $status = isset($_GET['status']) ? trim((string) $_GET['status']) : '';
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $limit = max(5, min(100, (int) ($_GET['limit'] ?? 15)));
         $offset = ($page - 1) * $limit;
 
         // 1. Thống kê tổng quan (KPIs)
         $statPendingStmt = $pdo->query("SELECT COUNT(*) FROM user_memberships WHERE status = 'pending'");
-        $totalPending = (int)$statPendingStmt->fetchColumn();
+        $totalPending = (int) $statPendingStmt->fetchColumn();
 
         $statActiveStmt = $pdo->query("SELECT COUNT(*) FROM user_memberships WHERE status = 'active' AND end_date >= NOW()");
-        $totalActive = (int)$statActiveStmt->fetchColumn();
+        $totalActive = (int) $statActiveStmt->fetchColumn();
 
         $tierStatsStmt = $pdo->query("
             SELECT tier, COUNT(*) as cnt 
@@ -54,12 +55,12 @@ try {
         $tierCounts = ['silver' => 0, 'gold' => 0, 'platinum' => 0];
         while ($row = $tierStatsStmt->fetch()) {
             if (isset($tierCounts[$row['tier']])) {
-                $tierCounts[$row['tier']] = (int)$row['cnt'];
+                $tierCounts[$row['tier']] = (int) $row['cnt'];
             }
         }
 
         $revenueStmt = $pdo->query("SELECT COALESCE(SUM(price_paid), 0) FROM user_memberships WHERE status = 'active'");
-        $totalRevenue = (float)$revenueStmt->fetchColumn();
+        $totalRevenue = (float) $revenueStmt->fetchColumn();
 
         $expiringStmt = $pdo->query("
             SELECT COUNT(*) 
@@ -68,7 +69,7 @@ try {
               AND end_date >= NOW() 
               AND end_date <= DATE_ADD(NOW(), INTERVAL 7 DAY)
         ");
-        $expiringSoon = (int)$expiringStmt->fetchColumn();
+        $expiringSoon = (int) $expiringStmt->fetchColumn();
 
         // 2. Lọc danh sách
         $where = ['1=1'];
@@ -111,7 +112,7 @@ try {
             WHERE {$whereSql}
         ");
         $countStmt->execute($params);
-        $totalRecords = (int)$countStmt->fetchColumn();
+        $totalRecords = (int) $countStmt->fetchColumn();
 
         // Lấy danh sách chi tiết kèm trạng thái thanh toán SePay thực tế
         $listStmt = $pdo->prepare("
@@ -139,9 +140,9 @@ try {
         $rawItems = $listStmt->fetchAll();
 
         $now = time();
-        $items = array_map(function($item) use ($now) {
+        $items = array_map(function ($item) use ($now) {
             $end = strtotime($item['end_date']);
-            $daysLeft = max(0, (int)ceil(($end - $now) / 86400));
+            $daysLeft = max(0, (int) ceil(($end - $now) / 86400));
             $isExpired = $end < $now;
 
             $effectiveStatus = $item['status'];
@@ -158,38 +159,38 @@ try {
             $canExtend = ($isPaid && in_array($item['status'], ['active', 'expired'], true));
 
             return [
-                'id'               => (int)$item['id'],
-                'user_id'          => (int)$item['user_id'],
-                'user_name'        => $item['user_name'] ?? 'Khách hàng',
-                'user_email'       => $item['user_email'] ?? '',
-                'user_phone'       => $item['user_phone'] ?? '',
-                'user_avatar'      => '',
-                'post_id'          => (int)$item['post_id'],
-                'package_title'    => $item['package_title'] ?? 'Gói Hội Viên',
-                'package_slug'     => $item['package_slug'] ?? '',
-                'tier'             => $item['tier'],
-                'tier_label'       => match($item['tier']) {
+                'id' => (int) $item['id'],
+                'user_id' => (int) $item['user_id'],
+                'user_name' => $item['user_name'] ?? 'Khách hàng',
+                'user_email' => $item['user_email'] ?? '',
+                'user_phone' => $item['user_phone'] ?? '',
+                'user_avatar' => '',
+                'post_id' => (int) $item['post_id'],
+                'package_title' => $item['package_title'] ?? 'Gói Hội Viên',
+                'package_slug' => $item['package_slug'] ?? '',
+                'tier' => $item['tier'],
+                'tier_label' => match ($item['tier']) {
                     'platinum' => 'Bạch Kim',
-                    'gold'     => 'Vàng',
-                    'silver'   => 'Bạc',
-                    default    => 'Hội Viên'
+                    'gold' => 'Vàng',
+                    'silver' => 'Bạc',
+                    default => 'Hội Viên'
                 },
-                'discount_percent' => (int)$item['discount_percent'],
-                'price_paid'       => (float)$item['price_paid'],
-                'duration_days'    => (int)$item['duration_days'],
-                'start_date'       => $item['start_date'],
-                'end_date'         => $item['end_date'],
-                'days_left'        => $daysLeft,
-                'is_expired'       => $isExpired,
-                'status'           => $item['status'],
+                'discount_percent' => (int) $item['discount_percent'],
+                'price_paid' => (float) $item['price_paid'],
+                'duration_days' => (int) $item['duration_days'],
+                'start_date' => $item['start_date'],
+                'end_date' => $item['end_date'],
+                'days_left' => $daysLeft,
+                'is_expired' => $isExpired,
+                'status' => $item['status'],
                 'effective_status' => $effectiveStatus,
-                'payment_method'   => $item['payment_method'] ?? 'VietQR',
-                'payment_status'   => $payStatus,
-                'payment_code'     => $item['payment_code'] ?? null,
-                'is_paid'          => $isPaid,
-                'can_reactivate'   => $canReactivate,
-                'can_extend'       => $canExtend,
-                'created_at'       => $item['created_at']
+                'payment_method' => $item['payment_method'] ?? 'VietQR',
+                'payment_status' => $payStatus,
+                'payment_code' => $item['payment_code'] ?? null,
+                'is_paid' => $isPaid,
+                'can_reactivate' => $canReactivate,
+                'can_extend' => $canExtend,
+                'created_at' => $item['created_at']
             ];
         }, $rawItems);
 
@@ -203,7 +204,7 @@ try {
         $availablePackages = $pkgStmt->fetchAll();
 
         // 4. Danh sách tài khoản khách hàng để admin chọn nhanh khi cấp gói
-        $userSearch = isset($_GET['user_search']) ? trim((string)$_GET['user_search']) : '';
+        $userSearch = isset($_GET['user_search']) ? trim((string) $_GET['user_search']) : '';
         if ($userSearch !== '') {
             $uStmt = $pdo->prepare("
                 SELECT id, name, email, phone 
@@ -225,27 +226,28 @@ try {
                 LIMIT 50
             ");
         }
+
         $customers = $uStmt->fetchAll();
 
         booking_account_out(200, [
             'stats' => [
-                'total_pending'  => $totalPending,
-                'total_active'   => $totalActive,
-                'silver_count'   => $tierCounts['silver'],
-                'gold_count'     => $tierCounts['gold'],
+                'total_pending' => $totalPending,
+                'total_active' => $totalActive,
+                'silver_count' => $tierCounts['silver'],
+                'gold_count' => $tierCounts['gold'],
                 'platinum_count' => $tierCounts['platinum'],
-                'total_revenue'  => $totalRevenue,
-                'expiring_soon'  => $expiringSoon
+                'total_revenue' => $totalRevenue,
+                'expiring_soon' => $expiringSoon
             ],
             'items' => $items,
             'pagination' => [
                 'total' => $totalRecords,
-                'page'  => $page,
+                'page' => $page,
                 'limit' => $limit,
-                'pages' => max(1, (int)ceil($totalRecords / $limit))
+                'pages' => max(1, (int) ceil($totalRecords / $limit))
             ],
             'available_packages' => $availablePackages,
-            'customers'          => $customers
+            'customers' => $customers
         ]);
     }
 
@@ -259,25 +261,27 @@ try {
             $input = !empty($_POST) ? $_POST : [];
             if (empty($input) && !empty($raw)) {
                 parse_str($raw, $parsedRaw);
-                if (is_array($parsedRaw)) $input = $parsedRaw;
+                if (is_array($parsedRaw))
+                    $input = $parsedRaw;
             }
         }
 
-        $action = trim((string)($input['action'] ?? $_POST['action'] ?? $_GET['action'] ?? ''));
+        $action = trim((string) ($input['action'] ?? $_POST['action'] ?? $_GET['action'] ?? ''));
 
         // ==========================================
         // 1. ACTION: GRANT (Cấp / Tặng gói cho user)
         // ==========================================
         if ($action === 'grant') {
-            $targetUserId = (int)($input['user_id'] ?? 0);
-            $postId = (int)($input['post_id'] ?? 0);
-            $paymentMethod = trim((string)($input['payment_method'] ?? 'Admin cấp / Tiền mặt'));
-            $customDays = isset($input['duration_days']) && (int)$input['duration_days'] > 0 ? (int)$input['duration_days'] : null;
-            $customPrice = isset($input['price_paid']) ? (float)$input['price_paid'] : null;
+            $targetUserId = (int) ($input['user_id'] ?? 0);
+            $postId = (int) ($input['post_id'] ?? 0);
+            $paymentMethod = trim((string) ($input['payment_method'] ?? 'Admin cấp / Tiền mặt'));
+            $customDays = isset($input['duration_days']) && (int) $input['duration_days'] > 0 ? (int) $input['duration_days'] : null;
+            $customPrice = isset($input['price_paid']) ? (float) $input['price_paid'] : null;
 
             if ($targetUserId <= 0) {
                 booking_account_out(422, null, 'Vui lòng chọn tài khoản người dùng.');
             }
+
             if ($postId <= 0) {
                 booking_account_out(422, null, 'Vui lòng chọn gói hội viên.');
             }
@@ -296,16 +300,19 @@ try {
                 booking_account_out(404, null, 'Gói hội viên không tồn tại trong hệ thống.');
             }
 
-            $durationDays = $customDays !== null ? $customDays : (int)($pkg['duration_days'] ?? 30);
-            if ($durationDays <= 0) $durationDays = 30;
+            $durationDays = $customDays !== null ? $customDays : (int) ($pkg['duration_days'] ?? 30);
+            if ($durationDays <= 0)
+                $durationDays = 30;
 
-            $pricePaid = $customPrice !== null ? max(0, $customPrice) : (float)($pkg['price'] ?? 0);
+            $pricePaid = $customPrice !== null ? max(0, $customPrice) : (float) ($pkg['price'] ?? 0);
 
-            $discountPercent = (int)($pkg['discount_percent'] ?? 0);
+            $discountPercent = (int) ($pkg['discount_percent'] ?? 0);
             if ($discountPercent <= 0) {
                 $slug = $pkg['slug'] ?? '';
-                if (str_contains($slug, 'platinum')) $discountPercent = 15;
-                elseif (str_contains($slug, 'gold') || str_contains($slug, 'golden')) $discountPercent = 10;
+                if (str_contains($slug, 'platinum'))
+                    $discountPercent = 15;
+                elseif (str_contains($slug, 'gold') || str_contains($slug, 'golden'))
+                    $discountPercent = 10;
                 else $discountPercent = 5;
             }
 
@@ -352,7 +359,7 @@ try {
             ]);
 
             booking_account_out(200, [
-                'id' => (int)$pdo->lastInsertId(),
+                'id' => (int) $pdo->lastInsertId(),
                 'user_name' => $targetUser['name'],
                 'package_title' => $pkg['title'],
                 'tier' => $tier,
@@ -365,8 +372,8 @@ try {
         // 2. ACTION: EXTEND (Gia hạn thêm số ngày)
         // ==========================================
         if ($action === 'extend') {
-            $membershipId = (int)($input['id'] ?? 0);
-            $addDays = (int)($input['days'] ?? 30);
+            $membershipId = (int) ($input['id'] ?? 0);
+            $addDays = (int) ($input['days'] ?? 30);
 
             if ($membershipId <= 0 || $addDays <= 0) {
                 booking_account_out(422, null, 'Thông tin gia hạn không hợp lệ.');
@@ -389,7 +396,7 @@ try {
             $baseTime = ($curEnd > time()) ? $curEnd : time();
             $targetDate = date('Y-m-d', strtotime("+{$addDays} days", $baseTime));
             $newEndDate = $targetDate . ' 23:59:59';
-            $newDuration = (int)$mem['duration_days'] + $addDays;
+            $newDuration = (int) $mem['duration_days'] + $addDays;
 
             $upd = $pdo->prepare("
                 UPDATE user_memberships 
@@ -409,8 +416,8 @@ try {
         // 3. ACTION: UPDATE_STATUS (Đổi trạng thái)
         // ==========================================
         if ($action === 'update_status') {
-            $membershipId = (int)($input['id'] ?? 0);
-            $newStatus = trim((string)($input['status'] ?? ''));
+            $membershipId = (int) ($input['id'] ?? 0);
+            $newStatus = trim((string) ($input['status'] ?? ''));
 
             if ($membershipId <= 0 || !in_array($newStatus, ['active', 'expired', 'cancelled'], true)) {
                 booking_account_out(422, null, 'Trạng thái không hợp lệ.');
@@ -429,7 +436,8 @@ try {
                 if ($mem['status'] === 'rejected' || !$isPaid) {
                     booking_account_out(422, null, 'Không thể kích hoạt lại gói chưa thanh toán hoặc đã bị từ chối. Vui lòng yêu cầu khách tạo mã QR mới hoặc dùng chức năng Cấp gói hội viên.');
                 }
-                if (strtotime((string)$mem['end_date']) < time()) {
+
+                if (strtotime((string) $mem['end_date']) < time()) {
                     booking_account_out(422, null, 'Gói hội viên này đã hết hạn thời gian. Vui lòng sử dụng chức năng Gia hạn.');
                 }
             }
@@ -450,7 +458,7 @@ try {
         // 4. ACTION: DELETE (Xóa bản ghi)
         // ==========================================
         if ($action === 'delete') {
-            $membershipId = (int)($input['id'] ?? 0);
+            $membershipId = (int) ($input['id'] ?? 0);
             if ($membershipId <= 0) {
                 booking_account_out(422, null, 'ID bản ghi không hợp lệ.');
             }
@@ -465,7 +473,7 @@ try {
         // 5. ACTION: APPROVE (Duyệt & Kích hoạt gói)
         // ==========================================
         if ($action === 'approve') {
-            $membershipId = (int)($input['id'] ?? 0);
+            $membershipId = (int) ($input['id'] ?? 0);
             if ($membershipId <= 0) {
                 booking_account_out(422, null, 'ID bản ghi không hợp lệ.');
             }
@@ -482,8 +490,8 @@ try {
         // 6. ACTION: REJECT (Từ chối yêu cầu đăng ký)
         // ==========================================
         if ($action === 'reject') {
-            $membershipId = (int)($input['id'] ?? 0);
-            $reason = trim((string)($input['reason'] ?? ''));
+            $membershipId = (int) ($input['id'] ?? 0);
+            $reason = trim((string) ($input['reason'] ?? ''));
             if ($membershipId <= 0) {
                 booking_account_out(422, null, 'ID bản ghi không hợp lệ.');
             }
@@ -500,7 +508,6 @@ try {
     }
 
     booking_account_out(405, null, 'Phương thức không được hỗ trợ.');
-
 } catch (Throwable $e) {
     booking_account_out(500, null, 'Lỗi xử lý quản lý hội viên: ' . $e->getMessage());
 }

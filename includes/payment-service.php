@@ -1,4 +1,5 @@
 <?php
+
 /**
  * includes/payment-service.php
  * Thanh toán tiền cọc thật qua SePay (chuyển khoản ngân hàng + webhook biến động số dư).
@@ -16,74 +17,69 @@
 require_once __DIR__ . '/../config/load-env.php';
 
 /** Cấu hình SePay đọc từ .env (cache theo request). */
-function payment_config(): array
-{
+function payment_config(): array {
     static $config = null;
     if ($config !== null) {
         return $config;
     }
-    $prefix = strtoupper(preg_replace('/[^A-Za-z]/', '', (string)(getenv('SEPAY_PAYMENT_PREFIX') ?: 'GDM')));
-    $env = strtolower((string)(getenv('APP_ENV') ?: 'production'));
+
+    $prefix = strtoupper(preg_replace('/[^A-Za-z]/', '', (string) (getenv('SEPAY_PAYMENT_PREFIX') ?: 'GDM')));
+    $env = strtolower((string) (getenv('APP_ENV') ?: 'production'));
     $config = [
-        'bank_code'      => trim((string)(getenv('SEPAY_BANK_CODE') ?: 'MBBank')),
-        'bank_name'      => trim((string)(getenv('SEPAY_BANK_NAME') ?: 'MB Bank (Ngân hàng Quân Đội)')),
-        'account_number' => preg_replace('/\s+/', '', (string)(getenv('SEPAY_ACCOUNT_NUMBER') ?: '')),
-        'account_name'   => trim((string)(getenv('SEPAY_ACCOUNT_NAME') ?: '')),
-        'webhook_key'    => (string)(getenv('SEPAY_WEBHOOK_API_KEY') ?: ''),
-        'prefix'         => $prefix !== '' ? $prefix : 'GDM',
-        'timeout'        => max(5, min(60, (int)(getenv('PAYMENT_TIMEOUT_MINUTES') ?: 15))),
+        'bank_code' => trim((string) (getenv('SEPAY_BANK_CODE') ?: 'MBBank')),
+        'bank_name' => trim((string) (getenv('SEPAY_BANK_NAME') ?: 'MB Bank (Ngân hàng Quân Đội)')),
+        'account_number' => preg_replace('/\s+/', '', (string) (getenv('SEPAY_ACCOUNT_NUMBER') ?: '')),
+        'account_name' => trim((string) (getenv('SEPAY_ACCOUNT_NAME') ?: '')),
+        'webhook_key' => (string) (getenv('SEPAY_WEBHOOK_API_KEY') ?: ''),
+        'prefix' => $prefix !== '' ? $prefix : 'GDM',
+        'timeout' => max(5, min(60, (int) (getenv('PAYMENT_TIMEOUT_MINUTES') ?: 15))),
         // Giả lập chỉ dùng khi phát triển: phải bật rõ ràng VÀ không phải production.
-        'simulate'       => getenv('SEPAY_ALLOW_SIMULATE') === '1' && $env !== 'production',
+        'simulate' => getenv('SEPAY_ALLOW_SIMULATE') === '1' && $env !== 'production',
     ];
     return $config;
 }
 
 /** Mã thanh toán in vào nội dung chuyển khoản đặt sân: GDM000123 (chỉ chữ + số, ngân hàng không cắt mất). */
-function payment_code_for_booking(int $bookingId): string
-{
-    return payment_config()['prefix'] . str_pad((string)$bookingId, 6, '0', STR_PAD_LEFT);
+function payment_code_for_booking(int $bookingId): string {
+    return payment_config()['prefix'] . str_pad((string) $bookingId, 6, '0', STR_PAD_LEFT);
 }
 
 /** Mã thanh toán SePay cho gói hội viên: GDM800001 (dải 800000+ để SePay nhận diện cùng prefix GDM 6 chữ số). */
-function payment_code_for_membership(int $membershipId): string
-{
-    return payment_config()['prefix'] . str_pad((string)(800000 + $membershipId), 6, '0', STR_PAD_LEFT);
+function payment_code_for_membership(int $membershipId): string {
+    return payment_config()['prefix'] . str_pad((string) (800000 + $membershipId), 6, '0', STR_PAD_LEFT);
 }
 
 /** Ảnh VietQR động của SePay, đã điền sẵn số tiền + nội dung. */
-function payment_qr_url(string $paymentCode, int $amount): string
-{
+function payment_qr_url(string $paymentCode, int $amount): string {
     $c = payment_config();
     return 'https://qr.sepay.vn/img?' . http_build_query([
-        'acc'      => $c['account_number'],
-        'bank'     => $c['bank_code'],
-        'amount'   => $amount,
-        'des'      => $paymentCode,
+        'acc' => $c['account_number'],
+        'bank' => $c['bank_code'],
+        'amount' => $amount,
+        'des' => $paymentCode,
         'template' => 'compact',
     ]);
 }
 
 /** Ảnh VietQR động để Chủ sân / Admin quét chuyển khoản hoàn tiền cọc cho khách hàng. */
-function payment_refund_qr_url(string $bankCode, string $accountNumber, int $amount, string $paymentCode): string
-{
+function payment_refund_qr_url(string $bankCode, string $accountNumber, int $amount, string $paymentCode): string {
     return 'https://qr.sepay.vn/img?' . http_build_query([
-        'acc'      => preg_replace('/\s+/', '', $accountNumber),
-        'bank'     => trim($bankCode),
-        'amount'   => max(0, $amount),
-        'des'      => 'HOAN ' . $paymentCode,
+        'acc' => preg_replace('/\s+/', '', $accountNumber),
+        'bank' => trim($bankCode),
+        'amount' => max(0, $amount),
+        'des' => 'HOAN ' . $paymentCode,
         'template' => 'compact',
     ]);
 }
 
 /** Thông tin ngân hàng công khai cho frontend (không chứa khoá bí mật). */
-function payment_public_bank(): array
-{
+function payment_public_bank(): array {
     $c = payment_config();
     return [
-        'code'           => $c['bank_code'],
-        'name'           => $c['bank_name'],
+        'code' => $c['bank_code'],
+        'name' => $c['bank_name'],
         'account_number' => $c['account_number'],
-        'account_name'   => $c['account_name'],
+        'account_name' => $c['account_name'],
     ];
 }
 
@@ -91,28 +87,30 @@ function payment_public_bank(): array
  * Tự tạo bảng payments / sepay_transactions + cột bookings.payment_status + cột payments.membership_id nếu DB chưa có.
  * DDL tự commit nên KHÔNG được gọi bên trong transaction.
  */
-function payment_ensure_schema(PDO $pdo): void
-{
+function payment_ensure_schema(PDO $pdo): void {
     static $ready = false;
     if ($ready) {
         return;
     }
+
     if ($pdo->inTransaction()) {
         throw new RuntimeException('payment_ensure_schema() không được gọi trong transaction.');
     }
+
     $hasTable = static function (string $table) use ($pdo): bool {
         $s = $pdo->prepare('SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?');
         $s->execute([$table]);
-        return (bool)$s->fetchColumn();
+        return (bool) $s->fetchColumn();
     };
     $hasCol = static function (string $table, string $col) use ($pdo): bool {
         $s = $pdo->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND COLUMN_NAME=?');
         $s->execute([$table, $col]);
-        return (bool)$s->fetchColumn();
+        return (bool) $s->fetchColumn();
     };
     if (!$hasCol('bookings', 'payment_status')) {
         $pdo->exec("ALTER TABLE bookings ADD COLUMN payment_status ENUM('unpaid','deposit_paid','refunded') NOT NULL DEFAULT 'unpaid' AFTER status");
     }
+
     if (!$hasTable('payments')) {
         $pdo->exec("CREATE TABLE payments (
             id            INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -138,9 +136,10 @@ function payment_ensure_schema(PDO $pdo): void
         try {
             $nullableStmt = $pdo->prepare("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='payments' AND COLUMN_NAME='booking_id'");
             $nullableStmt->execute();
-            if (strtoupper((string)$nullableStmt->fetchColumn()) === 'NO') {
+            if (strtoupper((string) $nullableStmt->fetchColumn()) === 'NO') {
                 $pdo->exec("ALTER TABLE payments MODIFY COLUMN booking_id INT UNSIGNED DEFAULT NULL");
             }
+
             if (!$hasCol('payments', 'membership_id')) {
                 $pdo->exec("ALTER TABLE payments ADD COLUMN membership_id INT UNSIGNED DEFAULT NULL AFTER booking_id, ADD UNIQUE KEY uq_payment_membership (membership_id)");
             }
@@ -148,6 +147,7 @@ function payment_ensure_schema(PDO $pdo): void
             error_log('[payment-schema-upgrade] ' . $e->getMessage());
         }
     }
+
     if (!$hasTable('sepay_transactions')) {
         $pdo->exec("CREATE TABLE sepay_transactions (
             id               INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -172,68 +172,67 @@ function payment_ensure_schema(PDO $pdo): void
             CONSTRAINT fk_st_payment FOREIGN KEY (payment_id) REFERENCES payments (id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
+
     $ready = true;
 }
 
 /** Có bảng payments chưa (dùng ở những chỗ chỉ đọc / dọn dẹp, không muốn chạy DDL). */
-function payment_tables_ready(PDO $pdo): bool
-{
+function payment_tables_ready(PDO $pdo): bool {
     static $ready = null;
     if ($ready === true) {
         return true;
     }
+
     try {
         $s = $pdo->query("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='payments'");
-        $ready = (bool)$s->fetchColumn();
+        $ready = (bool) $s->fetchColumn();
     } catch (Throwable $e) {
         $ready = false;
     }
+
     return $ready;
 }
 
 /** Dữ liệu thanh toán trả cho frontend. */
-function payment_public_data(array $payment): array
-{
-    $amount = (int)$payment['amount'];
-    $expiresIn = isset($payment['expires_in_seconds']) ? max(0, (int)$payment['expires_in_seconds']) : null;
+function payment_public_data(array $payment): array {
+    $amount = (int) $payment['amount'];
+    $expiresIn = isset($payment['expires_in_seconds']) ? max(0, (int) $payment['expires_in_seconds']) : null;
     return [
-        'payment_code'       => $payment['payment_code'],
-        'amount'             => $amount,
-        'paid_amount'        => (int)($payment['paid_amount'] ?? 0),
-        'status'             => $payment['status'],
-        'expires_at'         => (new DateTime($payment['expires_at'], new DateTimeZone('Asia/Ho_Chi_Minh')))->format('c'),
+        'payment_code' => $payment['payment_code'],
+        'amount' => $amount,
+        'paid_amount' => (int) ($payment['paid_amount'] ?? 0),
+        'status' => $payment['status'],
+        'expires_at' => (new DateTime($payment['expires_at'], new DateTimeZone('Asia/Ho_Chi_Minh')))->format('c'),
         'expires_in_seconds' => $expiresIn,
-        'qr_url'             => payment_qr_url($payment['payment_code'], $amount),
-        'bank'               => payment_public_bank(),
+        'qr_url' => payment_qr_url($payment['payment_code'], $amount),
+        'bank' => payment_public_bank(),
         'simulate_available' => payment_config()['simulate'],
     ];
 }
 
 /** Đọc payment theo booking kèm số giây còn lại (MySQL NOW() là nguồn thời gian duy nhất). */
-function payment_fetch_by_booking(PDO $pdo, int $bookingId): ?array
-{
+function payment_fetch_by_booking(PDO $pdo, int $bookingId): ?array {
     $s = $pdo->prepare('SELECT p.*, TIMESTAMPDIFF(SECOND, NOW(), p.expires_at) AS expires_in_seconds FROM payments p WHERE p.booking_id=?');
     $s->execute([$bookingId]);
     return $s->fetch() ?: null;
 }
 
 /** Đọc payment theo gói hội viên (membership_id) kèm số giây còn lại. */
-function payment_fetch_by_membership(PDO $pdo, int $membershipId): ?array
-{
+function payment_fetch_by_membership(PDO $pdo, int $membershipId): ?array {
     $s = $pdo->prepare('SELECT p.*, TIMESTAMPDIFF(SECOND, NOW(), p.expires_at) AS expires_in_seconds FROM payments p WHERE p.membership_id=?');
     $s->execute([$membershipId]);
     return $s->fetch() ?: null;
 }
 
 /** Tóm tắt booking để hiển thị (dùng khi trả lại đơn chờ thanh toán đã tồn tại). */
-function payment_booking_summary(PDO $pdo, int $bookingId): array
-{
+function payment_booking_summary(PDO $pdo, int $bookingId): array {
     $s = $pdo->prepare('SELECT b.*, c.name AS court_name, c.address AS court_address FROM bookings b JOIN courts c ON c.id=b.court_id WHERE b.id=?');
     $s->execute([$bookingId]);
     $b = $s->fetch();
     if (!$b) {
         return [];
     }
+
     $s = $pdo->prepare('SELECT s.sub_court_name, s.slot_date, s.start_time, s.end_time FROM booking_slots bs JOIN time_slots s ON s.id=bs.slot_id WHERE bs.booking_id=? ORDER BY s.slot_date, s.start_time');
     $s->execute([$bookingId]);
     $slots = $s->fetchAll();
@@ -242,23 +241,23 @@ function payment_booking_summary(PDO $pdo, int $bookingId): array
     $start = $first ? substr($first['start_time'], 0, 5) : '';
     $end = $last ? substr($last['end_time'], 0, 5) : '';
     return [
-        'booking_id'     => (int)$b['id'],
-        'booking_code'   => $b['booking_code'],
-        'court_id'       => (int)$b['court_id'],
-        'court_name'     => $b['court_name'],
-        'court_address'  => $b['court_address'] ?? '',
+        'booking_id' => (int) $b['id'],
+        'booking_code' => $b['booking_code'],
+        'court_id' => (int) $b['court_id'],
+        'court_name' => $b['court_name'],
+        'court_address' => $b['court_address'] ?? '',
         'sub_court_name' => $first['sub_court_name'] ?? '',
-        'booking_date'   => $first['slot_date'] ?? null,
-        'start_time'     => $start,
-        'end_time'       => $end,
-        'time_range'     => $start . ' - ' . $end,
-        'slot_count'     => count($slots),
-        'court_amount'   => (int)$b['court_amount'],
-        'discount_amount'=> (int)$b['discount_amount'],
-        'platform_fee'   => (int)$b['platform_fee'],
-        'total_price'    => (int)$b['total_price'],
-        'deposit_amount' => (int)$b['deposit_amount'],
-        'remain_amount'  => (int)$b['total_price'] - (int)$b['deposit_amount'],
+        'booking_date' => $first['slot_date'] ?? null,
+        'start_time' => $start,
+        'end_time' => $end,
+        'time_range' => $start . ' - ' . $end,
+        'slot_count' => count($slots),
+        'court_amount' => (int) $b['court_amount'],
+        'discount_amount' => (int) $b['discount_amount'],
+        'platform_fee' => (int) $b['platform_fee'],
+        'total_price' => (int) $b['total_price'],
+        'deposit_amount' => (int) $b['deposit_amount'],
+        'remain_amount' => (int) $b['total_price'] - (int) $b['deposit_amount'],
         'payment_method' => $b['payment_method'],
         'booking_status' => $b['status'],
         'payment_status' => $b['payment_status'] ?? 'unpaid',
@@ -269,19 +268,19 @@ function payment_booking_summary(PDO $pdo, int $bookingId): array
  * Huỷ booking pending: booking → cancelled, trả slot đang giữ về available, hoàn lượt voucher.
  * Gọi bên trong transaction, sau khi đã khoá payment.
  */
-function payment_release_booking(PDO $pdo, int $bookingId): void
-{
+function payment_release_booking(PDO $pdo, int $bookingId): void {
     $s = $pdo->prepare('SELECT id, user_id, status, voucher_id FROM bookings WHERE id=? FOR UPDATE');
     $s->execute([$bookingId]);
     $b = $s->fetch();
     if (!$b || $b['status'] !== 'pending') {
         return;
     }
+
     $pdo->prepare("UPDATE bookings SET status='cancelled' WHERE id=?")->execute([$bookingId]);
     $pdo->prepare("UPDATE time_slots s JOIN booking_slots bs ON bs.slot_id=s.id
                       SET s.status='available', s.held_by=NULL, s.hold_expires_at=NULL
                     WHERE bs.booking_id=? AND s.status='holding' AND s.held_by=?")
-        ->execute([$bookingId, (int)$b['user_id']]);
+        ->execute([$bookingId, (int) $b['user_id']]);
     if (!empty($b['voucher_id'])) {
         $vu = $pdo->prepare('SELECT id, voucher_id FROM voucher_usages WHERE booking_id=? AND released_at IS NULL FOR UPDATE');
         $vu->execute([$bookingId]);
@@ -298,11 +297,11 @@ function payment_release_booking(PDO $pdo, int $bookingId): void
  *
  * @return int số payment đã cho hết hạn
  */
-function payment_expire_overdue(PDO $pdo, int $limit = 50): int
-{
+function payment_expire_overdue(PDO $pdo, int $limit = 50): int {
     if ($pdo->inTransaction() || !payment_tables_ready($pdo)) {
         return 0;
     }
+
     $ids = $pdo->query("SELECT id FROM payments WHERE status='pending' AND expires_at < NOW() ORDER BY id LIMIT " . max(1, $limit))
                ->fetchAll(PDO::FETCH_COLUMN);
     $done = 0;
@@ -310,52 +309,60 @@ function payment_expire_overdue(PDO $pdo, int $limit = 50): int
         try {
             $pdo->beginTransaction();
             $s = $pdo->prepare("SELECT id, booking_id, membership_id FROM payments WHERE id=? AND status='pending' AND expires_at < NOW() FOR UPDATE");
-            $s->execute([(int)$paymentId]);
+            $s->execute([(int) $paymentId]);
             $p = $s->fetch();
             if ($p) {
                 if (!empty($p['booking_id'])) {
-                    payment_release_booking($pdo, (int)$p['booking_id']);
+                    payment_release_booking($pdo, (int) $p['booking_id']);
                 }
+
                 if (!empty($p['membership_id'])) {
                     $pdo->prepare("UPDATE user_memberships SET status='cancelled', updated_at=NOW() WHERE id=? AND status='pending'")
-                        ->execute([(int)$p['membership_id']]);
+                        ->execute([(int) $p['membership_id']]);
                 }
-                $pdo->prepare("UPDATE payments SET status='expired' WHERE id=?")->execute([(int)$p['id']]);
+
+                $pdo->prepare("UPDATE payments SET status='expired' WHERE id=?")->execute([(int) $p['id']]);
                 $done++;
             }
+
             $pdo->commit();
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
+
             error_log('[payment-expire] #' . $paymentId . ': ' . $e->getMessage());
         }
     }
+
     return $done;
 }
 
 /** Tách mã thanh toán từ payload SePay (ưu tiên field code, sau đó tới content/description). */
-function payment_extract_code(array $payload): ?string
-{
+function payment_extract_code(array $payload): ?string {
     $prefix = preg_quote(payment_config()['prefix'], '/');
     foreach (['code', 'content', 'description'] as $field) {
-        $value = isset($payload[$field]) && is_scalar($payload[$field]) ? (string)$payload[$field] : '';
+        $value = isset($payload[$field]) && is_scalar($payload[$field]) ? (string) $payload[$field] : '';
         if ($value === '') {
             continue;
         }
+
         // Khớp mã đơn đầy đủ dạng GDM-20261109-0003 trước tiên
-        if (preg_match('/' . $prefix . '-\d{8}-0*(\d{1,9})/i', $value, $mFull) && (int)$mFull[1] > 0) {
-            return payment_code_for_booking((int)$mFull[1]);
+        if (preg_match('/' . $prefix . '-\d{8}-0*(\d{1,9})/i', $value, $mFull) && (int) $mFull[1] > 0) {
+            return payment_code_for_booking((int) $mFull[1]);
         }
+
         // Khớp cả GDM000123, GDM800001, GDM 000123, GDM-123, GDM123
-        if (preg_match('/' . $prefix . '[-_\s]*0*(\d{1,9})/i', $value, $m) && (int)$m[1] > 0) {
-            return payment_code_for_booking((int)$m[1]);
+        if (preg_match('/' . $prefix . '[-_\s]*0*(\d{1,9})/i', $value, $m) && (int) $m[1] > 0) {
+            return payment_code_for_booking((int) $m[1]);
         }
+
         // Dự phòng trường hợp SePay đang để prefix mặc định DH trên my.sepay.vn
-        if (preg_match('/\bDH[-_\s]*0*(\d{1,9})\b/i', $value, $m) && (int)$m[1] > 0) {
-            return payment_code_for_booking((int)$m[1]);
+        if (preg_match('/\bDH[-_\s]*0*(\d{1,9})\b/i', $value, $m) && (int) $m[1] > 0) {
+            return payment_code_for_booking((int) $m[1]);
         }
     }
+
     return null;
 }
 
@@ -363,24 +370,25 @@ function payment_extract_code(array $payload): ?string
  * Kích hoạt gói hội viên tự động sau khi SePay báo đã nhận đủ 100% tiền gói.
  * Gọi bên trong transaction.
  */
-function payment_try_confirm_membership(PDO $pdo, int $membershipId): bool
-{
+function payment_try_confirm_membership(PDO $pdo, int $membershipId): bool {
     $s = $pdo->prepare('SELECT id, user_id, tier, duration_days, status FROM user_memberships WHERE id=? FOR UPDATE');
     $s->execute([$membershipId]);
     $mem = $s->fetch();
     if (!$mem) {
         return false;
     }
+
     if ($mem['status'] === 'active') {
         return true;
     }
+
     if (!in_array($mem['status'], ['pending', 'cancelled'], true)) {
         return false;
     }
 
-    $userId = (int)$mem['user_id'];
-    $tier = (string)$mem['tier'];
-    $durationDays = max(1, (int)$mem['duration_days']);
+    $userId = (int) $mem['user_id'];
+    $tier = (string) $mem['tier'];
+    $durationDays = max(1, (int) $mem['duration_days']);
     $now = date('Y-m-d H:i:s');
 
     // Kiểm tra gói active hiện tại của user (nếu có)
@@ -393,15 +401,15 @@ function payment_try_confirm_membership(PDO $pdo, int $membershipId): bool
     if ($active) {
         if ($active['tier'] === $tier) {
             // Gia hạn cùng hạng: cộng dồn thời hạn tiếp nối hạn cũ, xóa/chuyển bản ghi cũ sang cancelled để không trùng
-            $curEnd = strtotime((string)$active['end_date']);
+            $curEnd = strtotime((string) $active['end_date']);
             $baseTime = ($curEnd > time()) ? $curEnd : time();
             $targetDate = date('Y-m-d', strtotime("+{$durationDays} days", $baseTime));
             $newEnd = $targetDate . ' 23:59:59';
             $newStart = $active['start_date'];
-            $pdo->prepare("UPDATE user_memberships SET status = 'cancelled', updated_at = NOW() WHERE id = ?")->execute([(int)$active['id']]);
+            $pdo->prepare("UPDATE user_memberships SET status = 'cancelled', updated_at = NOW() WHERE id = ?")->execute([(int) $active['id']]);
         } else {
             // Đổi hạng: chuyển gói cũ sang cancelled, tính mới từ NOW()
-            $pdo->prepare("UPDATE user_memberships SET status = 'cancelled', updated_at = NOW() WHERE id = ?")->execute([(int)$active['id']]);
+            $pdo->prepare("UPDATE user_memberships SET status = 'cancelled', updated_at = NOW() WHERE id = ?")->execute([(int) $active['id']]);
             $newStart = $now;
             $targetDate = date('Y-m-d', strtotime("+{$durationDays} days", time()));
             $newEnd = $targetDate . ' 23:59:59';
@@ -425,15 +433,15 @@ function payment_try_confirm_membership(PDO $pdo, int $membershipId): bool
  * Nếu đơn đã bị huỷ do hết hạn mà slot vẫn trống thì vẫn nhận lại (khách chuyển trễ nhưng còn sân).
  * Trả true nếu xác nhận được, false nếu slot đã bị người khác lấy.
  */
-function payment_try_confirm_booking(PDO $pdo, int $bookingId): bool
-{
+function payment_try_confirm_booking(PDO $pdo, int $bookingId): bool {
     $s = $pdo->prepare('SELECT id, user_id, status, voucher_id FROM bookings WHERE id=? FOR UPDATE');
     $s->execute([$bookingId]);
     $b = $s->fetch();
     if (!$b || !in_array($b['status'], ['pending', 'cancelled'], true)) {
         return false;
     }
-    $userId = (int)$b['user_id'];
+
+    $userId = (int) $b['user_id'];
     $s = $pdo->prepare('SELECT s.id, s.status, s.held_by, (s.hold_expires_at IS NOT NULL AND s.hold_expires_at < NOW()) AS hold_expired,
                                (TIMESTAMP(s.slot_date, s.start_time) > NOW()) AS future_start
                           FROM booking_slots bs JOIN time_slots s ON s.id=bs.slot_id
@@ -443,27 +451,32 @@ function payment_try_confirm_booking(PDO $pdo, int $bookingId): bool
     if (!$slots) {
         return false;
     }
+
     foreach ($slots as $slot) {
         if (!$slot['future_start']) {
             return false;
         }
-        $mine = $slot['status'] === 'holding' && (int)$slot['held_by'] === $userId;
+
+        $mine = $slot['status'] === 'holding' && (int) $slot['held_by'] === $userId;
         $free = $slot['status'] === 'available' || ($slot['status'] === 'holding' && $slot['hold_expired']);
         if (!$mine && !$free) {
             return false;
         }
+
         // Slot không được thuộc một đơn đang hoạt động khác
         $other = $pdo->prepare("SELECT 1 FROM booking_slots bs JOIN bookings ob ON ob.id=bs.booking_id
                                  WHERE bs.slot_id=? AND bs.booking_id<>? AND ob.status IN ('pending','confirmed','completed') LIMIT 1");
-        $other->execute([(int)$slot['id'], $bookingId]);
+        $other->execute([(int) $slot['id'], $bookingId]);
         if ($other->fetchColumn()) {
             return false;
         }
     }
+
     $upd = $pdo->prepare("UPDATE time_slots SET status='booked', held_by=NULL, hold_expires_at=NULL WHERE id=?");
     foreach ($slots as $slot) {
-        $upd->execute([(int)$slot['id']]);
+        $upd->execute([(int) $slot['id']]);
     }
+
     // Đơn từng bị huỷ do hết hạn → lấy lại lượt voucher đã hoàn
     if ($b['status'] === 'cancelled' && !empty($b['voucher_id'])) {
         $vu = $pdo->prepare('SELECT id, voucher_id FROM voucher_usages WHERE booking_id=? AND released_at IS NOT NULL FOR UPDATE');
@@ -473,6 +486,7 @@ function payment_try_confirm_booking(PDO $pdo, int $bookingId): bool
             $pdo->prepare('UPDATE vouchers SET used_count=used_count+1 WHERE id=?')->execute([$row['voucher_id']]);
         }
     }
+
     $pdo->prepare("UPDATE bookings SET status='confirmed', payment_status='deposit_paid' WHERE id=?")->execute([$bookingId]);
     return true;
 }
@@ -483,18 +497,18 @@ function payment_try_confirm_booking(PDO $pdo, int $bookingId): bool
  * @return array{result:string, payment_id:?int, booking_id:?int, membership_id:?int, confirmed:bool}
  * @throws Throwable khi lỗi DB tạm thời (caller trả 5xx để SePay retry)
  */
-function payment_process_webhook(PDO $pdo, array $payload): array
-{
+function payment_process_webhook(PDO $pdo, array $payload): array {
     payment_ensure_schema($pdo);
     $out = ['result' => 'ignored', 'payment_id' => null, 'booking_id' => null, 'membership_id' => null, 'confirmed' => false];
 
-    $sepayId = isset($payload['id']) && is_scalar($payload['id']) && preg_match('/^\d{1,19}$/', (string)$payload['id']) ? (string)$payload['id'] : null;
+    $sepayId = isset($payload['id']) && is_scalar($payload['id']) && preg_match('/^\d{1,19}$/', (string) $payload['id']) ? (string) $payload['id'] : null;
     if ($sepayId === null) {
         $out['result'] = 'invalid_payload';
         return $out;
     }
-    $str = static fn($k, $max) => isset($payload[$k]) && is_scalar($payload[$k]) ? mb_substr(trim((string)$payload[$k]), 0, $max) : null;
-    $amount = isset($payload['transferAmount']) && is_numeric($payload['transferAmount']) ? (int)round((float)$payload['transferAmount']) : 0;
+
+    $str = static fn ($k, $max) => isset($payload[$k]) && is_scalar($payload[$k]) ? mb_substr(trim((string) $payload[$k]), 0, $max) : null;
+    $amount = isset($payload['transferAmount']) && is_numeric($payload['transferAmount']) ? (int) round((float) $payload['transferAmount']) : 0;
     $txDate = $str('transactionDate', 30);
     $txDate = ($txDate && strtotime($txDate) !== false) ? date('Y-m-d H:i:s', strtotime($txDate)) : null;
 
@@ -513,36 +527,40 @@ function payment_process_webhook(PDO $pdo, array $payload): array
         $prev = $s->fetch();
         // Lần trước đã xử lý xong → bỏ qua. Lần trước lỗi giữa chừng (vẫn 'received') → xử lý lại.
         if ($prev && $prev['result'] !== 'received') {
-            return ['result' => 'duplicate', 'payment_id' => $prev['payment_id'] ? (int)$prev['payment_id'] : null, 'booking_id' => null, 'membership_id' => null, 'confirmed' => false];
+            return ['result' => 'duplicate', 'payment_id' => $prev['payment_id'] ? (int) $prev['payment_id'] : null, 'booking_id' => null, 'membership_id' => null, 'confirmed' => false];
         }
     }
+
     $mark = static function (string $result, ?int $paymentId = null, ?string $note = null) use ($pdo, $sepayId): void {
         $pdo->prepare('UPDATE sepay_transactions SET result=?, payment_id=?, note=? WHERE sepay_id=?')
             ->execute([$result, $paymentId, $note, $sepayId]);
     };
 
     // 2. Xử lý giao dịch TIỀN RA (transferType = 'out') -> Tự động xác nhận hoàn cọc cho khách
-    $txType = strtolower((string)$str('transferType', 5));
+    $txType = strtolower((string) $str('transferType', 5));
     if ($txType === 'out') {
         if ($amount <= 0) {
             $mark('ignored_out', null, 'Số tiền giao dịch tiền ra không hợp lệ.');
             $out['result'] = 'ignored_out';
             return $out;
         }
+
         $outCode = payment_extract_code($payload);
         $targetBookingId = null;
         if ($outCode !== null && preg_match('/0*(\d{1,9})$/', $outCode, $mId)) {
-            $targetBookingId = (int)$mId[1];
+            $targetBookingId = (int) $mId[1];
         }
+
         if ($targetBookingId === null) {
             // Dự phòng: Nếu nội dung chuyển khoản hoàn tiền không ghi mã nhưng có ĐÚNG 1 đơn đang chờ hoàn cọc khớp số tiền
             $sRefFallback = $pdo->prepare("SELECT id FROM bookings WHERE status IN ('cancelled','no_show') AND is_deposit_refunded=1 AND payment_status='deposit_paid' AND deposit_amount=? LIMIT 2");
             $sRefFallback->execute([$amount]);
             $refCandidates = $sRefFallback->fetchAll(PDO::FETCH_COLUMN);
             if (count($refCandidates) === 1) {
-                $targetBookingId = (int)$refCandidates[0];
+                $targetBookingId = (int) $refCandidates[0];
             }
         }
+
         if ($targetBookingId === null) {
             $mark('ignored_out', null, 'Giao dịch tiền ra không khớp đơn chờ hoàn cọc nào.');
             $out['result'] = 'ignored_out';
@@ -558,7 +576,7 @@ function payment_process_webhook(PDO $pdo, array $payload): array
             $sp = $pdo->prepare('SELECT * FROM payments WHERE booking_id=? FOR UPDATE');
             $sp->execute([$targetBookingId]);
             $pRow = $sp->fetch();
-            $payId = $pRow ? (int)$pRow['id'] : null;
+            $payId = $pRow ? (int) $pRow['id'] : null;
 
             if (!$bRow || !in_array($bRow['status'], ['cancelled', 'no_show'], true)) {
                 $mark('ignored_out', $payId, 'Đơn #' . $targetBookingId . ' không ở trạng thái đã hủy / chờ hoàn cọc.');
@@ -566,7 +584,8 @@ function payment_process_webhook(PDO $pdo, array $payload): array
                 $out['result'] = 'ignored_out';
                 return $out;
             }
-            $expectedDeposit = (int)$bRow['deposit_amount'];
+
+            $expectedDeposit = (int) $bRow['deposit_amount'];
             if ($expectedDeposit > 0 && $amount < $expectedDeposit) {
                 $mark('underpaid_refund', $payId, 'Số tiền hoàn ra (' . $amount . 'đ) nhỏ hơn tiền cọc (' . $expectedDeposit . 'đ).');
                 $pdo->commit();
@@ -576,15 +595,17 @@ function payment_process_webhook(PDO $pdo, array $payload): array
 
             $stamp = date('H:i d/m/Y');
             $amtFormatted = number_format($amount, 0, ',', '.') . ' đ';
-            $curNote = (string)($bRow['refund_note'] ?? '');
+            $curNote = (string) ($bRow['refund_note'] ?? '');
             if (strpos($curNote, 'SePay tự động xác nhận hoàn cọc') === false) {
                 $curNote = trim($curNote . " | SePay tự động xác nhận hoàn cọc ({$amtFormatted}) lúc {$stamp}.", ' |');
             }
+
             $pdo->prepare("UPDATE bookings SET payment_status='refunded', is_deposit_refunded=1, refund_note=? WHERE id=?")
                 ->execute([$curNote, $targetBookingId]);
             if ($payId !== null) {
                 $pdo->prepare("UPDATE payments SET status='refunded' WHERE id=?")->execute([$payId]);
             }
+
             $mark('refunded_out', $payId, 'Đã tự động xác nhận hoàn cọc qua SePay cho đơn #' . $targetBookingId);
             $pdo->commit();
 
@@ -597,6 +618,7 @@ function payment_process_webhook(PDO $pdo, array $payload): array
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
+
             throw $e;
         }
     }
@@ -606,11 +628,13 @@ function payment_process_webhook(PDO $pdo, array $payload): array
         $out['result'] = 'ignored_out';
         return $out;
     }
+
     if ($amount <= 0) {
         $mark('unmatched', null, 'Số tiền giao dịch không hợp lệ.');
         $out['result'] = 'unmatched';
         return $out;
     }
+
     $code = payment_extract_code($payload);
     if ($code === null) {
         // Dự phòng: Nếu khách quên ghi mã GDM hoặc ngân hàng cắt nội dung,
@@ -619,17 +643,19 @@ function payment_process_webhook(PDO $pdo, array $payload): array
         $sFallback->execute([$amount]);
         $candidates = $sFallback->fetchAll(PDO::FETCH_COLUMN);
         if (count($candidates) === 1) {
-            $code = (string)$candidates[0];
+            $code = (string) $candidates[0];
         }
     }
+
     if ($code === null) {
         $cfgAcc = payment_config()['account_number'];
-        $payloadAcc = preg_replace('/\s+/', '', (string)$str('accountNumber', 50));
+        $payloadAcc = preg_replace('/\s+/', '', (string) $str('accountNumber', 50));
         if ($cfgAcc !== '' && $payloadAcc !== '' && $payloadAcc !== $cfgAcc) {
             $mark('wrong_account', null, 'Tài khoản nhận ' . $payloadAcc . ' không khớp cấu hình.');
             $out['result'] = 'wrong_account';
             return $out;
         }
+
         $mark('unmatched', null, 'Không tìm thấy mã thanh toán trong nội dung.');
         $out['result'] = 'unmatched';
         return $out;
@@ -647,20 +673,21 @@ function payment_process_webhook(PDO $pdo, array $payload): array
             $out['result'] = 'unmatched';
             return $out;
         }
-        $paymentId = (int)$p['id'];
-        $bookingId = !empty($p['booking_id']) ? (int)$p['booking_id'] : null;
-        $membershipId = !empty($p['membership_id']) ? (int)$p['membership_id'] : null;
+
+        $paymentId = (int) $p['id'];
+        $bookingId = !empty($p['booking_id']) ? (int) $p['booking_id'] : null;
+        $membershipId = !empty($p['membership_id']) ? (int) $p['membership_id'] : null;
         $out['payment_id'] = $paymentId;
         $out['booking_id'] = $bookingId;
         $out['membership_id'] = $membershipId;
-        $paidTotal = (int)$p['paid_amount'] + $amount;
+        $paidTotal = (int) $p['paid_amount'] + $amount;
         $pdo->prepare('UPDATE payments SET paid_amount=? WHERE id=?')->execute([$paidTotal, $paymentId]);
 
         if (in_array($p['status'], ['paid', 'late_paid', 'refunded'], true)) {
             $mark('overpaid', $paymentId, 'Đơn đã ở trạng thái ' . $p['status'] . ', khoản này cần hoàn lại.');
             $out['result'] = 'overpaid';
-        } elseif ($paidTotal < (int)$p['amount']) {
-            $mark('underpaid', $paymentId, 'Đã nhận ' . $paidTotal . '/' . (int)$p['amount'] . 'đ.');
+        } elseif ($paidTotal < (int) $p['amount']) {
+            $mark('underpaid', $paymentId, 'Đã nhận ' . $paidTotal . '/' . (int) $p['amount'] . 'đ.');
             $out['result'] = 'underpaid';
         } elseif ($membershipId !== null) {
             // Thanh toán Gói Hội Viên: Kích hoạt tự động ngay cả khi vừa quá hạn 15 phút
@@ -683,8 +710,9 @@ function payment_process_webhook(PDO $pdo, array $payload): array
         } else {
             // pending (còn hạn hoặc quá hạn nhưng chưa dọn) hoặc expired → thử xác nhận
             if ($p['status'] === 'pending' && $p['is_expired']) {
-                payment_release_booking($pdo, (int)$bookingId);
+                payment_release_booking($pdo, (int) $bookingId);
             }
+
             if ($bookingId !== null && payment_try_confirm_booking($pdo, $bookingId)) {
                 $pdo->prepare("UPDATE payments SET status='paid', paid_at=NOW() WHERE id=?")->execute([$paymentId]);
                 $late = $p['status'] === 'expired' || $p['is_expired'];
@@ -697,25 +725,28 @@ function payment_process_webhook(PDO $pdo, array $payload): array
                 $out['result'] = 'late_paid';
             }
         }
+
         $pdo->commit();
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
+
         throw $e;
     }
+
     return $out;
 }
 
 /** Gửi email hóa đơn xác nhận đặt cọc thành công (kèm logo GODMINTON đính kèm CID). */
-function payment_send_confirmation_email(PDO $pdo, int $bookingId): void
-{
+function payment_send_confirmation_email(PDO $pdo, int $bookingId): void {
     try {
         require_once __DIR__ . '/auth-mailer.php';
         $summary = payment_booking_summary($pdo, $bookingId);
         if (!$summary || $summary['booking_status'] !== 'confirmed') {
             return;
         }
+
         $s = $pdo->prepare('SELECT u.name, u.email, u.phone FROM bookings b JOIN users u ON u.id=b.user_id WHERE b.id=?');
         $s->execute([$bookingId]);
         $user = $s->fetch();
@@ -726,16 +757,16 @@ function payment_send_confirmation_email(PDO $pdo, int $bookingId): void
         $payment = payment_fetch_by_booking($pdo, $bookingId);
         $paymentCode = $payment['payment_code'] ?? payment_code_for_booking($bookingId);
         $paidAtStr = !empty($payment['paid_at'])
-            ? date('H:i · d/m/Y', strtotime((string)$payment['paid_at']))
+            ? date('H:i · d/m/Y', strtotime((string) $payment['paid_at']))
             : date('H:i · d/m/Y');
 
-        $e = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $money = static fn($n) => number_format((int)$n, 0, ',', '.') . ' đ';
+        $e = static fn ($v) => htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $money = static fn ($n) => number_format((int) $n, 0, ',', '.') . ' đ';
 
-        $dateStr = $summary['booking_date'] ? date('d/m/Y', strtotime((string)$summary['booking_date'])) : '';
-        $durationHours = max(0.5, ((int)($summary['slot_count'] ?? 1)) * 0.5);
-        $durationText = ($durationHours == (int)$durationHours ? (int)$durationHours : $durationHours) . ' giờ';
-        $historyUrl = rtrim((string)getenv('APP_URL'), '/') . '/history.php';
+        $dateStr = $summary['booking_date'] ? date('d/m/Y', strtotime((string) $summary['booking_date'])) : '';
+        $durationHours = max(0.5, ((int) ($summary['slot_count'] ?? 1)) * 0.5);
+        $durationText = ($durationHours == (int) $durationHours ? (int) $durationHours : $durationHours) . ' giờ';
+        $historyUrl = rtrim((string) getenv('APP_URL'), '/') . '/history.php';
         $year = date('Y');
 
         $logoPath = __DIR__ . '/../assets/img/logo.jpg';
@@ -745,23 +776,23 @@ function payment_send_confirmation_email(PDO $pdo, int $bookingId): void
 
         $bookingCodeSafe = $e($summary['booking_code']);
         $paymentCodeSafe = $e($paymentCode);
-        $userNameSafe    = $e($user['name']);
-        $userEmailSafe   = $e($user['email']);
-        $userPhoneSafe   = $e($user['phone'] ?? '—');
-        $courtNameSafe   = $e($summary['court_name']);
-        $courtAddrSafe   = $e($summary['court_address'] ?: 'Hệ thống sân cầu lông GODMINTON');
-        $subCourtSafe    = $e($summary['sub_court_name']);
-        $timeRangeSafe   = $e($summary['time_range'] . ' (' . $durationText . ')');
-        $methodSafe      = $e($summary['payment_method'] ?: 'Chuyển khoản VietQR 24/7 (SePay)');
-        $safeHistoryUrl  = $e($historyUrl);
+        $userNameSafe = $e($user['name']);
+        $userEmailSafe = $e($user['email']);
+        $userPhoneSafe = $e($user['phone'] ?? '—');
+        $courtNameSafe = $e($summary['court_name']);
+        $courtAddrSafe = $e($summary['court_address'] ?: 'Hệ thống sân cầu lông GODMINTON');
+        $subCourtSafe = $e($summary['sub_court_name']);
+        $timeRangeSafe = $e($summary['time_range'] . ' (' . $durationText . ')');
+        $methodSafe = $e($summary['payment_method'] ?: 'Chuyển khoản VietQR 24/7 (SePay)');
+        $safeHistoryUrl = $e($historyUrl);
 
-        $courtAmountTxt  = $e($money($summary['court_amount'] ?: $summary['total_price']));
-        $discountAmount  = (int)($summary['discount_amount'] ?? 0);
-        $platformFee     = (int)($summary['platform_fee'] ?? 0);
-        $platformFeeTxt  = $platformFee > 0 ? $e($money($platformFee)) : '0 đ (Miễn phí)';
-        $totalPriceTxt   = $e($money($summary['total_price']));
-        $depositTxt      = $e($money($summary['deposit_amount']));
-        $remainTxt       = $e($money($summary['remain_amount']));
+        $courtAmountTxt = $e($money($summary['court_amount'] ?: $summary['total_price']));
+        $discountAmount = (int) ($summary['discount_amount'] ?? 0);
+        $platformFee = (int) ($summary['platform_fee'] ?? 0);
+        $platformFeeTxt = $platformFee > 0 ? $e($money($platformFee)) : '0 đ (Miễn phí)';
+        $totalPriceTxt = $e($money($summary['total_price']));
+        $depositTxt = $e($money($summary['deposit_amount']));
+        $remainTxt = $e($money($summary['remain_amount']));
 
         $discountRowHtml = '';
         if ($discountAmount > 0) {
@@ -948,17 +979,17 @@ HTML;
 HTML;
 
         $rows = [
-            'Mã đặt sân'              => $summary['booking_code'],
-            'Mã giao dịch SePay'      => $paymentCode,
-            'Cụm sân'                 => $summary['court_name'] . ' · ' . $summary['sub_court_name'],
-            'Địa chỉ'                 => $summary['court_address'] ?: 'GODMINTON',
-            'Ngày chơi'               => $dateStr,
-            'Khung giờ'               => $summary['time_range'] . ' (' . $durationText . ')',
-            'Giá thuê sân'            => $money($summary['court_amount'] ?: $summary['total_price']),
-            'Tổng tiền'               => $money($summary['total_price']),
-            'Đã đặt cọc (50%)'        => $money($summary['deposit_amount']),
-            'Còn lại thanh toán sân'  => $money($summary['remain_amount']),
-            'Xem lịch đặt sân'        => $historyUrl,
+            'Mã đặt sân' => $summary['booking_code'],
+            'Mã giao dịch SePay' => $paymentCode,
+            'Cụm sân' => $summary['court_name'] . ' · ' . $summary['sub_court_name'],
+            'Địa chỉ' => $summary['court_address'] ?: 'GODMINTON',
+            'Ngày chơi' => $dateStr,
+            'Khung giờ' => $summary['time_range'] . ' (' . $durationText . ')',
+            'Giá thuê sân' => $money($summary['court_amount'] ?: $summary['total_price']),
+            'Tổng tiền' => $money($summary['total_price']),
+            'Đã đặt cọc (50%)' => $money($summary['deposit_amount']),
+            'Còn lại thanh toán sân' => $money($summary['remain_amount']),
+            'Xem lịch đặt sân' => $historyUrl,
         ];
         $text = "HÓA ĐƠN XÁC NHẬN ĐẶT SÂN - GODMINTON\n"
               . "====================================\n"
@@ -971,7 +1002,8 @@ HTML;
         if (is_file($logoPath)) {
             $mail->addEmbeddedImage($logoPath, 'godminton-logo', 'godminton-logo.jpg', 'base64', 'image/jpeg');
         }
-        $mail->addAddress($user['email'], (string)$user['name']);
+
+        $mail->addAddress($user['email'], (string) $user['name']);
         $mail->Subject = 'Hóa đơn xác nhận đặt sân ' . $summary['booking_code'] . ' - GODMINTON';
         $mail->isHTML(true);
         $mail->Body = $html;
@@ -983,8 +1015,7 @@ HTML;
 }
 
 /** Gửi email Hóa đơn điện tử & Xác nhận kích hoạt Gói Hội Viên VIP (kèm logo GODMINTON đính kèm CID). */
-function payment_send_membership_confirmation_email(PDO $pdo, int $membershipId): void
-{
+function payment_send_membership_confirmation_email(PDO $pdo, int $membershipId): void {
     try {
         require_once __DIR__ . '/auth-mailer.php';
         $stmt = $pdo->prepare(
@@ -1004,143 +1035,143 @@ function payment_send_membership_confirmation_email(PDO $pdo, int $membershipId)
         $payment = payment_fetch_by_membership($pdo, $membershipId);
         $paymentCode = $payment['payment_code'] ?? payment_code_for_membership($membershipId);
         $paidAtStr = !empty($payment['paid_at'])
-            ? date('H:i · d/m/Y', strtotime((string)$payment['paid_at']))
+            ? date('H:i · d/m/Y', strtotime((string) $payment['paid_at']))
             : date('H:i · d/m/Y');
 
-        $e = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $money = static fn($n) => number_format((int)round((float)$n), 0, ',', '.') . ' đ';
+        $e = static fn ($v) => htmlspecialchars((string) $v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $money = static fn ($n) => number_format((int) round((float) $n), 0, ',', '.') . ' đ';
 
-        $membershipCode = 'MB-' . str_pad((string)$membershipId, 6, '0', STR_PAD_LEFT);
-        $tierKey = strtolower((string)($mem['tier'] ?? 'silver'));
+        $membershipCode = 'MB-' . str_pad((string) $membershipId, 6, '0', STR_PAD_LEFT);
+        $tierKey = strtolower((string) ($mem['tier'] ?? 'silver'));
         $tierLabel = match ($tierKey) {
             'platinum' => 'Hội Viên Bạch Kim (Platinum VIP)',
-            'gold'     => 'Hội Viên Vàng (Golden Racket)',
-            default    => 'Hội Viên Bạc (Silver Member)',
+            'gold' => 'Hội Viên Vàng (Golden Racket)',
+            default => 'Hội Viên Bạc (Silver Member)',
         };
-        $discountPercent = (int)($mem['discount_percent'] ?? 5);
-        $durationDays    = (int)($mem['duration_days'] ?? 30);
-        $startStr        = $mem['start_date'] ? date('d/m/Y', strtotime((string)$mem['start_date'])) : date('d/m/Y');
-        $endStr          = $mem['end_date'] ? date('d/m/Y', strtotime((string)$mem['end_date'])) : '';
-        $priceTxt        = $e($money($mem['price_paid'] ?? 0));
-        $profileUrl      = rtrim((string)getenv('APP_URL'), '/') . '/profile.php?tab=membership';
-        $courtsUrl       = rtrim((string)getenv('APP_URL'), '/') . '/courts.php';
-        $year            = date('Y');
+        $discountPercent = (int) ($mem['discount_percent'] ?? 5);
+        $durationDays = (int) ($mem['duration_days'] ?? 30);
+        $startStr = $mem['start_date'] ? date('d/m/Y', strtotime((string) $mem['start_date'])) : date('d/m/Y');
+        $endStr = $mem['end_date'] ? date('d/m/Y', strtotime((string) $mem['end_date'])) : '';
+        $priceTxt = $e($money($mem['price_paid'] ?? 0));
+        $profileUrl = rtrim((string) getenv('APP_URL'), '/') . '/profile.php?tab=membership';
+        $courtsUrl = rtrim((string) getenv('APP_URL'), '/') . '/courts.php';
+        $year = date('Y');
 
         // Bảng màu giao diện Email tương ứng từng hạng Gói Hội Viên (Bạch Kim / Vàng / Bạc)
         $theme = match ($tierKey) {
             'platinum' => [
-                'outerBgColor'    => '#e2e8f0',
+                'outerBgColor' => '#e2e8f0',
                 'outerBgGradient' => 'linear-gradient(140deg,#cbd5e1 0%,#e2e8f0 50%,#e0f2fe 100%)',
-                'cardBorder'      => '#94a3b8',
-                'cardShadow'      => '0 20px 50px rgba(15,23,42,0.18)',
-                'headerBgColor'   => '#0f172a',
-                'headerGradient'  => 'linear-gradient(135deg,#090d16 0%,#1e293b 55%,#334155 100%)',
+                'cardBorder' => '#94a3b8',
+                'cardShadow' => '0 20px 50px rgba(15,23,42,0.18)',
+                'headerBgColor' => '#0f172a',
+                'headerGradient' => 'linear-gradient(135deg,#090d16 0%,#1e293b 55%,#334155 100%)',
                 'headerSub1Color' => '#cbd5e1',
                 'headerSub2Color' => '#38bdf8',
-                'headerSub2Text'  => 'HÓA ĐƠN ĐIỆN TỬ &amp; CHỨNG NHẬN THẺ HỘI VIÊN BẠCH KIM',
-                'accentBarBg'     => '#38bdf8',
-                'accentGradient'  => 'linear-gradient(90deg,#38bdf8 0%,#818cf8 50%,#e2e8f0 100%)',
-                'badgeBg'         => '#0f172a',
-                'badgeBorder'     => '#38bdf8',
-                'badgeTextColor'  => '#f8fafc',
-                'badgeLabel'      => '&#9830; HẠNG BẠCH KIM (PLATINUM VIP) · KÍCH HOẠT TỰ ĐỘNG 24/7',
-                'headingColor'    => '#0f172a',
-                'certBgColor'     => '#f1f5f9',
-                'certBgGradient'  => 'linear-gradient(135deg,#f8fafc 0%,#e2e8f0 55%,#e0f2fe 100%)',
-                'certBorder'      => '#334155',
-                'certLabelColor'  => '#334155',
-                'certCodeColor'   => '#0f172a',
-                'certTierColor'   => '#0284c7',
-                'sectionColor'    => '#0f172a',
-                'tableBorder'     => '#cbd5e1',
-                'rowAltBg'        => '#f8fafc',
-                'discountColor'   => '#0284c7',
-                'totalRowBg'      => '#0f172a',
-                'totalRowText'    => '#38bdf8',
-                'btnBgColor'      => '#0f172a',
-                'btnGradient'     => 'linear-gradient(120deg,#0f172a 0%,#1e293b 55%,#0284c7 100%)',
-                'btnShadow'       => '0 8px 20px rgba(15,23,42,0.28)',
-                'linkColor'       => '#0284c7',
-                'footerBg'        => '#f1f5f9',
-                'footerGradient'  => 'linear-gradient(110deg,#f1f5f9 0%,#e2e8f0 100%)',
-                'footerBorder'    => '#cbd5e1',
-                'footerText'      => '#334155',
+                'headerSub2Text' => 'HÓA ĐƠN ĐIỆN TỬ &amp; CHỨNG NHẬN THẺ HỘI VIÊN BẠCH KIM',
+                'accentBarBg' => '#38bdf8',
+                'accentGradient' => 'linear-gradient(90deg,#38bdf8 0%,#818cf8 50%,#e2e8f0 100%)',
+                'badgeBg' => '#0f172a',
+                'badgeBorder' => '#38bdf8',
+                'badgeTextColor' => '#f8fafc',
+                'badgeLabel' => '&#9830; HẠNG BẠCH KIM (PLATINUM VIP) · KÍCH HOẠT TỰ ĐỘNG 24/7',
+                'headingColor' => '#0f172a',
+                'certBgColor' => '#f1f5f9',
+                'certBgGradient' => 'linear-gradient(135deg,#f8fafc 0%,#e2e8f0 55%,#e0f2fe 100%)',
+                'certBorder' => '#334155',
+                'certLabelColor' => '#334155',
+                'certCodeColor' => '#0f172a',
+                'certTierColor' => '#0284c7',
+                'sectionColor' => '#0f172a',
+                'tableBorder' => '#cbd5e1',
+                'rowAltBg' => '#f8fafc',
+                'discountColor' => '#0284c7',
+                'totalRowBg' => '#0f172a',
+                'totalRowText' => '#38bdf8',
+                'btnBgColor' => '#0f172a',
+                'btnGradient' => 'linear-gradient(120deg,#0f172a 0%,#1e293b 55%,#0284c7 100%)',
+                'btnShadow' => '0 8px 20px rgba(15,23,42,0.28)',
+                'linkColor' => '#0284c7',
+                'footerBg' => '#f1f5f9',
+                'footerGradient' => 'linear-gradient(110deg,#f1f5f9 0%,#e2e8f0 100%)',
+                'footerBorder' => '#cbd5e1',
+                'footerText' => '#334155',
             ],
             'gold' => [
-                'outerBgColor'    => '#fef3c7',
+                'outerBgColor' => '#fef3c7',
                 'outerBgGradient' => 'linear-gradient(140deg,#fde68a 0%,#fef3c7 50%,#fffbeb 100%)',
-                'cardBorder'      => '#f59e0b',
-                'cardShadow'      => '0 20px 50px rgba(180,83,9,0.16)',
-                'headerBgColor'   => '#92400e',
-                'headerGradient'  => 'linear-gradient(135deg,#78350f 0%,#b45309 55%,#d97706 100%)',
+                'cardBorder' => '#f59e0b',
+                'cardShadow' => '0 20px 50px rgba(180,83,9,0.16)',
+                'headerBgColor' => '#92400e',
+                'headerGradient' => 'linear-gradient(135deg,#78350f 0%,#b45309 55%,#d97706 100%)',
                 'headerSub1Color' => '#fef3c7',
                 'headerSub2Color' => '#fde68a',
-                'headerSub2Text'  => 'HÓA ĐƠN ĐIỆN TỬ &amp; CHỨNG NHẬN THẺ HỘI VIÊN VÀNG',
-                'accentBarBg'     => '#fbbf24',
-                'accentGradient'  => 'linear-gradient(90deg,#fbbf24 0%,#f59e0b 50%,#fde68a 100%)',
-                'badgeBg'         => '#fef3c7',
-                'badgeBorder'     => '#f59e0b',
-                'badgeTextColor'  => '#92400e',
-                'badgeLabel'      => '&#9733; HẠNG VÀNG (GOLDEN RACKET) · KÍCH HOẠT TỰ ĐỘNG 24/7',
-                'headingColor'    => '#92400e',
-                'certBgColor'     => '#fffbeb',
-                'certBgGradient'  => 'linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%)',
-                'certBorder'      => '#d97706',
-                'certLabelColor'  => '#b45309',
-                'certCodeColor'   => '#78350f',
-                'certTierColor'   => '#b45309',
-                'sectionColor'    => '#92400e',
-                'tableBorder'     => '#fcd34d',
-                'rowAltBg'        => '#fffbeb',
-                'discountColor'   => '#b45309',
-                'totalRowBg'      => '#fef3c7',
-                'totalRowText'    => '#92400e',
-                'btnBgColor'      => '#b45309',
-                'btnGradient'     => 'linear-gradient(120deg,#92400e 0%,#d97706 60%,#f59e0b 100%)',
-                'btnShadow'       => '0 8px 20px rgba(180,83,9,0.28)',
-                'linkColor'       => '#b45309',
-                'footerBg'        => '#fffbeb',
-                'footerGradient'  => 'linear-gradient(110deg,#fffbeb 0%,#fef3c7 100%)',
-                'footerBorder'    => '#fcd34d',
-                'footerText'      => '#92400e',
+                'headerSub2Text' => 'HÓA ĐƠN ĐIỆN TỬ &amp; CHỨNG NHẬN THẺ HỘI VIÊN VÀNG',
+                'accentBarBg' => '#fbbf24',
+                'accentGradient' => 'linear-gradient(90deg,#fbbf24 0%,#f59e0b 50%,#fde68a 100%)',
+                'badgeBg' => '#fef3c7',
+                'badgeBorder' => '#f59e0b',
+                'badgeTextColor' => '#92400e',
+                'badgeLabel' => '&#9733; HẠNG VÀNG (GOLDEN RACKET) · KÍCH HOẠT TỰ ĐỘNG 24/7',
+                'headingColor' => '#92400e',
+                'certBgColor' => '#fffbeb',
+                'certBgGradient' => 'linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%)',
+                'certBorder' => '#d97706',
+                'certLabelColor' => '#b45309',
+                'certCodeColor' => '#78350f',
+                'certTierColor' => '#b45309',
+                'sectionColor' => '#92400e',
+                'tableBorder' => '#fcd34d',
+                'rowAltBg' => '#fffbeb',
+                'discountColor' => '#b45309',
+                'totalRowBg' => '#fef3c7',
+                'totalRowText' => '#92400e',
+                'btnBgColor' => '#b45309',
+                'btnGradient' => 'linear-gradient(120deg,#92400e 0%,#d97706 60%,#f59e0b 100%)',
+                'btnShadow' => '0 8px 20px rgba(180,83,9,0.28)',
+                'linkColor' => '#b45309',
+                'footerBg' => '#fffbeb',
+                'footerGradient' => 'linear-gradient(110deg,#fffbeb 0%,#fef3c7 100%)',
+                'footerBorder' => '#fcd34d',
+                'footerText' => '#92400e',
             ],
             default => [
-                'outerBgColor'    => '#e2e8f0',
+                'outerBgColor' => '#e2e8f0',
                 'outerBgGradient' => 'linear-gradient(140deg,#cbd5e1 0%,#f1f5f9 55%,#f8fafc 100%)',
-                'cardBorder'      => '#94a3b8',
-                'cardShadow'      => '0 20px 50px rgba(71,85,105,0.15)',
-                'headerBgColor'   => '#475569',
-                'headerGradient'  => 'linear-gradient(135deg,#334155 0%,#475569 55%,#64748b 100%)',
+                'cardBorder' => '#94a3b8',
+                'cardShadow' => '0 20px 50px rgba(71,85,105,0.15)',
+                'headerBgColor' => '#475569',
+                'headerGradient' => 'linear-gradient(135deg,#334155 0%,#475569 55%,#64748b 100%)',
                 'headerSub1Color' => '#e2e8f0',
                 'headerSub2Color' => '#f8fafc',
-                'headerSub2Text'  => 'HÓA ĐƠN ĐIỆN TỬ &amp; CHỨNG NHẬN THẺ HỘI VIÊN BẠC',
-                'accentBarBg'     => '#94a3b8',
-                'accentGradient'  => 'linear-gradient(90deg,#64748b 0%,#cbd5e1 50%,#94a3b8 100%)',
-                'badgeBg'         => '#f1f5f9',
-                'badgeBorder'     => '#94a3b8',
-                'badgeTextColor'  => '#334155',
-                'badgeLabel'      => '&#10022; HẠNG BẠC (SILVER MEMBER) · KÍCH HOẠT TỰ ĐỘNG 24/7',
-                'headingColor'    => '#334155',
-                'certBgColor'     => '#f8fafc',
-                'certBgGradient'  => 'linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%)',
-                'certBorder'      => '#64748b',
-                'certLabelColor'  => '#475569',
-                'certCodeColor'   => '#1e293b',
-                'certTierColor'   => '#334155',
-                'sectionColor'    => '#334155',
-                'tableBorder'     => '#cbd5e1',
-                'rowAltBg'        => '#f8fafc',
-                'discountColor'   => '#334155',
-                'totalRowBg'      => '#e2e8f0',
-                'totalRowText'    => '#1e293b',
-                'btnBgColor'      => '#475569',
-                'btnGradient'     => 'linear-gradient(120deg,#334155 0%,#475569 60%,#64748b 100%)',
-                'btnShadow'       => '0 8px 20px rgba(71,85,105,0.25)',
-                'linkColor'       => '#475569',
-                'footerBg'        => '#f1f5f9',
-                'footerGradient'  => 'linear-gradient(110deg,#f8fafc 0%,#e2e8f0 100%)',
-                'footerBorder'    => '#cbd5e1',
-                'footerText'      => '#475569',
+                'headerSub2Text' => 'HÓA ĐƠN ĐIỆN TỬ &amp; CHỨNG NHẬN THẺ HỘI VIÊN BẠC',
+                'accentBarBg' => '#94a3b8',
+                'accentGradient' => 'linear-gradient(90deg,#64748b 0%,#cbd5e1 50%,#94a3b8 100%)',
+                'badgeBg' => '#f1f5f9',
+                'badgeBorder' => '#94a3b8',
+                'badgeTextColor' => '#334155',
+                'badgeLabel' => '&#10022; HẠNG BẠC (SILVER MEMBER) · KÍCH HOẠT TỰ ĐỘNG 24/7',
+                'headingColor' => '#334155',
+                'certBgColor' => '#f8fafc',
+                'certBgGradient' => 'linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%)',
+                'certBorder' => '#64748b',
+                'certLabelColor' => '#475569',
+                'certCodeColor' => '#1e293b',
+                'certTierColor' => '#334155',
+                'sectionColor' => '#334155',
+                'tableBorder' => '#cbd5e1',
+                'rowAltBg' => '#f8fafc',
+                'discountColor' => '#334155',
+                'totalRowBg' => '#e2e8f0',
+                'totalRowText' => '#1e293b',
+                'btnBgColor' => '#475569',
+                'btnGradient' => 'linear-gradient(120deg,#334155 0%,#475569 60%,#64748b 100%)',
+                'btnShadow' => '0 8px 20px rgba(71,85,105,0.25)',
+                'linkColor' => '#475569',
+                'footerBg' => '#f1f5f9',
+                'footerGradient' => 'linear-gradient(110deg,#f8fafc 0%,#e2e8f0 100%)',
+                'footerBorder' => '#cbd5e1',
+                'footerText' => '#475569',
             ],
         };
 
@@ -1149,15 +1180,15 @@ function payment_send_membership_confirmation_email(PDO $pdo, int $membershipId)
             ? '<img src="cid:godminton-logo" width="175" height="118" alt="GODMINTON" style="display:block;width:175px;max-width:100%;height:auto;border:0;margin:0 auto;">'
             : '<span style="font-size:26px;font-weight:800;color:#0d9488;letter-spacing:1px;">GODMINTON</span>';
 
-        $userNameSafe      = $e($mem['user_name']);
-        $userEmailSafe     = $e($mem['user_email']);
-        $userPhoneSafe     = $e($mem['user_phone'] ?: '—');
-        $packageTitleSafe  = $e($mem['package_title']);
-        $tierLabelSafe     = $e($tierLabel);
-        $memCodeSafe       = $e($membershipCode);
-        $payCodeSafe       = $e($paymentCode);
-        $safeProfileUrl    = $e($profileUrl);
-        $safeCourtsUrl     = $e($courtsUrl);
+        $userNameSafe = $e($mem['user_name']);
+        $userEmailSafe = $e($mem['user_email']);
+        $userPhoneSafe = $e($mem['user_phone'] ?: '—');
+        $packageTitleSafe = $e($mem['package_title']);
+        $tierLabelSafe = $e($tierLabel);
+        $memCodeSafe = $e($membershipCode);
+        $payCodeSafe = $e($paymentCode);
+        $safeProfileUrl = $e($profileUrl);
+        $safeCourtsUrl = $e($courtsUrl);
 
         $html = <<<HTML
 <!doctype html>
@@ -1296,7 +1327,8 @@ HTML;
         if (is_file($logoPath)) {
             $mail->addEmbeddedImage($logoPath, 'godminton-logo', 'godminton-logo.jpg', 'base64', 'image/jpeg');
         }
-        $mail->addAddress($mem['user_email'], (string)$mem['user_name']);
+
+        $mail->addAddress($mem['user_email'], (string) $mem['user_name']);
         $mail->Subject = 'Kích hoạt thành công ' . $tierLabel . ' (#' . $membershipCode . ') - GODMINTON';
         $mail->isHTML(true);
         $mail->Body = $html;
@@ -1312,59 +1344,63 @@ HTML;
  * hệ thống tự động kéo danh sách giao dịch mới nhất từ SePay API khi client đang chờ thanh toán.
  * Nhờ đó kể cả khi chạy ở localhost hoặc Webhook chưa cấu hình đúng, đơn vẫn tự xác nhận tức thì.
  */
-function payment_sync_from_sepay_api(PDO $pdo): void
-{
-    $apiToken = trim((string)(getenv('SEPAY_API_TOKEN') ?: ''));
+function payment_sync_from_sepay_api(PDO $pdo): void {
+    $apiToken = trim((string) (getenv('SEPAY_API_TOKEN') ?: ''));
     if ($apiToken === '' || !function_exists('curl_init')) {
         return;
     }
+
     try {
         $ch = curl_init('https://my.sepay.vn/userapi/transactions/list?limit=15');
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 4,
+            CURLOPT_TIMEOUT => 4,
             CURLOPT_CONNECTTIMEOUT => 2,
-            CURLOPT_HTTPHEADER     => [
+            CURLOPT_HTTPHEADER => [
                 'Authorization: Bearer ' . $apiToken,
                 'Content-Type: application/json',
             ],
         ]);
         $raw = curl_exec($ch);
-        $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         if ($httpCode !== 200 || !$raw) {
             return;
         }
-        $data = json_decode((string)$raw, true);
+
+        $data = json_decode((string) $raw, true);
         if (!is_array($data) || empty($data['transactions']) || !is_array($data['transactions'])) {
             return;
         }
+
         foreach ($data['transactions'] as $tx) {
-            $amountIn = isset($tx['amount_in']) ? (int)round((float)$tx['amount_in']) : 0;
+            $amountIn = isset($tx['amount_in']) ? (int) round((float) $tx['amount_in']) : 0;
             if ($amountIn <= 0) {
                 continue;
             }
+
             $payload = [
-                'id'              => $tx['id'] ?? null,
-                'gateway'         => $tx['bank_brand_name'] ?? 'MBBank',
+                'id' => $tx['id'] ?? null,
+                'gateway' => $tx['bank_brand_name'] ?? 'MBBank',
                 'transactionDate' => $tx['transaction_date'] ?? null,
-                'accountNumber'   => $tx['account_number'] ?? null,
-                'subAccount'      => $tx['sub_account'] ?? null,
-                'code'            => $tx['code'] ?? null,
-                'content'         => $tx['transaction_content'] ?? '',
-                'transferType'    => 'in',
-                'description'     => $tx['transaction_content'] ?? '',
-                'transferAmount'  => $amountIn,
-                'accumulated'     => isset($tx['accumulated']) ? (int)round((float)$tx['accumulated']) : 0,
-                'referenceCode'   => $tx['reference_number'] ?? null,
+                'accountNumber' => $tx['account_number'] ?? null,
+                'subAccount' => $tx['sub_account'] ?? null,
+                'code' => $tx['code'] ?? null,
+                'content' => $tx['transaction_content'] ?? '',
+                'transferType' => 'in',
+                'description' => $tx['transaction_content'] ?? '',
+                'transferAmount' => $amountIn,
+                'accumulated' => isset($tx['accumulated']) ? (int) round((float) $tx['accumulated']) : 0,
+                'referenceCode' => $tx['reference_number'] ?? null,
             ];
             $res = payment_process_webhook($pdo, $payload);
             if (!empty($res['confirmed'])) {
                 if (!empty($res['booking_id'])) {
-                    payment_send_confirmation_email($pdo, (int)$res['booking_id']);
+                    payment_send_confirmation_email($pdo, (int) $res['booking_id']);
                 }
+
                 if (!empty($res['membership_id'])) {
-                    payment_send_membership_confirmation_email($pdo, (int)$res['membership_id']);
+                    payment_send_membership_confirmation_email($pdo, (int) $res['membership_id']);
                 }
             }
         }

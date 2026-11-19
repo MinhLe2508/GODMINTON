@@ -3,3 +3,7 @@ RedirectMatch 403 "(?i)/(?:\.git|config|database|docs|includes|report|scratch|te
 <FilesMatch "^(\.env(?:\..*)?|composer\.(?:json|lock))$">
     Require all denied
 </FilesMatch>
+
+<Files "KIEM_THU.cjs">
+    Require all denied
+</Files>

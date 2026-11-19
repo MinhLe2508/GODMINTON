@@ -1,4 +1,5 @@
 <?php
+
 /**
  * includes/auth-session.php
  * Quản lý phiên đăng nhập (PHP Session) & Ghi nhớ đăng nhập (Remember Me) bảo mật cao:
@@ -11,18 +12,22 @@
 const GOD_REMEMBER_DAYS = 30;
 
 function god_auth_is_https(): bool {
-    if (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') {
+    if (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off') {
         return true;
     }
-    if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string)$_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
+
+    if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
         return true;
     }
-    if (!empty($_SERVER['REQUEST_SCHEME']) && strtolower((string)$_SERVER['REQUEST_SCHEME']) === 'https') {
+
+    if (!empty($_SERVER['REQUEST_SCHEME']) && strtolower((string) $_SERVER['REQUEST_SCHEME']) === 'https') {
         return true;
     }
-    if ((int)($_SERVER['SERVER_PORT'] ?? 0) === 443) {
+
+    if ((int) ($_SERVER['SERVER_PORT'] ?? 0) === 443) {
         return true;
     }
+
     return false;
 }
 
@@ -35,7 +40,7 @@ function god_auth_saved_login_cookie_name(): string {
 }
 
 function god_auth_cipher_key(): string {
-    $secret = (string)(getenv('APP_KEY') ?: getenv('SEPAY_WEBHOOK_API_KEY') ?: getenv('SMTP_PASS') ?: 'godminton-default-secret-key-2026');
+    $secret = (string) (getenv('APP_KEY') ?: getenv('SEPAY_WEBHOOK_API_KEY') ?: getenv('SMTP_PASS') ?: 'godminton-default-secret-key-2026');
     return hash_hmac('sha256', 'godminton-aes-256-gcm-login-v1|' . __DIR__, $secret, true);
 }
 
@@ -53,9 +58,9 @@ function god_auth_clear_saved_credentials(): void {
     foreach (['__Host-godminton_saved_login', 'godminton_saved_login'] as $name) {
         if (isset($_COOKIE[$name]) || $name === god_auth_saved_login_cookie_name()) {
             setcookie($name, '', [
-                'expires'  => time() - 3600,
-                'path'     => '/',
-                'secure'   => $name === '__Host-godminton_saved_login' ? true : $isHttps,
+                'expires' => time() - 3600,
+                'path' => '/',
+                'secure' => $name === '__Host-godminton_saved_login' ? true : $isHttps,
                 'httponly' => true,
                 'samesite' => 'Lax',
             ]);
@@ -73,9 +78,9 @@ function god_auth_set_remember_cookie(string $value, int $expiresAt): void {
     $isHttps = god_auth_is_https();
     $name = god_auth_remember_cookie_name();
     setcookie($name, $value, [
-        'expires'  => $expiresAt,
-        'path'     => '/',
-        'secure'   => $isHttps,
+        'expires' => $expiresAt,
+        'path' => '/',
+        'secure' => $isHttps,
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
@@ -87,9 +92,9 @@ function god_auth_clear_remember_cookie(): void {
     foreach (['__Host-godminton_remember', 'godminton_remember'] as $name) {
         if (isset($_COOKIE[$name]) || $name === god_auth_remember_cookie_name()) {
             setcookie($name, '', [
-                'expires'  => time() - 3600,
-                'path'     => '/',
-                'secure'   => $name === '__Host-godminton_remember' ? true : $isHttps,
+                'expires' => time() - 3600,
+                'path' => '/',
+                'secure' => $name === '__Host-godminton_remember' ? true : $isHttps,
                 'httponly' => true,
                 'samesite' => 'Lax',
             ]);
@@ -104,6 +109,7 @@ function god_auth_get_remember_cookie(): string {
             return trim($_COOKIE[$name]);
         }
     }
+
     return '';
 }
 
@@ -112,6 +118,7 @@ function god_auth_ensure_remember_schema(PDO $pdo): bool {
     if ($ensured) {
         return true;
     }
+
     try {
         $pdo->exec("
             CREATE TABLE IF NOT EXISTS `remember_tokens` (
@@ -144,7 +151,8 @@ function god_auth_issue_remember_token(PDO $pdo, array $user, int $days = GOD_RE
     if (!god_auth_ensure_remember_schema($pdo)) {
         return;
     }
-    $userId = (int)($user['id'] ?? 0);
+
+    $userId = (int) ($user['id'] ?? 0);
     if ($userId <= 0) {
         return;
     }
@@ -168,9 +176,9 @@ function god_auth_issue_remember_token(PDO $pdo, array $user, int $days = GOD_RE
         $selector = bin2hex(random_bytes(12));   // 24 ký tự hex
         $validator = bin2hex(random_bytes(32));  // 64 ký tự hex
         $validatorHash = hash('sha256', $validator);
-        $sessionVersion = (int)($user['session_version'] ?? 0);
-        $uaHash = hash('sha256', (string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
-        $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+        $sessionVersion = (int) ($user['session_version'] ?? 0);
+        $uaHash = hash('sha256', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
+        $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
         $ttlSeconds = max(86400, $days * 86400);
         $expiresAt = time() + $ttlSeconds;
         $expiresSql = date('Y-m-d H:i:s', $expiresAt);
@@ -193,7 +201,7 @@ function god_auth_revoke_remember(?PDO $pdo = null, bool $allDevices = false): v
     if ($pdo && god_auth_ensure_remember_schema($pdo)) {
         try {
             if ($allDevices && !empty($_SESSION['user_id'])) {
-                $pdo->prepare('DELETE FROM remember_tokens WHERE user_id = ?')->execute([(int)$_SESSION['user_id']]);
+                $pdo->prepare('DELETE FROM remember_tokens WHERE user_id = ?')->execute([(int) $_SESSION['user_id']]);
             } elseif ($raw !== '' && preg_match('/^([a-f0-9]{24}):([a-f0-9]{64})$/', $raw, $m)) {
                 $pdo->prepare('DELETE FROM remember_tokens WHERE selector = ?')->execute([$m[1]]);
             }
@@ -201,6 +209,7 @@ function god_auth_revoke_remember(?PDO $pdo = null, bool $allDevices = false): v
             error_log('[GODMINTON remember_revoke] ' . $e->getMessage());
         }
     }
+
     god_auth_clear_remember_cookie();
 }
 
@@ -210,6 +219,7 @@ function god_auth_try_remember(PDO $pdo): ?array {
         if ($raw !== '') {
             god_auth_clear_remember_cookie();
         }
+
         return null;
     }
 
@@ -238,18 +248,18 @@ function god_auth_try_remember(PDO $pdo): ?array {
             return null;
         }
 
-        $expiresTs = strtotime((string)$row['expires_at']);
+        $expiresTs = strtotime((string) $row['expires_at']);
         if ($expiresTs === false || $expiresTs <= time()) {
-            $pdo->prepare('DELETE FROM remember_tokens WHERE id = ?')->execute([(int)$row['token_id']]);
+            $pdo->prepare('DELETE FROM remember_tokens WHERE id = ?')->execute([(int) $row['token_id']]);
             god_auth_clear_remember_cookie();
             return null;
         }
 
         // So sánh băm thời gian hằng số (Constant-time comparison)
         $givenHash = hash('sha256', $validator);
-        if (!hash_equals((string)$row['validator_hash'], $givenHash)) {
+        if (!hash_equals((string) $row['validator_hash'], $givenHash)) {
             // Phát hiện selector hợp lệ nhưng validator sai -> nguy cơ đánh cắp/replay cookie -> thu hồi toàn bộ token của user!
-            $pdo->prepare('DELETE FROM remember_tokens WHERE user_id = ?')->execute([(int)$row['user_id']]);
+            $pdo->prepare('DELETE FROM remember_tokens WHERE user_id = ?')->execute([(int) $row['user_id']]);
             god_auth_clear_remember_cookie();
             return null;
         }
@@ -259,9 +269,9 @@ function god_auth_try_remember(PDO $pdo): ?array {
             !$row['is_verified']
             || $row['account_status'] !== 'active'
             || $row['deleted_at'] !== null
-            || (int)$row['token_session_version'] !== (int)$row['session_version']
+            || (int) $row['token_session_version'] !== (int) $row['session_version']
         ) {
-            $pdo->prepare('DELETE FROM remember_tokens WHERE id = ?')->execute([(int)$row['token_id']]);
+            $pdo->prepare('DELETE FROM remember_tokens WHERE id = ?')->execute([(int) $row['token_id']]);
             god_auth_clear_remember_cookie();
             return null;
         }
@@ -269,37 +279,38 @@ function god_auth_try_remember(PDO $pdo): ?array {
         // Xoay vòng validator (Token Rotation) ngay khi khôi phục phiên để mỗi validator chỉ dùng 1 lần
         $newValidator = bin2hex(random_bytes(32));
         $newHash = hash('sha256', $newValidator);
-        $uaHash = hash('sha256', (string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
+        $uaHash = hash('sha256', (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
         $pdo->prepare('UPDATE remember_tokens SET validator_hash = ?, user_agent_hash = ?, last_used_at = NOW() WHERE id = ?')
-            ->execute([$newHash, $uaHash, (int)$row['token_id']]);
+            ->execute([$newHash, $uaHash, (int) $row['token_id']]);
 
         god_auth_set_remember_cookie($selector . ':' . $newValidator, $expiresTs);
 
         // Thiết lập lại PHP Session an toàn
         $now = time();
         session_regenerate_id(true);
-        $_SESSION['user_id'] = (int)$row['id'];
-        $_SESSION['auth_version'] = (int)$row['session_version'];
+        $_SESSION['user_id'] = (int) $row['id'];
+        $_SESSION['auth_version'] = (int) $row['session_version'];
         $_SESSION['authenticated_at'] = $now;
         $_SESSION['last_activity'] = $now;
         $_SESSION['remember_me'] = true;
         if (empty($_SESSION['csrf_token'])) {
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         }
+
         foreach (['name', 'email', 'phone', 'role'] as $key) {
             $_SESSION[$key] = $row[$key] ?? '';
         }
 
         return [
-            'id'             => (int)$row['id'],
-            'name'           => $row['name'],
-            'email'          => $row['email'],
-            'phone'          => $row['phone'],
-            'role'           => $row['role'],
-            'avatar_url'     => $row['avatar_url'],
-            'created_at'     => $row['created_at'],
+            'id' => (int) $row['id'],
+            'name' => $row['name'],
+            'email' => $row['email'],
+            'phone' => $row['phone'],
+            'role' => $row['role'],
+            'avatar_url' => $row['avatar_url'],
+            'created_at' => $row['created_at'],
             'account_status' => $row['account_status'],
-            'owner_intent'   => $row['owner_intent'],
+            'owner_intent' => $row['owner_intent'],
         ];
     } catch (Throwable $e) {
         error_log('[GODMINTON remember_restore] ' . $e->getMessage());
@@ -316,16 +327,18 @@ function god_auth_start(): void {
         ini_set('session.cookie_httponly', '1');
         session_set_cookie_params([
             'lifetime' => 0,
-            'path'     => '/',
-            'secure'   => $isHttps,
+            'path' => '/',
+            'secure' => $isHttps,
             'httponly' => true,
             'samesite' => 'Lax',
         ]);
         session_start();
     }
+
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
+
     // Tự động khôi phục phiên từ cookie Ghi nhớ đăng nhập nếu trang đã nạp $pdo
     if (empty($_SESSION['user_id']) && god_auth_get_remember_cookie() !== '') {
         global $pdo;
@@ -340,16 +353,18 @@ function god_auth_clear(bool $clearRememberCookie = true): void {
         global $pdo;
         god_auth_revoke_remember((isset($pdo) && $pdo instanceof PDO) ? $pdo : null, false);
     }
+
     $_SESSION = [];
     if (session_status() === PHP_SESSION_ACTIVE) {
         session_regenerate_id(true);
     }
+
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
 function god_auth_user(PDO $pdo): ?array {
     god_auth_start();
-    $id = (int)($_SESSION['user_id'] ?? 0);
+    $id = (int) ($_SESSION['user_id'] ?? 0);
     if (!$id) {
         return god_auth_try_remember($pdo);
     }
@@ -365,15 +380,15 @@ function god_auth_user(PDO $pdo): ?array {
         || !$u['is_verified']
         || $u['account_status'] !== 'active'
         || $u['deleted_at'] !== null
-        || (int)$u['session_version'] !== (int)($_SESSION['auth_version'] ?? 0)
+        || (int) $u['session_version'] !== (int) ($_SESSION['auth_version'] ?? 0)
     ) {
         god_auth_clear(true);
         return null;
     }
 
     // Kiểm tra timeout phiên làm việc (30 phút không tương tác hoặc 12 giờ phiên ngắn hạn)
-    $idleExpired = ($now - (int)($_SESSION['last_activity'] ?? $now)) > 1800;
-    $absExpired  = ($now - (int)($_SESSION['authenticated_at'] ?? $now)) > 43200;
+    $idleExpired = ($now - (int) ($_SESSION['last_activity'] ?? $now)) > 1800;
+    $absExpired = ($now - (int) ($_SESSION['authenticated_at'] ?? $now)) > 43200;
     if ($idleExpired || $absExpired) {
         // Nếu người dùng có cookie Ghi nhớ đăng nhập hợp lệ -> xoay vòng khóa và gia hạn phiên tự động
         if (god_auth_get_remember_cookie() !== '') {
@@ -382,30 +397,33 @@ function god_auth_user(PDO $pdo): ?array {
                 return $restored;
             }
         }
+
         god_auth_clear(true);
         return null;
     }
 
-    $_SESSION['auth_version'] = (int)($_SESSION['auth_version'] ?? 0);
+    $_SESSION['auth_version'] = (int) ($_SESSION['auth_version'] ?? 0);
     $_SESSION['last_activity'] = $now;
     $_SESSION['authenticated_at'] ??= $now;
     foreach (['name', 'email', 'phone', 'role', 'avatar_url'] as $key) {
         $_SESSION[$key] = $u[$key] ?? '';
     }
+
     unset($u['session_version'], $u['is_verified'], $u['deleted_at']);
-    $u['id'] = (int)$u['id'];
+    $u['id'] = (int) $u['id'];
     return $u;
 }
 
 function god_auth_login(array $user, ?PDO $pdo = null, bool $remember = false): void {
     god_auth_clear(true);
-    $_SESSION['user_id'] = (int)$user['id'];
-    $_SESSION['auth_version'] = (int)$user['session_version'];
+    $_SESSION['user_id'] = (int) $user['id'];
+    $_SESSION['auth_version'] = (int) $user['session_version'];
     $_SESSION['authenticated_at'] = $_SESSION['last_activity'] = time();
     $_SESSION['remember_me'] = $remember;
     foreach (['name', 'email', 'phone', 'role', 'avatar_url'] as $key) {
         $_SESSION[$key] = $user[$key] ?? '';
     }
+
     if ($remember && $pdo instanceof PDO) {
         god_auth_issue_remember_token($pdo, $user, GOD_REMEMBER_DAYS);
     }

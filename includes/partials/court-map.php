@@ -11,7 +11,7 @@
  *    include __DIR__ . '/includes/partials/court-map.php';
  */
 
-$initialMapData = isset($courtMapData) ? (is_array($courtMapData) && isset($courtMapData['id']) ? [$courtMapData] : (array)$courtMapData) : [];
+$initialMapData = isset($courtMapData) ? (is_array($courtMapData) && isset($courtMapData['id']) ? [$courtMapData] : (array) $courtMapData) : [];
 $mapContainerId = 'courtMapContainer_' . uniqid();
 $encodedData = json_encode($initialMapData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
 ?>

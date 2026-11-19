@@ -1,4 +1,5 @@
 <?php
+
 /** Shared Web Push sender & automatic reminder dispatcher. Call only after config/db.php has loaded .env. */
 if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
     require_once __DIR__ . '/../vendor/autoload.php';
@@ -6,7 +7,8 @@ if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
 
 function god_push_ensure_schema(PDO $pdo): void {
     static $ensured = false;
-    if ($ensured) return;
+    if ($ensured)
+        return;
     $ensured = true;
     try {
         $pdo->exec("CREATE TABLE IF NOT EXISTS push_subscriptions (
@@ -46,9 +48,11 @@ function god_push_has_driver(): bool {
 }
 
 function god_push_sender(): ?\Minishlink\WebPush\WebPush {
-    if (!god_push_has_driver()) return null;
+    if (!god_push_has_driver())
+        return null;
     static $sender = null;
-    if ($sender instanceof \Minishlink\WebPush\WebPush) return $sender;
+    if ($sender instanceof \Minishlink\WebPush\WebPush)
+        return $sender;
     try {
         if (DIRECTORY_SEPARATOR === '\\' && !getenv('OPENSSL_CONF')) {
             foreach (['D:/xampp/apache/conf/openssl.cnf', 'C:/xampp/apache/conf/openssl.cnf', dirname(PHP_BINARY) . '/extras/ssl/openssl.cnf'] as $cnf) {
@@ -58,10 +62,12 @@ function god_push_sender(): ?\Minishlink\WebPush\WebPush {
                 }
             }
         }
+
         $vapid = require __DIR__ . '/../config/vapid.php';
         if (empty($vapid['publicKey']) || empty($vapid['privateKey'])) {
             return null;
         }
+
         $sender = new \Minishlink\WebPush\WebPush([
             'VAPID' => [
                 'subject' => $vapid['subject'],
@@ -78,7 +84,8 @@ function god_push_sender(): ?\Minishlink\WebPush\WebPush {
 
 /** Send to only the supplied database rows; expired endpoints are removed. */
 function god_push_dispatch(PDO $pdo, array $rows, array $payload): array {
-    if (!$rows) return ['accepted' => 0, 'expired' => 0, 'failed' => 0];
+    if (!$rows)
+        return ['accepted' => 0, 'expired' => 0, 'failed' => 0];
 
     // Nếu môi trường chưa cài đặt minishlink/web-push qua Composer,
     // trả về fallback_demo để client hiển thị thông báo trực tiếp qua Service Worker/Notification API.
@@ -95,14 +102,15 @@ function god_push_dispatch(PDO $pdo, array $rows, array $payload): array {
     try {
         $endpoints = [];
         foreach ($rows as $row) {
-            $endpoint = (string)($row['endpoint'] ?? '');
-            if ($endpoint === '') continue;
+            $endpoint = (string) ($row['endpoint'] ?? '');
+            if ($endpoint === '')
+                continue;
             $endpoints[$endpoint] = true;
             $sender->queueNotification(
                 \Minishlink\WebPush\Subscription::create([
                     'endpoint' => $endpoint,
-                    'publicKey' => (string)$row['p256dh'],
-                    'authToken' => (string)$row['auth'],
+                    'publicKey' => (string) $row['p256dh'],
+                    'authToken' => (string) $row['auth'],
                 ]),
                 json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
             );
@@ -118,10 +126,11 @@ function god_push_dispatch(PDO $pdo, array $rows, array $payload): array {
                 $expired++;
             } else {
                 $failed++;
-                $status = $report->getResponse() ? (string)$report->getResponse()->getStatusCode() : 'transport';
+                $status = $report->getResponse() ? (string) $report->getResponse()->getStatusCode() : 'transport';
                 error_log('[GODMINTON Push] Delivery failed (HTTP ' . $status . ').');
             }
         }
+
         return compact('accepted', 'expired', 'failed');
     } catch (\Throwable $e) {
         error_log('[GODMINTON Push] Dispatch exception: ' . $e->getMessage());
@@ -135,10 +144,12 @@ function god_push_dispatch(PDO $pdo, array $rows, array $payload): array {
 }
 
 function god_push_endpoint_is_allowed(string $endpoint): bool {
-    if (strlen($endpoint) > 2048) return false;
+    if (strlen($endpoint) > 2048)
+        return false;
     $parts = parse_url($endpoint);
-    if (!is_array($parts) || strtolower((string)($parts['scheme'] ?? '')) !== 'https' || empty($parts['host'])) return false;
-    $host = strtolower(rtrim((string)$parts['host'], '.'));
+    if (!is_array($parts) || strtolower((string) ($parts['scheme'] ?? '')) !== 'https' || empty($parts['host']))
+        return false;
+    $host = strtolower(rtrim((string) $parts['host'], '.'));
     return $host === 'fcm.googleapis.com'
         || $host === 'web.push.apple.com'
         || $host === 'push.services.mozilla.com'
@@ -155,10 +166,11 @@ function god_push_dispatch_due_reminders(PDO $pdo, ?int $onlyUserId = null, bool
 
     $lock = 0;
     try {
-        $lock = (int)$pdo->query("SELECT GET_LOCK('godminton_push_reminders', 0)")->fetchColumn();
+        $lock = (int) $pdo->query("SELECT GET_LOCK('godminton_push_reminders', 0)")->fetchColumn();
     } catch (\Throwable $e) {
         return ['sent' => 0, 'failed' => 0, 'upcoming_count' => 0, 'skipped_lock' => true, 'notifications' => []];
     }
+
     if ($lock !== 1) {
         return ['sent' => 0, 'failed' => 0, 'upcoming_count' => 0, 'skipped_lock' => true, 'notifications' => []];
     }
@@ -195,8 +207,9 @@ function god_push_dispatch_due_reminders(PDO $pdo, ?int $onlyUserId = null, bool
         $markFailed = $pdo->prepare("UPDATE push_reminder_dispatches SET status = 'failed', last_error = ? WHERE id = ?");
 
         foreach ($bookings as $booking) {
-            $bookingUserId = (int)($booking['user_id'] ?? 0);
-            if ($bookingUserId <= 0) continue;
+            $bookingUserId = (int) ($booking['user_id'] ?? 0);
+            if ($bookingUserId <= 0)
+                continue;
 
             $subscriptionsQuery = $pdo->prepare('SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ? ORDER BY id DESC');
             $subscriptionsQuery->execute([$bookingUserId]);
@@ -204,23 +217,26 @@ function god_push_dispatch_due_reminders(PDO $pdo, ?int $onlyUserId = null, bool
 
             // Fallback: nếu người dùng đang online trên trình duyệt nhưng subscription cũ có user_id IS NULL,
             // vẫn cho phép kiểm tra trạng thái nếu $onlyUserId trùng khớp
-            if (!$subscriptions) continue;
+            if (!$subscriptions)
+                continue;
             if ($dryRun) {
                 continue;
             }
 
-            $createDispatch->execute([(int)$booking['id']]);
-            $findDispatch->execute([(int)$booking['id']]);
+            $createDispatch->execute([(int) $booking['id']]);
+            $findDispatch->execute([(int) $booking['id']]);
             $dispatch = $findDispatch->fetch();
-            if (!$dispatch || $dispatch['status'] === 'sent' || (int)$dispatch['attempts'] >= 3) continue;
+            if (!$dispatch || $dispatch['status'] === 'sent' || (int) $dispatch['attempts'] >= 3)
+                continue;
 
-            $beginAttempt->execute([(int)$dispatch['id']]);
-            if ($beginAttempt->rowCount() !== 1) continue;
+            $beginAttempt->execute([(int) $dispatch['id']]);
+            if ($beginAttempt->rowCount() !== 1)
+                continue;
 
             try {
-                $startsAt = new DateTimeImmutable((string)$booking['starts_at']);
-                $secondsLeft = max(60, (int)($booking['seconds_until_start'] ?? 300));
-                $minutesLeft = max(1, (int)ceil($secondsLeft / 60));
+                $startsAt = new DateTimeImmutable((string) $booking['starts_at']);
+                $secondsLeft = max(60, (int) ($booking['seconds_until_start'] ?? 300));
+                $minutesLeft = max(1, (int) ceil($secondsLeft / 60));
 
                 $payload = [
                     'title' => sprintf('GODMINTON · Sắp đến giờ vào sân (còn %d phút)', $minutesLeft),
@@ -235,26 +251,26 @@ function god_push_dispatch_due_reminders(PDO $pdo, ?int $onlyUserId = null, bool
                     'badge' => 'assets/img/icons/badge-72.png',
                     'data' => [
                         'url' => 'history.php',
-                        'booking_id' => (int)$booking['id'],
-                        'booking_code' => (string)($booking['booking_code'] ?? ''),
+                        'booking_id' => (int) $booking['id'],
+                        'booking_code' => (string) ($booking['booking_code'] ?? ''),
                         'timestamp' => time(),
                     ],
                 ];
 
                 $delivery = god_push_dispatch($pdo, $subscriptions, $payload);
                 if ($delivery['accepted'] > 0 || !empty($delivery['fallback_demo'])) {
-                    $markSent->execute([(int)$dispatch['id']]);
+                    $markSent->execute([(int) $dispatch['id']]);
                     $sentBookings++;
                     if ($onlyUserId !== null && $bookingUserId === $onlyUserId) {
                         $userNotifications[] = $payload;
                     }
                 } else {
-                    $markFailed->execute(['Push Service không nhận thông báo ở lần gửi này.', (int)$dispatch['id']]);
+                    $markFailed->execute(['Push Service không nhận thông báo ở lần gửi này.', (int) $dispatch['id']]);
                     $failedBookings++;
                 }
             } catch (\Throwable $e) {
-                error_log('[GODMINTON Push] Reminder failed for booking #' . (int)$booking['id'] . ': ' . $e->getMessage());
-                $markFailed->execute(['Lỗi cấu hình hoặc gửi Push Service.', (int)$dispatch['id']]);
+                error_log('[GODMINTON Push] Reminder failed for booking #' . (int) $booking['id'] . ': ' . $e->getMessage());
+                $markFailed->execute(['Lỗi cấu hình hoặc gửi Push Service.', (int) $dispatch['id']]);
                 $failedBookings++;
             }
         }
@@ -263,7 +279,8 @@ function god_push_dispatch_due_reminders(PDO $pdo, ?int $onlyUserId = null, bool
     } finally {
         try {
             $pdo->query("SELECT RELEASE_LOCK('godminton_push_reminders')");
-        } catch (\Throwable $_) {}
+        } catch (\Throwable $_) {
+        }
     }
 
     return [
@@ -290,35 +307,35 @@ function god_push_broadcast_new_post(PDO $pdo, array $post): array {
         return ['accepted' => 0, 'expired' => 0, 'failed' => 0];
     }
 
-    $type = (string)($post['type'] ?? 'announcement');
+    $type = (string) ($post['type'] ?? 'announcement');
     $typePrefix = match ($type) {
-        'event'      => '🏆 Sự kiện mới',
+        'event' => '🏆 Sự kiện mới',
         'membership' => '👑 Ưu đãi Hội viên',
-        default      => '🔔 Thông báo mới',
+        default => '🔔 Thông báo mới',
     };
 
     $title = 'GODMINTON · ' . $typePrefix;
     $voucherHint = !empty($post['voucher_code'])
-        ? sprintf(' (🎁 Tặng mã %s giảm %d%%)', $post['voucher_code'], (int)($post['voucher_discount_percent'] ?? 0))
+        ? sprintf(' (🎁 Tặng mã %s giảm %d%%)', $post['voucher_code'], (int) ($post['voucher_discount_percent'] ?? 0))
         : '';
 
-    $summary = trim((string)($post['summary'] ?? ''));
-    $bodyText = (string)($post['title'] ?? 'Bài viết mới trên Khám phá') . $voucherHint;
+    $summary = trim((string) ($post['summary'] ?? ''));
+    $bodyText = (string) ($post['title'] ?? 'Bài viết mới trên Khám phá') . $voucherHint;
     if ($summary !== '') {
         $bodyText .= ' — ' . mb_strimwidth($summary, 0, 90, '...', 'UTF-8');
     }
 
-    $slug = (string)($post['slug'] ?? '');
+    $slug = (string) ($post['slug'] ?? '');
     $targetUrl = $slug !== '' ? ('post-detail.php?slug=' . rawurlencode($slug)) : 'explore.php';
 
     $payload = [
         'title' => $title,
-        'body'  => $bodyText,
-        'icon'  => !empty($post['cover_image']) ? (string)$post['cover_image'] : 'assets/img/icons/icon-192.png',
+        'body' => $bodyText,
+        'icon' => !empty($post['cover_image']) ? (string) $post['cover_image'] : 'assets/img/icons/icon-192.png',
         'badge' => 'assets/img/icons/badge-72.png',
-        'data'  => [
-            'url'       => $targetUrl,
-            'post_id'   => (int)($post['id'] ?? 0),
+        'data' => [
+            'url' => $targetUrl,
+            'post_id' => (int) ($post['id'] ?? 0),
             'post_slug' => $slug,
             'post_type' => $type,
             'timestamp' => time(),

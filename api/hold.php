@@ -1,5 +1,6 @@
 <?php
-require_once __DIR__.'/../includes/auth-session.php';
+
+require_once __DIR__ . '/../includes/auth-session.php';
 /**
  * api/hold.php
  * POST giữ chỗ 5 phút / huỷ giữ chỗ — Transaction + SELECT ... FOR UPDATE.
@@ -20,20 +21,23 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Headers: Content-Type');
 
 const HOLD_MINUTES = 5;
-const MAX_RETRY    = 3;
+const MAX_RETRY = 3;
 
 function jsonResponse(int $code, array $body): void {
     http_response_code($code);
     if (!isset($body['code'])) {
         $body = ['status' => $body['status'] ?? ($code < 400 ? 'success' : 'error'), 'code' => $code] + $body;
     }
+
     echo json_encode($body, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 /** Ngoại lệ nghiệp vụ: bị ném trong transaction để rollback rồi trả lỗi cho client. */
 class HoldError extends Exception {
-    public function __construct(public int $httpCode, string $message) { parent::__construct($message); }
+    public function __construct(public int $httpCode, string $message) {
+        parent::__construct($message);
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -46,18 +50,20 @@ if (session_status() === PHP_SESSION_NONE) {
     god_auth_start();
     god_auth_user($pdo);
 }
-$currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
+
+$currentUserId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
 session_write_close(); // nhả khoá session để không chặn các request song song của cùng user
 
 if ($currentUserId <= 0) {
     jsonResponse(401, ['message' => 'Vui lòng đăng nhập để thực hiện giữ chỗ sân.']);
 }
 
-$input  = json_decode(file_get_contents('php://input'), true);
+$input = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) {
     $input = $_POST;
 }
-$action = isset($input['action']) ? strtolower(trim((string)$input['action'])) : 'hold';
+
+$action = isset($input['action']) ? strtolower(trim((string) $input['action'])) : 'hold';
 if (!in_array($action, ['hold', 'release'], true)) {
     jsonResponse(422, ['message' => 'Hành động không hợp lệ (chỉ hỗ trợ hold hoặc release).']);
 }
@@ -65,20 +71,22 @@ if (!in_array($action, ['hold', 'release'], true)) {
 // Gom slot_id / slot_ids thành mảng số nguyên dương, bỏ trùng, sắp tăng dần (thứ tự khoá cố định)
 $slotIds = [];
 if (!empty($input['slot_id'])) {
-    $slotIds[] = (int)$input['slot_id'];
+    $slotIds[] = (int) $input['slot_id'];
 }
+
 if (!empty($input['slot_ids']) && is_array($input['slot_ids'])) {
     foreach ($input['slot_ids'] as $sid) {
-        $slotIds[] = (int)$sid;
+        $slotIds[] = (int) $sid;
     }
 }
-$slotIds = array_values(array_unique(array_filter($slotIds, fn($v) => $v > 0)));
+
+$slotIds = array_values(array_unique(array_filter($slotIds, fn ($v) => $v > 0)));
 sort($slotIds);
 
 /** Giá 1 ô 30 phút: price_per_hour / 2, giờ cao điểm 17h–21h phụ thu 7.500đ (khớp slots.php / bookings.php). */
 function slotPrice(array $slot): int {
-    $p = (int)round((float)$slot['price_per_hour'] / 2);
-    $h = (int)substr($slot['start_time'], 0, 2);
+    $p = (int) round((float) $slot['price_per_hour'] / 2);
+    $h = (int) substr($slot['start_time'], 0, 2);
     return ($h >= 17 && $h <= 21) ? $p + 7500 : $p;
 }
 
@@ -86,7 +94,10 @@ function slotPrice(array $slot): int {
 function doHold(PDO $pdo, int $userId, array $slotIds): array {
     $pdo->beginTransaction();
     try {
-        $account=$pdo->prepare("SELECT id FROM users WHERE id=? AND account_status='active' AND deleted_at IS NULL AND is_verified=1 FOR UPDATE");$account->execute([$userId]);if(!$account->fetchColumn())throw new HoldError(401,'Tài khoản không còn hoạt động.');
+        $account = $pdo->prepare("SELECT id FROM users WHERE id=? AND account_status='active' AND deleted_at IS NULL AND is_verified=1 FOR UPDATE");
+        $account->execute([$userId]);
+        if (!$account->fetchColumn())
+            throw new HoldError(401, 'Tài khoản không còn hoạt động.');
         $in = implode(',', array_fill(0, count($slotIds), '?'));
 
         // Khoá toàn bộ slot theo thứ tự id. hold_expired do MySQL tính (NOW()) — một nguồn thời gian duy nhất.
@@ -103,7 +114,10 @@ function doHold(PDO $pdo, int $userId, array $slotIds): array {
         $rows = $stmt->fetchAll();
 
         $byId = [];
-        foreach ($rows as $r) { $byId[(int)$r['id']] = $r; }
+        foreach ($rows as $r) {
+            $byId[(int) $r['id']] = $r;
+        }
+
         foreach ($slotIds as $sid) {
             if (!isset($byId[$sid]) || $byId[$sid]['court_status'] !== 'active') {
                 throw new HoldError(404, "Không tìm thấy khung giờ ID #{$sid}.");
@@ -113,7 +127,7 @@ function doHold(PDO $pdo, int $userId, array $slotIds): array {
         $first = $byId[$slotIds[0]];
         foreach ($slotIds as $sid) {
             $s = $byId[$sid];
-            if ((int)$s['court_id'] !== (int)$first['court_id'] || $s['slot_date'] !== $first['slot_date']) {
+            if ((int) $s['court_id'] !== (int) $first['court_id'] || $s['slot_date'] !== $first['slot_date']) {
                 throw new HoldError(422, 'Các khung giờ phải thuộc cùng một sân và cùng một ngày.');
             }
         }
@@ -124,7 +138,7 @@ function doHold(PDO $pdo, int $userId, array $slotIds): array {
         $nowTimeStr = $nowDt->format('H:i:s');
 
         foreach ($slotIds as $sid) {
-            $s     = $byId[$sid];
+            $s = $byId[$sid];
             $range = substr($s['start_time'], 0, 5) . '–' . substr($s['end_time'], 0, 5);
 
             // Chặn đặt khung giờ đã trôi qua trong quá khứ
@@ -136,17 +150,21 @@ function doHold(PDO $pdo, int $userId, array $slotIds): array {
             if ($s['status'] === 'booked') {
                 throw new HoldError(409, "Khung giờ {$s['sub_court_name']} {$range} đã có khách hàng khác đặt thành công.");
             }
+
             if ($s['status'] === 'maintenance') {
                 $reason = !empty($s['note']) ? " (Lý do: {$s['note']})" : '';
                 throw new HoldError(409, "Khung giờ {$s['sub_court_name']} {$range} đang được bảo trì sân{$reason}. Không thể đặt lúc này!");
             }
+
             if ($s['status'] === 'blocked') {
                 throw new HoldError(409, "Khung giờ {$s['sub_court_name']} {$range} đang tạm ngừng nhận đặt.");
             }
+
             // Đang holding, còn hạn, của người khác → từ chối. (Hết hạn = coi như trống; của chính mình = gia hạn.)
-            if ($s['status'] === 'holding' && !$s['hold_expired'] && (int)$s['held_by'] !== $userId) {
+            if ($s['status'] === 'holding' && !$s['hold_expired'] && (int) $s['held_by'] !== $userId) {
                 throw new HoldError(409, "Khung giờ {$s['sub_court_name']} {$range} đang được khách khác giữ chỗ. Vui lòng chọn khung giờ khác!");
             }
+
             $total += slotPrice($s);
         }
 
@@ -168,34 +186,37 @@ function doHold(PDO $pdo, int $userId, array $slotIds): array {
 
         $pdo->commit();
     } catch (Throwable $e) {
-        if ($pdo->inTransaction()) { $pdo->rollBack(); }
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+
         throw $e;
     }
 
     $last = $byId[end($slotIds)];
-    $n    = count($slotIds);
-    $hrs  = $n * 0.5;
+    $n = count($slotIds);
+    $hrs = $n * 0.5;
     $startHm = substr($first['start_time'], 0, 5);
-    $endHm   = substr($last['end_time'], 0, 5);
+    $endHm = substr($last['end_time'], 0, 5);
 
     return [
-        'slot_id'            => (int)$first['id'],
-        'slot_ids'           => $slotIds,
-        'court_id'           => (int)$first['court_id'],
-        'court_name'         => $first['court_name'],
-        'sub_court_name'     => $first['sub_court_name'],
-        'slot_date'          => $first['slot_date'],
-        'start_time'         => $startHm,
-        'end_time'           => $endHm,
-        'time_range'         => "{$startHm} – {$endHm}",
-        'duration'           => $hrs,
-        'duration_label'     => "{$hrs} giờ ({$n} ô)",
-        'total_price'        => $total,
-        'deposit_amount'     => (int)round($total * 0.5),
-        'status'             => 'holding',
-        'expires_in'         => (int)$exp['secs'],                 // giữ tên cũ mà frontend đang dùng
-        'expires_in_seconds' => (int)$exp['secs'],                 // tên theo hợp đồng API
-        'hold_expires_at'    => (new DateTime($exp['hold_expires_at'], new DateTimeZone('Asia/Ho_Chi_Minh')))->format('c'),
+        'slot_id' => (int) $first['id'],
+        'slot_ids' => $slotIds,
+        'court_id' => (int) $first['court_id'],
+        'court_name' => $first['court_name'],
+        'sub_court_name' => $first['sub_court_name'],
+        'slot_date' => $first['slot_date'],
+        'start_time' => $startHm,
+        'end_time' => $endHm,
+        'time_range' => "{$startHm} – {$endHm}",
+        'duration' => $hrs,
+        'duration_label' => "{$hrs} giờ ({$n} ô)",
+        'total_price' => $total,
+        'deposit_amount' => (int) round($total * 0.5),
+        'status' => 'holding',
+        'expires_in' => (int) $exp['secs'],                 // giữ tên cũ mà frontend đang dùng
+        'expires_in_seconds' => (int) $exp['secs'],                 // tên theo hợp đồng API
+        'hold_expires_at' => (new DateTime($exp['hold_expires_at'], new DateTimeZone('Asia/Ho_Chi_Minh')))->format('c'),
     ];
 }
 
@@ -212,6 +233,7 @@ try {
                                  WHERE status='holding' AND held_by = ?");
             $st->execute([$currentUserId]);
         }
+
         jsonResponse(200, ['message' => 'Đã hủy giữ chỗ thành công.', 'data' => ['status' => 'available']]);
     }
 
@@ -226,20 +248,20 @@ try {
             $data = doHold($pdo, $currentUserId, $slotIds);
             break;
         } catch (PDOException $e) {
-            $mysqlCode = (int)($e->errorInfo[1] ?? 0);
+            $mysqlCode = (int) ($e->errorInfo[1] ?? 0);
             if (in_array($mysqlCode, [1213, 1205], true) && $attempt < MAX_RETRY) {
                 usleep(random_int(20000, 80000)); // deadlock / lock timeout → thử lại
                 continue;
             }
+
             throw $e;
         }
     }
 
     jsonResponse(200, [
         'message' => 'Giữ chỗ thành công! Bạn có ' . HOLD_MINUTES . ' phút để hoàn tất đặt sân & thanh toán cọc.',
-        'data'    => $data,
+        'data' => $data,
     ]);
-
 } catch (HoldError $e) {
     jsonResponse($e->httpCode, ['message' => $e->getMessage()]);
 } catch (Throwable $e) {

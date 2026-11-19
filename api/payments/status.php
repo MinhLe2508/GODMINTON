@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/payments/status.php
  * GET ?code=GDM000123 → trạng thái thanh toán của đơn (chỉ chủ đơn được xem).
@@ -11,13 +12,15 @@ try {
     if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
         booking_account_out(405, null, 'Chỉ hỗ trợ GET.');
     }
+
     $user = booking_account_user();
     session_write_close();
 
-    $code = strtoupper(trim((string)($_GET['code'] ?? '')));
+    $code = strtoupper(trim((string) ($_GET['code'] ?? '')));
     if (!preg_match('/^[A-Z]{1,10}\d{6,9}$/', $code)) {
         booking_account_out(422, null, 'Mã thanh toán không hợp lệ.');
     }
+
     if (!payment_tables_ready($pdo)) {
         booking_account_out(404, null, 'Không tìm thấy giao dịch.');
     }
@@ -46,18 +49,20 @@ try {
 
     $data = payment_public_data($p);
     if (!empty($p['booking_id'])) {
-        $data['booking_id'] = (int)$p['booking_id'];
+        $data['booking_id'] = (int) $p['booking_id'];
         $data['booking_code'] = $p['booking_code'];
         $data['booking_status'] = $p['booking_status'];
     }
+
     if (!empty($p['membership_id'])) {
-        $mId = (int)$p['membership_id'];
+        $mId = (int) $p['membership_id'];
         $data['membership_id'] = $mId;
-        $data['membership_code'] = 'MB-' . str_pad((string)$mId, 6, '0', STR_PAD_LEFT);
+        $data['membership_code'] = 'MB-' . str_pad((string) $mId, 6, '0', STR_PAD_LEFT);
         $data['membership_status'] = $p['membership_status'];
         $data['membership_tier'] = $p['membership_tier'];
-        $data['membership_discount'] = (int)($p['membership_discount'] ?? 0);
+        $data['membership_discount'] = (int) ($p['membership_discount'] ?? 0);
     }
+
     booking_account_out(200, $data);
 } catch (Throwable $e) {
     booking_account_error($e);

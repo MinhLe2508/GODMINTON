@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/memberships/my-membership.php
  * Trả về thông tin gói hội viên đang kích hoạt và lịch sử của người dùng hiện tại.
@@ -25,9 +26,9 @@ try {
         ], 'Chưa đăng nhập.');
     }
 
-    $active = membership_get_active_for_user($pdo, (int)$user['id']);
-    $pending = membership_get_pending_for_user($pdo, (int)$user['id']);
-    $history = membership_get_history($pdo, (int)$user['id']);
+    $active = membership_get_active_for_user($pdo, (int) $user['id']);
+    $pending = membership_get_pending_for_user($pdo, (int) $user['id']);
+    $history = membership_get_history($pdo, (int) $user['id']);
 
     booking_account_out(200, [
         'logged_in' => true,
@@ -40,7 +41,6 @@ try {
         'pending_membership' => $pending,
         'history' => $history
     ], 'Lấy thông tin gói hội viên thành công.');
-
 } catch (Throwable $e) {
     error_log('[GODMINTON my-membership.php] ' . $e->getMessage());
     booking_account_out(500, null, 'Lỗi máy chủ khi lấy thông tin gói hội viên.');

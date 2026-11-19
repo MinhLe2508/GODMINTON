@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/court-detail.php
  * GET chi tiết 1 sân theo id.
@@ -27,7 +28,7 @@ $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 if ($id <= 0) {
     http_response_code(400);
     echo json_encode([
-        'status'  => 'error',
+        'status' => 'error',
         'message' => 'Thiếu hoặc sai tham số id.'
     ], JSON_UNESCAPED_UNICODE);
     exit;
@@ -63,7 +64,7 @@ try {
     if (!$court) {
         http_response_code(404);
         echo json_encode([
-            'status'  => 'error',
+            'status' => 'error',
             'message' => 'Không tìm thấy sân với id = ' . $id
         ], JSON_UNESCAPED_UNICODE);
         exit;
@@ -92,47 +93,46 @@ try {
 
     // ---- Format dữ liệu ----
     $result = [
-        'id'              => (int) $court['id'],
-        'name'            => $court['name'],
-        'address'         => $court['address'],
-        'latitude'        => (float) $court['latitude'],
-        'longitude'       => (float) $court['longitude'],
-        'price_per_hour'  => (int) $court['price_per_hour'],
+        'id' => (int) $court['id'],
+        'name' => $court['name'],
+        'address' => $court['address'],
+        'latitude' => (float) $court['latitude'],
+        'longitude' => (float) $court['longitude'],
+        'price_per_hour' => (int) $court['price_per_hour'],
         'price_formatted' => number_format($court['price_per_hour'], 0, '', '.') . ' đ',
-        'description'     => $court['description'],
-        'status'          => $court['status'],
-        'booking_open'    => (int)($court['booking_open'] ?? 1),
-        'ward_id'         => (int) $court['ward_id'],
-        'ward_name'       => $court['ward_name'],
-        'old_area_label'  => $court['old_area_label'],
-        'owner_name'      => $court['owner_name'],
-        'owner_phone'     => $court['owner_phone'],
-        'images'          => array_map(function ($img) {
+        'description' => $court['description'],
+        'status' => $court['status'],
+        'booking_open' => (int) ($court['booking_open'] ?? 1),
+        'ward_id' => (int) $court['ward_id'],
+        'ward_name' => $court['ward_name'],
+        'old_area_label' => $court['old_area_label'],
+        'owner_name' => $court['owner_name'],
+        'owner_phone' => $court['owner_phone'],
+        'images' => array_map(function ($img) {
             return [
-                'url'        => godminton_hires_image($img['image_url'], 1600),
+                'url' => godminton_hires_image($img['image_url'], 1600),
                 'sort_order' => (int) $img['sort_order']
             ];
         }, $images),
-        'image_url'       => godminton_hires_image(!empty($images) ? $images[0]['image_url']
+        'image_url' => godminton_hires_image(!empty($images) ? $images[0]['image_url']
                              : 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1600&auto=format&fit=crop', 1600),
-        'amenities'       => array_map(function ($a) {
+        'amenities' => array_map(function ($a) {
             return [
-                'code'  => $a['code'],
+                'code' => $a['code'],
                 'label' => $a['label']
             ];
         }, $amenities),
-        'amenity_codes'   => array_column($amenities, 'code'),
+        'amenity_codes' => array_column($amenities, 'code'),
     ];
 
     echo json_encode([
         'status' => 'success',
-        'data'   => $result
+        'data' => $result
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([
-        'status'  => 'error',
+        'status' => 'error',
         'message' => 'Lỗi truy vấn cơ sở dữ liệu: ' . $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 }

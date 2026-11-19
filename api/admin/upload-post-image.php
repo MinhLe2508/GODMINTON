@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/admin/upload-post-image.php
  * Endpoint tải ảnh bìa bài viết dành riêng cho Quản trị viên (Admin).
@@ -18,8 +19,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 /**
  * Nhận diện MIME thực tế của file ảnh mà không phụ thuộc cứng vào extension fileinfo trên Shared Hosting.
  */
-function god_detect_image_mime(string $tmpPath): string
-{
+function god_detect_image_mime(string $tmpPath): string {
     if (!is_file($tmpPath) || !is_readable($tmpPath)) {
         return '';
     }
@@ -28,7 +28,7 @@ function god_detect_image_mime(string $tmpPath): string
     if (function_exists('getimagesize')) {
         $info = @getimagesize($tmpPath);
         if (is_array($info) && !empty($info['mime']) && ($info[0] ?? 0) > 0 && ($info[1] ?? 0) > 0) {
-            return strtolower((string)$info['mime']);
+            return strtolower((string) $info['mime']);
         }
     }
 
@@ -56,17 +56,20 @@ function god_detect_image_mime(string $tmpPath): string
     // 4. Kiểm tra chữ ký nhị phân (Magic Bytes) đầu file
     $fh = @fopen($tmpPath, 'rb');
     if ($fh) {
-        $head = (string)@fread($fh, 16);
+        $head = (string) @fread($fh, 16);
         @fclose($fh);
         if (strncmp($head, "\xFF\xD8\xFF", 3) === 0) {
             return 'image/jpeg';
         }
+
         if (strncmp($head, "\x89PNG\r\n\x1A\n", 8) === 0) {
             return 'image/png';
         }
-        if ( strlen($head) >= 12 && substr($head, 0, 4) === 'RIFF' && substr($head, 8, 4) === 'WEBP') {
+
+        if (strlen($head) >= 12 && substr($head, 0, 4) === 'RIFF' && substr($head, 8, 4) === 'WEBP') {
             return 'image/webp';
         }
+
         if (strncmp($head, 'GIF87a', 6) === 0 || strncmp($head, 'GIF89a', 6) === 0) {
             return 'image/gif';
         }
@@ -91,7 +94,7 @@ try {
     }
 
     $file = $_FILES['image'];
-    $errCode = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
+    $errCode = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
 
     if ($errCode !== UPLOAD_ERR_OK) {
         $msg = match ($errCode) {
@@ -106,11 +109,11 @@ try {
 
     // Giới hạn dung lượng tối đa 5 MiB (5 * 1024 * 1024 bytes)
     $maxBytes = 5 * 1024 * 1024;
-    if ((int)($file['size'] ?? 0) > $maxBytes) {
+    if ((int) ($file['size'] ?? 0) > $maxBytes) {
         booking_account_out(422, null, 'Dung lượng ảnh không được vượt quá 5 MiB.');
     }
 
-    $tmpName = (string)($file['tmp_name'] ?? '');
+    $tmpName = (string) ($file['tmp_name'] ?? '');
     if ($tmpName === '' || !file_exists($tmpName)) {
         booking_account_out(422, null, 'Không tìm thấy tệp tạm trên máy chủ.');
     }
@@ -119,13 +122,13 @@ try {
     $mime = god_detect_image_mime($tmpName);
 
     $allowedMimes = [
-        'image/jpeg'  => 'jpg',
-        'image/jpg'   => 'jpg',
+        'image/jpeg' => 'jpg',
+        'image/jpg' => 'jpg',
         'image/pjpeg' => 'jpg',
-        'image/png'   => 'png',
+        'image/png' => 'png',
         'image/x-png' => 'png',
-        'image/webp'  => 'webp',
-        'image/gif'   => 'gif',
+        'image/webp' => 'webp',
+        'image/gif' => 'gif',
     ];
 
     if (!isset($allowedMimes[$mime])) {
@@ -140,6 +143,7 @@ try {
     if (!is_dir($targetDir)) {
         @mkdir($targetDir, 0755, true);
     }
+
     @chmod($targetDir, 0755);
 
     // Đảm bảo file .htaccess tương thích Shared Hosting (không dùng Options -ExecCGI gây lỗi 500 trên LiteSpeed/Apache)
@@ -154,7 +158,7 @@ try {
         . "        Deny from all\n"
         . "    </IfModule>\n"
         . "</FilesMatch>\n";
-    if (!file_exists($htaccessFile) || str_contains((string)@file_get_contents($htaccessFile), '-ExecCGI')) {
+    if (!file_exists($htaccessFile) || str_contains((string) @file_get_contents($htaccessFile), '-ExecCGI')) {
         @file_put_contents($htaccessFile, $safeHtaccess);
     }
 
@@ -166,6 +170,7 @@ try {
     if (!$saved && is_readable($tmpName)) {
         $saved = @copy($tmpName, $destination);
     }
+
     if (!$saved && is_readable($tmpName)) {
         $raw = @file_get_contents($tmpName);
         if ($raw !== false) {
@@ -186,6 +191,7 @@ try {
             $pdo->exec("ALTER TABLE posts MODIFY COLUMN cover_image MEDIUMTEXT NULL");
         } catch (Throwable $ignore) {
         }
+
         $dataUri = 'data:' . $mime . ';base64,' . base64_encode($rawBytes);
         booking_account_out(200, ['url' => $dataUri], 'Tải ảnh lên thành công.');
     }

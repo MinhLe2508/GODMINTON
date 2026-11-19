@@ -1,5 +1,6 @@
 <?php
-require_once __DIR__.'/../../includes/auth-session.php';
+
+require_once __DIR__ . '/../../includes/auth-session.php';
 /**
  * api/admin/dashboard.php
  * GET số liệu thống kê tổng quan, danh sách đơn gần đây và sân quản lý cho chủ sân / admin.
@@ -14,6 +15,7 @@ function jsonOut(int $code, array $body): void {
     if (!isset($body['code'])) {
         $body = ['status' => $body['status'] ?? ($code < 400 ? 'success' : 'error'), 'code' => $code] + $body;
     }
+
     echo json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
@@ -23,13 +25,15 @@ if (session_status() === PHP_SESSION_NONE) {
     god_auth_start();
     god_auth_user($pdo);
 }
-$currentUserId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
-$currentRole   = $_SESSION['role'] ?? '';
+
+$currentUserId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
+$currentRole = $_SESSION['role'] ?? '';
 session_write_close();
 
 if ($currentUserId <= 0) {
     jsonOut(401, ['status' => 'error', 'message' => 'Vui lòng đăng nhập để xem thống kê quản trị.']);
 }
+
 if (!in_array($currentRole, ['admin', 'owner'], true)) {
     jsonOut(403, ['status' => 'error', 'message' => 'Bạn không có quyền truy cập trang tổng quan quản trị.']);
 }
@@ -69,33 +73,35 @@ try {
         $courtSql .= " WHERE c.owner_id = :owner_id";
         $courtParams[':owner_id'] = $currentUserId;
     }
+
     $courtSql .= " ORDER BY c.id ASC";
 
     $courtStmt = $pdo->prepare($courtSql);
     $courtStmt->execute($courtParams);
     $rawCourts = $courtStmt->fetchAll();
 
-    $defaultImg   = 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop';
-    $courts       = [];
+    $defaultImg = 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop';
+    $courts = [];
     $activeCourts = 0;
 
     foreach ($rawCourts as $rc) {
         if ($rc['status'] === 'active') {
             $activeCourts++;
         }
+
         $districtLabel = $rc['old_area_label']
             ? preg_replace('/\s*\(cũ\)\s*$/u', '', $rc['old_area_label'])
             : $rc['ward_name'];
 
         $courts[] = [
-            'id'               => (int)$rc['id'],
-            'name'             => $rc['name'],
-            'address'          => $rc['address'],
-            'district'         => $districtLabel,
-            'price_per_hour'   => (int)$rc['price_per_hour'],
-            'total_sub_courts' => (int)($rc['total_sub_courts'] ?? 6),
-            'status'           => $rc['status'],
-            'image_url'        => $rc['image_url'] ?: $defaultImg,
+            'id' => (int) $rc['id'],
+            'name' => $rc['name'],
+            'address' => $rc['address'],
+            'district' => $districtLabel,
+            'price_per_hour' => (int) $rc['price_per_hour'],
+            'total_sub_courts' => (int) ($rc['total_sub_courts'] ?? 6),
+            'status' => $rc['status'],
+            'image_url' => $rc['image_url'] ?: $defaultImg,
         ];
     }
 
@@ -136,32 +142,34 @@ try {
         $bookingSql .= " WHERE c.owner_id = :owner_id";
         $bookingParams[':owner_id'] = $currentUserId;
     }
+
     $bookingSql .= " GROUP BY b.id ORDER BY b.created_at DESC, b.id DESC";
 
     $bStmt = $pdo->prepare($bookingSql);
     $bStmt->execute($bookingParams);
     $rawBookings = $bStmt->fetchAll();
 
-    $todayStr       = date('Y-m-d');
+    $todayStr = date('Y-m-d');
     $mondayThisWeek = date('Y-m-d', strtotime('monday this week'));
     $sundayThisWeek = date('Y-m-d', strtotime('sunday this week'));
 
-    $todayCount     = 0;
-    $weekCount      = 0;
-    $pendingCount   = 0;
+    $todayCount = 0;
+    $weekCount = 0;
+    $pendingCount = 0;
     $cancelledCount = 0;
-    $revenue        = 0;
+    $revenue = 0;
     $recentBookings = [];
 
     foreach ($rawBookings as $idx => $rb) {
-        $bDate  = $rb['booking_date'] ?: substr((string)$rb['created_at'], 0, 10);
+        $bDate = $rb['booking_date'] ?: substr((string) $rb['created_at'], 0, 10);
         $status = $rb['booking_status'];
-        $amount = (int)round((float)$rb['total_price']);
+        $amount = (int) round((float) $rb['total_price']);
 
         if (!in_array($status, ['cancelled', 'no_show'], true)) {
             if ($bDate === $todayStr) {
                 $todayCount++;
             }
+
             if ($bDate >= $mondayThisWeek && $bDate <= $sundayThisWeek) {
                 $weekCount++;
             }
@@ -179,72 +187,71 @@ try {
                 $revenue += $amount;
             } else {
                 // Doanh thu chủ sân: Thực nhận của chủ sân (owner_amount), fallback về total_price nếu đơn cũ
-                $ownerAmt = (isset($rb['owner_amount']) && (float)$rb['owner_amount'] > 0)
-                    ? (int)round((float)$rb['owner_amount'])
+                $ownerAmt = (isset($rb['owner_amount']) && (float) $rb['owner_amount'] > 0)
+                    ? (int) round((float) $rb['owner_amount'])
                     : $amount;
                 $revenue += $ownerAmt;
             }
         } elseif ($status === 'no_show') {
             // Khi khách bùng sân: Tiền cọc giữ lại nếu không được hoàn cọc
-            $isDepositRefunded = (int)($rb['is_deposit_refunded'] ?? 0);
+            $isDepositRefunded = (int) ($rb['is_deposit_refunded'] ?? 0);
             if (!$isDepositRefunded) {
-                $depositAmt = (int)round((float)($rb['deposit_amount'] ?? 0));
+                $depositAmt = (int) round((float) ($rb['deposit_amount'] ?? 0));
                 $revenue += $depositAmt;
             }
         } elseif ($status === 'cancelled') {
             // Khi khách đã đóng cọc nhưng hủy sát giờ (không thuộc diện hoàn cọc): Tiền cọc giữ lại cho sân
-            $isDepositRefunded = (int)($rb['is_deposit_refunded'] ?? 0);
+            $isDepositRefunded = (int) ($rb['is_deposit_refunded'] ?? 0);
             $payStatus = $rb['payment_status'] ?? 'unpaid';
             if (!$isDepositRefunded && $payStatus === 'deposit_paid') {
-                $depositAmt = (int)round((float)($rb['deposit_amount'] ?? 0));
+                $depositAmt = (int) round((float) ($rb['deposit_amount'] ?? 0));
                 $revenue += $depositAmt;
             }
         }
 
         if ($idx < 6) {
-            $dateCode   = str_replace('-', '', $bDate);
+            $dateCode = str_replace('-', '', $bDate);
             $startShort = $rb['start_time'] ? substr($rb['start_time'], 0, 5) : '--:--';
-            $endShort   = $rb['end_time']   ? substr($rb['end_time'], 0, 5)   : '--:--';
+            $endShort = $rb['end_time'] ? substr($rb['end_time'], 0, 5) : '--:--';
 
             $recentBookings[] = [
-                'id'               => (int)$rb['booking_id'],
-                'booking_code'     => 'GDM-' . $dateCode . '-' . str_pad((string)$rb['booking_id'], 4, '0', STR_PAD_LEFT),
-                'court_id'         => (int)$rb['court_id'],
-                'court_name'       => $rb['court_name'],
-                'sub_court_name'   => $rb['sub_courts'] ?: 'Thảm A1',
-                'user_name'        => $rb['user_name'],
-                'user_phone'       => $rb['user_phone'] ?? '',
-                'booking_date'     => $bDate,
-                'time_range'       => "{$startShort} - {$endShort}",
-                'total_amount'     => $amount,
-                'deposit_amount'   => (int)round((float)$rb['deposit_amount']),
-                'booking_status'   => $status,
-                'created_at'       => $rb['created_at'],
+                'id' => (int) $rb['booking_id'],
+                'booking_code' => 'GDM-' . $dateCode . '-' . str_pad((string) $rb['booking_id'], 4, '0', STR_PAD_LEFT),
+                'court_id' => (int) $rb['court_id'],
+                'court_name' => $rb['court_name'],
+                'sub_court_name' => $rb['sub_courts'] ?: 'Thảm A1',
+                'user_name' => $rb['user_name'],
+                'user_phone' => $rb['user_phone'] ?? '',
+                'booking_date' => $bDate,
+                'time_range' => "{$startShort} - {$endShort}",
+                'total_amount' => $amount,
+                'deposit_amount' => (int) round((float) $rb['deposit_amount']),
+                'booking_status' => $status,
+                'created_at' => $rb['created_at'],
             ];
         }
     }
 
     $stats = [
-        'totalCourts'       => count($courts),
-        'activeCourts'      => $activeCourts,
-        'todayCount'        => $todayCount,
-        'weekCount'         => $weekCount,
-        'totalBookings'     => count($rawBookings),
-        'pendingCount'      => $pendingCount,
-        'cancelledCount'    => $cancelledCount,
-        'revenue'           => $revenue,
+        'totalCourts' => count($courts),
+        'activeCourts' => $activeCourts,
+        'todayCount' => $todayCount,
+        'weekCount' => $weekCount,
+        'totalBookings' => count($rawBookings),
+        'pendingCount' => $pendingCount,
+        'cancelledCount' => $cancelledCount,
+        'revenue' => $revenue,
         'revenue_formatted' => number_format($revenue, 0, '', '.') . ' đ',
     ];
 
     jsonOut(200, [
         'status' => 'success',
-        'data'   => [
-            'stats'          => $stats,
+        'data' => [
+            'stats' => $stats,
             'recentBookings' => $recentBookings,
-            'courts'         => $courts,
+            'courts' => $courts,
         ],
     ]);
-
 } catch (Throwable $e) {
     error_log('[admin/dashboard.php] ' . $e->getMessage());
     jsonOut(500, ['status' => 'error', 'message' => 'Lỗi máy chủ khi tải thống kê: ' . $e->getMessage()]);

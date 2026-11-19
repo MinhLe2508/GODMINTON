@@ -1,31 +1,39 @@
 <?php
+
 /** HTML + text alternatives for security emails. No remote images or tracking. */
-function god_auth_email_content(array $user,string $purpose,string $link): array {
-    $types=[
-        'verify'=>['title'=>'Xác minh email GODMINTON','heading'=>'Chào mừng bạn đến GODMINTON',
-            'intro'=>'Cảm ơn bạn đã đăng ký. Vui lòng xác minh địa chỉ email để kích hoạt tài khoản và bắt đầu đặt sân.',
-            'action'=>'Xác minh email','minutes'=>5],
-        'reset'=>['title'=>'Đặt lại mật khẩu GODMINTON','heading'=>'Đặt lại mật khẩu của bạn',
-            'intro'=>'Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản GODMINTON của bạn. Bấm nút bên dưới để tạo mật khẩu mới.',
-            'action'=>'Đặt mật khẩu mới','minutes'=>15],
-        'delete'=>['title'=>'Xác nhận xóa tài khoản GODMINTON','heading'=>'Xác nhận yêu cầu xóa tài khoản',
-            'intro'=>'Bạn đã yêu cầu xóa tài khoản GODMINTON. Sau khi xác nhận, tài khoản sẽ bị vô hiệu và hồ sơ được ẩn danh. Lịch sử giao dịch được giữ để đối soát. Thao tác không thể hoàn tác.',
-            'action'=>'Xác nhận xóa tài khoản','minutes'=>5],
-        'email_change'=>['title'=>'Xác nhận email mới GODMINTON','heading'=>'Xác minh địa chỉ email mới',
-            'intro'=>'Có yêu cầu thay đổi email đăng nhập cho tài khoản của bạn. Chỉ bấm xác nhận nếu đây là thay đổi bạn mong muốn. Sau xác nhận, các phiên đăng nhập cũ sẽ kết thúc.',
-            'action'=>'Xác nhận email mới','minutes'=>30],
+function god_auth_email_content(array $user, string $purpose, string $link): array {
+    $types = [
+        'verify' => ['title' => 'Xác minh email GODMINTON', 'heading' => 'Chào mừng bạn đến GODMINTON',
+            'intro' => 'Cảm ơn bạn đã đăng ký. Vui lòng xác minh địa chỉ email để kích hoạt tài khoản và bắt đầu đặt sân.',
+            'action' => 'Xác minh email', 'minutes' => 5],
+        'reset' => ['title' => 'Đặt lại mật khẩu GODMINTON', 'heading' => 'Đặt lại mật khẩu của bạn',
+            'intro' => 'Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản GODMINTON của bạn. Bấm nút bên dưới để tạo mật khẩu mới.',
+            'action' => 'Đặt mật khẩu mới', 'minutes' => 15],
+        'delete' => ['title' => 'Xác nhận xóa tài khoản GODMINTON', 'heading' => 'Xác nhận yêu cầu xóa tài khoản',
+            'intro' => 'Bạn đã yêu cầu xóa tài khoản GODMINTON. Sau khi xác nhận, tài khoản sẽ bị vô hiệu và hồ sơ được ẩn danh. Lịch sử giao dịch được giữ để đối soát. Thao tác không thể hoàn tác.',
+            'action' => 'Xác nhận xóa tài khoản', 'minutes' => 5],
+        'email_change' => ['title' => 'Xác nhận email mới GODMINTON', 'heading' => 'Xác minh địa chỉ email mới',
+            'intro' => 'Có yêu cầu thay đổi email đăng nhập cho tài khoản của bạn. Chỉ bấm xác nhận nếu đây là thay đổi bạn mong muốn. Sau xác nhận, các phiên đăng nhập cũ sẽ kết thúc.',
+            'action' => 'Xác nhận email mới', 'minutes' => 30],
     ];
-    if(!isset($types[$purpose]))throw new InvalidArgumentException('Unsupported email purpose');
-    $type=$types[$purpose];
-    $escape=fn(string $value):string=>htmlspecialchars($value,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');
-    $name=$escape((string)$user['name']);$email=$escape((string)$user['email']);$safeLink=$escape($link);
-    $heading=$escape($type['heading']);$intro=$escape($type['intro']);$action=$escape($type['action']);
-    $minutes=$type['minutes'];$color=$purpose==='delete'?'#b83240':'#0d9488';$year=date('Y');
-    $buttonGradient=$purpose==='delete'?'linear-gradient(120deg,#be123c 0%,#c2410c 100%)':'linear-gradient(120deg,#0f766e 0%,#0891b2 100%)';
-    $logo=is_file(__DIR__.'/../assets/img/logo.jpg')
-        ?'<img src="cid:godminton-logo" width="180" height="121" alt="GODMINTON" style="display:block;width:180px;max-width:100%;height:auto;border:0;margin:0 auto;">'
-        :'<span style="font-size:26px;font-weight:bold;color:#0d9488;">GODMINTON</span>';
-    $body=<<<HTML
+    if (!isset($types[$purpose]))
+        throw new InvalidArgumentException('Unsupported email purpose');
+    $type = $types[$purpose];
+    $escape = fn (string $value): string => htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    $name = $escape((string) $user['name']);
+    $email = $escape((string) $user['email']);
+    $safeLink = $escape($link);
+    $heading = $escape($type['heading']);
+    $intro = $escape($type['intro']);
+    $action = $escape($type['action']);
+    $minutes = $type['minutes'];
+    $color = $purpose === 'delete' ? '#b83240' : '#0d9488';
+    $year = date('Y');
+    $buttonGradient = $purpose === 'delete' ? 'linear-gradient(120deg,#be123c 0%,#c2410c 100%)' : 'linear-gradient(120deg,#0f766e 0%,#0891b2 100%)';
+    $logo = is_file(__DIR__ . '/../assets/img/logo.jpg')
+        ? '<img src="cid:godminton-logo" width="180" height="121" alt="GODMINTON" style="display:block;width:180px;max-width:100%;height:auto;border:0;margin:0 auto;">'
+        : '<span style="font-size:26px;font-weight:bold;color:#0d9488;">GODMINTON</span>';
+    $body = <<<HTML
 <!doctype html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{$escape($type['title'])}</title></head>
 <body style="margin:0;padding:0;background-color:#e5f5f1;background-image:linear-gradient(140deg,#d9f7ed 0%,#edf5ff 100%);font-family:'Plus Jakarta Sans','Segoe UI',Roboto,Arial,sans-serif;color:#193d42;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">$heading — liên kết có hiệu lực $minutes phút.</div>
@@ -57,8 +65,8 @@ function god_auth_email_content(array $user,string $purpose,string $link): array
 <p style="font-family:'Plus Jakarta Sans','Segoe UI',Roboto,Arial,sans-serif;margin:0;color:#6b817e;font-size:12px;line-height:1.7;">© $year GODMINTON · Email bảo mật tài khoản<br>Bạn nhận email này vì có yêu cầu liên quan đến tài khoản trên GODMINTON.</p>
 </td></tr></table></td></tr></table></body></html>
 HTML;
-    $plain=$type['title']."\n\nXin chào ".$user['name'].",\n\n".$type['intro']."\n\nTài khoản: ".$user['email'].
-        "\n\n".$type['action'].":\n".$link."\n\nLiên kết có hiệu lực $minutes phút và chỉ sử dụng một lần.\n\n".
+    $plain = $type['title'] . "\n\nXin chào " . $user['name'] . ",\n\n" . $type['intro'] . "\n\nTài khoản: " . $user['email'] .
+        "\n\n" . $type['action'] . ":\n" . $link . "\n\nLiên kết có hiệu lực $minutes phút và chỉ sử dụng một lần.\n\n" .
         "Nếu không phải bạn yêu cầu, hãy bỏ qua email này. Không chia sẻ liên kết hoặc mật khẩu với người khác. GODMINTON không yêu cầu bạn gửi mật khẩu qua email.\n\nGODMINTON — Nền tảng đặt sân cầu lông.";
-    return ['subject'=>$type['title'],'html'=>$body,'text'=>$plain];
+    return ['subject' => $type['title'], 'html' => $body, 'text' => $plain];
 }

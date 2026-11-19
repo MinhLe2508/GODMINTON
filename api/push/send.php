@@ -1,11 +1,12 @@
 <?php
+
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../includes/auth-session.php';
 require_once __DIR__ . '/../../includes/web-push.php';
 god_auth_start();
 god_push_ensure_schema($pdo);
 $user = god_auth_user($pdo);
-$userId = $user ? (int)$user['id'] : null;
+$userId = $user ? (int) $user['id'] : null;
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
@@ -15,18 +16,20 @@ function push_send_out(int $code, array $body): void {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') push_send_out(405, ['status' => 'error', 'message' => 'Chỉ hỗ trợ POST.']);
+if ($_SERVER['REQUEST_METHOD'] !== 'POST')
+    push_send_out(405, ['status' => 'error', 'message' => 'Chỉ hỗ trợ POST.']);
 $csrf = $_SERVER['HTTP_X_GODMINTON_CSRF'] ?? '';
 if (!is_string($csrf) || $csrf === '' || !hash_equals($_SESSION['csrf_token'], $csrf)) {
     push_send_out(403, ['status' => 'error', 'message' => 'Phiên thao tác đã hết hạn. Hãy tải lại trang.']);
 }
+
 $in = json_decode(file_get_contents('php://input'), true);
-$action = is_array($in) ? (string)($in['action'] ?? '') : '';
+$action = is_array($in) ? (string) ($in['action'] ?? '') : '';
 if (!in_array($action, ['test', 'reminder'], true)) {
     push_send_out(422, ['status' => 'error', 'message' => 'Yêu cầu gửi thông báo không hợp lệ.']);
 }
 
-$endpoint = trim((string)($in['endpoint'] ?? ''));
+$endpoint = trim((string) ($in['endpoint'] ?? ''));
 
 try {
     // Nếu thiết bị đã đăng ký trước khi đăng nhập (user_id IS NULL), tự động gắn vào user hiện tại
@@ -38,9 +41,9 @@ try {
     if ($action === 'reminder') {
         $summary = god_push_dispatch_due_reminders($pdo, $userId);
         push_send_out(200, [
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Đã quét nhắc lịch thi đấu tự động.',
-            'data'    => $summary,
+            'data' => $summary,
         ]);
     }
 
@@ -50,6 +53,7 @@ try {
         if (!god_push_endpoint_is_allowed($endpoint)) {
             push_send_out(422, ['status' => 'error', 'message' => 'Thiết bị nhận thông báo không hợp lệ.']);
         }
+
         $stmt = $pdo->prepare('SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE endpoint = ? LIMIT 1');
         $stmt->execute([$endpoint]);
         $subscription = $stmt->fetch();
@@ -67,8 +71,8 @@ try {
     }
 
     // Kiểm tra xem người dùng hiện tại có đơn đặt sân nào sắp diễn ra trong hôm nay không để cá nhân hóa nội dung nhắc lịch
-    $customTitle = trim((string)($in['title'] ?? ''));
-    $customBody  = trim((string)($in['body'] ?? ''));
+    $customTitle = trim((string) ($in['title'] ?? ''));
+    $customBody = trim((string) ($in['body'] ?? ''));
     $upcomingBooking = null;
     if ($userId !== null) {
         $upStmt = $pdo->prepare(
@@ -92,29 +96,29 @@ try {
     }
 
     if ($upcomingBooking) {
-        $startsAt = new DateTimeImmutable((string)$upcomingBooking['starts_at']);
-        $minsLeft = max(1, (int)$upcomingBooking['minutes_left']);
+        $startsAt = new DateTimeImmutable((string) $upcomingBooking['starts_at']);
+        $minsLeft = max(1, (int) $upcomingBooking['minutes_left']);
         $timeHint = $minsLeft <= 60 ? "còn {$minsLeft} phút" : ('lúc ' . $startsAt->format('H:i d/m'));
         $payload = [
             'title' => "GODMINTON · Nhắc lịch thi đấu ({$timeHint})",
-            'body'  => sprintf(
+            'body' => sprintf(
                 '%s · %s · Bắt đầu lúc %s. Mã đặt: %s. Hãy khởi động kỹ và sẵn sàng vào sân!',
                 $upcomingBooking['court_name'],
                 $upcomingBooking['court_names'],
                 $startsAt->format('H:i d/m/Y'),
                 $upcomingBooking['booking_code'] ?: ('#' . $upcomingBooking['id'])
             ),
-            'icon'  => 'assets/img/icons/icon-192.png',
+            'icon' => 'assets/img/icons/icon-192.png',
             'badge' => 'assets/img/icons/badge-72.png',
-            'data'  => ['url' => 'history.php', 'timestamp' => time()],
+            'data' => ['url' => 'history.php', 'timestamp' => time()],
         ];
     } else {
         $payload = [
             'title' => $customTitle !== '' ? $customTitle : 'GODMINTON · Nhắc lịch thi đấu (Demo)',
-            'body'  => $customBody !== '' ? $customBody : 'Trận cầu của bạn tại Thảm A1 sắp bắt đầu sau 5 phút. Khởi động kỹ và sẵn sàng vào sân!',
-            'icon'  => 'assets/img/icons/icon-192.png',
+            'body' => $customBody !== '' ? $customBody : 'Trận cầu của bạn tại Thảm A1 sắp bắt đầu sau 5 phút. Khởi động kỹ và sẵn sàng vào sân!',
+            'icon' => 'assets/img/icons/icon-192.png',
             'badge' => 'assets/img/icons/badge-72.png',
-            'data'  => ['url' => 'history.php', 'timestamp' => time()],
+            'data' => ['url' => 'history.php', 'timestamp' => time()],
         ];
     }
 

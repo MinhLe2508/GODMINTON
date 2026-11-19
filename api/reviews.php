@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/reviews.php — Đánh giá sân.
  *
@@ -17,11 +18,13 @@ function review_court_exists(PDO $pdo, int $courtId): bool {
     $s->execute([$courtId]);
     return (bool) $s->fetchColumn();
 }
+
 function review_has_booked(PDO $pdo, int $userId, int $courtId): bool {
     $s = $pdo->prepare("SELECT 1 FROM bookings WHERE user_id=? AND court_id=? AND status IN " . REVIEW_BOOKING_STATUSES . " LIMIT 1");
     $s->execute([$userId, $courtId]);
     return (bool) $s->fetchColumn();
 }
+
 function review_payload(PDO $pdo, int $courtId, ?array $user): array {
     $sum = $pdo->prepare("SELECT COUNT(*) AS total, COALESCE(AVG(r.rating),0) AS average
         FROM reviews r JOIN users u ON u.id=r.user_id AND u.deleted_at IS NULL
@@ -31,7 +34,8 @@ function review_payload(PDO $pdo, int $courtId, ?array $user): array {
     $dist = array_fill(1, 5, 0);
     $d = $pdo->prepare("SELECT r.rating, COUNT(*) c FROM reviews r JOIN users u ON u.id=r.user_id AND u.deleted_at IS NULL WHERE r.court_id=? GROUP BY r.rating");
     $d->execute([$courtId]);
-    foreach ($d->fetchAll() as $x) $dist[(int) $x['rating']] = (int) $x['c'];
+    foreach ($d->fetchAll() as $x)
+        $dist[(int) $x['rating']] = (int) $x['c'];
 
     $list = $pdo->prepare("SELECT r.id, r.user_id, r.rating, r.comment, r.created_at, r.updated_at, u.name, u.avatar_url
         FROM reviews r JOIN users u ON u.id=r.user_id AND u.deleted_at IS NULL
@@ -51,9 +55,11 @@ function review_payload(PDO $pdo, int $courtId, ?array $user): array {
             'edited' => $r['updated_at'] !== $r['created_at'],
             'is_mine' => $uid && (int) $r['user_id'] === $uid,
         ];
-        if ($item['is_mine']) $mine = $item;
+        if ($item['is_mine'])
+            $mine = $item;
         $items[] = $item;
     }
+
     return [
         'summary' => ['average' => round((float) $row['average'], 1), 'total' => (int) $row['total'], 'distribution' => $dist],
         'reviews' => $items,
@@ -70,11 +76,13 @@ try {
     $method = $_SERVER['REQUEST_METHOD'];
     if ($method === 'GET') {
         $courtId = booking_account_id($_GET['court_id'] ?? 0);
-        if (!review_court_exists($pdo, $courtId)) booking_account_out(404, null, 'Không tìm thấy sân.');
+        if (!review_court_exists($pdo, $courtId))
+            booking_account_out(404, null, 'Không tìm thấy sân.');
         $data = review_payload($pdo, $courtId, booking_account_user(true));
         $data['csrf_token'] = $_SESSION['csrf_token'];
         booking_account_out(200, $data);
     }
+
     if (!in_array($method, ['POST', 'DELETE'], true)) {
         header('Allow: GET, POST, DELETE');
         booking_account_out(405, null, 'Chỉ hỗ trợ GET/POST/DELETE.');
@@ -84,7 +92,8 @@ try {
     booking_account_csrf();
     $in = booking_account_input();
     $courtId = booking_account_id($in['court_id'] ?? ($_GET['court_id'] ?? 0));
-    if (!review_court_exists($pdo, $courtId)) booking_account_out(404, null, 'Không tìm thấy sân.');
+    if (!review_court_exists($pdo, $courtId))
+        booking_account_out(404, null, 'Không tìm thấy sân.');
 
     if ($method === 'DELETE' || (($in['action'] ?? '') === 'delete')) {
         $reviewId = isset($in['review_id']) && $in['review_id'] !== '' ? booking_account_id($in['review_id']) : 0;
@@ -92,10 +101,12 @@ try {
             $chk = $pdo->prepare('SELECT id, user_id FROM reviews WHERE id=? AND court_id=? LIMIT 1');
             $chk->execute([$reviewId, $courtId]);
             $rev = $chk->fetch();
-            if (!$rev) booking_account_out(404, null, 'Không tìm thấy bình luận cần xóa.');
-            if ((int)$rev['user_id'] !== (int)$user['id'] && ($user['role'] ?? '') !== 'admin') {
+            if (!$rev)
+                booking_account_out(404, null, 'Không tìm thấy bình luận cần xóa.');
+            if ((int) $rev['user_id'] !== (int) $user['id'] && ($user['role'] ?? '') !== 'admin') {
                 booking_account_out(403, null, 'Bạn chỉ có thể xóa bình luận của chính mình.');
             }
+
             $pdo->prepare('DELETE FROM reviews WHERE id=? AND court_id=?')->execute([$reviewId, $courtId]);
         } else {
             $del = $pdo->prepare('DELETE FROM reviews WHERE court_id=? AND user_id=?');
@@ -104,19 +115,25 @@ try {
                 booking_account_out(404, null, 'Không tìm thấy bình luận của bạn để xóa.');
             }
         }
+
         $data = review_payload($pdo, $courtId, $user);
         $data['csrf_token'] = $_SESSION['csrf_token'];
         booking_account_out(200, $data, 'Đã xóa đánh giá của bạn.');
     }
 
     $rating = $in['rating'] ?? null;
-    if (!is_scalar($rating) || !preg_match('/^[1-5]$/', (string) $rating)) booking_account_out(422, null, 'Vui lòng chọn số sao từ 1 đến 5.');
+    if (!is_scalar($rating) || !preg_match('/^[1-5]$/', (string) $rating))
+        booking_account_out(422, null, 'Vui lòng chọn số sao từ 1 đến 5.');
     $comment = is_string($in['comment'] ?? null) ? trim(preg_replace("/\r\n?/", "\n", $in['comment'])) : '';
     $len = mb_strlen($comment, 'UTF-8');
-    if ($len < 5) booking_account_out(422, null, 'Bình luận cần ít nhất 5 ký tự.');
-    if ($len > 1000) booking_account_out(422, null, 'Bình luận tối đa 1000 ký tự.');
-    if (!review_court_exists($pdo, $courtId)) booking_account_out(404, null, 'Không tìm thấy sân.');
-    if (!review_has_booked($pdo, $user['id'], $courtId)) booking_account_out(403, null, 'Chỉ khách đã từng đặt sân này mới được đánh giá.');
+    if ($len < 5)
+        booking_account_out(422, null, 'Bình luận cần ít nhất 5 ký tự.');
+    if ($len > 1000)
+        booking_account_out(422, null, 'Bình luận tối đa 1000 ký tự.');
+    if (!review_court_exists($pdo, $courtId))
+        booking_account_out(404, null, 'Không tìm thấy sân.');
+    if (!review_has_booked($pdo, $user['id'], $courtId))
+        booking_account_out(403, null, 'Chỉ khách đã từng đặt sân này mới được đánh giá.');
 
     // UNIQUE(court_id,user_id): lần đầu thì thêm, lần sau thì cập nhật đánh giá cũ.
     $pdo->prepare("INSERT INTO reviews (court_id,user_id,rating,comment) VALUES (?,?,?,?)
@@ -127,6 +144,12 @@ try {
     $data['csrf_token'] = $_SESSION['csrf_token'];
     booking_account_out(200, $data, 'Đã lưu đánh giá của bạn.');
 } catch (PDOException $e) {
-    if ((int) ($e->errorInfo[1] ?? 0) === 1146) { error_log('[GODMINTON reviews] ' . $e->getMessage()); booking_account_out(500, null, 'Chưa có bảng reviews. Hãy import database/migration_reviews.sql.'); }
+    if ((int) ($e->errorInfo[1] ?? 0) === 1146) {
+        error_log('[GODMINTON reviews] ' . $e->getMessage());
+        booking_account_out(500, null, 'Chưa có bảng reviews. Hãy import database/migration_reviews.sql.');
+    }
+
     booking_account_error($e);
-} catch (Throwable $e) { booking_account_error($e); }
+} catch (Throwable $e) {
+    booking_account_error($e);
+}

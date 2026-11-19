@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/courts.php
  * GET danh sách sân, hỗ trợ lọc theo phường/giá/tiện ích/tìm kiếm.
@@ -57,7 +58,16 @@ try {
             (SELECT GROUP_CONCAT(a.label ORDER BY a.id SEPARATOR ',')
              FROM court_amenities ca
              JOIN amenities a ON a.id = ca.amenity_id
-             WHERE ca.court_id = c.id) AS amenity_labels
+             WHERE ca.court_id = c.id) AS amenity_labels,
+            -- Điểm đánh giá trung bình và số lượt đánh giá
+            COALESCE((SELECT ROUND(AVG(r.rating), 1)
+             FROM reviews r
+             JOIN users ru ON ru.id = r.user_id AND ru.deleted_at IS NULL
+             WHERE r.court_id = c.id), 0) AS avg_rating,
+            (SELECT COUNT(*)
+             FROM reviews r
+             JOIN users ru ON ru.id = r.user_id AND ru.deleted_at IS NULL
+             WHERE r.court_id = c.id) AS review_count
         FROM courts c
         JOIN wards w ON w.id = c.ward_id
         WHERE c.status = 'active' AND c.approval_status='approved' AND c.booking_open=1 AND EXISTS(SELECT 1 FROM users venue_owner WHERE venue_owner.id=c.owner_id AND venue_owner.account_status='active' AND venue_owner.deleted_at IS NULL AND venue_owner.is_verified=1)
@@ -68,7 +78,7 @@ try {
     if (!empty($_GET['search'])) {
         $search = '%' . trim($_GET['search']) . '%';
         $sql .= " AND (c.name LIKE :search OR c.address LIKE :search2)";
-        $params[':search']  = $search;
+        $params[':search'] = $search;
         $params[':search2'] = $search;
     }
 
@@ -80,8 +90,8 @@ try {
 
     // ---- Lọc theo mức giá ----
     $priceRange = trim($_GET['price_range'] ?? '');
-    if (empty($priceRange) && !empty($_GET['max_price']) && strpos((string)$_GET['max_price'], '-') !== false) {
-        $priceRange = trim((string)$_GET['max_price']);
+    if (empty($priceRange) && !empty($_GET['max_price']) && strpos((string) $_GET['max_price'], '-') !== false) {
+        $priceRange = trim((string) $_GET['max_price']);
     }
 
     if (!empty($priceRange)) {
@@ -100,6 +110,7 @@ try {
                 $sql .= " AND c.price_per_hour >= :min_range_price";
                 $params[':min_range_price'] = $minP;
             }
+
             if ($maxP > 0) {
                 $sql .= " AND c.price_per_hour <= :max_range_price";
                 $params[':max_range_price'] = $maxP;
@@ -110,11 +121,13 @@ try {
             $sql .= " AND c.price_per_hour >= :min_price";
             $params[':min_price'] = (int) $_GET['min_price'];
         }
+
         if (!empty($_GET['max_price'])) {
             $sql .= " AND c.price_per_hour <= :max_price";
             $params[':max_price'] = (int) $_GET['max_price'];
         }
     }
+
     // ---- Lọc theo tiện ích (phải có TẤT CẢ các tiện ích được chọn) ----
     if (!empty($_GET['amenities'])) {
         $amenityCodes = array_filter(explode(',', $_GET['amenities']));
@@ -126,8 +139,9 @@ try {
                 $amenityPlaceholders[] = $key;
                 $params[$key] = trim($code);
             }
+
             $inList = implode(',', $amenityPlaceholders);
-            $count  = count($amenityCodes);
+            $count = count($amenityCodes);
             $sql .= "
                 AND (
                     SELECT COUNT(*)
@@ -150,49 +164,50 @@ try {
     // ---- Format dữ liệu đầu ra ----
     $courts = [];
     foreach ($rows as $row) {
-        $amenityCodes  = $row['amenity_codes']  ? explode(',', $row['amenity_codes'])  : [];
+        $amenityCodes = $row['amenity_codes'] ? explode(',', $row['amenity_codes']) : [];
         $amenityLabels = $row['amenity_labels'] ? explode(',', $row['amenity_labels']) : [];
 
         $amenities = [];
         for ($i = 0; $i < count($amenityCodes); $i++) {
             $amenities[] = [
-                'code'  => $amenityCodes[$i],
+                'code' => $amenityCodes[$i],
                 'label' => $amenityLabels[$i] ?? $amenityCodes[$i]
             ];
         }
 
         $courts[] = [
-            'id'              => (int) $row['id'],
-            'name'            => $row['name'],
-            'address'         => $row['address'],
-            'latitude'        => (float) $row['latitude'],
-            'longitude'       => (float) $row['longitude'],
-            'price_per_hour'  => (int) $row['price_per_hour'],
+            'id' => (int) $row['id'],
+            'name' => $row['name'],
+            'address' => $row['address'],
+            'latitude' => (float) $row['latitude'],
+            'longitude' => (float) $row['longitude'],
+            'price_per_hour' => (int) $row['price_per_hour'],
             'price_formatted' => number_format($row['price_per_hour'], 0, '', '.') . ' đ',
-            'description'     => $row['description'],
-            'status'          => $row['status'],
-            'opening_time'    => $row['opening_time'],
-            'closing_time'    => $row['closing_time'],
-            'ward_id'         => (int) $row['ward_id'],
-            'ward_name'       => $row['ward_name'],
-            'old_area_label'  => $row['old_area_label'],
-            'image_url'       => godminton_hires_image($row['image_url'] ?: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop', 800),
-            'amenities'       => $amenities,
-            'amenity_codes'   => $amenityCodes,
+            'description' => $row['description'],
+            'status' => $row['status'],
+            'opening_time' => $row['opening_time'],
+            'closing_time' => $row['closing_time'],
+            'ward_id' => (int) $row['ward_id'],
+            'ward_name' => $row['ward_name'],
+            'old_area_label' => $row['old_area_label'],
+            'image_url' => godminton_hires_image($row['image_url'] ?: 'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop', 800),
+            'amenities' => $amenities,
+            'amenity_codes' => $amenityCodes,
+            'avg_rating' => round((float) ($row['avg_rating'] ?? 0), 1),
+            'review_count' => (int) ($row['review_count'] ?? 0),
         ];
     }
 
     echo json_encode([
         'status' => 'success',
-        'data'   => $courts,
-        'total'  => count($courts),
+        'data' => $courts,
+        'total' => count($courts),
         'server_time' => (int) round(microtime(true) * 1000)
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([
-        'status'  => 'error',
+        'status' => 'error',
         'message' => 'Lỗi truy vấn cơ sở dữ liệu: ' . $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 }

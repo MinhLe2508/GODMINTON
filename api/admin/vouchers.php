@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/admin/vouchers.php
  * API quản lý mã giảm giá dành cho Quản trị viên (admin) và Chủ sân (owner).
@@ -23,8 +24,8 @@ try {
     // GET: Danh sách mã giảm giá
     // ==========================================
     if ($method === 'GET') {
-        $q = isset($_GET['q']) ? trim((string)$_GET['q']) : '';
-        $status = isset($_GET['status']) ? trim((string)$_GET['status']) : '';
+        $q = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
+        $status = isset($_GET['status']) ? trim((string) $_GET['status']) : '';
 
         $where = [];
         $args = [];
@@ -32,7 +33,7 @@ try {
         // Phân quyền theo vai trò
         if ($user['role'] === 'owner') {
             $where[] = 'v.owner_id = ?';
-            $args[] = (int)$user['id'];
+            $args[] = (int) $user['id'];
         }
 
         if ($status !== '' && in_array($status, ['active', 'disabled'], true)) {
@@ -57,6 +58,7 @@ try {
         if (!empty($where)) {
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
+
         $sql .= ' ORDER BY v.created_at DESC, v.id DESC';
 
         $stmt = $pdo->prepare($sql);
@@ -64,27 +66,27 @@ try {
         $vouchers = $stmt->fetchAll();
 
         // Định dạng dữ liệu trả về cho client
-        $data = array_map(function($v) {
+        $data = array_map(function ($v) {
             return [
-                'id'                 => (int)$v['id'],
-                'code'               => $v['code'],
-                'created_by'         => (int)$v['created_by'],
-                'creator_name'       => $v['creator_name'] ?? 'Hệ thống',
-                'owner_id'           => $v['owner_id'] !== null ? (int)$v['owner_id'] : null,
-                'court_id'           => $v['court_id'] !== null ? (int)$v['court_id'] : null,
-                'court_name'         => $v['court_name'] ?? 'Tất cả sân',
-                'discount_percent'   => (int)$v['discount_percent'],
-                'max_discount'       => $v['max_discount'] !== null ? (int)$v['max_discount'] : null,
-                'min_order'          => (int)$v['min_order'],
-                'start_at'           => $v['start_at'],
-                'end_at'             => $v['end_at'],
-                'usage_limit'        => $v['usage_limit'] !== null ? (int)$v['usage_limit'] : null,
-                'used_count'         => (int)$v['used_count'],
-                'per_user_limit'     => (int)$v['per_user_limit'],
-                'first_booking_only' => (bool)$v['first_booking_only'],
-                'funded_by'          => $v['funded_by'],
-                'status'             => $v['status'],
-                'created_at'         => $v['created_at'],
+                'id' => (int) $v['id'],
+                'code' => $v['code'],
+                'created_by' => (int) $v['created_by'],
+                'creator_name' => $v['creator_name'] ?? 'Hệ thống',
+                'owner_id' => $v['owner_id'] !== null ? (int) $v['owner_id'] : null,
+                'court_id' => $v['court_id'] !== null ? (int) $v['court_id'] : null,
+                'court_name' => $v['court_name'] ?? 'Tất cả sân',
+                'discount_percent' => (int) $v['discount_percent'],
+                'max_discount' => $v['max_discount'] !== null ? (int) $v['max_discount'] : null,
+                'min_order' => (int) $v['min_order'],
+                'start_at' => $v['start_at'],
+                'end_at' => $v['end_at'],
+                'usage_limit' => $v['usage_limit'] !== null ? (int) $v['usage_limit'] : null,
+                'used_count' => (int) $v['used_count'],
+                'per_user_limit' => (int) $v['per_user_limit'],
+                'first_booking_only' => (bool) $v['first_booking_only'],
+                'funded_by' => $v['funded_by'],
+                'status' => $v['status'],
+                'created_at' => $v['created_at'],
             ];
         }, $vouchers);
 
@@ -99,7 +101,7 @@ try {
     // POST: Tạo mã giảm giá mới
     // ==========================================
     if ($method === 'POST') {
-        $code = strtoupper(trim((string)($in['code'] ?? '')));
+        $code = strtoupper(trim((string) ($in['code'] ?? '')));
         if ($code === '' || !preg_match('/^[A-Z0-9_-]{3,50}$/', $code)) {
             booking_account_out(422, null, 'Mã giảm giá phải từ 3-50 ký tự chữ cái, số, gạch nối.');
         }
@@ -111,7 +113,7 @@ try {
             booking_account_out(422, null, 'Mã giảm giá này đã tồn tại trong hệ thống.');
         }
 
-        $percent = (int)($in['discount_percent'] ?? 0);
+        $percent = (int) ($in['discount_percent'] ?? 0);
         if ($percent < 1 || $percent > 100) {
             booking_account_out(422, null, 'Phần trăm giảm giá phải từ 1% đến 100%.');
         }
@@ -122,7 +124,7 @@ try {
         }
 
         $maxDiscount = isset($in['max_discount']) && $in['max_discount'] !== ''
-            ? max(0, (int)$in['max_discount'])
+            ? max(0, (int) $in['max_discount'])
             : null;
 
         // Mã do Admin tạo bắt buộc phải có max_discount
@@ -132,27 +134,27 @@ try {
             }
         }
 
-        $minOrder = max(0, (int)($in['min_order'] ?? 0));
+        $minOrder = max(0, (int) ($in['min_order'] ?? 0));
 
-        $startAt = trim((string)($in['start_at'] ?? ''));
-        $endAt = trim((string)($in['end_at'] ?? ''));
+        $startAt = trim((string) ($in['start_at'] ?? ''));
+        $endAt = trim((string) ($in['end_at'] ?? ''));
         if (!$startAt || !$endAt || strtotime($endAt) <= strtotime($startAt)) {
             booking_account_out(422, null, 'Thời gian kết thúc phải sau thời gian bắt đầu.');
         }
 
         $usageLimit = isset($in['usage_limit']) && $in['usage_limit'] !== ''
-            ? max(1, (int)$in['usage_limit'])
+            ? max(1, (int) $in['usage_limit'])
             : null;
 
-        $perUserLimit = max(1, (int)($in['per_user_limit'] ?? 1));
+        $perUserLimit = max(1, (int) ($in['per_user_limit'] ?? 1));
 
         // first_booking_only: chỉ admin được bật
         $firstBookingOnly = ($user['role'] === 'admin' && !empty($in['first_booking_only'])) ? 1 : 0;
 
         // Xác định bên chịu và phạm vi sân (server tự gán theo vai trò)
         $fundedBy = ($user['role'] === 'admin') ? 'platform' : 'owner';
-        $ownerId = ($user['role'] === 'admin') ? null : (int)$user['id'];
-        $courtId = isset($in['court_id']) && $in['court_id'] !== '' ? (int)$in['court_id'] : null;
+        $ownerId = ($user['role'] === 'admin') ? null : (int) $user['id'];
+        $courtId = isset($in['court_id']) && $in['court_id'] !== '' ? (int) $in['court_id'] : null;
 
         // Nếu là chủ sân và có chọn court_id: bắt buộc phải thuộc quyền sở hữu
         if ($user['role'] === 'owner') {
@@ -188,7 +190,7 @@ try {
             $fundedBy
         ]);
 
-        $newId = (int)$pdo->lastInsertId();
+        $newId = (int) $pdo->lastInsertId();
         booking_account_out(201, ['id' => $newId, 'code' => $code], 'Tạo mã giảm giá thành công.');
     }
 
@@ -207,7 +209,7 @@ try {
         }
 
         // Quyền truy cập
-        if ($user['role'] === 'owner' && (int)$v['owner_id'] !== (int)$user['id']) {
+        if ($user['role'] === 'owner' && (int) $v['owner_id'] !== (int) $user['id']) {
             booking_account_out(403, null, 'Bạn không có quyền chỉnh sửa mã này.');
         }
 
@@ -219,27 +221,29 @@ try {
         }
 
         // Trường hợp 2: Chỉnh sửa thông tin
-        $usedCount = (int)$v['used_count'];
+        $usedCount = (int) $v['used_count'];
 
         // Nếu admin chỉnh sửa mã của chủ sân: Admin được tắt/bật nhưng không được sửa mức giảm
-        if ($user['role'] === 'admin' && $v['funded_by'] === 'owner' && (int)$v['created_by'] !== (int)$user['id']) {
+        if ($user['role'] === 'admin' && $v['funded_by'] === 'owner' && (int) $v['created_by'] !== (int) $user['id']) {
             booking_account_out(403, null, 'Quản trị viên chỉ được tắt/bật mã của chủ sân, không được sửa mức giảm.');
         }
 
         // Mã đã có lượt dùng: KHÔNG được sửa %, max_discount, phạm vi sân; chỉ được kéo dài hạn hoặc chỉnh lượt
         if ($usedCount > 0) {
-            if (isset($in['discount_percent']) && (int)$in['discount_percent'] !== (int)$v['discount_percent']) {
+            if (isset($in['discount_percent']) && (int) $in['discount_percent'] !== (int) $v['discount_percent']) {
                 booking_account_out(422, null, 'Mã đã có lượt sử dụng, không thể sửa phần trăm giảm giá.');
             }
-            if (isset($in['max_discount']) && (int)$in['max_discount'] !== (int)$v['max_discount']) {
+
+            if (isset($in['max_discount']) && (int) $in['max_discount'] !== (int) $v['max_discount']) {
                 booking_account_out(422, null, 'Mã đã có lượt sử dụng, không thể sửa mức giảm tối đa.');
             }
-            if (isset($in['court_id']) && (int)($in['court_id'] ?: 0) !== (int)($v['court_id'] ?: 0)) {
+
+            if (isset($in['court_id']) && (int) ($in['court_id'] ?: 0) !== (int) ($v['court_id'] ?: 0)) {
                 booking_account_out(422, null, 'Mã đã có lượt sử dụng, không thể đổi phạm vi sân áp dụng.');
             }
 
             // Kéo dài hạn
-            $endAt = trim((string)($in['end_at'] ?? $v['end_at']));
+            $endAt = trim((string) ($in['end_at'] ?? $v['end_at']));
             if (strtotime($endAt) < strtotime($v['end_at'])) {
                 booking_account_out(422, null, 'Mã đã có lượt sử dụng, chỉ được kéo dài hạn dùng chứ không thể rút ngắn.');
             }
@@ -249,32 +253,32 @@ try {
         }
 
         // Mã chưa có lượt dùng: cho phép cập nhật đầy đủ
-        $percent = isset($in['discount_percent']) ? (int)$in['discount_percent'] : (int)$v['discount_percent'];
+        $percent = isset($in['discount_percent']) ? (int) $in['discount_percent'] : (int) $v['discount_percent'];
         if ($user['role'] === 'owner' && $percent > 50) {
             booking_account_out(422, null, 'Chủ sân chỉ được đặt mức giảm tối đa 50%.');
         }
 
         $maxDiscount = isset($in['max_discount']) && $in['max_discount'] !== ''
-            ? max(0, (int)$in['max_discount'])
+            ? max(0, (int) $in['max_discount'])
             : null;
 
         if ($v['funded_by'] === 'platform' && ($maxDiscount === null || $maxDiscount <= 0)) {
             booking_account_out(422, null, 'Mã nền tảng bắt buộc phải có mức giảm tối đa.');
         }
 
-        $minOrder = max(0, (int)($in['min_order'] ?? $v['min_order']));
-        $startAt = trim((string)($in['start_at'] ?? $v['start_at']));
-        $endAt = trim((string)($in['end_at'] ?? $v['end_at']));
+        $minOrder = max(0, (int) ($in['min_order'] ?? $v['min_order']));
+        $startAt = trim((string) ($in['start_at'] ?? $v['start_at']));
+        $endAt = trim((string) ($in['end_at'] ?? $v['end_at']));
         if (strtotime($endAt) <= strtotime($startAt)) {
             booking_account_out(422, null, 'Thời gian kết thúc phải sau thời gian bắt đầu.');
         }
 
         $usageLimit = isset($in['usage_limit']) && $in['usage_limit'] !== ''
-            ? max(1, (int)$in['usage_limit'])
+            ? max(1, (int) $in['usage_limit'])
             : null;
-        $perUserLimit = max(1, (int)($in['per_user_limit'] ?? $v['per_user_limit']));
+        $perUserLimit = max(1, (int) ($in['per_user_limit'] ?? $v['per_user_limit']));
 
-        $courtId = isset($in['court_id']) && $in['court_id'] !== '' ? (int)$in['court_id'] : null;
+        $courtId = isset($in['court_id']) && $in['court_id'] !== '' ? (int) $in['court_id'] : null;
         if ($user['role'] === 'owner' && $courtId !== null) {
             $cChk = $pdo->prepare('SELECT id FROM courts WHERE id = ? AND owner_id = ?');
             $cChk->execute([$courtId, $user['id']]);
@@ -318,11 +322,11 @@ try {
             booking_account_out(404, null, 'Không tìm thấy mã giảm giá.');
         }
 
-        if ($user['role'] === 'owner' && (int)$v['owner_id'] !== (int)$user['id']) {
+        if ($user['role'] === 'owner' && (int) $v['owner_id'] !== (int) $user['id']) {
             booking_account_out(403, null, 'Bạn không có quyền xóa mã này.');
         }
 
-        if ((int)$v['used_count'] > 0) {
+        if ((int) $v['used_count'] > 0) {
             booking_account_out(422, null, 'Mã này đã có lượt sử dụng trong lịch sử đặt sân, không thể xóa. Bạn có thể chọn Tắt mã.');
         }
 
@@ -331,7 +335,6 @@ try {
     }
 
     booking_account_out(405, null, 'Phương thức không được hỗ trợ.');
-
 } catch (Throwable $e) {
     booking_account_error($e);
 }

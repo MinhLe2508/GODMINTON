@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/memberships/subscribe.php
  * API Đăng ký / Gia hạn Gói Hội Viên (Silver 5%, Gold 10%, Platinum 15%).
@@ -19,12 +20,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 try {
     // 1. Bắt buộc đăng nhập
     $user = booking_account_user(false);
-    $userId = (int)$user['id'];
+    $userId = (int) $user['id'];
 
     // 2. Đọc payload
     $in = booking_account_input();
-    $postId = isset($in['post_id']) ? (int)$in['post_id'] : 0;
-    $paymentMethod = isset($in['payment_method']) ? trim((string)$in['payment_method']) : 'VietQR';
+    $postId = isset($in['post_id']) ? (int) $in['post_id'] : 0;
+    $paymentMethod = isset($in['payment_method']) ? trim((string) $in['payment_method']) : 'VietQR';
 
     if ($postId <= 0) {
         booking_account_out(422, null, 'Vui lòng chọn gói hội viên hợp lệ.');
@@ -39,7 +40,6 @@ try {
     $result = membership_subscribe($pdo, $userId, $postId, $paymentMethod);
 
     booking_account_out(200, $result, $result['message']);
-
 } catch (MembershipError $e) {
     booking_account_out($e->httpCode, null, $e->getMessage());
 } catch (Throwable $e) {

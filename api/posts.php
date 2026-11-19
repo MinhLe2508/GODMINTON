@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/posts.php
  * API công khai lấy bài viết phần Khám phá (Sự kiện, Gói hội viên, Thông báo).
@@ -19,7 +20,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
 try {
     // 0. Nếu có tham số latest_check -> Trả về danh sách bài viết xuất bản mới nhất cho hệ thống thông báo
     if (!empty($_GET['latest_check'])) {
-        $limit = min(15, max(1, (int)($_GET['limit'] ?? 10)));
+        $limit = min(15, max(1, (int) ($_GET['limit'] ?? 10)));
         $items = post_get_latest_notifications($pdo, $limit);
         booking_account_out(200, [
             'items' => $items,
@@ -28,8 +29,8 @@ try {
     }
 
     // 1. Nếu có tham số slug -> Lấy chi tiết bài viết
-    if (isset($_GET['slug']) && trim((string)$_GET['slug']) !== '') {
-        $slug = trim((string)$_GET['slug']);
+    if (isset($_GET['slug']) && trim((string) $_GET['slug']) !== '') {
+        $slug = trim((string) $_GET['slug']);
         $post = post_get_public_by_slug($pdo, $slug);
 
         if (!$post) {
@@ -42,10 +43,10 @@ try {
     }
 
     // 2. Lấy danh sách bài viết theo bộ lọc
-    $type = isset($_GET['type']) ? trim((string)$_GET['type']) : '';
-    $search = isset($_GET['search']) ? trim((string)$_GET['search']) : '';
-    $page = max(1, (int)($_GET['page'] ?? 1));
-    $limit = min(50, max(1, (int)($_GET['limit'] ?? 9)));
+    $type = isset($_GET['type']) ? trim((string) $_GET['type']) : '';
+    $search = isset($_GET['search']) ? trim((string) $_GET['search']) : '';
+    $page = max(1, (int) ($_GET['page'] ?? 1));
+    $limit = min(50, max(1, (int) ($_GET['limit'] ?? 9)));
 
     $result = post_get_public_list($pdo, [
         'type' => $type,

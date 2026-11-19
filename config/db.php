@@ -1,4 +1,5 @@
 <?php
+
 /**
  * config/db.php — Kết nối PDO dùng chung cho toàn bộ dự án.
  * Mọi file trong api/ include file này để lấy biến $pdo.
@@ -18,7 +19,7 @@ $DB_PASS = getenv('DB_PASS') !== false ? getenv('DB_PASS') : '';
 // Luôn thử cổng trong .env trước, sau đó tự động fallback sang 3306 và 3307
 // để tránh lỗi khi .env để 3307 nhưng XAMPP chạy 3306 (hoặc ngược lại).
 $portsToTry = array_values(array_unique(array_filter([
-    $DB_PORT ? (int)$DB_PORT : null,
+    $DB_PORT ? (int) $DB_PORT : null,
     3306,
     3307,
     3308,
@@ -31,7 +32,7 @@ $hostsToTry = array_values(array_unique(array_filter([
 ])));
 
 $passesToTry = array_values(array_unique([
-    (string)$DB_PASS,
+    (string) $DB_PASS,
     '',
 ]));
 
@@ -40,10 +41,12 @@ if (!function_exists('godminton_exec_sql_file')) {
         if (!is_readable($filePath)) {
             return;
         }
+
         $raw = file_get_contents($filePath);
         if ($raw === false || trim($raw) === '') {
             return;
         }
+
         $raw = str_replace("\r\n", "\n", $raw);
         $lines = explode("\n", $raw);
         $cleanLines = [];
@@ -52,8 +55,10 @@ if (!function_exists('godminton_exec_sql_file')) {
             if ($trimmed === '' || strpos($trimmed, '--') === 0) {
                 continue;
             }
+
             $cleanLines[] = $line;
         }
+
         $cleaned = implode("\n", $cleanLines);
         $statements = explode(";\n", $cleaned);
         foreach ($statements as $stmt) {
@@ -61,9 +66,11 @@ if (!function_exists('godminton_exec_sql_file')) {
             if ($stmt === '') {
                 continue;
             }
+
             if (substr($stmt, -1) === ';') {
                 $stmt = trim(substr($stmt, 0, -1));
             }
+
             if ($stmt !== '') {
                 $pdo->exec($stmt);
             }
@@ -76,7 +83,7 @@ if (!function_exists('godminton_ensure_schema_ready')) {
         $projectRoot = dirname(__DIR__);
         try {
             $stmt = $pdo->query("SHOW TABLES LIKE 'courts'");
-            $hasCourtsTable = (bool)$stmt->fetchColumn();
+            $hasCourtsTable = (bool) $stmt->fetchColumn();
         } catch (Throwable $e) {
             $hasCourtsTable = false;
         }
@@ -96,12 +103,13 @@ if (!function_exists('godminton_ensure_schema_ready')) {
                     error_log('[GODMINTON DB INIT] ' . basename($sqlFile) . ': ' . $e->getMessage());
                 }
             }
+
             return;
         }
 
         // Nếu bảng courts đã có nhưng trống dữ liệu -> nạp seed.sql
         try {
-            $courtCount = (int)$pdo->query("SELECT COUNT(*) FROM courts")->fetchColumn();
+            $courtCount = (int) $pdo->query("SELECT COUNT(*) FROM courts")->fetchColumn();
             if ($courtCount === 0) {
                 godminton_exec_sql_file($pdo, $projectRoot . '/database/seed.sql');
                 godminton_exec_sql_file($pdo, $projectRoot . '/database/seed_vouchers.sql');
@@ -116,10 +124,10 @@ if (!function_exists('godminton_ensure_schema_ready')) {
 $pdo = null;
 $lastException = null;
 $pdoOptions = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
-    PDO::ATTR_TIMEOUT            => 3,
+    PDO::ATTR_EMULATE_PREPARES => false,
+    PDO::ATTR_TIMEOUT => 3,
 ];
 
 foreach ($hostsToTry as $host) {
@@ -137,7 +145,7 @@ foreach ($hostsToTry as $host) {
                 break 3;
             } catch (PDOException $e) {
                 $lastException = $e;
-                $errCode = (int)($e->errorInfo[1] ?? 0);
+                $errCode = (int) ($e->errorInfo[1] ?? 0);
                 // Mã 1049: Unknown database -> Tự tạo database badminton_booking rồi kết nối lại
                 if ($errCode === 1049 || strpos($e->getMessage(), '1049') !== false || stripos($e->getMessage(), 'Unknown database') !== false) {
                     try {
@@ -174,10 +182,12 @@ if (!$pdo) {
     if (defined('GODMINTON_DB_OPTIONAL') && GODMINTON_DB_OPTIONAL === true) {
         return;
     }
+
     if (!headers_sent()) {
         http_response_code(500);
         header('Content-Type: application/json; charset=utf-8');
     }
+
     echo json_encode([
         'status' => 'error',
         'message' => 'Không kết nối được MySQL. Vui lòng bật MySQL trong XAMPP Control Panel.'

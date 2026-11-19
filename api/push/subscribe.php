@@ -1,11 +1,12 @@
 <?php
+
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../includes/auth-session.php';
 require_once __DIR__ . '/../../includes/web-push.php';
 god_auth_start();
 god_push_ensure_schema($pdo);
 $user = god_auth_user($pdo);
-$userId = $user ? (int)$user['id'] : null;
+$userId = $user ? (int) $user['id'] : null;
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
@@ -21,8 +22,9 @@ try {
         if ($userId !== null) {
             $stmt = $pdo->prepare('SELECT COUNT(*) FROM push_subscriptions WHERE user_id = ?');
             $stmt->execute([$userId]);
-            $count = (int)$stmt->fetchColumn();
+            $count = (int) $stmt->fetchColumn();
         }
+
         // Tự động quét nhắc lịch cho các đơn sắp đến giờ chơi
         $reminderSummary = god_push_dispatch_due_reminders($pdo, $userId);
         push_subscribe_out(200, ['status' => 'success', 'data' => [
@@ -32,17 +34,22 @@ try {
             'reminders' => $reminderSummary,
         ]]);
     }
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') push_subscribe_out(405, ['status' => 'error', 'message' => 'Chỉ hỗ trợ GET/POST.']);
+
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST')
+        push_subscribe_out(405, ['status' => 'error', 'message' => 'Chỉ hỗ trợ GET/POST.']);
 
     $csrf = $_SERVER['HTTP_X_GODMINTON_CSRF'] ?? '';
     if (!is_string($csrf) || $csrf === '' || !hash_equals($_SESSION['csrf_token'], $csrf)) {
         push_subscribe_out(403, ['status' => 'error', 'message' => 'Phiên thao tác đã hết hạn. Hãy tải lại trang.']);
     }
+
     $in = json_decode(file_get_contents('php://input'), true);
-    if (!is_array($in)) push_subscribe_out(400, ['status' => 'error', 'message' => 'Dữ liệu gửi lên không hợp lệ.']);
-    $action = (string)($in['action'] ?? 'subscribe');
-    $endpoint = trim((string)($in['endpoint'] ?? ''));
-    if (!god_push_endpoint_is_allowed($endpoint)) push_subscribe_out(422, ['status' => 'error', 'message' => 'Địa chỉ Push Service không hợp lệ.']);
+    if (!is_array($in))
+        push_subscribe_out(400, ['status' => 'error', 'message' => 'Dữ liệu gửi lên không hợp lệ.']);
+    $action = (string) ($in['action'] ?? 'subscribe');
+    $endpoint = trim((string) ($in['endpoint'] ?? ''));
+    if (!god_push_endpoint_is_allowed($endpoint))
+        push_subscribe_out(422, ['status' => 'error', 'message' => 'Địa chỉ Push Service không hợp lệ.']);
 
     if ($action === 'unsubscribe') {
         if ($userId === null) {
@@ -52,17 +59,21 @@ try {
             $stmt = $pdo->prepare('DELETE FROM push_subscriptions WHERE endpoint = ? AND (user_id = ? OR user_id IS NULL)');
             $stmt->execute([$endpoint, $userId]);
         }
+
         push_subscribe_out(200, ['status' => 'success', 'data' => ['unsubscribed' => true]]);
     }
-    if ($action !== 'subscribe') push_subscribe_out(422, ['status' => 'error', 'message' => 'Hành động không hợp lệ.']);
+
+    if ($action !== 'subscribe')
+        push_subscribe_out(422, ['status' => 'error', 'message' => 'Hành động không hợp lệ.']);
 
     $keys = is_array($in['keys'] ?? null) ? $in['keys'] : [];
-    $p256dh = trim((string)($keys['p256dh'] ?? ''));
-    $auth = trim((string)($keys['auth'] ?? ''));
+    $p256dh = trim((string) ($keys['p256dh'] ?? ''));
+    $auth = trim((string) ($keys['auth'] ?? ''));
     if (!preg_match('/^[A-Za-z0-9_=-]{40,140}$/', $p256dh) || !preg_match('/^[A-Za-z0-9_=-]{16,80}$/', $auth)) {
         push_subscribe_out(422, ['status' => 'error', 'message' => 'Khóa mã hóa subscription không hợp lệ.']);
     }
-    $userAgent = substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255);
+
+    $userAgent = substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255);
     $stmt = $pdo->prepare('INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, user_agent)
         VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE
         user_id = COALESCE(VALUES(user_id), user_id),

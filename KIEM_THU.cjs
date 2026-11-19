@@ -7,7 +7,7 @@ const vm = require('node:vm');
 const net = require('node:net');
 const { spawn } = require('node:child_process');
 
-const root = path.resolve(__dirname, '..');
+const root = __dirname;
 const results = [];
 async function test(name, run) {
     try { await run(); results.push({ name, passed: true }); }

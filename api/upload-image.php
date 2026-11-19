@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/upload-image.php
  * Endpoint tải ảnh đại diện cá nhân (avatar) hoặc ảnh đại diện sân cầu lông (court).
@@ -15,8 +16,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     booking_account_out(405, null, 'Chỉ chấp nhận phương thức POST.');
 }
 
-function god_detect_uploaded_image_mime(string $tmpPath): string
-{
+function god_detect_uploaded_image_mime(string $tmpPath): string {
     if (!is_file($tmpPath) || !is_readable($tmpPath)) {
         return '';
     }
@@ -24,7 +24,7 @@ function god_detect_uploaded_image_mime(string $tmpPath): string
     if (function_exists('getimagesize')) {
         $info = @getimagesize($tmpPath);
         if (is_array($info) && !empty($info['mime']) && ($info[0] ?? 0) > 0 && ($info[1] ?? 0) > 0) {
-            return strtolower((string)$info['mime']);
+            return strtolower((string) $info['mime']);
         }
     }
 
@@ -35,7 +35,8 @@ function god_detect_uploaded_image_mime(string $tmpPath): string
             if (is_string($mime) && $mime !== '') {
                 return strtolower($mime);
             }
-        } catch (Throwable $e) {}
+        } catch (Throwable $e) {
+        }
     }
 
     if (function_exists('mime_content_type')) {
@@ -47,14 +48,16 @@ function god_detect_uploaded_image_mime(string $tmpPath): string
 
     $fh = @fopen($tmpPath, 'rb');
     if ($fh) {
-        $head = (string)@fread($fh, 16);
+        $head = (string) @fread($fh, 16);
         @fclose($fh);
         if (strncmp($head, "\xFF\xD8\xFF", 3) === 0) {
             return 'image/jpeg';
         }
+
         if (strncmp($head, "\x89PNG\r\n\x1A\n", 8) === 0) {
             return 'image/png';
         }
+
         if (strlen($head) >= 12 && substr($head, 0, 4) === 'RIFF' && substr($head, 8, 4) === 'WEBP') {
             return 'image/webp';
         }
@@ -67,7 +70,7 @@ try {
     $user = booking_account_user();
     booking_account_csrf();
 
-    $type = strtolower(trim((string)($_POST['type'] ?? $_GET['type'] ?? 'avatar')));
+    $type = strtolower(trim((string) ($_POST['type'] ?? $_GET['type'] ?? 'avatar')));
     if (!in_array($type, ['avatar', 'court'], true)) {
         $type = 'avatar';
     }
@@ -77,7 +80,7 @@ try {
     }
 
     $file = $_FILES['image'];
-    $errCode = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
+    $errCode = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
 
     if ($errCode !== UPLOAD_ERR_OK) {
         $msg = match ($errCode) {
@@ -90,11 +93,11 @@ try {
     }
 
     $maxBytes = 5 * 1024 * 1024;
-    if ((int)($file['size'] ?? 0) > $maxBytes) {
+    if ((int) ($file['size'] ?? 0) > $maxBytes) {
         booking_account_out(422, null, 'Dung lượng ảnh không được vượt quá 5 MiB.');
     }
 
-    $tmpName = (string)($file['tmp_name'] ?? '');
+    $tmpName = (string) ($file['tmp_name'] ?? '');
     if ($tmpName === '' || !file_exists($tmpName)) {
         booking_account_out(422, null, 'Không tìm thấy tệp tạm trên máy chủ.');
     }
@@ -102,9 +105,9 @@ try {
     $mime = god_detect_uploaded_image_mime($tmpName);
     $allowedMimes = [
         'image/jpeg' => 'jpg',
-        'image/jpg'  => 'jpg',
-        'image/pjpeg'=> 'jpg',
-        'image/png'  => 'png',
+        'image/jpg' => 'jpg',
+        'image/pjpeg' => 'jpg',
+        'image/png' => 'png',
         'image/webp' => 'webp',
     ];
 
@@ -130,7 +133,7 @@ try {
         );
     }
 
-    $userId = (int)$user['id'];
+    $userId = (int) $user['id'];
     $filename = sprintf('%s_%d_%s_%s.%s', $type, $userId, date('Ymd_His'), bin2hex(random_bytes(4)), $ext);
     $destPath = $uploadDir . '/' . $filename;
 
@@ -138,6 +141,7 @@ try {
     if (!$moved) {
         $moved = @copy($tmpName, $destPath);
     }
+
     if (!$moved || !file_exists($destPath)) {
         booking_account_out(500, null, 'Không thể lưu file ảnh lên máy chủ. Vui lòng kiểm tra quyền ghi thư mục assets/img/' . $subFolder . '.');
     }
@@ -153,12 +157,11 @@ try {
     }
 
     booking_account_out(200, [
-        'url'      => $publicUrl,
+        'url' => $publicUrl,
         'filename' => $filename,
-        'type'     => $type
+        'type' => $type
     ], $type === 'avatar' ? 'Đã cập nhật ảnh đại diện thành công.' : 'Tải ảnh đại diện sân thành công.');
 } catch (Throwable $e) {
     error_log('[GODMINTON api/upload-image.php] ' . $e->getMessage());
     booking_account_out(500, null, 'Lỗi máy chủ khi xử lý tải ảnh lên.');
 }
-

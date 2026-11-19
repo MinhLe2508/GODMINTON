@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/payments/sepay-webhook.php
  * Nhận webhook "Có tiền vào" từ SePay → khớp mã thanh toán → xác nhận booking.
@@ -20,40 +21,43 @@ require_once __DIR__ . '/../../includes/payment-service.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
-function sepay_out(int $code, array $body): never
-{
+function sepay_out(int $code, array $body): never {
     http_response_code($code);
     echo json_encode($body, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 /** Lấy API key từ Header Authorization (Apikey/Bearer), X-Api-Key hoặc query ?key= */
-function sepay_extract_api_key(): string
-{
+function sepay_extract_api_key(): string {
     $auth = '';
     foreach (['HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION', 'HTTP_X_API_KEY'] as $key) {
         if (!empty($_SERVER[$key])) {
-            $auth = trim((string)$_SERVER[$key]);
+            $auth = trim((string) $_SERVER[$key]);
             break;
         }
     }
+
     if ($auth === '' && function_exists('getallheaders')) {
         foreach (getallheaders() as $name => $value) {
-            if (in_array(strtolower((string)$name), ['authorization', 'x-api-key'], true)) {
-                $auth = trim((string)$value);
+            if (in_array(strtolower((string) $name), ['authorization', 'x-api-key'], true)) {
+                $auth = trim((string) $value);
                 break;
             }
         }
     }
+
     if ($auth !== '') {
         if (preg_match('/^(?:Apikey|Bearer)\s+(.+)$/i', $auth, $m)) {
             return trim($m[1]);
         }
+
         return $auth;
     }
+
     if (!empty($_GET['key']) && is_scalar($_GET['key'])) {
-        return trim((string)$_GET['key']);
+        return trim((string) $_GET['key']);
     }
+
     return '';
 }
 
@@ -77,6 +81,7 @@ if ($strictAuth) {
     if ($expectedKey === '') {
         sepay_out(503, ['success' => false, 'message' => 'Webhook not configured']);
     }
+
     if ($givenKey === '' || !hash_equals($expectedKey, $givenKey)) {
         sepay_out(401, ['success' => false, 'message' => 'Unauthorized']);
     }
@@ -89,7 +94,7 @@ if (!$pdo) {
 }
 
 $raw = file_get_contents('php://input');
-$payload = json_decode((string)$raw, true);
+$payload = json_decode((string) $raw, true);
 if (!is_array($payload)) {
     sepay_out(400, ['success' => false, 'message' => 'Invalid JSON']);
 }
@@ -111,6 +116,7 @@ echo $body;
 while (ob_get_level() > 0) {
     ob_end_flush();
 }
+
 flush();
 if (function_exists('fastcgi_finish_request')) {
     fastcgi_finish_request();
@@ -118,8 +124,8 @@ if (function_exists('fastcgi_finish_request')) {
 
 if (!empty($result['confirmed'])) {
     if (!empty($result['booking_id'])) {
-        payment_send_confirmation_email($pdo, (int)$result['booking_id']);
+        payment_send_confirmation_email($pdo, (int) $result['booking_id']);
     } elseif (!empty($result['membership_id'])) {
-        payment_send_membership_confirmation_email($pdo, (int)$result['membership_id']);
+        payment_send_membership_confirmation_email($pdo, (int) $result['membership_id']);
     }
 }

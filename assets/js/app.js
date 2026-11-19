@@ -114,13 +114,32 @@ function initServiceWorker() {
     }
 }
 
+const PWA_DISMISS_KEY = 'godminton_pwa_dismissed_at';
+const PWA_DISMISS_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 ngày
+
+function isPwaBannerDismissed() {
+    try {
+        const ts = Number(localStorage.getItem(PWA_DISMISS_KEY) || 0);
+        return ts > 0 && (Date.now() - ts) < PWA_DISMISS_TTL_MS;
+    } catch (_) {
+        return false;
+    }
+}
+
+function dismissPwaBanner() {
+    try {
+        localStorage.setItem(PWA_DISMISS_KEY, String(Date.now()));
+    } catch (_) {}
+    const installBanner = document.getElementById('pwaInstallBanner');
+    if (installBanner) installBanner.classList.remove('show');
+}
+
 function initPwaInstallPrompt() {
     window.addEventListener('beforeinstallprompt', e => {
-        // Ngăn chặn thanh prompt mặc định của trình duyệt để hiển thị giao diện tùy chỉnh đẹp mắt
+        // Ngăn chặn thanh prompt mặc định của trình duyệt để hiển thị giao diện tùy chỉnh
         e.preventDefault();
         deferredInstallPrompt = e;
 
-        // Hiển thị nút hoặc banner cài đặt nếu có chỗ đặt
         const installBtn = document.getElementById('btnPwaInstall');
         const installBanner = document.getElementById('pwaInstallBanner');
 
@@ -129,12 +148,12 @@ function initPwaInstallPrompt() {
             installBtn.onclick = triggerPwaInstall;
         }
 
-        if (installBanner) {
+        if (installBanner && !isPwaBannerDismissed()) {
             installBanner.classList.add('show');
             const actionBtn = document.getElementById('btnBannerInstall');
             if (actionBtn) actionBtn.onclick = triggerPwaInstall;
             const closeBtn = document.getElementById('btnBannerDismiss');
-            if (closeBtn) closeBtn.onclick = () => installBanner.classList.remove('show');
+            if (closeBtn) closeBtn.onclick = dismissPwaBanner;
         }
     });
 
@@ -150,8 +169,14 @@ function initPwaInstallPrompt() {
 async function triggerPwaInstall() {
     if (!deferredInstallPrompt) return;
     deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
+    const choice = await deferredInstallPrompt.userChoice;
     deferredInstallPrompt = null;
+    if (choice && choice.outcome === 'dismissed') {
+        dismissPwaBanner();
+    } else {
+        const installBanner = document.getElementById('pwaInstallBanner');
+        if (installBanner) installBanner.classList.remove('show');
+    }
 }
 
 // ========================

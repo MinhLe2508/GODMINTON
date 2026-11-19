@@ -1,11 +1,13 @@
 /**
  * GODMINTON — courts.js
- * Quản lý tìm kiếm, lọc theo quận / mức giá / tiện ích và hiển thị danh sách sân cầu lông.
+ * Quản lý tìm kiếm, lọc theo quận / mức giá / tiện ích / sân yêu thích và hiển thị danh sách sân cầu lông.
  */
 
 /* ================================================================
-   STATE
+   STATE & FAVORITES STORAGE
    ================================================================ */
+const FAVORITES_STORAGE_KEY = 'godminton_favorite_courts';
+
 let state = {
     search: '',
     ward_id: '',
@@ -16,6 +18,53 @@ let state = {
     showFavorites: false,
     sortMode: 'default'
 };
+
+let favoriteCourtIds = new Set();
+
+function loadLocalFavorites() {
+    try {
+        const raw = localStorage.getItem(FAVORITES_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(parsed)) {
+            favoriteCourtIds = new Set(parsed.map(id => Number(id)).filter(id => Number.isInteger(id) && id > 0));
+        }
+    } catch (_) {
+        favoriteCourtIds = new Set();
+    }
+}
+
+function saveLocalFavorites() {
+    try {
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...favoriteCourtIds]));
+    } catch (_) {}
+}
+
+function isFavoriteCourt(courtId) {
+    return favoriteCourtIds.has(Number(courtId));
+}
+
+async function syncFavoritesWithServer() {
+    try {
+        const localList = [...favoriteCourtIds];
+        const res = await fetch('api/favorites.php', {
+            method: localList.length > 0 ? 'POST' : 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: localList.length > 0 ? { 'Content-Type': 'application/json' } : {},
+            body: localList.length > 0 ? JSON.stringify({ action: 'sync', court_ids: localList }) : undefined
+        });
+        const json = await res.json();
+        if (json.status === 'success' && json.data?.logged_in && Array.isArray(json.data.court_ids)) {
+            const beforeKey = [...favoriteCourtIds].sort((a, b) => a - b).join(',');
+            favoriteCourtIds = new Set(json.data.court_ids.map(id => Number(id)).filter(id => id > 0));
+            saveLocalFavorites();
+            const afterKey = [...favoriteCourtIds].sort((a, b) => a - b).join(',');
+            if (beforeKey !== afterKey) {
+                renderCourts();
+            }
+        }
+    } catch (_) {}
+}
 
 /* ================================================================
    DRAWER OPEN / CLOSE
@@ -38,8 +87,9 @@ function toggleAmenityChip(el) {
     el.classList.toggle('selected');
 }
 function setRating(el, val) {
+    const wasSelected = el.classList.contains('selected');
     document.querySelectorAll('#ratingGroup .amenity-chip').forEach(c => c.classList.remove('selected'));
-    el.classList.toggle('selected');
+    if (!wasSelected) el.classList.add('selected');
 }
 function toggleBookingType(el) {
     el.classList.toggle('selected');
@@ -84,8 +134,10 @@ function resetAllFilters() {
     state.showFavorites = false;
     document.getElementById('filterSearch').value = '';
     const favBtn = document.getElementById('btnFavorite');
-    favBtn.classList.remove('active');
-    favBtn.querySelector('i').className = 'fa-regular fa-heart';
+    if (favBtn) {
+        favBtn.classList.remove('active');
+        favBtn.querySelector('i').className = 'fa-regular fa-heart';
+    }
     updateActiveTagsStrip();
     updateFilterBadge();
     renderCourts();
@@ -100,7 +152,6 @@ function updateActiveTagsStrip() {
 
     const tags = [];
 
-    // Lấy label hiển thị cho ward_id
     if (state.ward_id) {
         const sel = document.getElementById('filterDistrict');
         const label = sel.options[sel.selectedIndex]?.textContent || state.ward_id;
@@ -150,7 +201,6 @@ function updateFilterBadge() {
     const btn = document.getElementById('btnOpenFilter');
     let badge = document.getElementById('filterCountBadge');
 
-    // Một số phiên bản giao diện thiếu badge; bổ sung trước khi cập nhật.
     if (!badge && btn) {
         badge = document.createElement('span');
         badge.id = 'filterCountBadge';
@@ -170,8 +220,10 @@ function updateFilterBadge() {
 function toggleFavoriteFilter() {
     state.showFavorites = !state.showFavorites;
     const btn = document.getElementById('btnFavorite');
-    btn.classList.toggle('active', state.showFavorites);
-    btn.querySelector('i').className = state.showFavorites ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+    if (btn) {
+        btn.classList.toggle('active', state.showFavorites);
+        btn.querySelector('i').className = state.showFavorites ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+    }
     updateActiveTagsStrip();
     renderCourts();
 }
@@ -196,7 +248,6 @@ function formatVND(amount) {
 /* ================================================================
    FETCH COURTS FROM API (AJAX)
    ================================================================ */
-// Giờ hoạt động hằng ngày, dùng múi giờ Việt Nam trên mọi thiết bị.
 let courtClockOffset = 0;
 const courtTimeFormatter = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit',
@@ -233,7 +284,6 @@ function renderCourtHours(court) {
     const opening = parseCourtTime(court.opening_time);
     const closing = parseCourtTime(court.closing_time, true);
     const info = courtHoursState(court.opening_time, court.closing_time);
-    // Chỉ đưa chuỗi thời gian đã kiểm tra vào thuộc tính HTML.
     return `<div class="court-hours mb-3" data-court-hours
                  data-opening="${opening ? court.opening_time : ''}"
                  data-closing="${closing ? court.closing_time : ''}"
@@ -267,7 +317,6 @@ async function fetchCourts() {
         }
     }
 
-    // Gom amenity codes thành chuỗi phân cách dấu phẩy
     if (state.amenities.length > 0) {
         params.set('amenities', state.amenities.map(a => a.value).join(','));
     }
@@ -291,7 +340,6 @@ async function fetchCourts() {
 async function renderCourts() {
     const container = document.getElementById('courtListContainer');
 
-    // Hiển thị loading spinner
     container.innerHTML = `
         <div class="text-center py-5 col-12">
             <div class="spinner-border text-teal" role="status"></div>
@@ -300,6 +348,16 @@ async function renderCourts() {
 
     try {
         let courts = await fetchCourts();
+
+        // Lọc theo sân yêu thích
+        if (state.showFavorites) {
+            courts = courts.filter(c => isFavoriteCourt(c.id));
+        }
+
+        // Lọc theo điểm đánh giá tối thiểu
+        if (state.minRating > 0) {
+            courts = courts.filter(c => (Number(c.avg_rating) || 0) >= state.minRating);
+        }
 
         // Sắp xếp phía client
         if (state.sortMode === 'price_asc') {
@@ -316,15 +374,27 @@ async function renderCourts() {
         }
 
         if (!courts.length) {
-            container.innerHTML = `
-            <div class="col-12 text-center py-5">
-                <i class="fa-solid fa-search-minus fs-1 text-muted mb-3 d-block"></i>
-                <h5 class="fw-bold">Không tìm thấy sân phù hợp</h5>
-                <p class="text-muted small">Thử thay đổi bộ lọc hoặc mở rộng tìm kiếm.</p>
-                <button class="btn btn-outline-teal rounded-pill px-4" onclick="resetAllFilters()">
-                    <i class="fa-solid fa-rotate-left me-1"></i>Xóa bộ lọc
-                </button>
-            </div>`;
+            if (state.showFavorites && favoriteCourtIds.size === 0) {
+                container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="fa-regular fa-heart fs-1 text-danger mb-3 d-block"></i>
+                    <h5 class="fw-bold">Chưa có sân yêu thích nào</h5>
+                    <p class="text-muted small">Nhấn vào biểu tượng trái tim <i class="fa-solid fa-heart text-danger"></i> ở góc trên bên phải mỗi thẻ sân để lưu sân bạn thường chơi.</p>
+                    <button class="btn btn-outline-teal rounded-pill px-4" onclick="toggleFavoriteFilter()">
+                        <i class="fa-solid fa-list me-1"></i>Xem tất cả sân
+                    </button>
+                </div>`;
+            } else {
+                container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="fa-solid fa-search-minus fs-1 text-muted mb-3 d-block"></i>
+                    <h5 class="fw-bold">Không tìm thấy sân phù hợp</h5>
+                    <p class="text-muted small">Thử thay đổi bộ lọc hoặc mở rộng tìm kiếm.</p>
+                    <button class="btn btn-outline-teal rounded-pill px-4" onclick="resetAllFilters()">
+                        <i class="fa-solid fa-rotate-left me-1"></i>Xóa bộ lọc
+                    </button>
+                </div>`;
+            }
             return;
         }
 
@@ -337,10 +407,13 @@ async function renderCourts() {
             cafe:    'fa-mug-hot text-danger',
             locker:  'fa-lock text-secondary',
             wifi:    'fa-wifi text-warning',
-            indoor:  'fa-warehouse text-info'
+            indoor:  'fa-warehouse text-info',
+            court_indoor: 'fa-warehouse text-info'
         };
 
-        container.innerHTML = courts.map((court, i) => `
+        container.innerHTML = courts.map((court, i) => {
+            const isFav = isFavoriteCourt(court.id);
+            return `
         <div class="col-md-6 col-xl-4" data-aos="fade-up" data-aos-delay="${Math.min(i*40,120)}">
             <div class="card border rounded-4 overflow-hidden shadow-sm h-100 court-card">
                 <div style="position:relative; overflow:hidden; height:185px;">
@@ -349,12 +422,16 @@ async function renderCourts() {
                     <div style="position:absolute;top:0.6rem;left:0.6rem; display:flex; gap:0.35rem; flex-wrap:wrap;">
                         ${court.old_area_label ? `<span class="badge bg-dark bg-opacity-75 small">${court.old_area_label}</span>` : ''}
                     </div>
-                    <button onclick="toggleFavCard(${court.id}, this)" title="Yêu thích"
+                    <button type="button" onclick="toggleFavCard(${court.id}, this)"
+                        title="${isFav ? 'Bỏ khỏi sân yêu thích' : 'Lưu vào sân yêu thích'}"
+                        aria-label="${isFav ? 'Bỏ khỏi sân yêu thích' : 'Lưu vào sân yêu thích'}"
+                        aria-pressed="${isFav ? 'true' : 'false'}"
                         style="position:absolute;top:0.6rem;right:0.6rem;
-                               width:30px;height:30px;border-radius:50%;
-                               background:rgba(0,0,0,0.55);border:none;cursor:pointer;
-                               display:flex;align-items:center;justify-content:center;">
-                        <i class="fa-regular fa-heart" style="color:#fff;font-size:0.75rem;"></i>
+                               width:32px;height:32px;border-radius:50%;
+                               background:rgba(0,0,0,0.58);border:none;cursor:pointer;
+                               display:flex;align-items:center;justify-content:center;
+                               transition:transform 0.18s ease;">
+                        <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart" style="color:${isFav ? '#f43f5e' : '#fff'};font-size:0.85rem;"></i>
                     </button>
                 </div>
                 <div class="p-3 d-flex flex-column flex-grow-1">
@@ -387,7 +464,8 @@ async function renderCourts() {
                     </div>
                 </div>
             </div>
-        </div>`).join('');
+        </div>`;
+        }).join('');
 
         if (typeof AOS !== 'undefined') AOS.refresh();
 
@@ -405,11 +483,51 @@ async function renderCourts() {
     }
 }
 
-function toggleFavCard(id, btn) {
-    const icon = btn.querySelector('i');
-    const isActive = icon.className.includes('fa-solid');
-    icon.className = isActive ? 'fa-regular fa-heart' : 'fa-solid fa-heart';
-    icon.style.color = isActive ? '#fff' : '#f43f5e';
+async function toggleFavCard(id, btn) {
+    const courtId = Number(id);
+    if (!courtId) return;
+
+    const wasFav = isFavoriteCourt(courtId);
+    const nowFav = !wasFav;
+
+    if (nowFav) {
+        favoriteCourtIds.add(courtId);
+    } else {
+        favoriteCourtIds.delete(courtId);
+    }
+    saveLocalFavorites();
+
+    if (btn) {
+        const icon = btn.querySelector('i');
+        if (icon) {
+            icon.className = nowFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+            icon.style.color = nowFav ? '#f43f5e' : '#fff';
+        }
+        btn.title = nowFav ? 'Bỏ khỏi sân yêu thích' : 'Lưu vào sân yêu thích';
+        btn.setAttribute('aria-label', btn.title);
+        btn.setAttribute('aria-pressed', nowFav ? 'true' : 'false');
+        btn.style.transform = 'scale(1.22)';
+        setTimeout(() => { btn.style.transform = ''; }, 180);
+    }
+
+    // Nếu đang ở chế độ lọc "Yêu thích" và người dùng bỏ yêu thích sân này, cập nhật lại danh sách ngay
+    if (state.showFavorites && !nowFav) {
+        renderCourts();
+    }
+
+    try {
+        const res = await fetch('api/favorites.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ court_id: courtId, action: nowFav ? 'add' : 'remove' })
+        });
+        const json = await res.json();
+        if (json.status === 'success' && json.data?.logged_in && Array.isArray(json.data.court_ids)) {
+            favoriteCourtIds = new Set(json.data.court_ids.map(cid => Number(cid)).filter(cid => cid > 0));
+            saveLocalFavorites();
+        }
+    } catch (_) {}
 }
 
 /* ================================================================
@@ -422,7 +540,6 @@ async function loadWardsDropdown() {
         if (json.status !== 'success') return;
 
         const sel = document.getElementById('filterDistrict');
-        // Giữ lại option "Tất cả"
         sel.innerHTML = '<option value="">Tất cả khu vực TP.HCM</option>';
         json.data.forEach(w => {
             const opt = document.createElement('option');
@@ -431,7 +548,6 @@ async function loadWardsDropdown() {
             sel.appendChild(opt);
         });
 
-        // Nếu có ward_id từ URL, set lại
         if (state.ward_id) {
             sel.value = state.ward_id;
         }
@@ -444,8 +560,11 @@ async function loadWardsDropdown() {
    INIT
    ================================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+    loadLocalFavorites();
+    syncFavoritesWithServer();
+
     setInterval(refreshCourtHours, 30000);
-    // Realtime text search
+
     const searchInput = document.getElementById('filterSearch');
     searchInput.addEventListener('input', () => {
         clearTimeout(window._st);
@@ -477,17 +596,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (p.get('amenity')) {
         state.amenities = [{ value: p.get('amenity'), label: p.get('amenity') }];
     }
+    if (p.get('favorites') === '1') {
+        state.showFavorites = true;
+        const favBtn = document.getElementById('btnFavorite');
+        if (favBtn) {
+            favBtn.classList.add('active');
+            favBtn.querySelector('i').className = 'fa-solid fa-heart';
+        }
+    }
 
-    // Load wards dropdown from API
     loadWardsDropdown();
-
+    updateActiveTagsStrip();
     updateFilterBadge();
     renderCourts();
 });
 
 // ESC key closes drawer
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFilterDrawer(); });
-// Cập nhật ngay khi quay lại tab sau thời gian để nền.
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) refreshCourtHours();
 });

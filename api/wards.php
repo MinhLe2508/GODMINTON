@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/wards.php
  * GET danh sách phường (để populate dropdown lọc khu vực).
@@ -29,21 +30,20 @@ try {
     // Cast id to int
     $wards = array_map(function ($w) {
         return [
-            'id'             => (int) $w['id'],
-            'name'           => $w['name'],
+            'id' => (int) $w['id'],
+            'name' => $w['name'],
             'old_area_label' => $w['old_area_label']
         ];
     }, $wards);
 
     echo json_encode([
         'status' => 'success',
-        'data'   => $wards
+        'data' => $wards
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([
-        'status'  => 'error',
+        'status' => 'error',
         'message' => 'Lỗi truy vấn: ' . $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 }

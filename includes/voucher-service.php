@@ -1,4 +1,5 @@
 <?php
+
 /**
  * includes/voucher-service.php
  * Logic nghiệp vụ xử lý mã giảm giá (Vouchers) dùng chung cho GODMINTON.
@@ -26,16 +27,17 @@ class VoucherError extends RuntimeException {
  * Định dạng tiền tệ VND rút gọn hoặc đủ
  */
 function voucher_format_vnd(int|float $amount): string {
-    return number_format((int)round($amount), 0, ',', '.') . 'đ';
+    return number_format((int) round($amount), 0, ',', '.') . 'đ';
 }
 
 /**
  * Kiểm tra và ghi nhận giới hạn tần suất nhập sai mã (5 lần / 10 phút)
  */
 function voucher_check_rate_limit(PDO $pdo, int $userId): void {
-    if ($userId <= 0) return;
+    if ($userId <= 0)
+        return;
     $scope = 'voucher_attempt';
-    $key = (string)$userId;
+    $key = (string) $userId;
     $hash = hash('sha256', $scope . '|' . $key);
     $seconds = 600; // 10 phút
     $cutoff = date('Y-m-d H:i:s', time() - $seconds);
@@ -48,8 +50,8 @@ function voucher_check_rate_limit(PDO $pdo, int $userId): void {
     if ($row) {
         $startedAt = strtotime($row['window_started_at']);
         $elapsed = time() - $startedAt;
-        if ($elapsed < $seconds && (int)$row['attempts'] >= 5) {
-            $remainingMins = max(1, (int)ceil(($seconds - $elapsed) / 60));
+        if ($elapsed < $seconds && (int) $row['attempts'] >= 5) {
+            $remainingMins = max(1, (int) ceil(($seconds - $elapsed) / 60));
             throw new VoucherError(
                 429,
                 'VOUCHER_RATE_LIMIT',
@@ -64,9 +66,10 @@ function voucher_check_rate_limit(PDO $pdo, int $userId): void {
  * Tăng số lần nhập sai khi mã không tồn tại
  */
 function voucher_record_failure(PDO $pdo, int $userId): void {
-    if ($userId <= 0) return;
+    if ($userId <= 0)
+        return;
     $scope = 'voucher_attempt';
-    $key = (string)$userId;
+    $key = (string) $userId;
     $hash = hash('sha256', $scope . '|' . $key);
     $seconds = 600; // 10 phút
     $cutoff = date('Y-m-d H:i:s', time() - $seconds);
@@ -85,9 +88,10 @@ function voucher_record_failure(PDO $pdo, int $userId): void {
  * Xóa giới hạn tần suất khi nhập đúng mã thành công
  */
 function voucher_clear_failure(PDO $pdo, int $userId): void {
-    if ($userId <= 0) return;
+    if ($userId <= 0)
+        return;
     $scope = 'voucher_attempt';
-    $key = (string)$userId;
+    $key = (string) $userId;
     $hash = hash('sha256', $scope . '|' . $key);
     $stmt = $pdo->prepare('DELETE FROM auth_rate_limits WHERE key_hash = ?');
     $stmt->execute([$hash]);
@@ -105,9 +109,9 @@ function voucher_calculate_pricing(int $courtAmount, ?array $voucher = null, ?ar
     $membershipDiscount = 0;
     $membershipId = null;
     if ($membership && !empty($membership['discount_percent'])) {
-        $memberPercent = (int)$membership['discount_percent'];
-        $membershipDiscount = (int)round(($courtAmount * $memberPercent) / 100);
-        $membershipId = isset($membership['id']) ? (int)$membership['id'] : null;
+        $memberPercent = (int) $membership['discount_percent'];
+        $membershipDiscount = (int) round(($courtAmount * $memberPercent) / 100);
+        $membershipId = isset($membership['id']) ? (int) $membership['id'] : null;
     }
 
     // 2. Tính chiết khấu voucher (nếu có)
@@ -118,13 +122,13 @@ function voucher_calculate_pricing(int $courtAmount, ?array $voucher = null, ?ar
     $voucherFundedBy = 'platform';
 
     if ($voucher) {
-        $voucherId = (int)$voucher['id'];
+        $voucherId = (int) $voucher['id'];
         $voucherCode = strtoupper(trim($voucher['code']));
-        $voucherPercent = (int)($voucher['discount_percent'] ?? 0);
-        $rawDiscount = (int)round(($courtAmount * $voucherPercent) / 100);
+        $voucherPercent = (int) ($voucher['discount_percent'] ?? 0);
+        $rawDiscount = (int) round(($courtAmount * $voucherPercent) / 100);
 
         $maxDiscount = isset($voucher['max_discount']) && $voucher['max_discount'] !== null
-            ? (int)$voucher['max_discount']
+            ? (int) $voucher['max_discount']
             : null;
 
         if ($maxDiscount !== null && $maxDiscount > 0) {
@@ -132,6 +136,7 @@ function voucher_calculate_pricing(int $courtAmount, ?array $voucher = null, ?ar
         } else {
             $voucherDiscount = $rawDiscount;
         }
+
         $voucherFundedBy = $voucher['funded_by'] ?? 'platform';
     }
 
@@ -140,13 +145,13 @@ function voucher_calculate_pricing(int $courtAmount, ?array $voucher = null, ?ar
     $afterDiscount = max(0, $courtAmount - $totalDiscount);
 
     // Phí sàn = 5% của tiền sân sau giảm
-    $platformFee = ($voucher !== null || $totalDiscount > 0) ? (int)round($afterDiscount * 0.05) : 0;
+    $platformFee = ($voucher !== null || $totalDiscount > 0) ? (int) round($afterDiscount * 0.05) : 0;
 
     // Tổng khách trả = tiền sau giảm + phí sàn
     $totalAmount = $afterDiscount + $platformFee;
 
     // Cọc = 50% tổng khách trả
-    $depositAmount = (int)round($totalAmount * 0.5);
+    $depositAmount = (int) round($totalAmount * 0.5);
 
     // Tiền chủ sân nhận
     if ($voucher && $voucherFundedBy === 'owner') {
@@ -160,20 +165,20 @@ function voucher_calculate_pricing(int $courtAmount, ?array $voucher = null, ?ar
     $fundedBy = ($totalDiscount > 0) ? ($voucher && $voucherFundedBy === 'owner' ? 'owner' : 'platform') : null;
 
     return [
-        'voucher_id'                  => $voucherId,
-        'voucher_code'                => $voucherCode,
-        'user_membership_id'          => $membershipId,
-        'membership_discount_amount'  => $membershipDiscount,
+        'voucher_id' => $voucherId,
+        'voucher_code' => $voucherCode,
+        'user_membership_id' => $membershipId,
+        'membership_discount_amount' => $membershipDiscount,
         'membership_discount_percent' => $memberPercent,
-        'court_amount'                => $courtAmount,
-        'discount_amount'             => $totalDiscount,
-        'voucher_discount_amount'     => $voucherDiscount,
-        'discount_funded_by'          => $fundedBy,
-        'platform_fee'                => $platformFee,
-        'total_amount'                => $totalAmount,
-        'deposit_amount'              => $depositAmount,
-        'owner_amount'                => $ownerAmount,
-        'discount_percent'            => $voucherPercent,
+        'court_amount' => $courtAmount,
+        'discount_amount' => $totalDiscount,
+        'voucher_discount_amount' => $voucherDiscount,
+        'discount_funded_by' => $fundedBy,
+        'platform_fee' => $platformFee,
+        'total_amount' => $totalAmount,
+        'deposit_amount' => $depositAmount,
+        'owner_amount' => $ownerAmount,
+        'discount_percent' => $voucherPercent,
     ];
 }
 
@@ -202,6 +207,7 @@ function voucher_validate_and_get(
     if ($forUpdate) {
         $sql .= ' FOR UPDATE';
     }
+
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$normalizedCode]);
     $voucher = $stmt->fetch();
@@ -254,17 +260,17 @@ function voucher_validate_and_get(
     }
 
     // Nếu voucher giới hạn theo 1 sân cụ thể
-    if ($voucher['court_id'] !== null && (int)$voucher['court_id'] !== $courtId) {
+    if ($voucher['court_id'] !== null && (int) $voucher['court_id'] !== $courtId) {
         throw new VoucherError(422, 'VOUCHER_WRONG_COURT', 'Mã này không áp dụng cho sân này.');
     }
 
     // Nếu voucher do chủ sân tạo cho tất cả sân của họ
-    if ($voucher['owner_id'] !== null && (int)$voucher['owner_id'] !== (int)$court['owner_id']) {
+    if ($voucher['owner_id'] !== null && (int) $voucher['owner_id'] !== (int) $court['owner_id']) {
         throw new VoucherError(422, 'VOUCHER_WRONG_COURT', 'Mã này không áp dụng cho sân này.');
     }
 
     // 6. Kiểm tra đơn hàng tối thiểu
-    $minOrder = (int)$voucher['min_order'];
+    $minOrder = (int) $voucher['min_order'];
     if ($minOrder > 0 && $courtAmount < $minOrder) {
         throw new VoucherError(
             422,
@@ -276,20 +282,20 @@ function voucher_validate_and_get(
 
     // 7. Kiểm tra tổng lượt sử dụng toàn hệ thống
     if ($voucher['usage_limit'] !== null) {
-        if ((int)$voucher['used_count'] >= (int)$voucher['usage_limit']) {
+        if ((int) $voucher['used_count'] >= (int) $voucher['usage_limit']) {
             throw new VoucherError(422, 'VOUCHER_USED_UP', 'Mã đã hết lượt sử dụng.');
         }
     }
 
     // 8. Kiểm tra giới hạn số lần dùng trên mỗi tài khoản khách
     if ($userId > 0) {
-        $perUserLimit = (int)($voucher['per_user_limit'] ?? 1);
+        $perUserLimit = (int) ($voucher['per_user_limit'] ?? 1);
         $usageCountStmt = $pdo->prepare('
             SELECT COUNT(*) FROM voucher_usages
             WHERE voucher_id = ? AND user_id = ? AND released_at IS NULL
         ');
-        $usageCountStmt->execute([(int)$voucher['id'], $userId]);
-        $userUsages = (int)$usageCountStmt->fetchColumn();
+        $usageCountStmt->execute([(int) $voucher['id'], $userId]);
+        $userUsages = (int) $usageCountStmt->fetchColumn();
 
         if ($userUsages >= $perUserLimit) {
             throw new VoucherError(422, 'VOUCHER_ALREADY_USED', 'Bạn đã sử dụng mã này rồi.');
@@ -297,10 +303,10 @@ function voucher_validate_and_get(
 
         // 8.1. Nếu voucher được phát hành qua bài viết, khách cần bấm nhận mã vào kho trước khi sử dụng
         $postVoucherStmt = $pdo->prepare('SELECT 1 FROM posts WHERE voucher_id = ? LIMIT 1');
-        $postVoucherStmt->execute([(int)$voucher['id']]);
+        $postVoucherStmt->execute([(int) $voucher['id']]);
         if ($postVoucherStmt->fetch()) {
             $hasCollectedStmt = $pdo->prepare('SELECT 1 FROM user_vouchers WHERE user_id = ? AND voucher_id = ?');
-            $hasCollectedStmt->execute([$userId, (int)$voucher['id']]);
+            $hasCollectedStmt->execute([$userId, (int) $voucher['id']]);
             if (!$hasCollectedStmt->fetch()) {
                 throw new VoucherError(422, 'VOUCHER_NOT_COLLECTED', 'Bạn chưa lưu mã này vào kho. Vui lòng vào bài viết để bấm "Nhận mã" trước khi sử dụng.');
             }

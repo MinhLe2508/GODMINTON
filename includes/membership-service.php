@@ -1,4 +1,5 @@
 <?php
+
 /**
  * includes/membership-service.php
  * Logic nghiệp vụ Quản lý & Kích hoạt Gói Hội Viên GODMINTON:
@@ -38,7 +39,8 @@ function membership_sync_expired(PDO $pdo): int {
  * Lấy gói hội viên đang có hiệu lực của người dùng (nếu có)
  */
 function membership_get_active_for_user(PDO $pdo, int $userId): ?array {
-    if ($userId <= 0) return null;
+    if ($userId <= 0)
+        return null;
 
     // Tự động đồng bộ trạng thái hết hạn sau 23h59p
     membership_sync_expired($pdo);
@@ -55,12 +57,13 @@ function membership_get_active_for_user(PDO $pdo, int $userId): ?array {
     ");
     $stmt->execute([$userId]);
     $row = $stmt->fetch();
-    if (!$row) return null;
+    if (!$row)
+        return null;
 
     // Tính số ngày còn lại
     $now = time();
     $end = strtotime($row['end_date']);
-    $daysLeft = max(0, (int)ceil(($end - $now) / 86400));
+    $daysLeft = max(0, (int) ceil(($end - $now) / 86400));
     $row['days_left'] = $daysLeft;
 
     return $row;
@@ -70,7 +73,8 @@ function membership_get_active_for_user(PDO $pdo, int $userId): ?array {
  * Lấy gói hội viên đang chờ thanh toán / chờ admin xác nhận (pending) của người dùng
  */
 function membership_get_pending_for_user(PDO $pdo, int $userId): ?array {
-    if ($userId <= 0) return null;
+    if ($userId <= 0)
+        return null;
 
     payment_expire_overdue($pdo, 20);
 
@@ -85,16 +89,17 @@ function membership_get_pending_for_user(PDO $pdo, int $userId): ?array {
     ");
     $stmt->execute([$userId]);
     $row = $stmt->fetch();
-    if (!$row) return null;
+    if (!$row)
+        return null;
 
-    $row['tier_label'] = match($row['tier']) {
+    $row['tier_label'] = match ($row['tier']) {
         'platinum' => 'Bạch Kim (15%)',
-        'gold'     => 'Vàng (10%)',
-        'silver'   => 'Bạc (5%)',
-        default    => 'Hội Viên'
+        'gold' => 'Vàng (10%)',
+        'silver' => 'Bạc (5%)',
+        default => 'Hội Viên'
     };
 
-    $pay = payment_fetch_by_membership($pdo, (int)$row['id']);
+    $pay = payment_fetch_by_membership($pdo, (int) $row['id']);
     $row['payment'] = $pay ? payment_public_data($pay) : null;
 
     return $row;
@@ -104,7 +109,8 @@ function membership_get_pending_for_user(PDO $pdo, int $userId): ?array {
  * Lấy lịch sử các gói hội viên đã đăng ký của người dùng
  */
 function membership_get_history(PDO $pdo, int $userId): array {
-    if ($userId <= 0) return [];
+    if ($userId <= 0)
+        return [];
 
     $stmt = $pdo->prepare("
         SELECT um.*, p.title AS package_title, p.slug AS package_slug
@@ -121,7 +127,8 @@ function membership_get_history(PDO $pdo, int $userId): array {
  * Lấy chi tiết gói hội viên từ posts
  */
 function membership_get_package_by_id(PDO $pdo, int $postId): ?array {
-    if ($postId <= 0) return null;
+    if ($postId <= 0)
+        return null;
 
     $stmt = $pdo->prepare("
         SELECT * FROM posts
@@ -155,16 +162,20 @@ function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymen
         throw new MembershipError(404, 'PACKAGE_NOT_FOUND', 'Gói hội viên không tồn tại hoặc đã ngừng cung cấp.');
     }
 
-    $price = (float)($pkg['price'] ?? 0);
-    $durationDays = (int)($pkg['duration_days'] ?? 30);
-    if ($durationDays <= 0) $durationDays = 30;
+    $price = (float) ($pkg['price'] ?? 0);
+    $durationDays = (int) ($pkg['duration_days'] ?? 30);
+    if ($durationDays <= 0)
+        $durationDays = 30;
 
-    $discountPercent = (int)($pkg['discount_percent'] ?? 0);
+    $discountPercent = (int) ($pkg['discount_percent'] ?? 0);
     if ($discountPercent <= 0) {
         $slug = $pkg['slug'] ?? '';
-        if (str_contains($slug, 'platinum')) $discountPercent = 15;
-        elseif (str_contains($slug, 'gold') || str_contains($slug, 'golden')) $discountPercent = 10;
-        elseif (str_contains($slug, 'silver')) $discountPercent = 5;
+        if (str_contains($slug, 'platinum'))
+            $discountPercent = 15;
+        elseif (str_contains($slug, 'gold') || str_contains($slug, 'golden'))
+            $discountPercent = 10;
+        elseif (str_contains($slug, 'silver'))
+            $discountPercent = 5;
         else $discountPercent = 5;
     }
 
@@ -190,27 +201,28 @@ function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymen
     // Kiểm tra xem user đã có phiên thanh toán pending nào chưa
     $pending = membership_get_pending_for_user($pdo, $userId);
     if ($pending) {
-        $pendingId = (int)$pending['id'];
+        $pendingId = (int) $pending['id'];
         $existingPay = payment_fetch_by_membership($pdo, $pendingId);
         // Nếu cùng gói và phiên thanh toán SePay vẫn còn hạn -> trả về luôn phiên thanh toán hiện tại để khách quét tiếp
-        if ((int)$pending['post_id'] === (int)$pkg['id'] && $existingPay && $existingPay['status'] === 'pending' && (int)$existingPay['expires_in_seconds'] > 0) {
+        if ((int) $pending['post_id'] === (int) $pkg['id'] && $existingPay && $existingPay['status'] === 'pending' && (int) $existingPay['expires_in_seconds'] > 0) {
             return [
-                'membership_id'    => $pendingId,
-                'membership_code'  => 'MB-' . str_pad((string)$pendingId, 6, '0', STR_PAD_LEFT),
-                'package_id'       => (int)$pkg['id'],
-                'package_title'    => $pkg['title'],
-                'tier'             => $tier,
+                'membership_id' => $pendingId,
+                'membership_code' => 'MB-' . str_pad((string) $pendingId, 6, '0', STR_PAD_LEFT),
+                'package_id' => (int) $pkg['id'],
+                'package_title' => $pkg['title'],
+                'tier' => $tier,
                 'discount_percent' => $discountPercent,
-                'duration_days'    => $durationDays,
-                'price_paid'       => (float)$pending['price_paid'],
-                'start_date'       => $pending['start_date'],
-                'end_date'         => $pending['end_date'],
-                'status'           => 'pending',
-                'is_extend'        => $isExtend,
-                'payment'          => payment_public_data($existingPay),
-                'message'          => 'Vui lòng quét mã VietQR để hoàn tất kích hoạt gói hội viên.'
+                'duration_days' => $durationDays,
+                'price_paid' => (float) $pending['price_paid'],
+                'start_date' => $pending['start_date'],
+                'end_date' => $pending['end_date'],
+                'status' => 'pending',
+                'is_extend' => $isExtend,
+                'payment' => payment_public_data($existingPay),
+                'message' => 'Vui lòng quét mã VietQR để hoàn tất kích hoạt gói hội viên.'
             ];
         }
+
         // Ngược lại (khách đổi sang gói khác hoặc phiên cũ đã hết hạn) -> hủy yêu cầu pending cũ để tạo mã QR mới
         $pdo->prepare("UPDATE user_memberships SET status = 'cancelled', updated_at = NOW() WHERE id = ? AND status = 'pending'")->execute([$pendingId]);
         if (payment_tables_ready($pdo)) {
@@ -249,7 +261,7 @@ function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymen
         'VietQR (SePay 24/7)'
     ]);
 
-    $membershipId = (int)$pdo->lastInsertId();
+    $membershipId = (int) $pdo->lastInsertId();
 
     // Tạo phiên thanh toán SePay VietQR cho gói hội viên
     $paymentData = null;
@@ -260,7 +272,7 @@ function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymen
             INSERT INTO payments (booking_id, membership_id, payment_code, amount, paid_amount, status, expires_at)
             VALUES (NULL, ?, ?, ?, 0, 'pending', DATE_ADD(NOW(), INTERVAL ? MINUTE))
         ");
-        $payStmt->execute([$membershipId, $paymentCode, (int)round($price), $timeout]);
+        $payStmt->execute([$membershipId, $paymentCode, (int) round($price), $timeout]);
         $payRow = payment_fetch_by_membership($pdo, $membershipId);
         if ($payRow) {
             $paymentData = payment_public_data($payRow);
@@ -268,20 +280,20 @@ function membership_subscribe(PDO $pdo, int $userId, int $postId, string $paymen
     }
 
     return [
-        'membership_id'    => $membershipId,
-        'membership_code'  => 'MB-' . str_pad((string)$membershipId, 6, '0', STR_PAD_LEFT),
-        'package_id'       => (int)$pkg['id'],
-        'package_title'    => $pkg['title'],
-        'tier'             => $tier,
+        'membership_id' => $membershipId,
+        'membership_code' => 'MB-' . str_pad((string) $membershipId, 6, '0', STR_PAD_LEFT),
+        'package_id' => (int) $pkg['id'],
+        'package_title' => $pkg['title'],
+        'tier' => $tier,
         'discount_percent' => $discountPercent,
-        'duration_days'    => $durationDays,
-        'price_paid'       => $price,
-        'start_date'       => $startDate,
-        'end_date'         => $endDate,
-        'status'           => 'pending',
-        'is_extend'        => $isExtend,
-        'payment'          => $paymentData,
-        'message'          => 'Đã khởi tạo mã thanh toán VietQR. Gói hội viên sẽ tự động kích hoạt ngay sau khi nhận thanh toán.'
+        'duration_days' => $durationDays,
+        'price_paid' => $price,
+        'start_date' => $startDate,
+        'end_date' => $endDate,
+        'status' => 'pending',
+        'is_extend' => $isExtend,
+        'payment' => $paymentData,
+        'message' => 'Đã khởi tạo mã thanh toán VietQR. Gói hội viên sẽ tự động kích hoạt ngay sau khi nhận thanh toán.'
     ];
 }
 
@@ -301,13 +313,14 @@ function membership_approve(PDO $pdo, int $membershipId): array {
     if (!$mem) {
         throw new MembershipError(404, 'NOT_FOUND', 'Không tìm thấy yêu cầu đăng ký gói hội viên.');
     }
+
     if ($mem['status'] !== 'pending') {
         throw new MembershipError(400, 'INVALID_STATUS', 'Yêu cầu này không ở trạng thái chờ duyệt (Trạng thái hiện tại: ' . $mem['status'] . ').');
     }
 
-    $userId = (int)$mem['user_id'];
+    $userId = (int) $mem['user_id'];
     $tier = $mem['tier'];
-    $durationDays = (int)$mem['duration_days'];
+    $durationDays = (int) $mem['duration_days'];
     $now = date('Y-m-d H:i:s');
 
     // Kiểm tra gói active hiện tại của user
@@ -346,14 +359,14 @@ function membership_approve(PDO $pdo, int $membershipId): array {
     }
 
     return [
-        'id'            => $membershipId,
-        'user_name'     => $mem['user_name'],
+        'id' => $membershipId,
+        'user_name' => $mem['user_name'],
         'package_title' => $mem['package_title'],
-        'tier'          => $mem['tier'],
-        'start_date'    => $newStart,
-        'end_date'      => $newEnd,
-        'status'        => 'active',
-        'message'       => "Đã duyệt và kích hoạt thành công Gói {$mem['package_title']} cho thành viên {$mem['user_name']}!"
+        'tier' => $mem['tier'],
+        'start_date' => $newStart,
+        'end_date' => $newEnd,
+        'status' => 'active',
+        'message' => "Đã duyệt và kích hoạt thành công Gói {$mem['package_title']} cho thành viên {$mem['user_name']}!"
     ];
 }
 
@@ -373,6 +386,7 @@ function membership_reject(PDO $pdo, int $membershipId, string $reason = ''): ar
     if (!$mem) {
         throw new MembershipError(404, 'NOT_FOUND', 'Không tìm thấy yêu cầu đăng ký gói hội viên.');
     }
+
     if ($mem['status'] !== 'pending') {
         throw new MembershipError(400, 'INVALID_STATUS', 'Yêu cầu này không ở trạng thái chờ duyệt.');
     }
@@ -383,11 +397,11 @@ function membership_reject(PDO $pdo, int $membershipId, string $reason = ''): ar
     }
 
     return [
-        'id'            => $membershipId,
-        'user_name'     => $mem['user_name'],
+        'id' => $membershipId,
+        'user_name' => $mem['user_name'],
         'package_title' => $mem['package_title'],
-        'status'        => 'rejected',
-        'message'       => "Đã từ chối yêu cầu đăng ký của thành viên {$mem['user_name']}."
+        'status' => 'rejected',
+        'message' => "Đã từ chối yêu cầu đăng ký của thành viên {$mem['user_name']}."
     ];
 }
 
@@ -399,27 +413,27 @@ function membership_calculate_discount(int $courtAmount, ?array $activeMembershi
 
     if (!$activeMembership || empty($activeMembership['discount_percent'])) {
         return [
-            'membership_id'            => null,
-            'tier'                     => null,
-            'discount_percent'         => 0,
+            'membership_id' => null,
+            'tier' => null,
+            'discount_percent' => 0,
             'membership_discount_amount' => 0
         ];
     }
 
-    $percent = (int)$activeMembership['discount_percent'];
-    $discount = (int)round(($courtAmount * $percent) / 100);
+    $percent = (int) $activeMembership['discount_percent'];
+    $discount = (int) round(($courtAmount * $percent) / 100);
     $discount = min($courtAmount, max(0, $discount));
 
     return [
-        'membership_id'              => (int)$activeMembership['id'],
-        'tier'                       => $activeMembership['tier'],
-        'tier_label'                 => match($activeMembership['tier']) {
+        'membership_id' => (int) $activeMembership['id'],
+        'tier' => $activeMembership['tier'],
+        'tier_label' => match ($activeMembership['tier']) {
             'platinum' => 'Bạch Kim (15%)',
-            'gold'     => 'Vàng (10%)',
-            'silver'   => 'Bạc (5%)',
-            default    => 'Hội Viên'
+            'gold' => 'Vàng (10%)',
+            'silver' => 'Bạc (5%)',
+            default => 'Hội Viên'
         },
-        'discount_percent'           => $percent,
+        'discount_percent' => $percent,
         'membership_discount_amount' => $discount
     ];
 }

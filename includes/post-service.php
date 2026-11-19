@@ -1,4 +1,5 @@
 <?php
+
 /**
  * includes/post-service.php
  * Nghiệp vụ xử lý Bài viết (Khám phá: Sự kiện, Gói hội viên ưu đãi, Thông báo).
@@ -41,6 +42,7 @@ function post_remove_vietnamese_accents(string $str): string {
     foreach ($map as $nonAccent => $accentRegex) {
         $str = preg_replace("/($accentRegex)/u", $nonAccent, $str);
     }
+
     return $str;
 }
 
@@ -71,11 +73,13 @@ function post_generate_unique_slug(PDO $pdo, string $title, ?int $excludeId = nu
             $sql .= ' AND id != ?';
             $params[] = $excludeId;
         }
+
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
         if (!$stmt->fetch()) {
             return $slug;
         }
+
         $counter++;
         $slug = $baseSlug . '-' . $counter;
     }
@@ -102,7 +106,7 @@ function post_render_content(string $content): string {
     $safe = preg_replace('/^[-*]\s+(.+)$/m', '<div class="d-flex align-items-start gap-2 my-1"><i class="fa-solid fa-circle-check text-teal mt-1 small"></i><span>$1</span></div>', $safe);
 
     // 6. Chuyển đổi link Markdown an toàn [Title](http(s)://URL)
-    $safe = preg_replace_callback('/\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/i', function($matches) {
+    $safe = preg_replace_callback('/\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/i', function ($matches) {
         return '<a href="' . $matches[2] . '" target="_blank" rel="noopener noreferrer" class="text-teal text-decoration-underline fw-semibold">' . $matches[1] . '</a>';
     }, $safe);
 
@@ -114,8 +118,9 @@ function post_render_content(string $content): string {
  * Định dạng tiền tệ VNĐ
  */
 function post_format_vnd(int|float|null $amount): string {
-    if ($amount === null || $amount < 0) return '0đ';
-    return number_format((float)$amount, 0, ',', '.') . 'đ';
+    if ($amount === null || $amount < 0)
+        return '0đ';
+    return number_format((float) $amount, 0, ',', '.') . 'đ';
 }
 
 /**
@@ -123,11 +128,11 @@ function post_format_vnd(int|float|null $amount): string {
  * status = 'published' AND (publish_at IS NULL OR publish_at <= NOW()) AND (expire_at IS NULL OR expire_at > NOW())
  */
 function post_get_public_list(PDO $pdo, array $filters = []): array {
-    $type = isset($filters['type']) ? trim((string)$filters['type']) : '';
-    $page = max(1, (int)($filters['page'] ?? 1));
-    $limit = min(50, max(1, (int)($filters['limit'] ?? 9)));
+    $type = isset($filters['type']) ? trim((string) $filters['type']) : '';
+    $page = max(1, (int) ($filters['page'] ?? 1));
+    $limit = min(50, max(1, (int) ($filters['limit'] ?? 9)));
     $offset = ($page - 1) * $limit;
-    $search = isset($filters['search']) ? trim((string)$filters['search']) : '';
+    $search = isset($filters['search']) ? trim((string) $filters['search']) : '';
 
     $where = [
         "p.status = 'published'",
@@ -152,7 +157,7 @@ function post_get_public_list(PDO $pdo, array $filters = []): array {
     // Đếm tổng số bản ghi
     $countStmt = $pdo->prepare("SELECT COUNT(*) FROM posts p WHERE {$whereSql}");
     $countStmt->execute($params);
-    $total = (int)$countStmt->fetchColumn();
+    $total = (int) $countStmt->fetchColumn();
 
     // Lấy danh sách bài viết: Ghim trước, sau đó sắp xếp theo publish_at / created_at mới nhất
     $querySql = "
@@ -168,7 +173,7 @@ function post_get_public_list(PDO $pdo, array $filters = []): array {
         LEFT JOIN vouchers v ON v.id = p.voucher_id
         WHERE {$whereSql}
         ORDER BY p.is_pinned DESC, COALESCE(p.publish_at, p.created_at) DESC, p.id DESC
-        LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
+        LIMIT " . (int) $limit . " OFFSET " . (int) $offset;
 
     $stmt = $pdo->prepare($querySql);
     $stmt->execute($params);
@@ -179,7 +184,7 @@ function post_get_public_list(PDO $pdo, array $filters = []): array {
         'total' => $total,
         'page' => $page,
         'limit' => $limit,
-        'total_pages' => (int)ceil($total / $limit) ?: 1
+        'total_pages' => (int) ceil($total / $limit) ?: 1
     ];
 }
 
@@ -204,7 +209,7 @@ function post_get_latest_notifications(PDO $pdo, int $limit = 5): array {
           AND (p.publish_at IS NULL OR p.publish_at <= NOW())
           AND (p.expire_at IS NULL OR p.expire_at > NOW())
         ORDER BY GREATEST(COALESCE(p.publish_at, p.created_at), COALESCE(p.updated_at, p.created_at)) DESC, p.id DESC
-        LIMIT " . (int)$limit;
+        LIMIT " . (int) $limit;
 
     $stmt = $pdo->query($sql);
     return $stmt ? $stmt->fetchAll() : [];
@@ -216,7 +221,8 @@ function post_get_latest_notifications(PDO $pdo, int $limit = 5): array {
  */
 function post_get_public_by_slug(PDO $pdo, string $slug): ?array {
     $slug = trim($slug);
-    if ($slug === '') return null;
+    if ($slug === '')
+        return null;
 
     $stmt = $pdo->prepare("
         SELECT p.*, u.name AS author_name,
@@ -249,11 +255,11 @@ function post_get_public_by_slug(PDO $pdo, string $slug): ?array {
  * Lấy danh sách bài viết dành cho Admin (không lọc quy tắc publish, hiển thị cả draft/archived)
  */
 function post_get_admin_list(PDO $pdo, array $filters = []): array {
-    $type = isset($filters['type']) ? trim((string)$filters['type']) : '';
-    $status = isset($filters['status']) ? trim((string)$filters['status']) : '';
-    $search = isset($filters['search']) ? trim((string)$filters['search']) : '';
-    $page = max(1, (int)($filters['page'] ?? 1));
-    $limit = min(50, max(1, (int)($filters['limit'] ?? 15)));
+    $type = isset($filters['type']) ? trim((string) $filters['type']) : '';
+    $status = isset($filters['status']) ? trim((string) $filters['status']) : '';
+    $search = isset($filters['search']) ? trim((string) $filters['search']) : '';
+    $page = max(1, (int) ($filters['page'] ?? 1));
+    $limit = min(50, max(1, (int) ($filters['limit'] ?? 15)));
     $offset = ($page - 1) * $limit;
 
     $where = [];
@@ -279,7 +285,7 @@ function post_get_admin_list(PDO $pdo, array $filters = []): array {
 
     $countStmt = $pdo->prepare("SELECT COUNT(*) FROM posts p {$whereSql}");
     $countStmt->execute($params);
-    $total = (int)$countStmt->fetchColumn();
+    $total = (int) $countStmt->fetchColumn();
 
     $querySql = "
         SELECT p.*, u.name AS author_name,
@@ -290,7 +296,7 @@ function post_get_admin_list(PDO $pdo, array $filters = []): array {
         LEFT JOIN vouchers v ON v.id = p.voucher_id
         {$whereSql}
         ORDER BY p.is_pinned DESC, p.id DESC
-        LIMIT " . (int)$limit . " OFFSET " . (int)$offset;
+        LIMIT " . (int) $limit . " OFFSET " . (int) $offset;
 
     $stmt = $pdo->prepare($querySql);
     $stmt->execute($params);
@@ -301,7 +307,7 @@ function post_get_admin_list(PDO $pdo, array $filters = []): array {
         'total' => $total,
         'page' => $page,
         'limit' => $limit,
-        'total_pages' => (int)ceil($total / $limit) ?: 1
+        'total_pages' => (int) ceil($total / $limit) ?: 1
     ];
 }
 
@@ -309,7 +315,8 @@ function post_get_admin_list(PDO $pdo, array $filters = []): array {
  * Lấy chi tiết bài viết theo ID (dành cho Admin)
  */
 function post_get_by_id(PDO $pdo, int $id): ?array {
-    if ($id <= 0) return null;
+    if ($id <= 0)
+        return null;
     $stmt = $pdo->prepare('
         SELECT p.*, u.name AS author_name,
                v.code AS voucher_code,
@@ -328,37 +335,38 @@ function post_get_by_id(PDO $pdo, int $id): ?array {
  * Validate dữ liệu bài viết
  */
 function post_validate_payload(array $data, bool $isUpdate = false): array {
-    $title = trim((string)($data['title'] ?? ''));
+    $title = trim((string) ($data['title'] ?? ''));
     if ($title === '') {
         throw new PostError(422, 'EMPTY_TITLE', 'Tiêu đề bài viết không được để trống.');
     }
+
     if (mb_strlen($title, 'UTF-8') < 3 || mb_strlen($title, 'UTF-8') > 255) {
         throw new PostError(422, 'INVALID_TITLE_LENGTH', 'Tiêu đề bài viết phải từ 3 đến 255 ký tự.');
     }
 
-    $type = trim((string)($data['type'] ?? ''));
+    $type = trim((string) ($data['type'] ?? ''));
     if (!in_array($type, ['event', 'membership', 'announcement'], true)) {
         throw new PostError(422, 'INVALID_TYPE', 'Loại bài viết phải là Sự kiện (event), Gói hội viên (membership) hoặc Thông báo (announcement).');
     }
 
-    $content = trim((string)($data['content'] ?? ''));
+    $content = trim((string) ($data['content'] ?? ''));
     if ($content === '') {
         throw new PostError(422, 'EMPTY_CONTENT', 'Nội dung chi tiết bài viết không được để trống.');
     }
 
-    $summary = trim((string)($data['summary'] ?? ''));
-    $coverImage = trim((string)($data['cover_image'] ?? ''));
+    $summary = trim((string) ($data['summary'] ?? ''));
+    $coverImage = trim((string) ($data['cover_image'] ?? ''));
     if ($coverImage !== '' && strlen($coverImage) > 2048) {
         throw new PostError(422, 'IMAGE_URL_TOO_LONG', 'Đường dẫn ảnh bìa quá dài.');
     }
 
-    $status = trim((string)($data['status'] ?? 'draft'));
+    $status = trim((string) ($data['status'] ?? 'draft'));
     if (!in_array($status, ['draft', 'published', 'archived'], true)) {
         $status = 'draft';
     }
 
-    $publishAt = !empty($data['publish_at']) ? trim((string)$data['publish_at']) : null;
-    $expireAt = !empty($data['expire_at']) ? trim((string)$data['expire_at']) : null;
+    $publishAt = !empty($data['publish_at']) ? trim((string) $data['publish_at']) : null;
+    $expireAt = !empty($data['expire_at']) ? trim((string) $data['expire_at']) : null;
 
     if ($publishAt && $expireAt && strtotime($publishAt) >= strtotime($expireAt)) {
         throw new PostError(422, 'INVALID_PUBLISH_RANGE', 'Thời gian hết hạn phải sau thời gian xuất bản.');
@@ -375,9 +383,9 @@ function post_validate_payload(array $data, bool $isUpdate = false): array {
     $eventEnd = null;
     $eventLocation = null;
     if ($type === 'event') {
-        $eventStart = !empty($data['event_start']) ? trim((string)$data['event_start']) : null;
-        $eventEnd = !empty($data['event_end']) ? trim((string)$data['event_end']) : null;
-        $eventLocation = !empty($data['event_location']) ? trim((string)$data['event_location']) : null;
+        $eventStart = !empty($data['event_start']) ? trim((string) $data['event_start']) : null;
+        $eventEnd = !empty($data['event_end']) ? trim((string) $data['event_end']) : null;
+        $eventLocation = !empty($data['event_location']) ? trim((string) $data['event_location']) : null;
 
         if ($eventStart && $eventEnd && strtotime($eventStart) > strtotime($eventEnd)) {
             throw new PostError(422, 'INVALID_EVENT_RANGE', 'Thời gian kết thúc sự kiện phải bằng hoặc sau thời gian bắt đầu.');
@@ -391,24 +399,27 @@ function post_validate_payload(array $data, bool $isUpdate = false): array {
     $discountPercent = 0;
     if ($type === 'membership') {
         if (isset($data['price']) && $data['price'] !== '') {
-            $price = (float)$data['price'];
+            $price = (float) $data['price'];
             if ($price < 0) {
                 throw new PostError(422, 'INVALID_PRICE', 'Giá gói hội viên không được âm.');
             }
         }
+
         if (isset($data['duration_days']) && $data['duration_days'] !== '') {
-            $durationDays = (int)$data['duration_days'];
+            $durationDays = (int) $data['duration_days'];
             if ($durationDays <= 0) {
                 throw new PostError(422, 'INVALID_DURATION', 'Thời hạn gói phải lớn hơn 0 ngày.');
             }
         }
+
         if (isset($data['discount_percent']) && $data['discount_percent'] !== '') {
-            $discountPercent = max(0, min(100, (int)$data['discount_percent']));
+            $discountPercent = max(0, min(100, (int) $data['discount_percent']));
         }
-        $benefits = !empty($data['benefits']) ? trim((string)$data['benefits']) : null;
+
+        $benefits = !empty($data['benefits']) ? trim((string) $data['benefits']) : null;
     }
 
-    $voucherId = !empty($data['voucher_id']) ? (int)$data['voucher_id'] : null;
+    $voucherId = !empty($data['voucher_id']) ? (int) $data['voucher_id'] : null;
     if ($voucherId !== null && $voucherId <= 0) {
         $voucherId = null;
     }
@@ -429,7 +440,7 @@ function post_validate_payload(array $data, bool $isUpdate = false): array {
         'event_location' => $eventLocation,
         'price' => $price,
         'duration_days' => $durationDays,
-        'discount_percent' => (int)$discountPercent,
+        'discount_percent' => (int) $discountPercent,
         'benefits' => $benefits
     ];
 }
@@ -477,7 +488,7 @@ function post_create(PDO $pdo, int $adminId, array $data): int {
         $validated['benefits']
     ]);
 
-    return (int)$pdo->lastInsertId();
+    return (int) $pdo->lastInsertId();
 }
 
 /**
@@ -551,6 +562,7 @@ function post_toggle_status(PDO $pdo, int $id, string $status): bool {
     if (!in_array($status, ['draft', 'published', 'archived'], true)) {
         throw new PostError(422, 'INVALID_STATUS', 'Trạng thái không hợp lệ.');
     }
+
     $stmt = $pdo->prepare('UPDATE posts SET status = ?, updated_at = NOW() WHERE id = ?');
     return $stmt->execute([$status, $id]);
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/admin/posts.php
  * API quản lý bài viết phần Khám phá dành riêng cho Quản trị viên (Admin).
@@ -25,20 +26,21 @@ try {
     // GET: Danh sách bài viết hoặc chi tiết 1 bài
     // ==========================================
     if ($method === 'GET') {
-        if (isset($_GET['id']) && (int)$_GET['id'] > 0) {
-            $id = (int)$_GET['id'];
+        if (isset($_GET['id']) && (int) $_GET['id'] > 0) {
+            $id = (int) $_GET['id'];
             $post = post_get_by_id($pdo, $id);
             if (!$post) {
                 booking_account_out(404, null, 'Không tìm thấy bài viết yêu cầu.');
             }
+
             booking_account_out(200, $post, 'Thành công.');
         }
 
-        $type = isset($_GET['type']) ? trim((string)$_GET['type']) : '';
-        $status = isset($_GET['status']) ? trim((string)$_GET['status']) : '';
-        $search = isset($_GET['search']) ? trim((string)$_GET['search']) : '';
-        $page = max(1, (int)($_GET['page'] ?? 1));
-        $limit = min(50, max(1, (int)($_GET['limit'] ?? 15)));
+        $type = isset($_GET['type']) ? trim((string) $_GET['type']) : '';
+        $status = isset($_GET['status']) ? trim((string) $_GET['status']) : '';
+        $search = isset($_GET['search']) ? trim((string) $_GET['search']) : '';
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $limit = min(50, max(1, (int) ($_GET['limit'] ?? 15)));
 
         $result = post_get_admin_list($pdo, [
             'type' => $type,
@@ -59,16 +61,17 @@ try {
     // POST: Tạo bài viết mới
     // ==========================================
     if ($method === 'POST') {
-        $newId = post_create($pdo, (int)$user['id'], $input);
+        $newId = post_create($pdo, (int) $user['id'], $input);
         $notifyUsers = !isset($input['notify_users']) || !empty($input['notify_users']);
         $pushResult = null;
         if ($notifyUsers) {
             $createdPost = post_get_by_id($pdo, $newId);
             if ($createdPost && ($createdPost['status'] ?? '') === 'published'
-                && (empty($createdPost['publish_at']) || strtotime((string)$createdPost['publish_at']) <= time())) {
+                && (empty($createdPost['publish_at']) || strtotime((string) $createdPost['publish_at']) <= time())) {
                 $pushResult = god_push_broadcast_new_post($pdo, $createdPost);
             }
         }
+
         booking_account_out(201, ['id' => $newId, 'push_broadcast' => $pushResult], 'Tạo bài viết thành công.');
     }
 
@@ -76,19 +79,21 @@ try {
     // PUT: Cập nhật bài viết
     // ==========================================
     if ($method === 'PUT') {
-        $id = (int)($input['id'] ?? 0);
+        $id = (int) ($input['id'] ?? 0);
         if ($id <= 0) {
             booking_account_out(422, null, 'ID bài viết không hợp lệ.');
         }
+
         $oldPost = post_get_by_id($pdo, $id);
         post_update($pdo, $id, $input);
         $updatedPost = post_get_by_id($pdo, $id);
         $notifyUsers = !empty($input['notify_users']) || (($oldPost['status'] ?? '') !== 'published' && ($updatedPost['status'] ?? '') === 'published');
         $pushResult = null;
         if ($notifyUsers && $updatedPost && ($updatedPost['status'] ?? '') === 'published'
-            && (empty($updatedPost['publish_at']) || strtotime((string)$updatedPost['publish_at']) <= time())) {
+            && (empty($updatedPost['publish_at']) || strtotime((string) $updatedPost['publish_at']) <= time())) {
             $pushResult = god_push_broadcast_new_post($pdo, $updatedPost);
         }
+
         booking_account_out(200, ['id' => $id, 'push_broadcast' => $pushResult], 'Cập nhật bài viết thành công.');
     }
 
@@ -96,7 +101,7 @@ try {
     // PATCH: Đổi nhanh trạng thái, ghim bài hoặc phát lại thông báo nhắc bài mới
     // ==========================================
     if ($method === 'PATCH') {
-        $id = (int)($input['id'] ?? 0);
+        $id = (int) ($input['id'] ?? 0);
         if ($id <= 0) {
             booking_account_out(422, null, 'ID bài viết không hợp lệ.');
         }
@@ -107,20 +112,22 @@ try {
             if (!$post || ($post['status'] ?? '') !== 'published') {
                 booking_account_out(422, null, 'Chỉ có thể gửi thông báo nhắc cho bài viết đang ở trạng thái Đã xuất bản.');
             }
+
             $pushResult = god_push_broadcast_new_post($pdo, $post);
             booking_account_out(200, ['push_broadcast' => $pushResult], 'Đã phát thông báo nhắc bài viết mới đến người dùng.');
         }
 
         if (isset($input['status'])) {
-            $newStatus = trim((string)$input['status']);
+            $newStatus = trim((string) $input['status']);
             post_toggle_status($pdo, $id, $newStatus);
             $pushResult = null;
             if ($newStatus === 'published') {
                 $post = post_get_by_id($pdo, $id);
-                if ($post && (empty($post['publish_at']) || strtotime((string)$post['publish_at']) <= time())) {
+                if ($post && (empty($post['publish_at']) || strtotime((string) $post['publish_at']) <= time())) {
                     $pushResult = god_push_broadcast_new_post($pdo, $post);
                 }
             }
+
             booking_account_out(200, ['push_broadcast' => $pushResult], 'Đã cập nhật trạng thái bài viết.');
         }
 
@@ -136,10 +143,11 @@ try {
     // DELETE: Xóa bài viết
     // ==========================================
     if ($method === 'DELETE') {
-        $id = (int)($input['id'] ?? ($_GET['id'] ?? 0));
+        $id = (int) ($input['id'] ?? ($_GET['id'] ?? 0));
         if ($id <= 0) {
             booking_account_out(422, null, 'ID bài viết cần xóa không hợp lệ.');
         }
+
         post_delete($pdo, $id);
         booking_account_out(200, null, 'Đã xóa bài viết thành công.');
     }

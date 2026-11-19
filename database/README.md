@@ -1,118 +1,55 @@
 # Database GODMINTON
 
-Đã đối chiếu cấu trúc MySQL đang chạy ngày 22/10/2026. Bộ cài gồm **22 bảng**, không dùng seed/dump cũ theo tuần.
-
-## File được giữ
-
-| File | Mục đích |
-|---|---|
-| `schema.sql` | Cấu trúc 20 bảng, khóa và chỉ mục hiện tại. Chỉ import vào DB trống. |
-| `seed.sql` | Danh mục phường, tiện ích, sân, ảnh, liên kết tiện ích và tin tức hiện có; tài khoản phát triển được tạo riêng. |
-| `export_installation.php` | Đọc DB hiện tại, tạo lại schema/seed cài mới mà không xuất dữ liệu cá nhân/giao dịch. |
-| `migrate_booking_metadata.php` | Nâng cấp metadata đơn đặt trên DB cũ, giữ lịch sử. |
-| `migrate_content.php` | Nâng cấp bảng tin tức/liên hệ trên DB cũ; gọi file SQL bên dưới. |
-| `migration_content.sql` | Tạo bảng tin tức và liên hệ nếu chưa có. |
-| `migration_admin_management.sql` | Thêm cột quản lý sân, khung giờ cho DB cũ. Không sửa giá/giờ của sân theo dữ liệu mẫu. |
-| `migration_push_subscriptions.sql` | Tạo bảng thiết bị Web Push cho DB cũ. |
-| `migration_push_reminders.sql` | Thêm nhật ký chống gửi lặp và retry cho nhắc lịch Web Push. |
-| `migration_customer_accounts.sql` | Import bằng phpMyAdmin để nâng cấp đăng ký/đăng nhập, xác minh email, khôi phục mật khẩu và xóa tài khoản; có thể import lại. |
-
 ## Cài mới
 
-1. Khởi động MySQL trong XAMPP.
-2. Tạo một database trống tên `badminton_booking`, charset `utf8mb4`, collation `utf8mb4_unicode_ci`.
-3. Chọn database đó trong phpMyAdmin, import **`schema.sql` trước**, sau đó **`seed.sql`**.
-4. Cấu hình `.env` trỏ đúng DB; máy đang dùng MySQL cổng `3307` thì đặt `DB_HOST=127.0.0.1`, `DB_PORT=3307`.
+Chỉ thực hiện trên **database mới trống**:
 
-Không chạy lại seed trên database nhóm đang có dữ liệu. Schema/seed không có lệnh DROP hoặc tự chuyển sang một database cố định.
+1. Bật MySQL/MariaDB. XAMPP của nhóm dùng cổng **3307**.
+2. Tạo database utf8mb4, ví dụ `badminton_booking_local`, collation `utf8mb4_unicode_ci`.
+3. Chọn đúng database trong phpMyAdmin, import **duy nhất `cai-dat-moi.sql`**.
+4. Điền tên database, host, cổng và tài khoản cục bộ trong `.env`, rồi mở website.
 
-Snapshot danh mục hiện tại: 47 phường, 8 tiện ích, 114 bản ghi sân (41 đang hoạt động), 114 ảnh, 576 liên kết sân–tiện ích. Bản sân trùng cũ được giữ `inactive` để tương thích ID lịch sử và cấu hình sân thay thế. TPro giữ địa chỉ/tọa độ đã sửa. DB hiện có **0 bài tin tức** nên seed không tự khôi phục các bài đã xóa.
+Bộ cài tổng hợp cấu trúc từ `schema.sql`, phần bổ sung SePay và token đăng nhập, nội dung hội viên và các seed. Các bảng được sắp theo phụ thuộc để tránh lỗi khóa ngoại khi tạo mới. Không import thêm `schema.sql`, `schema_hosting_import.sql` hoặc các seed sau bộ cài tổng hợp.
 
-Các bảng `bookings`, `booking_slots`, `time_slots`, `contacts`, `push_subscriptions` ban đầu trống. Không sao chép tài khoản thật, hash mật khẩu thật hay dữ liệu thiết bị. Tạo khung giờ bằng trang quản lý khung giờ; API hiện tại cũng có cơ chế sinh lịch cho ngày chưa có dữ liệu.
+Bộ dữ liệu mẫu gồm 28 bảng, 114 sân, 9 bài viết, 125 đánh giá và ba tài khoản đang hoạt động. Các tài khoản phục vụ dữ liệu đánh giá được khóa. Không có dữ liệu giao dịch hoặc thông tin đăng nhập cá nhân của hosting.
 
-### Tài khoản phát triển cho máy cài mới
+| Vai trò mẫu | Email | Mật khẩu phát triển |
+|---|---|---|
+| Khách | `khach1@gmail.com` | `Khach@123` |
+| Chủ sân | `owner.q1@godminton.vn` | `Owner@123` |
+| Admin | `admin@godminton.vn` | `Admin@123` |
 
-| Vai trò | Email | Mật khẩu phát triển | Ghi chú |
-|---|---|---|---|
-| Khách | `khach1@gmail.com` | `Khach@123` | Tài khoản khách hàng đặt sân |
-| Admin | `admin@godminton.vn` | `Admin@123` | Quản trị viên (quản lý toàn bộ sân trên hệ thống) |
-| Chủ sân Q1 | `owner.q1@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Quận 1 |
-| Chủ sân Q2 | `owner.q2@godminton.vn` | `Owner@123` | Quản lý 5 sân khu vực Quận 2 (TP. Thủ Đức) |
-| Chủ sân Q3 | `owner.q3@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Quận 3 |
-| Chủ sân Q4 | `owner.q4@godminton.vn` | `Owner@123` | Quản lý 3 sân khu vực Quận 4 |
-| Chủ sân Q5 | `owner.q5@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Quận 5 |
-| Chủ sân Q6 | `owner.q6@godminton.vn` | `Owner@123` | Quản lý 6 sân khu vực Quận 6 |
-| Chủ sân Q7 | `owner.q7@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Quận 7 |
-| Chủ sân Q8 | `owner.q8@godminton.vn` | `Owner@123` | Quản lý 3 sân khu vực Quận 8 |
-| Chủ sân Q9 | `owner.q9@godminton.vn` | `Owner@123` | Quản lý 3 sân khu vực Quận 9 (TP. Thủ Đức) |
-| Chủ sân Q10 | `owner.q10@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Quận 10 |
-| Chủ sân Q11 | `owner.q11@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Quận 11 |
-| Chủ sân Q12 | `owner.q12@godminton.vn` | `Owner@123` | Quản lý 3 sân khu vực Quận 12 |
-| Chủ sân Bình Thạnh | `owner.binhthanh@godminton.vn` | `Owner@123` | Quản lý 6 sân khu vực Bình Thạnh |
-| Chủ sân Tân Bình | `owner.tanbinh@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Tân Bình |
-| Chủ sân Gò Vấp | `owner.govap@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Gò Vấp |
-| Chủ sân Phú Nhuận | `owner.phunhuan@godminton.vn` | `Owner@123` | Quản lý 8 sân khu vực Phú Nhuận |
-| Chủ sân Tân Phú | `owner.tanphu@godminton.vn` | `Owner@123` | Quản lý 3 sân khu vực Tân Phú |
-| Chủ sân Bình Tân | `owner.binhtan@godminton.vn` | `Owner@123` | Quản lý 3 sân khu vực Bình Tân |
-| Chủ sân TP. Thủ Đức | `owner.thuduc@godminton.vn` | `Owner@123` | Quản lý 6 sân khu vực TP. Thủ Đức |
-| Chủ sân Bình Chánh | `owner.binhchanh@godminton.vn` | `Owner@123` | Quản lý 1 sân khu vực Bình Chánh |
+## Database đang vận hành
 
-Mật khẩu chung cho tất cả tài khoản chủ sân: **`Owner@123`**. Phân quyền: mỗi chủ sân chỉ thấy và quản lý khung giờ, giá, đơn đặt của các cụm sân thuộc quận mình; Admin quản lý toàn bộ hệ thống.
+Không import lại bộ cài mới, schema hoặc seed vào DB có dữ liệu. Lần clean code không yêu cầu import SQL hoặc chuyển dữ liệu hiện có.
 
-## Nâng cấp database cũ
+Khi cần nâng cấp một DB cũ, sao lưu và kiểm tra `SHOW CREATE TABLE` trước. Các migration được giữ để chọn đúng phần còn thiếu; không chạy toàn bộ theo tên hoặc theo thứ tự chữ cái.
 
-Máy đã import schema mới không cần chạy các migration. Với máy đang dùng cấu trúc cũ, sao lưu trước rồi chọn migration đúng phần còn thiếu:
+| Nhóm chức năng | Tệp liên quan |
+|---|---|
+| Đăng nhập, xác minh email, token | `migration_customer_accounts.sql` |
+| Hồ sơ người dùng | `migration_user_profile.sql` |
+| Hồ sơ chủ sân, xét duyệt, nhật ký quản trị | `migration_owner_account_management.sql` |
+| Quản lý sân, khung giờ | `migration_admin_management.sql` |
+| Thanh toán, hội viên và token ghi nhớ | `migration_sepay_payments.sql`, `migration_memberships.sql` |
+| Bài viết, liên hệ, nội dung | `migration_content.sql`, `migration_posts.sql` |
+| Voucher | `migration_vouchers.sql` |
+| Đánh giá | `migration_reviews.sql` |
+| Web Push, lịch sử gửi nhắc | `migration_push_subscriptions.sql`, `migration_push_reminders.sql` |
 
-```powershell
-& D:\xampp\php\php.exe .\database\migrate_booking_metadata.php
-& D:\xampp\php\php.exe .\database\migrate_content.php
-```
+Các công cụ `migrate_*.php`, `export_installation.php`, tệp cập nhật danh mục và `reset_reviews.sql` chỉ dùng khi chủ động bảo trì dữ liệu đúng phạm vi. Không chạy để thử giao diện hoặc sửa lỗi cấu hình kết nối. Tệp reset có thể xóa dữ liệu đánh giá.
 
-Hai file migration SQL quản lý sân/Web Push được import trong phpMyAdmin sau khi chọn DB đích. Chúng không xóa lịch/đơn hoặc ghi đè thông tin sân.
+## Tệp hỗ trợ khởi tạo
 
-## Xuất lại bộ cài sau khi cập nhật dữ liệu
+`config/db.php` vẫn tham chiếu `schema.sql`, `seed.sql`, `seed_vouchers.sql` và `seed_reviews_demo.sql` cho cơ chế dự phòng. Các tệp này được giữ để không làm mất phụ thuộc; cài đặt có kiểm soát nên import bộ tổng hợp trước khi truy cập website.
 
-```powershell
-& D:\xampp\php\php.exe .\database\export_installation.php
-```
+`schema_hosting_import.sql` là phương án schema của phiên bản cũ, không phải bước tiếp theo sau `schema.sql`. Đối với bộ cài hiện tại, dùng `cai-dat-moi.sql` trên DB trống để có đủ dữ liệu Khám phá, tài khoản và phần thanh toán.
 
-Script chỉ SELECT/SHOW từ DB theo `.env`, rồi ghi đè **hai file** schema/seed. Có thể dùng `--output-dir=ĐƯỜNG_DẪN_THƯ_MỤC_ĐÃ_TỒN_TẠI` để xuất ra thư mục khác. Công cụ này không phải backup DB đầy đủ vì chủ động bỏ dữ liệu cá nhân và giao dịch.
+## Kiểm tra sau cài đặt
 
-## File cũ đã đưa ra khỏi website
+- Kiểm tra số bảng, các bảng tài khoản, sân, khung giờ, đơn, thanh toán, nội dung và Web Push.
+- Đăng nhập ba vai trò, xem sân và Khám phá; kiểm tra chủ sân không có quyền ngoài phạm vi sở hữu.
+- Tạo lịch cho một ngày tương lai, giữ ô và đặt đơn trên dữ liệu thử. Đối chiếu giá và trạng thái trước/sau thao tác.
+- Cấu hình SMTP/VAPID và dịch vụ thanh toán riêng theo môi trường; SQL không thay thế các khóa dịch vụ.
 
-Đã lưu riêng các bản dump/seed cũ, JSON danh mục, importer dữ liệu nhúng, script thêm bài/đính chính tọa độ/ẩn sân trùng, script reset lịch và `.gitkeep`. Không cần chạy các script đó để cài hoặc vận hành phiên bản hiện tại.
-
-Bản lưu trước khi dọn trên máy Minh: `D:\MinhDangHocCode\Web\Project\database-cleanup-2026-10-20`. Bản này chứa snapshot riêng của DB hiện tại, không đưa vào Git hoặc thư mục public của website.
-
-## Nâng cấp xác thực email
-
-Sau khi pull, chọn DB website trong phpMyAdmin → Import/Nhập → chọn `migration_customer_accounts.sql` → Go/Thực hiện. File gộp cả xác thực email và xóa tài khoản, có thể import lại. Sau đó chạy `composer install` và cấu hình SMTP trong `.env`. Không import lại schema/seed vào DB đang dùng. Hướng dẫn chi tiết: [AUTH_EMAIL_SETUP.md](../docs/AUTH_EMAIL_SETUP.md). Hai bảng auth không chứa dữ liệu seed.
-
-## Xóa tài khoản
-
-Phần xóa tài khoản đã được gộp trong `migration_customer_accounts.sql`; không chạy migration PHP riêng. File thêm `users.deleted_at` và mục đích token `delete`, không xóa dữ liệu. Không import lại seed/schema vào DB đang dùng.
-
-## Ảnh sân theo Google Maps và ẩn sân không thuê được
-
-- `migration_hide_unrentable_courts.sql`: chuyển 18 sân (sân trong trường, nhà thi đấu công, sân nghi vấn, sân đã đóng cửa) sang `inactive`. DB đang chạy import file này trong phpMyAdmin; cài mới đã có sẵn trong `seed.sql`.
-- `court_images_google.csv`: danh sách 41 sân đang hoạt động kèm link ảnh Google Maps đã điền sẵn.
-- `update_court_images.php`: đọc CSV và cập nhật `court_images` (`--apply` để ghi thật, `--sql` để xuất `update_court_images.sql` cho thành viên khác).
-- `fetch_google_place_photos.php`: tùy chọn, tự lấy link ảnh bằng Google Places API (cần `GOOGLE_MAPS_API_KEY` trong `.env`).
-- `update_court_images.sql`: cập nhật link ảnh của 41 sân cho DB đang chạy (import trong phpMyAdmin sau file ẩn sân). Cài mới đã có ảnh trong `seed.sql`.
-
-## Xét duyệt chủ sân và quản lý tài khoản Admin
-
-DB đã có dữ liệu: chọn DB website trong phpMyAdmin, import `migration_customer_accounts.sql` trước nếu chưa cập nhật xác thực, sau đó import **`migration_owner_account_management.sql`**. Có thể import lại; không chạy file PHP import/migration cho hai luồng này. Không import lại seed/schema vào DB đang sử dụng.
-
-Migration mới thêm trạng thái khóa/ý định đăng ký chủ sân/email chờ xác minh, tách xét duyệt sân và mở nhận đặt; tạo bảng hồ sơ, lịch sử xét duyệt, nhật ký quản trị và thông báo. Giữ nguyên vai trò, sân và trạng thái hoạt động hiện có. Hồ sơ, chứng minh và nhật ký không có trong seed cài mới.
-
-Chi tiết và bài kiểm thử: [OWNER_ACCOUNT_WORKFLOW.md](../docs/OWNER_ACCOUNT_WORKFLOW.md).
-
-## Web Push thông báo và nhắc lịch
-
-- Cài các thư viện đã khóa phiên bản: `composer install --no-dev` (yêu cầu PHP 8.1+, ext-curl, ext-json, ext-mbstring, ext-openssl).
-- Cấu hình `VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` trong `.env`. Tạo cặp riêng cho từng môi trường bằng `php tools/generate-vapid-keys.php`; trên PowerShell XAMPP đặt `$env:OPENSSL_CONF='D:\xampp\apache\conf\openssl.cnf'` trước khi chạy. Không commit private key. Khi đổi cặp khóa, từng trình duyệt cần tắt rồi bật lại thông báo.
-- DB cài mới có bảng nhắc lịch trong `schema.sql`. DB đang chạy import `migration_push_reminders.sql` một lần trong phpMyAdmin sau khi chọn `badminton_booking`.
-- Thành viên bật thông báo khi đã đăng nhập, cấp quyền trong trình duyệt và dùng “Gửi thử thông báo” để kiểm tra push thật.
-- Nhắc lịch cần Task Scheduler chạy `D:\xampp\php\php.exe` với tham số `D:\xampp\htdocs\GODMINTON\tools\send-push-reminders.php`, lặp mỗi 5 phút. Worker chỉ gửi cho đơn `confirmed`, trước giờ bắt đầu ~5 phút, tối đa 3 lần thử và khóa mỗi booking để không gửi lặp. Có thể kiểm tra an toàn bằng `php tools/send-push-reminders.php --dry-run`.
-- Localhost trên máy phát triển hỗ trợ Web Push. Website thật cần HTTPS, PHP 8.1+ và chạy worker bằng cron/Task Scheduler. Máy người nhận cần kết nối Internet và bật quyền thông báo; không thể nhận khi thiết bị mất mạng.
+Hướng dẫn chạy ứng dụng, cấu hình và kiểm thử đặt tại `../README.md`. Các tệp SQL và công cụ database bị chặn qua HTTP bằng `.htaccess`.

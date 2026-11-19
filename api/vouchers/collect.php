@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/vouchers/collect.php
  * Khách hàng bấm nhận mã giảm giá từ bài viết để lưu vào kho cá nhân.
@@ -17,17 +18,17 @@ try {
 
     // 1. Yêu cầu đăng nhập tài khoản
     $user = booking_account_user(true);
-    $userId = (int)$user['id'];
+    $userId = (int) $user['id'];
 
     $input = booking_account_input();
-    $voucherId = (int)($input['voucher_id'] ?? 0);
-    $postId = !empty($input['post_id']) ? (int)$input['post_id'] : null;
+    $voucherId = (int) ($input['voucher_id'] ?? 0);
+    $postId = !empty($input['post_id']) ? (int) $input['post_id'] : null;
 
     if ($voucherId <= 0 && $postId > 0) {
         // Tìm voucher_id từ post_id
         $postStmt = $pdo->prepare('SELECT voucher_id FROM posts WHERE id = ?');
         $postStmt->execute([$postId]);
-        $voucherId = (int)$postStmt->fetchColumn();
+        $voucherId = (int) $postStmt->fetchColumn();
     }
 
     if ($voucherId <= 0) {
@@ -56,11 +57,12 @@ try {
     if ($now < $voucher['start_at']) {
         booking_account_out(422, null, 'Chương trình ưu đãi này chưa bắt đầu.');
     }
+
     if ($now > $voucher['end_at']) {
         booking_account_out(422, null, 'Chương trình ưu đãi này đã hết hạn.');
     }
 
-    if ($voucher['usage_limit'] !== null && (int)$voucher['used_count'] >= (int)$voucher['usage_limit']) {
+    if ($voucher['usage_limit'] !== null && (int) $voucher['used_count'] >= (int) $voucher['usage_limit']) {
         booking_account_out(422, null, 'Mã giảm giá đã hết lượt phát hành.');
     }
 
@@ -71,7 +73,7 @@ try {
 
     if ($existing) {
         booking_account_out(409, [
-            'voucher_id'   => $voucherId,
+            'voucher_id' => $voucherId,
             'voucher_code' => $voucher['code'],
             'collected_at' => $existing['collected_at']
         ], 'Bạn đã lưu mã này vào kho rồi.');
@@ -85,15 +87,14 @@ try {
     $insertStmt->execute([$userId, $voucherId, $postId]);
 
     booking_account_out(200, [
-        'voucher_id'       => $voucherId,
-        'voucher_code'     => $voucher['code'],
-        'discount_percent' => (int)$voucher['discount_percent'],
-        'max_discount'     => (int)($voucher['max_discount'] ?? 0),
-        'min_order'        => (int)($voucher['min_order'] ?? 0),
-        'end_at'           => $voucher['end_at'],
-        'court_name'       => $voucher['court_name'] ?? 'Toàn hệ thống'
+        'voucher_id' => $voucherId,
+        'voucher_code' => $voucher['code'],
+        'discount_percent' => (int) $voucher['discount_percent'],
+        'max_discount' => (int) ($voucher['max_discount'] ?? 0),
+        'min_order' => (int) ($voucher['min_order'] ?? 0),
+        'end_at' => $voucher['end_at'],
+        'court_name' => $voucher['court_name'] ?? 'Toàn hệ thống'
     ], "Đã nhận mã \"{$voucher['code']}\" thành công! Mã đã được lưu vào Kho Mã Giảm Giá của bạn.");
-
 } catch (BookingAccountError $e) {
     booking_account_out($e->getCode() ?: 400, null, $e->getMessage());
 } catch (Throwable $e) {

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * api/vouchers/preview.php
  * POST kiểm tra và tính thử số tiền khi áp dụng mã giảm giá.
@@ -15,10 +16,10 @@ try {
 
     // Xác thực người dùng (trang thanh toán đã qua auth-check)
     $user = booking_account_user(false);
-    $userId = (int)$user['id'];
+    $userId = (int) $user['id'];
 
     $in = booking_account_input();
-    $code = isset($in['code']) ? trim((string)$in['code']) : '';
+    $code = isset($in['code']) ? trim((string) $in['code']) : '';
     $courtId = isset($in['court_id']) ? booking_account_id($in['court_id']) : 0;
     $slotIds = $in['slot_ids'] ?? (isset($in['slot_id']) ? [$in['slot_id']] : []);
 
@@ -46,11 +47,12 @@ try {
 
     $courtAmount = 0;
     foreach ($slots as $slot) {
-        if ($courtId > 0 && (int)$slot['court_id'] !== $courtId) {
+        if ($courtId > 0 && (int) $slot['court_id'] !== $courtId) {
             throw new VoucherError(422, 'COURT_MISMATCH', 'Khung giờ không khớp với sân đã chọn.');
         }
-        $h = (int)substr($slot['start_time'], 0, 2);
-        $courtAmount += (int)round((float)$slot['price_per_hour'] / 2) + (($h >= 17 && $h <= 21) ? 7500 : 0);
+
+        $h = (int) substr($slot['start_time'], 0, 2);
+        $courtAmount += (int) round((float) $slot['price_per_hour'] / 2) + (($h >= 17 && $h <= 21) ? 7500 : 0);
     }
 
     require_once __DIR__ . '/../../includes/membership-service.php';
@@ -65,46 +67,45 @@ try {
     http_response_code(200);
     echo json_encode([
         'status' => 'success',
-        'ok'     => true,
-        'data'   => [
+        'ok' => true,
+        'data' => [
             'voucher' => [
-                'id'               => (int)$voucher['id'],
-                'code'             => strtoupper(trim($voucher['code'])),
-                'discount_percent' => (int)$voucher['discount_percent'],
-                'max_discount'     => $voucher['max_discount'] !== null ? (int)$voucher['max_discount'] : null,
-                'funded_by'        => $voucher['funded_by'],
+                'id' => (int) $voucher['id'],
+                'code' => strtoupper(trim($voucher['code'])),
+                'discount_percent' => (int) $voucher['discount_percent'],
+                'max_discount' => $voucher['max_discount'] !== null ? (int) $voucher['max_discount'] : null,
+                'funded_by' => $voucher['funded_by'],
             ],
             'membership' => $activeMembership ? [
-                'id'               => (int)$activeMembership['id'],
-                'tier'             => $activeMembership['tier'],
-                'discount_percent' => (int)$activeMembership['discount_percent'],
-                'package_title'    => $activeMembership['package_title'],
-                'discount_amount'  => $pricing['membership_discount_amount'],
+                'id' => (int) $activeMembership['id'],
+                'tier' => $activeMembership['tier'],
+                'discount_percent' => (int) $activeMembership['discount_percent'],
+                'package_title' => $activeMembership['package_title'],
+                'discount_amount' => $pricing['membership_discount_amount'],
             ] : null,
             'pricing' => $pricing,
         ],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
-
 } catch (VoucherError $e) {
     http_response_code($e->httpCode);
     echo json_encode([
-        'status'  => 'error',
-        'ok'      => false,
-        'code'    => $e->errorCode,
+        'status' => 'error',
+        'ok' => false,
+        'code' => $e->errorCode,
         'message' => $e->getMessage(),
-        'meta'    => (object)$e->meta,
+        'meta' => (object) $e->meta,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 } catch (Throwable $e) {
     error_log('[preview.php] ' . $e->getMessage());
     http_response_code(500);
     echo json_encode([
-        'status'  => 'error',
-        'ok'      => false,
-        'code'    => 'INTERNAL_ERROR',
+        'status' => 'error',
+        'ok' => false,
+        'code' => 'INTERNAL_ERROR',
         'message' => 'Lỗi máy chủ khi kiểm tra mã giảm giá.',
-        'meta'    => (object)[],
+        'meta' => (object) [],
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
