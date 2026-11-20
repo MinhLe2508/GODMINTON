@@ -34,45 +34,66 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (b.booking_status === 'confirmed') {
             itemsHtml = `
-                <li><button type="button" class="dropdown-item action-gradient-item action-complete" data-action="complete" data-id="${id}">Thu tiền &amp; Hoàn tất</button></li>
-                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}">Xem chi tiết đơn</button></li>
-                <li><button type="button" class="dropdown-item action-gradient-item action-noshow" data-action="noshow" data-id="${id}">Báo bùng sân</button></li>
-                <li><button type="button" class="dropdown-item action-gradient-item action-cancel" data-action="cancel" data-id="${id}">Hủy đơn</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-complete" data-action="complete" data-id="${id}"><i class="fa-solid fa-circle-check me-2"></i>Thu tiền &amp; Hoàn tất</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}"><i class="fa-solid fa-eye me-2"></i>Xem chi tiết đơn</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-noshow" data-action="noshow" data-id="${id}"><i class="fa-solid fa-user-slash me-2"></i>Báo bùng sân</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-cancel" data-action="cancel" data-id="${id}"><i class="fa-solid fa-ban me-2"></i>Hủy đơn</button></li>
             `;
         } else if (b.booking_status === 'pending') {
             itemsHtml = `
-                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}">Xem chi tiết đơn</button></li>
-                <li><button type="button" class="dropdown-item action-gradient-item action-cancel" data-action="cancel" data-id="${id}">Hủy đơn</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}"><i class="fa-solid fa-eye me-2"></i>Xem chi tiết đơn</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-cancel" data-action="cancel" data-id="${id}"><i class="fa-solid fa-ban me-2"></i>Hủy đơn</button></li>
             `;
         } else if (b.booking_status === 'checked_in') {
             itemsHtml = `
-                <li><button type="button" class="dropdown-item action-gradient-item action-complete" data-action="complete" data-id="${id}">Thu tiền &amp; Hoàn tất</button></li>
-                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}">Xem chi tiết đơn</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-complete" data-action="complete" data-id="${id}"><i class="fa-solid fa-circle-check me-2"></i>Thu tiền &amp; Hoàn tất</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}"><i class="fa-solid fa-eye me-2"></i>Xem chi tiết đơn</button></li>
             `;
         } else if (b.booking_status === 'completed') {
             itemsHtml = `
-                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}">Xem chi tiết hóa đơn</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}"><i class="fa-solid fa-file-invoice me-2"></i>Xem chi tiết hóa đơn</button></li>
             `;
         } else if (b.can_refund) {
             itemsHtml = `
-                <li><button type="button" class="dropdown-item action-gradient-item action-complete" data-action="refund" data-id="${id}">Xác nhận đã hoàn cọc</button></li>
-                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}">Xem chi tiết đơn</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-complete" data-action="refund" data-id="${id}"><i class="fa-solid fa-hand-holding-dollar me-2"></i>Xác nhận đã hoàn cọc</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}"><i class="fa-solid fa-eye me-2"></i>Xem chi tiết đơn</button></li>
             `;
         } else {
             itemsHtml = `
-                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}">Xem chi tiết đơn</button></li>
+                <li><button type="button" class="dropdown-item action-gradient-item action-view" data-action="view" data-id="${id}"><i class="fa-solid fa-eye me-2"></i>Xem chi tiết đơn</button></li>
             `;
         }
 
         return `
-            <div class="dropdown d-inline-block text-end">
-                <button class="btn btn-sm booking-action-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-config='{"strategy":"fixed"}' aria-expanded="false">
+            <div class="dropdown d-inline-block text-end booking-action-dropdown">
+                <button class="btn btn-sm booking-action-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
                     Chọn thao tác
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow-sm booking-action-menu">
+                <ul class="dropdown-menu dropdown-menu-end shadow booking-action-menu">
                     ${itemsHtml}
                 </ul>
             </div>`;
+    }
+
+    function initFloatingDropdowns() {
+        if (!window.bootstrap?.Dropdown) return;
+        body.querySelectorAll('.booking-action-btn[data-bs-toggle="dropdown"]').forEach(btn => {
+            window.bootstrap.Dropdown.getOrCreateInstance(btn, {
+                boundary: 'viewport',
+                popperConfig(defaultBsPopperConfig) {
+                    return {
+                        ...(defaultBsPopperConfig || {}),
+                        strategy: 'fixed'
+                    };
+                }
+            });
+        });
+    }
+
+    function syncStatusPills(statusVal) {
+        document.querySelectorAll('#bookingStatusPills .booking-status-pill').forEach(pill => {
+            pill.classList.toggle('active', (pill.dataset.status || '') === (statusVal || ''));
+        });
     }
 
     async function load() {
@@ -91,6 +112,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             const bookings = await BookingAccount.request('api/admin/bookings.php?' + params);
             if (own !== sequence) return;
             currentBookings = Array.isArray(bookings) ? bookings : [];
+
+            const totalBadge = document.getElementById('bookingTotalBadge');
+            if (totalBadge) totalBadge.textContent = `${currentBookings.length} đơn`;
+            syncStatusPills(filterSelect ? filterSelect.value : '');
 
             empty.style.display = currentBookings.length ? 'none' : 'block';
             empty.textContent = 'Không có đơn đặt nào phù hợp.';
@@ -173,27 +198,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 return `
-                    <tr class="${b.booking_status === 'checked_in' ? 'table-success-subtle' : ''}">
-                        <td class="ps-3">
-                            <strong class="font-monospace text-dark">${BookingAccount.escape(b.booking_code)}</strong>
+                    <tr class="booking-row ${b.booking_status === 'checked_in' ? 'table-success-subtle' : ''}">
+                        <td class="ps-4">
+                            <span class="booking-code-pill font-monospace">${BookingAccount.escape(b.booking_code)}</span>
                         </td>
                         <td>
                             <div class="fw-bold admin-text-primary">${BookingAccount.escape(b.court_name)}</div>
-                            <div class="small text-teal fw-semibold"><i class="fa-solid fa-layer-group me-1"></i>${BookingAccount.escape(b.sub_court_name)}</div>
+                            <div class="small text-teal fw-semibold mt-1"><i class="fa-solid fa-layer-group me-1"></i>${BookingAccount.escape(b.sub_court_name)}</div>
                         </td>
                         <td class="text-nowrap">
                             <div class="fw-semibold admin-text-primary"><i class="fa-regular fa-calendar me-1 text-teal"></i>${BookingAccount.escape(b.booking_date || '')}</div>
-                            <div class="small text-muted fw-medium"><i class="fa-regular fa-clock me-1"></i>${BookingAccount.escape(b.time_range || '')}</div>
+                            <div class="small text-muted fw-medium mt-1"><i class="fa-regular fa-clock me-1"></i>${BookingAccount.escape(b.time_range || '')}</div>
                         </td>
                         <td>
                             <div class="fw-semibold admin-text-primary">${BookingAccount.escape(b.user_name)}</div>
-                            <div class="small text-muted"><i class="fa-solid fa-phone me-1"></i>${BookingAccount.escape(b.user_phone)}</div>
+                            <div class="small text-muted mt-1"><i class="fa-solid fa-phone me-1"></i>${BookingAccount.escape(b.user_phone)}</div>
                         </td>
                         <td class="text-nowrap">${paymentColHtml}</td>
                         <td class="text-nowrap">${BookingAccount.badge(b.booking_status)}</td>
-                        <td class="text-end pe-3 text-nowrap">${renderRowActions(b)}</td>
+                        <td class="text-end pe-4 text-nowrap">${renderRowActions(b)}</td>
                     </tr>`;
             }).join('');
+
+            initFloatingDropdowns();
         } catch (e) {
             if (own !== sequence) return;
             body.innerHTML = '';
@@ -682,7 +709,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const filterEl = document.getElementById('filterStatus');
     if (filterEl) {
-        filterEl.addEventListener('change', load);
+        filterEl.addEventListener('change', () => {
+            syncStatusPills(filterEl.value);
+            load();
+        });
+    }
+
+    const statusPillsEl = document.getElementById('bookingStatusPills');
+    if (statusPillsEl) {
+        statusPillsEl.addEventListener('click', e => {
+            const pill = e.target.closest('.booking-status-pill');
+            if (!pill) return;
+            const statusVal = pill.dataset.status || '';
+            if (filterEl) filterEl.value = statusVal;
+            syncStatusPills(statusVal);
+            load();
+        });
     }
 
     const resetBtn = document.getElementById('btnResetBookingFilters');
@@ -690,6 +732,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         resetBtn.addEventListener('click', () => {
             if (searchEl) searchEl.value = '';
             if (filterEl) filterEl.value = '';
+            syncStatusPills('');
             load();
         });
     }

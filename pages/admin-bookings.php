@@ -67,10 +67,16 @@ $currentUser = [
 
         <main class="admin-content">
             <div class="admin-panel booking-list-panel">
-                <div class="admin-panel-head">
-                    <h2><i class="fa-solid fa-clipboard-list text-teal me-2"></i>Danh sách đơn đặt sân</h2>
+                <div class="admin-panel-head booking-panel-header">
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <h2 class="mb-0"><i class="fa-solid fa-clipboard-list text-teal me-2"></i>Danh sách đơn đặt sân</h2>
+                        <span class="badge rounded-pill booking-count-badge" id="bookingTotalBadge">0 đơn</span>
+                    </div>
                     <div class="booking-filter-toolbar">
-                        <input type="search" id="searchBooking" class="form-control form-control-sm rounded-pill" placeholder="Tìm mã đơn, tên, SĐT...">
+                        <div class="booking-search-box">
+                            <i class="fa-solid fa-magnifying-glass booking-search-icon"></i>
+                            <input type="search" id="searchBooking" class="form-control form-control-sm rounded-pill" placeholder="Tìm mã đơn, tên, SĐT...">
+                        </div>
                         <select id="filterStatus" class="form-select form-select-sm rounded-pill">
                             <option value="">Tất cả trạng thái</option>
                             <option value="confirmed">Đã cọc</option>
@@ -83,18 +89,25 @@ $currentUser = [
                         </button>
                     </div>
                 </div>
-                <div class="admin-panel-body p-0">
+                <div class="booking-status-pills-bar" id="bookingStatusPills">
+                    <button type="button" class="booking-status-pill active" data-status="">Tất cả</button>
+                    <button type="button" class="booking-status-pill" data-status="confirmed"><span class="pill-dot bg-info"></span>Đã cọc</button>
+                    <button type="button" class="booking-status-pill" data-status="completed"><span class="pill-dot bg-success"></span>Hoàn thành</button>
+                    <button type="button" class="booking-status-pill" data-status="no_show"><span class="pill-dot bg-warning"></span>Bùng sân</button>
+                    <button type="button" class="booking-status-pill" data-status="cancelled"><span class="pill-dot bg-danger"></span>Đã hủy</button>
+                </div>
+                <div class="admin-panel-body p-0 booking-panel-body">
                     <div class="table-responsive booking-table-wrap">
-                        <table class="table admin-table align-middle mb-0">
+                        <table class="table admin-table booking-admin-table align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th class="ps-3">Mã đơn</th>
+                                    <th class="ps-4">Mã đơn</th>
                                     <th>Sân &amp; Thảm</th>
                                     <th>Lịch chơi</th>
                                     <th>Khách hàng</th>
                                     <th>Đã cọc / Thu tại quầy</th>
                                     <th>Trạng thái</th>
-                                    <th class="text-end pe-3" style="min-width:145px;">Thao tác</th>
+                                    <th class="text-end pe-4" style="min-width:170px;">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody id="bookingsTableBody"></tbody>

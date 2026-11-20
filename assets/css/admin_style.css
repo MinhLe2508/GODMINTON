@@ -1268,15 +1268,18 @@ body.admin-body #godmintonBottomNav,
     vertical-align: 0.12em !important;
 }
 
-/* Menu Dropdown chứa các thao tác với màu Gradient */
+/* Menu Dropdown chứa các thao tác với màu Gradient (nổi hoàn toàn trên viewport, không bao giờ bị khung bảng cắt khuất) */
 .booking-action-menu {
-    border-radius: 12px !important;
-    padding: 6px !important;
-    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08)) !important;
-    min-width: 175px !important;
+    border-radius: 14px !important;
+    padding: 7px !important;
+    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.1)) !important;
+    min-width: 195px !important;
     background: var(--bg-card, #ffffff) !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
-    z-index: 1060 !important;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(13, 148, 136, 0.12) !important;
+    z-index: 1085 !important;
+}
+.booking-action-menu.show {
+    position: fixed !important;
 }
 
 /* Từng mục thao tác bên trong đều có màu Gradient riêng biệt */
@@ -1495,6 +1498,103 @@ body.admin-body #godmintonBottomNav,
 /* ==========================================================
    KHUNG DANH SÁCH ĐƠN ĐẶT SÂN & THANH CÔNG CỤ LỌC (ADMIN / CHỦ SÂN)
    ========================================================== */
+.booking-list-panel {
+    overflow: visible !important;
+    border-radius: 1.15rem !important;
+    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06) !important;
+}
+
+.booking-panel-header {
+    padding: 1.2rem 1.5rem !important;
+    background: linear-gradient(180deg, rgba(13, 148, 136, 0.04) 0%, transparent 100%);
+    border-top-left-radius: 1.15rem;
+    border-top-right-radius: 1.15rem;
+}
+
+.booking-count-badge {
+    background: rgba(13, 148, 136, 0.12) !important;
+    color: #0d9488 !important;
+    border: 1px solid rgba(13, 148, 136, 0.25);
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    padding: 0.35rem 0.75rem !important;
+}
+
+[data-bs-theme="dark"] .booking-count-badge {
+    background: rgba(45, 212, 191, 0.15) !important;
+    color: #2dd4bf !important;
+    border-color: rgba(45, 212, 191, 0.3);
+}
+
+.booking-status-pills-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    background: var(--bg-surface, #f8fafc);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.booking-status-pills-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.booking-status-pill {
+    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.1));
+    background: var(--bg-card, #ffffff);
+    color: var(--text-secondary, #64748b);
+    border-radius: 9999px;
+    padding: 0.32rem 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.booking-status-pill:hover {
+    border-color: #0d9488;
+    color: #0d9488;
+}
+
+.booking-status-pill.active {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    border-color: #0d9488;
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(13, 148, 136, 0.25);
+}
+
+.booking-status-pill .pill-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.booking-status-pill.active .pill-dot {
+    background-color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .booking-status-pills-bar {
+    background: rgba(7, 28, 34, 0.55);
+}
+
+[data-bs-theme="dark"] .booking-status-pill {
+    background: #0d2730;
+    border-color: #173844;
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .booking-status-pill.active {
+    background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%);
+    border-color: #2dd4bf;
+    color: #ffffff;
+}
+
 .booking-filter-toolbar {
     display: flex !important;
     flex-direction: row !important;
@@ -1502,6 +1602,20 @@ body.admin-body #godmintonBottomNav,
     justify-content: flex-end !important;
     flex-wrap: nowrap !important;
     gap: 0.5rem !important;
+}
+
+.booking-search-box {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.booking-search-icon {
+    position: absolute;
+    left: 12px;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    pointer-events: none;
 }
 
 .booking-filter-toolbar .form-control,
@@ -1514,10 +1628,11 @@ body.admin-body #godmintonBottomNav,
 }
 
 .booking-filter-toolbar #searchBooking {
-    width: 240px !important;
+    width: 245px !important;
     min-width: 190px !important;
-    max-width: 240px !important;
-    flex: 0 0 240px !important;
+    max-width: 245px !important;
+    flex: 0 0 245px !important;
+    padding-left: 2rem !important;
 }
 
 .booking-filter-toolbar #filterStatus {
@@ -1544,31 +1659,75 @@ body.admin-body #godmintonBottomNav,
     color: #f8fafc !important;
 }
 
-/* Đảm bảo bảng danh sách đơn đặt không tạo thanh cuộn dọc nhỏ hoặc che khuất dòng khi mở menu thao tác */
-.booking-list-panel {
+.booking-panel-body {
     overflow: visible !important;
+    padding-bottom: 0.5rem !important;
 }
 
+/* Loại bỏ hoàn toàn thanh cuộn dọc phụ làm cắt khuất menu thao tác */
 .booking-table-wrap {
-    overflow-x: auto !important;
-    overflow-y: visible !important;
-    border-bottom-left-radius: var(--radius-xl);
-    border-bottom-right-radius: var(--radius-xl);
+    overflow: visible !important;
+    border-bottom-left-radius: 1.15rem;
+    border-bottom-right-radius: 1.15rem;
 }
 
-.booking-table-wrap .admin-table th,
-.booking-table-wrap .admin-table td {
-    padding-top: 0.85rem !important;
-    padding-bottom: 0.85rem !important;
+@media (max-width: 991.98px) {
+    .booking-table-wrap {
+        overflow-x: auto !important;
+    }
+}
+
+.booking-admin-table thead th {
+    background: rgba(248, 250, 252, 0.8);
+    padding-top: 0.9rem !important;
+    padding-bottom: 0.9rem !important;
+    font-size: 0.73rem !important;
+    letter-spacing: 0.05em !important;
+}
+
+.booking-admin-table tbody td {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
     vertical-align: middle !important;
 }
 
+.booking-admin-table tbody tr.booking-row {
+    transition: background-color 0.15s ease;
+}
+
+.booking-admin-table tbody tr.booking-row:hover {
+    background-color: rgba(13, 148, 136, 0.035);
+}
+
+.booking-code-pill {
+    display: inline-block;
+    padding: 0.28rem 0.65rem;
+    border-radius: 0.5rem;
+    background: rgba(15, 23, 42, 0.05);
+    color: var(--text-primary, #0f172a);
+    font-weight: 700;
+    font-size: 0.84rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+[data-bs-theme="dark"] .booking-code-pill {
+    background: rgba(255, 255, 255, 0.06);
+    color: #f1f5f9;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
 @media (max-width: 767.98px) {
+    .booking-panel-header,
+    .booking-status-pills-bar {
+        padding-left: 0.9rem !important;
+        padding-right: 0.9rem !important;
+    }
     .booking-filter-toolbar {
         flex-wrap: wrap !important;
         width: 100% !important;
         justify-content: stretch !important;
     }
+    .booking-search-box,
     .booking-filter-toolbar #searchBooking {
         flex: 1 1 100% !important;
         width: 100% !important;

@@ -430,9 +430,36 @@ function initAdminPushBell() {
     if (bellBtn) bellBtn.remove();
 }
 
+// Khởi tạo Popper strategy="fixed" cho toàn bộ menu thao tác trong bảng Admin để không bao giờ bị khung bảng cắt khuất
+function ensureFixedDropdown(btn) {
+    if (!btn || !window.bootstrap?.Dropdown) return null;
+    return window.bootstrap.Dropdown.getOrCreateInstance(btn, {
+        boundary: 'viewport',
+        popperConfig(defaultBsPopperConfig) {
+            return {
+                ...(defaultBsPopperConfig || {}),
+                strategy: 'fixed'
+            };
+        }
+    });
+}
+
+function initAdminTableDropdowns() {
+    document.addEventListener('pointerdown', e => {
+        const btn = e.target.closest('.admin-table [data-bs-toggle="dropdown"], .booking-action-btn[data-bs-toggle="dropdown"]');
+        if (btn) ensureFixedDropdown(btn);
+    }, true);
+
+    document.addEventListener('focusin', e => {
+        const btn = e.target.closest('.admin-table [data-bs-toggle="dropdown"], .booking-action-btn[data-bs-toggle="dropdown"]');
+        if (btn) ensureFixedDropdown(btn);
+    }, true);
+}
+
 function initAdminComponents() {
     initAdminTheme();
     initAdminPushBell();
+    initAdminTableDropdowns();
 }
 
 if (document.readyState === 'loading') {
